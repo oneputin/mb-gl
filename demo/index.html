@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>mb-gl demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+
+    <link rel="import" href="../mb-gl.html">
+
+    <link rel="import" href="../../paper-styles/demo-pages.html">
+
+    <style is="custom-style">
+
+        div.mapbox {
+            width: 400px;
+            height: 400px;
+        }
+        .flex-horizontal {
+            @apply(--layout-horizontal);
+        }
+        .flexchild {
+            @apply(--layout-flex);
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <h1>slide-map</h1>
+    
+    <template is="dom-bind" id="app">
+        
+        <div class="container flex-horizontal">
+            <div class="mapbox">
+                <mb-gl 
+                    serviceparams="[[serviceparams]]"
+                    cbox="{{cbox}}"
+                    mapapikey="[[mbkey]]"
+                    mapctrl="[[mapctrl]]"
+                    slidectrl="[[layerctrl]]" 
+                    slideinfo="{{slideinfo}}">
+                </mb-gl>
+            </div>
+            <div class="flexchild">
+                <p>LonLat=[[cbox]]</p>
+                <p>[[asstring(slideinfo)]]</p>
+            </div>
+        </div>
+        </template>
+    </div>
+
+    <script>
+        var app = document.querySelector('#app');
+        app.serviceparams = {
+            slide: "basintree"
+        };
+        app.cbox = "13.7,52.4";
+        app.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+        app.mapctrl = {};
+        app.layerctrl = {};
+
+        app.asstring = function(item) {
+            var txt = JSON.stringify(item, null, '\n')
+                // console.log(txt, item);
+            return txt;
+        };
+    </script>
+</body>
+
+</html>

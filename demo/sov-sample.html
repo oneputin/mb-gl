@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="">
+
+<head>
+    <meta name="description" content="property change listener on dom-bind">
+    <base href="http://polygit.org/components/">
+    <script src="webcomponentsjs/webcomponents-lite.js"></script>
+    <link rel="import" href="polymer/polymer.html">
+    <link rel="import" href="paper-input/paper-input.html">
+
+    <style>
+
+    </style>
+</head>
+
+<body>
+
+    <dom-module id="x-example">
+
+        <style>
+             :host {
+                display: block;
+            }
+        </style>
+
+        <template>
+    <paper-input
+      type="text"
+      value="{{childTest}}"></paper-input>
+  </template>
+
+        <script>
+            // only need this when both (1) in the main document and (2) on non-Chrome browsers
+            addEventListener('WebComponentsReady', function() {
+                Polymer({
+                    is: 'x-example',
+                    properties: {
+                        childTest: {
+                            type: String,
+                            value: 'Init value',
+                            notify: true
+                        }
+                    }
+                });
+            });
+        </script>
+    </dom-module>
+
+    <template is="dom-bind" id="app2">
+ 
+      <input value={{test::input}}>
+    
+      <input type=button on-tap="changeTest" value="Change Test">
+      <br><br>
+
+      <x-example child-test="{{test}}" on-child-test-changed="childTestChanged"></x-example>
+
+    </template>
+
+    <script>
+        addEventListener('WebComponentsReady', function() {
+            (function(document) {
+                'use strict';
+                var app = document.querySelector('#app2');
+                app.test = "original value";
+
+                app.childTestChanged = function() {
+                    console.log('test changed');
+                }
+
+                app.addEventListener('dom-change', function() {
+                    console.log("dom-change");
+                });
+
+                app.changeTest = function() {
+                    app.test = 'New Value';
+                }
+
+            })(document);
+        });
+    </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,291 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../kml-json/kml-json.html">
+
+<link rel="import" href="mb-api.html">
+
+<!--
+`mb-gl`
+wraps a map based on mapbox-gl-api and a dynamic feature overlay with minimum parameters. 
+
+@demo demo/index.html 
+-->
+
+<dom-module id="mb-gl">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+            #map {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+
+        <h3>Slide-Service at: [[serviceurl]]</h3>
+
+        <template is="dom-if" if="[[serviceflag]]">
+            <kml-json 
+                url     = "[[serviceurl]]"
+                service = "[[servicequery]]"
+                geojson = "{{slidedata}}">
+            </kml-json>
+        </template>
+
+        <div id='map'></div>
+
+    </template>
+
+    <script>
+        var map,
+            setup = {
+
+                mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
+
+                serviceurl: "http://iimaps.de/npp/if_slides.php",
+
+                serviceparams: {
+                    mapclient: "ol2",
+                    card: "default",
+                    slide: "basin"
+                },
+
+                map: {
+                    // container: 'map',     // useless as map is in shadowdom  
+                    // center: [13.5, 52.5], // must be synced by client with service
+                    style: 'mapbox://styles/mapbox/streets-v9',
+                    zoom: 8,
+                    insertlayer: 'water'
+                },
+
+                layer: {
+                    "id": "slide",
+                    "type": "fill",
+                    "source": "slide",
+                    "layout": {},
+                    'paint': {
+                        'fill-color': '#088',
+                        'fill-opacity': 0.3,
+                        'fill-outline-color': '#000'
+                    }
+                },
+
+                cbox: "12,52"
+            };
+
+        Polymer({
+            is: 'mb-gl',
+
+            properties: {
+                serviceflag: {
+                    type: Number
+                },
+                serviceurl: {
+                    type: String
+                },
+                servicequery: {
+                    type: Object
+                        /*value: function() {
+                            return {};
+                        }*/
+                },
+                serviceparams: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+                cbox: {
+                    type: String,
+                    notify: true
+                },
+
+                slidedata: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+                mapapikey: {
+                    type: String,
+                    notify: true
+                },
+                mapctrl: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+                slidectrl: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+                slideinfo: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    },
+                    notify: true //, observer: 'slidecheck'
+                }
+            },
+
+            observers: [
+                'servicectrl(serviceparams.card, serviceparams.slide, cbox)',
+                'sliderefresh(slidedata.*, cbox, serviceflag)'
+            ],
+
+            attached: function() {
+                console.log("log setup",setup);
+
+                this.mapapikey = setup.mapapikey;
+
+                this.serviceurl = setup.serviceurl;
+
+                // this.serviceparams = this.extend({}, setup.serviceparams, this.serviceparams);
+                var serviceparams = Object.assign({}, setup.serviceparams, this.serviceparams);
+
+                // ************************************
+                var mapcontainer = {
+                    container: this.$.map // get container as dom-element  
+                };
+                // ************************************Object.assign
+                // this.mapctrl = this.extend({}, setup.map, this.mapctrl, mapcontainer);
+                var mapctrl = Object.assign({}, setup.map, this.mapctrl, mapcontainer);
+
+                // this.slidectrl = this.extend({}, setup.layer, this.slidectrl);
+                var slidectrl = Object.assign({}, setup.layer, this.slidectrl);
+
+                // SYNC cbox for map and service 
+                if (!this.cbox) {
+                    if (serviceparams.cbox) this.cbox = serviceparams.cbox;
+                    else if (setup.cbox) this.cbox = setup.cbox;
+                    else this.cbox = "10,52";
+                }
+                serviceparams.cbox = this.cbox;
+                mapctrl.center = this.cbox.split(",");
+                // console.log("service prepared", serviceparams, mapctrl, slidectrl);
+
+                this.serviceparams = serviceparams;
+                this.mapctrl = mapctrl;
+                this.slidectrl = slidectrl;
+
+                // 
+                this.installmap();
+            },
+
+            servicectrl: function(card, slide, cbox) {
+                if (!card || !slide || !cbox) return;
+                this.servicequery = {};
+                this.servicequery = this.serviceparams;
+                // console.log("servicequery", this.servicequery);
+            },
+
+            sliderefresh: function(rawdata, cbox) {
+                if (!map || !(typeof rawdata == "object")) return;
+
+                var slidedata;
+                if (rawdata.value) slidedata = rawdata.value; // !!
+                else slidedata = rawdata;
+                if (!slidedata.features || !slidedata.features.length) return;
+
+                // console.log("refresh slidelayer from:", slidedata);
+
+                if (!map.getSource('slide')) {
+                    var that = this,
+                        slidectrl = this.slidectrl,
+                        mapctrl = this.mapctrl; // queryAction
+                    // console.log("create slidelayer from", slidectrl, mapctrl);
+
+                    map.addSource('slide', {
+                        type: 'geojson',
+                        data: slidedata
+                    });
+
+                    // SlideLayer with insertpoint in baseLayerStack
+                    map.addLayer(slidectrl, mapctrl.insertlayer);
+
+                    map.on('click', function(e) {
+                        that.slidequery(e);
+                    });
+
+                    map.on('render', function(e) { // ?? too often ??? 
+                        that.slidequery(e);
+                    });
+                } else {
+                    map.getSource('slide').setData(slidedata);
+                }
+
+                // this.serviceflag = 0;
+            },
+
+            // interactive feature-query at mapcenter	
+            slidequery: function(e) {
+                //console.log("slidequery", e);
+                if (!e) return;
+                var qpoint, cbox;
+                if (e.point) {
+                    qpoint = e.point;
+                    cbox = e.lonlat; 
+                } else if (e.target) {
+                    var c = e.target._canvas;
+                    qpoint = new mapboxgl.Point(c.width / 2, c.height / 2);
+                }
+                if (!qpoint) return;
+                // console.log('slidequery-qpoint', qpoint);
+
+                var features = map.queryRenderedFeatures(qpoint, {
+                    layers: ['slide']
+                });
+
+                if (features.length) {
+                    // Optionally features or its ids or its properties 
+                    this.slideinfo = features;
+                    if (cbox) {
+                        this.cbox = cbox[0].toFixed(3)+', '+cbox[1].toFixed(3);
+                    }
+                }
+            },
+
+            sliderequest: function() {
+                var cbox = map.getCenter();
+                this.cbox = cbox.lng + "," + cbox.lat;
+                this.serviceparams.cbox = this.cbox;
+                console.log("map triggered sliderequest", this.serviceparams);
+            },
+
+            installmap: function() {
+
+                var that = this,
+                    mapctrl = this.mapctrl;
+
+                mapboxgl.accessToken = this.mapapikey; // console.log("create map using", mapctrl, mapboxgl);
+
+                map = new mapboxgl.Map(mapctrl);
+                //*****************************
+                map.on('load', function() { // console.log("map loaded", map);
+
+                    map.on('moveend', function() {
+                        that.sliderequest();
+                    });
+
+                    that.sliderequest();
+                    that.serviceflag = 1;
+                });
+            },
+
+            extend: function(dest) { // utility
+                for (let i = 1; i < arguments.length; i++) {
+                    const src = arguments[i];
+                    for (const k in src) {
+                        dest[k] = src[k];
+                    }
+                }
+                return dest;
+            }
+
+        });   
+    </script>
+</dom-module>

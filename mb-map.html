@@ -1,0 +1,158 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="mb-api.html">
+
+<!--
+`mb-map`
+wraps a map created with mapbox-gl-api.  
+the map-object can be ctrld from outside
+
+@demo demo/index1.html 
+-->
+
+<dom-module id="mb-map">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+            }
+            #map {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }            
+        </style>
+
+        <div id='map'></div>
+
+        <content></content>
+    
+    </template>
+
+    <script>
+        var map;
+        var setup = {
+
+            mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
+
+            map: {
+                // container: 'map',     // useless as map is in shadowdom  
+                // center: [13.5, 52.5], // must be synced by client with service
+                style: 'mapbox://styles/mapbox/streets-v9',
+                zoom: 8,
+                insertlayer: 'water'
+            },
+
+            cbox: "12,52"
+        };
+
+        Polymer({
+            is: 'mb-map',
+
+            properties: {
+                /**
+                 *  map-object available for query and manipulation outside 
+                 */
+                map: {
+                    type: Object,
+                    notify: true
+                },
+                /**
+                 *  access-key to mapbox-gl api
+                 */
+                mapapikey: {
+                    type: String
+                },
+                /**
+                 *  parameterset to specify mapbox-gl basemap
+                 *  composed from internal defaults an external data 
+                 */
+                mapctrl: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+
+                /**
+                 *  center of visible mapview as csv(Lon,Lat)
+                 */
+                cbox: {
+                    type: String,
+                    value: "13.5,52.5",
+                    observer: "centerthemap",
+                    notify: true
+                },
+                /**
+                 *  boundingbox of vidible mapview : LL,UR as Lon,Lat-csv
+                 */
+                bbox: {
+                    type: String,
+                    notify: true
+                }
+            },
+
+            attached: function() {
+
+                // console.log("mb-map setup", setup);
+                // 
+                if (!this.mapapikey) this.mapapikey = setup.mapapikey;
+
+                // ************************************
+                // Compile map-parameters from (default)setup, external parameters 
+                // and the local container-object !!
+                var mapcontainer = {
+                    container: this.$.map // get container as dom-element  
+                };
+                var mapctrl = Object.assign({}, setup.map, this.mapctrl, mapcontainer);
+                // ************************************
+
+                if (!this.cbox) this.cbox = setup.cbox;
+                if (this.cbox) mapctrl.center = this.cbox.split(",");
+
+                // 
+                this.mapctrl = mapctrl; //console.log(this.mapapikey, this.mapctrl);
+
+                this.installmap();
+            },
+
+            centerthemap: function(cbox, cboxold) {
+                cbox = cbox.split(",");
+                cbox = new mapboxgl.LngLat(cbox[0], cbox[1]);
+                if (this.map) this.map.setCenter(cbox);
+            },
+            /**
+             * setup a mb-gl-map 
+             */
+            installmap: function() {
+                // 
+                var that = this;
+
+                mapboxgl.accessToken = this.mapapikey;
+
+                map = new mapboxgl.Map(this.mapctrl); // console.log("create map using", this.mapctrl, mapboxgl, map);
+
+                map.on('load', function() { // console.log("map loaded", map);
+                    // inform app about new center after any move
+                    map.on('moveend', function() {
+                        let cb = map.getCenter(),
+                            bb = map.getBounds();
+                        that.cbox = cb.lng + "," + cb.lat;
+                        that.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
+                        // console.log(cb,bb,that.cbox,that.bbox);
+                    });
+
+                    //if zoom is NOT communicated to app via map-object : 
+                    //map.on('zoomend', function() { 
+                    //console.log("zoomed the map");                
+                    //});
+                    that.map = map;
+                });
+            }
+
+        });
+    </script>
+</dom-module>

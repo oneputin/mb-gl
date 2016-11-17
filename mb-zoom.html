@@ -1,0 +1,118 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-slider/paper-slider.html">
+
+<link rel="import" href="mb-api.html">
+
+<!--
+`mb-zoom`
+Zoom-Ctrl of related mb-gl-map 
+
+@demo demo/index1.html 
+-->
+
+<dom-module id="mb-zoom">
+
+    <template>
+
+        <style>
+            :host {
+                display: inline-block;
+                background-color: white;
+            }
+            .slider {
+                background-color: #ff4081;
+                color: white;
+            }   
+        </style>
+        <div>        
+            <!--   snap   step=1   min="[[min]]"  max="[[max]]"--> 
+            <paper-slider 
+                id = "slider"
+                class ="slider"
+                pin
+                min = "[[_min]]"
+                max = "[[_max]]"
+                value = "{{zoom}}">
+            </paper-slider>
+            <!--<span id="label">[[_zoom]]</span>--> 
+        </div>
+
+    </template>
+
+    <script>
+        Polymer({
+            is: 'mb-zoom',
+
+            properties: {
+                /**
+                 *  related mb-gl-map 
+                 */
+                map: {
+                    type: Object,
+                    observer: 'setupmaptool',
+                    notify: true
+                },
+
+                /**
+                 *  mb-gl zoomlevel(1-22)
+                 *  (int or float)   
+                 */
+                zoom: {
+                    type: Number,
+                    observer: 'setmapzoom',
+                    notify: true
+                },
+
+                /**
+                 * min zoom-level 
+                 */
+                _min: {
+                    type: Number,
+                    value: 2,
+                    notify: true
+                },
+
+                /**
+                 * max zoom-level 
+                 */
+                _max: {
+                    type: Number,
+                    value: 11,
+                    notify: true
+                }
+            },
+
+            attached: function() {},
+
+            setupmaptool: function(map, oldmap) {
+
+                if (map && !oldmap) {
+                    var that = this;
+                    this.zoom = map.getZoom();
+                    if (map.minZoom) this._min = map.minZoom;
+                    else map.minZoom = this._min;
+                    if (map.maxZoom) this._max = map.maxZoom;
+                    else map.maxZoom = this._max;
+
+                    // console.log("map-zooms", this._min, this._zoom, this._max)
+                    // mbmap.on('zoom', function(e) { // problems with rueckkopplung
+                    map.on('zoomend', function(e) {
+                        that.zoom = map.getZoom();
+                    });
+                } else {
+                    // console.log("map property changed");
+                }
+            },
+
+
+            /**
+             * sets new zoom value on mb-gl-map
+             */
+            setmapzoom: function(zoom) {
+                if (!this.map) return;
+                this.map.setZoom(zoom);
+            }
+        })
+    </script>
+
+</dom-module>

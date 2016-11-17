@@ -1,0 +1,83 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<!--
+`mb-target`
+Target-box as button,  centered on mb-gl-map's viewbox.  
+The visual signature can be toogled in sync with the value of the exported serviceflag
+
+@demo demo/index1.html 
+-->
+
+<dom-module id="mb-target">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                position: absolute;
+                left: 50%;
+                top: 50%;      
+                /* sync target-center to location */
+                transform: translate(-50%, -50%);
+            }
+            paper-icon-button.target {
+                color: var(--paper-pink-500);
+                --paper-icon-button-ink-color: var(--paper-indigo-500);
+            }          
+            paper-icon-button.target:hover {
+                background-color: var(--paper-pink-500);
+                color: white;
+            }
+            paper-icon-button.target.idle {
+                color: black;
+            }
+        </style>
+
+        <paper-icon-button icon="fullscreen" id="target" title="target" class="target" on-tap="toggletarget"></paper-icon-button>
+    
+    </template>
+
+    <script>
+        Polymer({
+            is: 'mb-target',
+
+            properties: {
+                /**
+                 * flag, can be interactively toggled.  
+                 * fi. by tap on mb-target.  
+                 * - evaluable by dynamic layers (slides)
+                 */
+                serviceflag: {
+                    type: Boolean,
+                    notify: true,
+                    value: true,
+                    observer: 'toggletarget'
+                }
+            },
+
+            attached: function() {
+                // console.log("target attached");
+            },
+
+            /**
+             * toggles the 'serviceflag' and the visual signature of the target 
+             */
+            toggletarget: function(t) {
+                this.debounce('target', function() {
+                    if (typeof t == "object") t = !this.serviceflag;
+                    console.log("toggling target to ", t);
+                    if (!t) {
+                        this.serviceflag = false;
+                        this.$.target.classList.add("idle");
+                    } else {
+                        this.serviceflag = true;
+                        this.$.target.classList.remove("idle");
+                    }
+                }, 300)
+
+            }
+        });
+    </script>
+</dom-module>

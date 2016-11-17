@@ -1,0 +1,471 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../neon-animation/neon-animations.html">
+<link rel="import" href="../kml-json/kml-json.html">
+<link rel="import" href="../paper-fab/paper-fab.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+
+<link rel="import" href="mb-api.html">
+
+<!--
+`mb-slide`
+wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-map 
+- additional fab for zoom to slide
+- interactive queries (f.i. map-click) produce slideinfo-object 
+- optional layer-bound POPUP (paper-dialog) to view slideinfo ontop of map  
+
+@demo demo/index1.html 
+-->
+
+<dom-module id="mb-slide">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+            paper-dialog {
+                border: 2px solid;
+                border-color: var(--paper-green-500);
+                background-color: var(--paper-light-green-50);
+                color: var(--paper-green-500);
+            }
+            .fab {
+                position:absolute;
+                right:5px;
+                top:5px;
+            }
+            #popupbody {
+                line-height: 0.8;
+            }
+            
+        </style>
+
+        <template is="dom-if" if="[[serviceflag]]">
+            <!-- async query for new {{slidedata}} -->
+            <kml-json 
+                url     = "[[serviceurl]]"
+                service = "[[_servicequery]]"
+                geojson = "{{slidedata}}">
+            </kml-json>
+        </template>
+
+    <paper-fab class="fab" icon="all-out" title="heart" on-tap="zoomall"></paper-fab>
+
+    <paper-dialog id="popup" class="colored" entry-animation="scale-up-animation" exit-animation="fade-out-animation" with-backdrop>
+        <!--  -->
+        <h2 id="popupheadline">[[popuptitle]]</h2>
+        <paper-dialog-scrollable>
+            <pre><code id="popupbody">[[slideinfo]]</code></pre>
+        </paper-dialog-scrollable>
+    </paper-dialog>
+
+    <div id='map'></div>
+
+    </template>
+
+    <script>
+        var slidesetup = {
+
+            serviceurl: "http://iimaps.de/npp/if_slides.php",
+
+            serviceparams: {
+                mapclient: "ol2",
+                card: "default",
+                slide: "basin"
+            },
+
+            cbox: {
+                type: String
+            },
+
+            /**
+             * "static" layer-ctrl of overlay 
+             */
+            layer: {
+                "id": "slide",
+                "type": "fill",
+                "source": "slide",
+                "layout": {},
+                'paint': {
+                    'fill-color': '#088',
+                    'fill-opacity': 0.3,
+                    'fill-outline-color': '#000'
+                }
+            }
+
+        };
+
+        Polymer({
+            is: 'mb-slide',
+
+            properties: {
+
+                /**
+                 *  map-object of related mb-gl-map
+                 */
+                map: {
+                    type: Object,
+                    observer: 'setupthetrigger',
+                    notify: true
+                },
+
+                /*
+                 *  flag to enable/disable automatic sliderequests
+                 */
+                serviceflag: {
+                    type: Boolean,
+                    value: false,
+                    notify: true,
+                    observer: 'servicetrigger'
+                },
+
+                /**
+                 * basic server-url of overlay-dataservice
+                 */
+                serviceurl: {
+                    type: String
+                },
+
+                /**
+                 * "static" parameters qualifying the overlay-dataservice
+                 */
+                serviceparams: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+
+                /**
+                 * location for service-query.
+                 * default: actual map-center
+                 */
+                cbox: {
+                    type: String
+                },
+
+                _servicequery: {
+                    type: Object
+                },
+
+                /**
+                 * raw response from slide-server. 
+                 * geometries + properties of all slide-faetures
+                 */
+                slidedata: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+
+                /*
+                 *  customizable transformation of feature-properties(attributes) for output
+                 */
+                preformatter: {
+                    type: Function,
+                    value: function(x) {
+                        // if geojson data 
+                        return x.properties;
+                    }
+                },
+
+                /*
+                 *  JSONstring of array of feature-properties after formatting by 'preformatter'
+                 */
+                slideinfo: {
+                    type: String,
+                    notify: true,
+                    observer: 'popupopen'
+                },
+
+                /*
+                 *  bbox of last-updated-slide
+                 */
+                slidebox: {
+                    type: Object
+                },
+                /*
+                 *  all feature-ids of last-updated-slide 
+                 *  (as links for following feature-actions, fi. requests to feature-databases)
+                 */
+                slidekeys: {
+                    type: String,
+                    notify: true
+                },
+
+                // mapbox-layer-ctrl used to create slideLayer
+                slidectrl: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+
+                /*
+                 *  name of basemap-layer to insert the slide below 
+                 */
+                insertslidebelow: {
+                    type: String,
+                    value: "water"
+                },
+
+                /*
+                 *  title of "internal" info-popup
+                 */
+                popuptitle: {
+                    type: String,
+                    value: "Slideinfo"
+                }
+            },
+
+            observers: [
+                'servicerequest(serviceparams.card, serviceparams.slide, cbox, serviceflag)',
+                'serviceresponse(slidedata.*, serviceflag)'
+            ],
+
+            attached: function() {
+
+                this.serviceurl = slidesetup.serviceurl;
+
+                // var serviceparams 
+                this.serviceparams = Object.assign({}, slidesetup.serviceparams, this.serviceparams);
+                // this.serviceparams = serviceparams;
+
+                this.slidectrl = Object.assign({}, slidesetup.layer, this.slidectrl);
+                // this.slidectrl = layerctrl;
+
+                if (0) {
+                    console.log("slide service: " + this.serviceurl, this.serviceparams);
+                    console.log("slide layer:", this.slidectrl);
+                }
+            },
+
+            /**
+             *   observer triggering new slide-request after changes of any of the service-parameters
+             *   mainly : cbox (mapcenter)
+             */
+            servicerequest: function(card, slide, cbox) {
+                if (!card || !slide || !cbox || !this.serviceflag) return;
+                this.debounce('request', function() {
+                    // console.log("Run SERVICEREQUEST with:", card, slide, cbox);
+                    this._servicequery = {};
+                    this._servicequery = this.serviceparams;
+                    // this.serviceresponse = {};
+                }, 300)
+            },
+
+            /*
+             *   observer triggered if any slide-data changed 
+             */
+            serviceresponse: function(rawdata) {
+                // console.log(typeof rawdata, rawdata); // , cbox) {
+                if (!this.map || (typeof rawdata != "object") || !Object.keys(rawdata).length) return;
+
+                var slidedata;
+                if (rawdata.value) slidedata = rawdata.value; // !!
+                else slidedata = rawdata;
+                if (!slidedata.features || !slidedata.features.length) return;
+
+                this.slidebox = this.getBoundingBox(slidedata);
+
+                this.slidekeys = this.getSlideKeys(slidedata);
+                // console.log("ServiceResponse=slidelayer:", this.slidekeys, slidedata, this.slidebox);
+
+                let slidesource = this.slidectrl.source;
+
+                if (!this.map.getSource(slidesource)) {
+
+                    this.createLayer();
+
+                } else {
+
+                    this.map.getSource(slidesource).setData(slidedata);
+                }
+
+                // this.serviceflag = 0;
+            },
+
+            /*
+             *
+             */
+            createLayer: function() {
+
+                var that = this,
+                    slidedata = this.slidedata,
+                    slidectrl = this.slidectrl,
+                    insertlayer = this.layerinsertbelow,
+                    slidesource = slidectrl.source;
+
+                this.map.addSource(slidesource, {
+                    type: 'geojson',
+                    data: slidedata
+                });
+
+                // SlideLayer with insert-point in baseLayerStack
+                this.map.addLayer(slidectrl, insertlayer);
+                // ======================================
+
+                this.map.on('click', function(e) { // console.log("clicked",e);
+                    // 
+                    that.slideinfoget(e.point);
+                });
+
+                /* Optional for autotracing of center-info
+                this.map.on('render', function(e) {  // 
+                    that.debounce('rendering', function() {  // was called too often 
+                        var ll = that.map.getCenter();
+                        var c = e.target._canvas;
+                        console.log(ll, c);
+                        // qpoint = new mapboxgl.Point(c.width / 2, c.height / 2);
+                        // that.slideinfoget(e.point);
+                    }, 300);
+                }); */
+            },
+
+            /**
+             *  setting 
+             */
+            setupthetrigger: function(newmap) { // console.log("setupthetrigger", newmap);
+                if (newmap) {
+                    // var that = this;
+
+                    this.map.on('moveend', function() {
+                        // trigger overlay-request after every "map-move" 
+                        //if (that.serviceflag) that.servicetrigger();
+                        if (this.serviceflag) this.servicetrigger();
+                    }.bind(this));
+
+                    // trigger initial service-request
+                    this.serviceflag = true;
+                    this.servicetrigger();
+                } else {
+                    // this.map = undefined;
+                }
+            },
+
+            /**
+             *
+             * Indirectly triggers a request for new servicedata 
+             * updating cbox in serviceparameters (observed by servicerequest)
+             */
+            servicetrigger: function(t) {
+                if ((t != undefined) && !t) return;
+                var that = this;
+                this.debounce('triggering', function() {
+                    var cbox = that.map.getCenter();
+                    that.cbox = cbox.lng + ',' + cbox.lat; // the TRIGGER 
+                    that.serviceparams.cbox = that.cbox;
+                    console.log("Triggering service", that.serviceparams, that.serviceflag);
+                }, 300);
+            },
+
+            // interactive feature-query at click-location 
+            // (?? or at mapcenter after render-event ??)	
+            slideinfoget: function(qpoint) {
+                if (!qpoint) return;
+                console.log("slideinfoget", qpoint);
+                let formatter = this.preformatter;
+                let slidename = this.slidectrl.id;
+
+                var features = map.queryRenderedFeatures(qpoint, {
+                    layers: [slidename]
+                }); // console.log('slideinfoget-qpoint', qpoint, features);
+
+                if (!features.length) {
+                    this.slideinfo = "slide-query outside slide-area!";
+                } else {
+                    var frameindex, slideinfo = [];
+                    features.forEach(function(item, index) {
+                        if (item.id) frameindex = item.id;
+                        else frameindex = index;
+                        slideinfo[frameindex] = formatter(item);
+                    })
+                    this.slideinfo = JSON.stringify(slideinfo, null, '\n');
+                }
+                console.log("slideinfoget", this.slideinfo);
+                // optionally show in map-context
+                if (true) this.$.popup.open();
+            },
+
+            /**
+             * 
+             */
+            popupopen: function(item) {
+                if (!item) return;
+                var txt = JSON.stringify(item, null, '\n');
+                this.$.popupbody.innerText = txt;
+                this.$.popup.open();
+            },
+
+
+            zoomall: function() {
+                if (!this.slidebox) return;
+                this.serviceflag = false;
+                var bb = this.slidebox; // console.log("fitToSlide", bb);
+                this.map.fitBounds(bb);
+            },
+
+            // utilities
+            // u1: bounding box
+            getBoundingBox: function(data) {
+                if (data.features) data = data.features; //console.log(data); // return
+                if (!data.length) return; //console.log(data); 
+
+                var segments, coords, pnt, latitude, longitude, bb = {};
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i].geometry.geometries) {
+                        segments = data[i].geometry.geometries; //console.log("segments", segments);
+                    } else {
+                        segments = [data[i].geometry];
+                    }
+                    for (var k = 0; k < segments.length; k++) {
+                        coords = segments[k].coordinates[0];
+                        if (!bb.xMin) {
+                            pnt = coords[0];
+                            bb = {
+                                "xMin": pnt[0],
+                                "xMax": pnt[0],
+                                "yMin": pnt[1],
+                                "yMax": pnt[1]
+                            };
+                        }
+                        for (var j = 0; j < coords.length; j++) {
+                            longitude = coords[j][0];
+                            latitude = coords[j][1];
+                            bb.xMin = bb.xMin < longitude ? bb.xMin : longitude;
+                            bb.xMax = bb.xMax > longitude ? bb.xMax : longitude;
+                            bb.yMin = bb.yMin < latitude ? bb.yMin : latitude;
+                            bb.yMax = bb.yMax > latitude ? bb.yMax : latitude;
+                        }
+                    }
+                }
+                var bb = [
+                    [bb.xMin, bb.yMin],
+                    [bb.xMax, bb.yMax]
+                ]; //console.log(bb);
+                return bb;
+            },
+            // u2: (geo)id-list of slide-features
+            getSlideKeys: function(data) {
+                if (data.features) data = data.features; //console.log(data); // return
+                if (!data.length) return; // console.log("getSlideKeys", data); 
+                var props, id, keys = [];
+                for (var i = 0; i < data.length; i++) {
+                    id = data[i].id;
+                    props = data[i].properties;
+                    if (!id) {
+                        id = props.id;
+                        if (!id) id = props.name;
+                        if (!id) id = i;
+                    }
+                    keys.push(id);
+                }
+                keys = keys.toString(); // 
+                return keys;
+            }
+
+        });
+    </script>
+</dom-module>
