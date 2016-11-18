@@ -34,11 +34,13 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 position:absolute;
                 right:5px;
                 top:5px;
+                opacity: 0.8; 
             }
             #popupbody {
                 line-height: 0.8;
             }
             
+
         </style>
 
         <template is="dom-if" if="[[serviceflag]]">
@@ -357,7 +359,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     var cbox = that.map.getCenter();
                     that.cbox = cbox.lng + ',' + cbox.lat; // the TRIGGER 
                     that.serviceparams.cbox = that.cbox;
-                    console.log("Triggering service", that.serviceparams, that.serviceflag);
+                    // console.log("Triggering service", that.serviceparams, that.serviceflag);
                 }, 300);
             },
 

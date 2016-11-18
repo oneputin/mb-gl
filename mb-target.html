@@ -22,8 +22,10 @@ The visual signature can be toogled in sync with the value of the exported servi
                 /* sync target-center to location */
                 transform: translate(-50%, -50%);
             }
+
             paper-icon-button.target {
                 color: var(--paper-pink-500);
+                opacity: 0.8;
                 --paper-icon-button-ink-color: var(--paper-indigo-500);
             }          
             paper-icon-button.target:hover {
@@ -36,7 +38,7 @@ The visual signature can be toogled in sync with the value of the exported servi
         </style>
 
         <paper-icon-button icon="fullscreen" id="target" title="target" class="target" on-tap="toggletarget"></paper-icon-button>
-    
+        
     </template>
 
     <script>
@@ -67,7 +69,7 @@ The visual signature can be toogled in sync with the value of the exported servi
             toggletarget: function(t) {
                 this.debounce('target', function() {
                     if (typeof t == "object") t = !this.serviceflag;
-                    console.log("toggling target to ", t);
+                    // console.log("toggling target to ", t);
                     if (!t) {
                         this.serviceflag = false;
                         this.$.target.classList.add("idle");

@@ -1,0 +1,93 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<!--
+`mb-target`
+Target-box as button,  centered on mb-gl-map's viewbox.  
+The visual signature can be toogled in sync with the value of the exported serviceflag
+
+@demo demo/index1.html 
+-->
+
+<dom-module id="mb-info">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                position: absolute;
+
+                left: 0%;
+                bottom: 0%;
+                height: 1.5em;
+
+                font: 0.8em Courier, Lucida;
+                background-color: rgba(255,64,129,0.8); /*#ff4081*/
+                color: white;                    
+
+                /*opacity: 0.7;*/ /*related to all content bg,fg*/
+
+            }
+
+            #lowerleft {
+                padding: 0.2em;
+            }
+        </style>
+
+        <div id="lowerleft">[[info]]</div>
+        
+    </template>
+
+    <script>
+        Polymer({
+            is: 'mb-info',
+
+            properties: {
+                /**
+                 * LonLat in csv-format
+                 */
+                lonlat: {
+                    type: String
+                },
+
+                /**
+                 * info created from different sources
+                 */
+                info: {
+                    type: String,
+                    computed: 'formatlonlat(lonlat)'
+                }
+
+            },
+
+            attached: function() {
+                // console.log("target attached");
+            },
+
+            /**
+             * toggles the 'serviceflag' and the visual signature of the target 
+             */
+            formatlonlat: function(cbox) {
+                if (!cbox) return "";
+                var lon = cbox.split(",")[0],
+                    lat = cbox.split(",")[1],
+                    lonunit = lon < 0 ? " W" : "E",
+                    latunit = lat < 0 ? " S" : "N";
+                return this.ddtodms(lon) + lonunit + "  " + this.ddtodms(lat) + latunit;
+            },
+
+            /**
+             *  transform digitaldegree to dms
+             */
+            ddtodms: function(dd) {
+                dd = parseFloat(dd);
+                if (dd < 0) dd = 0 - dd;
+                let d = Math.floor(dd); // console.log("dd,d=", dd, d)
+                let x = (dd - d) * 60;
+                return d + "°" + Math.floor(x) + "'" + ((x - Math.floor(x)) * 60).toFixed(1) + '"';
+
+            }
+        });
+    </script>
+</dom-module>

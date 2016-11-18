@@ -14,6 +14,7 @@
     <link rel="import" href="../mb-slide.html">
     <link rel="import" href="../mb-zoom.html">
     <link rel="import" href="../mb-target.html">
+    <link rel="import" href="../mb-info.html">
 
     <style is="custom-style">
         div.mapbox {
@@ -30,6 +31,19 @@
         .flexchild {
             @apply(--layout-flex);
         }
+        
+        div.ctrl {
+            background-color: cyan;
+            padding: 5px;
+            margin: 10px;
+        }
+        
+        paper-dialog.colored {
+            border: 2px solid;
+            border-color: var(--paper-green-500);
+            background-color: var(--paper-light-green-50);
+            color: var(--paper-green-500);
+        }
     </style>
 
 </head>
@@ -37,49 +51,6 @@
 <body>
 
     <h1>element-demo: mb-slide</h1>
-
-    <dom-module id="x-mb">
-        <template>
-            <style>
-
-                div.ctrl {
-                    background-color: cyan;
-                    padding: 5px;
-                    margin: 10px;
-                }
-                
-                paper-dialog.colored {
-                    border: 2px solid;
-                    border-color: var(--paper-green-500);
-                    background-color: var(--paper-light-green-50);
-                    color: var(--paper-green-500);
-                }
-
-            </style>
-    
-            <div class="ctrl">
-
-            </div>
-
-        </template>
-        <script>
-            Polymer({
-                is: 'x-mb',
-                properties: {
-                    cbox: {
-                        type: String,
-                        notify: true
-                    }
-                },
-                cboxchanged: function(v) {
-                    console.log("cbox changed", v);
-                    //  app.cbox = v;
-                }
-
-            });
-        </script>
-
-    </dom-module>
 
     <template is="dom-bind" id="app-demo">
         
@@ -104,6 +75,9 @@
                 <mb-target 
                     serviceflag="{{flag}}">
                 </mb-target>
+                <mb-info 
+                    lonlat="[[cbox]]">
+                </mb-info>
             </div>
 
             <div class="ctrl flexchild">
@@ -111,7 +85,6 @@
                 <mb-zoom map="{{map}}"></mb-zoom>
 
                 <paper-input label="actual cbox(LonLat) = [[cbox]]" value="{{cboxinput}}" always-float-label on-focused-changed="focuschanged"></paper-input>
-                <!--on-value-changed="cboxchanged"-->
 
                 <p>[[slideinfo]]</p>
                 <!--<p>[[asstring(slideinfo)]]</p>-->
@@ -147,11 +120,13 @@
         };
 
         app.focuschanged = function(e) {
-            console.log("focus changed", e);
+            // console.log("focus changed", e);
             if (!e.detail.value) {
                 app.cbox = app.cboxinput;
+                app.cboxinput = "";
             } else {
-                app.cboxinput = app.cbox;
+                let cbox = app.cbox.split(",");
+                app.cboxinput = parseFloat(cbox[0]).toFixed(3) + "," + parseFloat(cbox[1]).toFixed(3);
             }
             //  app.cbox = v;
         }
