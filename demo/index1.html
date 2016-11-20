@@ -20,7 +20,6 @@
         div.mapbox {
             position: relative;
             width: 50%;
-            /*400px;*/
             height: 400px;
         }
         
@@ -58,10 +57,10 @@
             
             <div class="mapbox">
                 <mb-map 
-                    map="{{map}}"
-                    zoom="{{zoom}}"
-                    cbox="{{cbox}}"
                     mapapikey="[[mbkey]]"
+                    map="{{map}}"
+                    cbox="{{cbox}}"
+                    zoom="{{zoom}}"
                     mapctrl="[[mapctrl]]">
                 </mb-map>
                 <mb-slide
@@ -72,14 +71,19 @@
                     slideinfo="{{slideinfo}}"
                     serviceflag="{{flag}}">
                 </mb-slide>
+                
                 <mb-target 
                     serviceflag="{{flag}}">
                 </mb-target>
+
                 <mb-info 
                     lonlat="[[cbox]]">
                 </mb-info>
+               <!--zoom="[[zoom]]"-->
+            
             </div>
 
+            <!--  -->
             <div class="ctrl flexchild">
 
                 <mb-zoom map="{{map}}"></mb-zoom>

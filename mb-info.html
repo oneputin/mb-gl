@@ -2,9 +2,8 @@
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 
 <!--
-`mb-target`
-Target-box as button,  centered on mb-gl-map's viewbox.  
-The visual signature can be toogled in sync with the value of the exported serviceflag
+`mb-info`
+Info-area for short msges 
 
 @demo demo/index1.html 
 -->
@@ -27,15 +26,14 @@ The visual signature can be toogled in sync with the value of the exported servi
                 color: white;                    
 
                 /*opacity: 0.7;*/ /*related to all content bg,fg*/
-
             }
 
-            #lowerleft {
+            #innerarea {
                 padding: 0.2em;
             }
         </style>
 
-        <div id="lowerleft">[[info]]</div>
+        <div id="innerarea">[[info]]</div>
         
     </template>
 
@@ -44,6 +42,13 @@ The visual signature can be toogled in sync with the value of the exported servi
             is: 'mb-info',
 
             properties: {
+                /**
+                 * optional zoominfo for variable formatting of info (lonlat)
+                 */
+                zoom: {
+                    type: Number
+                },
+
                 /**
                  * LonLat in csv-format
                  */
@@ -68,24 +73,26 @@ The visual signature can be toogled in sync with the value of the exported servi
             /**
              * toggles the 'serviceflag' and the visual signature of the target 
              */
-            formatlonlat: function(cbox) {
-                if (!cbox) return "";
+            formatlonlat: function(cbox, zoom) { console.log("formatlonlat:", cbox, zoom);
+                if (!cbox) return ""; 
+                var prec = zoom > 10 ? 1 : 0;
                 var lon = cbox.split(",")[0],
                     lat = cbox.split(",")[1],
                     lonunit = lon < 0 ? " W" : "E",
                     latunit = lat < 0 ? " S" : "N";
-                return this.ddtodms(lon) + lonunit + "  " + this.ddtodms(lat) + latunit;
+                return this.ddtodms(lon,prec) + lonunit + "  " + this.ddtodms(lat, prec) + latunit;
             },
 
             /**
              *  transform digitaldegree to dms
              */
-            ddtodms: function(dd) {
+            ddtodms: function(dd, prec) {
+                if (!prec) prec=0;
                 dd = parseFloat(dd);
                 if (dd < 0) dd = 0 - dd;
                 let d = Math.floor(dd); // console.log("dd,d=", dd, d)
                 let x = (dd - d) * 60;
-                return d + "°" + Math.floor(x) + "'" + ((x - Math.floor(x)) * 60).toFixed(1) + '"';
+                return d + "°" + Math.floor(x) + "'" + ((x - Math.floor(x)) * 60).toFixed(prec) + '"';
 
             }
         });

@@ -52,17 +52,17 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             </kml-json>
         </template>
 
-    <paper-fab class="fab" icon="all-out" title="heart" on-tap="zoomall"></paper-fab>
+        <paper-fab class="fab" icon="all-out" title="heart" on-tap="zoomall"></paper-fab>
 
-    <paper-dialog id="popup" class="colored" entry-animation="scale-up-animation" exit-animation="fade-out-animation" with-backdrop>
-        <!--  -->
-        <h2 id="popupheadline">[[popuptitle]]</h2>
-        <paper-dialog-scrollable>
-            <pre><code id="popupbody">[[slideinfo]]</code></pre>
-        </paper-dialog-scrollable>
-    </paper-dialog>
+        <paper-dialog id="popup" class="colored" entry-animation="scale-up-animation" exit-animation="fade-out-animation" with-backdrop>
+            <!--  -->
+            <h2 id="popupheadline">[[popuptitle]]</h2>
+            <paper-dialog-scrollable>
+                <pre><code id="popupbody">[[slideinfo]]</code></pre>
+            </paper-dialog-scrollable>
+        </paper-dialog>
 
-    <div id='map'></div>
+        <div id='map'></div>
 
     </template>
 
@@ -102,7 +102,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             is: 'mb-slide',
 
             properties: {
-
                 /**
                  *  map-object of related mb-gl-map
                  */
