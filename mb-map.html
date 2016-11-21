@@ -138,9 +138,18 @@ the map-object can be ctrld from outside
 
                 map.on('load', function() { // console.log("map loaded", map);
                     // inform app about new center after any move
+                    var von, bis, dist;
+
+                    map.on('movestart', function() {
+                        // 
+                        // this.start = map.getCenter();
+                    });
+
                     map.on('moveend', function() {
+
                         let cb = map.getCenter(),
                             bb = map.getBounds();
+
                         that.cbox = cb.lng + "," + cb.lat;
                         that.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
                         // console.log(cb,bb,that.cbox,that.bbox);

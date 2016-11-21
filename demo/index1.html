@@ -31,10 +31,10 @@
             @apply(--layout-flex);
         }
         
-        div.ctrl {
+        div.ctrlbox {
             background-color: cyan;
             padding: 5px;
-            margin: 10px;
+            margin: 0px 10px;
         }
         
         paper-dialog.colored {
@@ -63,6 +63,7 @@
                     zoom="{{zoom}}"
                     mapctrl="[[mapctrl]]">
                 </mb-map>
+
                 <mb-slide
                     map="[[map]]"
                     serviceparams="[[serviceparams]]"
@@ -84,14 +85,19 @@
             </div>
 
             <!--  -->
-            <div class="ctrl flexchild">
+            <div class="ctrlbox flexchild">
 
                 <mb-zoom map="{{map}}"></mb-zoom>
 
-                <paper-input label="actual cbox(LonLat) = [[cbox]]" value="{{cboxinput}}" always-float-label on-focused-changed="focuschanged"></paper-input>
+                <paper-input 
+                    label="actual cbox(LonLat) = [[cbox]]" 
+                    value="{{cboxinput}}" 
+                    always-float-label 
+                    on-focused-changed="focuschanged">
+                </paper-input>
 
+                <h4>SlideLogger</h4>
                 <p>[[slideinfo]]</p>
-                <!--<p>[[asstring(slideinfo)]]</p>-->
 
             </div>
         </div>
@@ -123,6 +129,7 @@
             return txt;
         };
 
+        // 
         app.focuschanged = function(e) {
             // console.log("focus changed", e);
             if (!e.detail.value) {

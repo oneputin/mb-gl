@@ -73,26 +73,55 @@ Info-area for short msges
             /**
              * toggles the 'serviceflag' and the visual signature of the target 
              */
-            formatlonlat: function(cbox, zoom) { console.log("formatlonlat:", cbox, zoom);
-                if (!cbox) return ""; 
+            formatlonlat: function(cbox, zoom) {
+                // console.log("apply formatlonlat:", cbox, zoom);
+                if (!cbox) return "";
                 var prec = zoom > 10 ? 1 : 0;
                 var lon = cbox.split(",")[0],
                     lat = cbox.split(",")[1],
-                    lonunit = lon < 0 ? " W" : "E",
-                    latunit = lat < 0 ? " S" : "N";
-                return this.ddtodms(lon,prec) + lonunit + "  " + this.ddtodms(lat, prec) + latunit;
+                    lonunit = lon < 0 ? " W" : " E",
+                    latunit = lat < 0 ? " S" : " N",
+                    trafo = this.ddtodm; // ddtodms;
+                return trafo(lon, "lon") + lonunit + "  " + trafo(lat) + latunit;
             },
 
             /**
              *  transform digitaldegree to dms
              */
             ddtodms: function(dd, prec) {
-                if (!prec) prec=0;
+                if (!prec) prec = 0;
                 dd = parseFloat(dd);
                 if (dd < 0) dd = 0 - dd;
-                let d = Math.floor(dd); // console.log("dd,d=", dd, d)
-                let x = (dd - d) * 60;
-                return d + "°" + Math.floor(x) + "'" + ((x - Math.floor(x)) * 60).toFixed(prec) + '"';
+                let d = Math.floor(dd), // console.log("dd,d=", dd, d)
+                    mm = (dd - d) * 60, // [minutes]
+                    m = Math.floor(mm), // [minutes]
+                    ss = ((mm - m) * 60).toFixed(prec);
+                if (ss == "60") {
+                    m = m + 1;
+                    ss = "00";
+                }
+                return d + "°" + m + "'" + ss + '"';
+
+            },
+
+            /**
+             *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
+             *  "maritime formatting"  
+             */
+            ddtodm: function(dd, lonflag, prec) {
+                if (!prec) prec = 3;
+                dd = parseFloat(dd);
+                if (dd < 0) dd = 0 - dd;
+
+                let d = Math.floor(dd), // console.log("dd,d=", dd, d)
+                    mm = (dd - d) * 60; // [minutes]
+                m = mm.toFixed(3);
+
+                if (d < 10) d = "0" + d;
+                if (d < 100 && lonflag) d = "0" + d
+                if (mm < 10) m = "0" + m;
+
+                return d + "°" + m;
 
             }
         });

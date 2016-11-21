@@ -4,6 +4,7 @@
 <link rel="import" href="../neon-animation/neon-animations.html">
 <link rel="import" href="../kml-json/kml-json.html">
 <link rel="import" href="../paper-fab/paper-fab.html">
+<link rel="import" href="../paper-spinner/paper-spinner-lite.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
 
 <link rel="import" href="mb-api.html">
@@ -30,16 +31,23 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 background-color: var(--paper-light-green-50);
                 color: var(--paper-green-500);
             }
-            .fab {
+            #slidezoom {
                 position:absolute;
                 right:5px;
                 top:5px;
                 opacity: 0.8; 
             }
+            #slideload {
+                position:absolute;
+                right: 0px;
+                width:  66px;
+                height: 66px;
+                --paper-spinner-color: var(--paper-pink-500);
+                opacity: 1; 
+            }
             #popupbody {
                 line-height: 0.8;
             }
-            
 
         </style>
 
@@ -52,17 +60,18 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             </kml-json>
         </template>
 
-        <paper-fab class="fab" icon="all-out" title="heart" on-tap="zoomall"></paper-fab>
+    <paper-spinner-lite id="slideload" alt="loading next slide" active></paper-spinner-lite>
+    <paper-fab id="slidezoom" class="fab" icon="all-out" title="heart" on-tap="zoomslide"></paper-fab>
 
-        <paper-dialog id="popup" class="colored" entry-animation="scale-up-animation" exit-animation="fade-out-animation" with-backdrop>
-            <!--  -->
-            <h2 id="popupheadline">[[popuptitle]]</h2>
-            <paper-dialog-scrollable>
-                <pre><code id="popupbody">[[slideinfo]]</code></pre>
-            </paper-dialog-scrollable>
-        </paper-dialog>
+    <paper-dialog id="popup" class="colored" entry-animation="scale-up-animation" exit-animation="fade-out-animation" with-backdrop>
+        <!--  -->
+        <h2 id="popupheadline">[[popuptitle]]</h2>
+        <paper-dialog-scrollable>
+            <pre><code id="popupbody">[[slideinfo]]</code></pre>
+        </paper-dialog-scrollable>
+    </paper-dialog>
 
-        <div id='map'></div>
+    <!--<div id='map'></div>-->
 
     </template>
 
@@ -78,7 +87,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             },
 
             cbox: {
-                type: String
+                type: String,
             },
 
             /**
@@ -143,7 +152,8 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                  * default: actual map-center
                  */
                 cbox: {
-                    type: String
+                    type: String,
+                    observer: "locationrequest"
                 },
 
                 _servicequery: {
@@ -162,13 +172,17 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 },
 
                 /*
-                 *  customizable transformation of feature-properties(attributes) for output
+                 *  customizable transformation of one features properties(attributes) for output
                  */
                 preformatter: {
                     type: Function,
-                    value: function(x) {
-                        // if geojson data 
-                        return x.properties;
+                    value: function() {
+                        return function(x) {
+                            var s = "";
+                            // console.log(x.properties.name, x.properties)
+                            return x.properties.name;
+                            // return s;
+                        };
                     }
                 },
 
@@ -188,7 +202,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     type: Object
                 },
                 /*
-                 *  all feature-ids of last-updated-slide 
+                 *  ids of all features building the actual slide 
                  *  (as links for following feature-actions, fi. requests to feature-databases)
                  */
                 slidekeys: {
@@ -222,8 +236,9 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             },
 
             observers: [
-                'servicerequest(serviceparams.card, serviceparams.slide, cbox, serviceflag)',
-                'serviceresponse(slidedata.*, serviceflag)'
+                // 'servicerequest(serviceparams.card, serviceparams.slide, cbox, serviceflag)',
+                'servicerequest(serviceparams.card, serviceparams.slide)',
+                'serviceresponse(slidedata.*)'
             ],
 
             attached: function() {
@@ -243,60 +258,149 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 }
             },
 
+            locationrequest: function(n, o) {
+                if (this.map && this.map.getBounds()) {
+                    // don't request for very small 'movements'
+                    var mindy = 0.01, //  
+                        mb = this.map.getBounds(),
+                        dlat = Math.abs(mb.getNorth() - mb.getSouth()),
+                        dy = Math.abs(n.split(",")[1] - o.split(",")[1]);
+                    // console.log("locationrequest", dlat, dy);
+                    if ((dy / dlat) < mindy) return;
+                }
+                this.servicerequest();
+            },
+
             /**
-             *   observer triggering new slide-request after changes of any of the service-parameters
+             *   Action triggers new slide-request after any of the service-parameters had changed
              *   mainly : cbox (mapcenter)
              */
-            servicerequest: function(card, slide, cbox) {
-                if (!card || !slide || !cbox || !this.serviceflag) return;
+            servicerequest: function() {
+                if (!this.cbox || !this.serviceflag) return;
+
+                this.$.slideload.active = true;
+
                 this.debounce('request', function() {
-                    // console.log("Run SERVICEREQUEST with:", card, slide, cbox);
+                    // Trigger the ServiceIF (<kml-json>) toggling _servicequery 
+
+                    var servicequery = this.serviceparams;
+                    servicequery["time"] = Date.now();
+                    // console.log("Trigger SERVICEREQUEST as:", servicequery);
+
                     this._servicequery = {};
-                    this._servicequery = this.serviceparams;
-                    // this.serviceresponse = {};
+                    this._servicequery = servicequery;
+
+                    // Hide actually active slide
+                    if (this.map && this.map.getLayer("slide")) {
+                        this.map.setLayoutProperty("slide", 'visibility', 'none');
+                    }
                 }, 300)
             },
 
             /*
-             *   observer triggered if any slide-data changed 
+             *   action triggered if (slide)-server returns new data   
              */
-            serviceresponse: function(rawdata) {
-                // console.log(typeof rawdata, rawdata); // , cbox) {
-                if (!this.map || (typeof rawdata != "object") || !Object.keys(rawdata).length) return;
+            serviceresponse: function(rawslidedata) {
+                // console.log(typeof rawslidedata, rawslidedata, this.map);
+
+                this.$.slideload.active = false;
+
+                if (!this.map || (typeof rawslidedata != "object") || !Object.keys(rawslidedata).length) return;
 
                 var slidedata;
-                if (rawdata.value) slidedata = rawdata.value; // !!
-                else slidedata = rawdata;
+                if (rawslidedata.value) slidedata = rawslidedata.value; // 
+                else slidedata = rawslidedata;
+
                 if (!slidedata.features || !slidedata.features.length) return;
+
+                // console.log("new slide data:", slidedata);
 
                 this.slidebox = this.getBoundingBox(slidedata);
 
                 this.slidekeys = this.getSlideKeys(slidedata);
                 // console.log("ServiceResponse=slidelayer:", this.slidekeys, slidedata, this.slidebox);
 
-                let slidesource = this.slidectrl.source;
+                // Specifically mb-gl: ? Test for source (not for layer) ?
+
+                var slidesource = this.slidectrl.source;
 
                 if (!this.map.getSource(slidesource)) {
-
+                    // create NEW slidelayer
                     this.createLayer();
 
                 } else {
+                    // Modify datasource in ACTUAL slidelayer     
+                    if (0) {
+                        // BUTCHED (DEFAULT) 
+                        this.map.getSource(slidesource).setData(slidedata);
+                        this.map.setLayoutProperty("slide", 'visibility', 'visible');
 
-                    this.map.getSource(slidesource).setData(slidedata);
+                    } else {
+                        // ANIMATED from 
+                        var dx = 2,
+                            dy = 0;
+                        slidedata = this.locateSlide(slidesource, slidedata, dx, dy); // prepare animation
+
+                        this.map.setLayoutProperty("slide", 'visibility', 'visible');
+
+                        var ddx = -2; // 0 - (dx / 100);
+                        this.animateSlide(slidesource, slidedata, ddx);
+                    }
+
+                }
+            },
+
+            locateSlide: function(slidesource, startdata, dx, dy) {
+                // translate slide by dx,dy
+                console.log("data BEFORE:", "dx=" + dx, "dy=" + dy, startdata, Date.now());
+                if (!dx) dx = 0;
+                if (!dy) dy = 0;
+                if (!dx && !dy) {
+                    this.map.getSource(slidesource).setData(startdata); // slidedata);
+                    return;
                 }
 
-                // this.serviceflag = 0;
+                var slidedata = Object.assign({}, startdata);
+
+                slidedata.features.forEach(function(f) {
+                    // Handle alternative geojson-geometry-struktures (with/without substructures)
+                    var gg = f.geometry.geometries;
+                    if (!gg) gg = [f.geometry];
+
+                    gg.forEach(function(g) {
+                        g.coordinates.forEach(function(cc) {
+                            cc.forEach(function(c) {
+                                c[0] = c[0] + dx;
+                                c[1] = c[1] + dy;
+                            })
+                        })
+                    })
+
+                })
+
+                console.log("data AFTER:", "dx=" + dx, "dy=" + dy, slidedata, Date.now());
+
+                this.map.getSource(slidesource).setData(slidedata); // slidedata);
+                return slidedata;
+            },
+
+            animateSlide: function(slidesource, slidedata, dx) {
+                console.log("animation-step:", dx);
+
+                slidedata = this.locateSlide(slidesource, slidedata, dx);
+
+                // requestAnimationFrame(this.animateSlide);
             },
 
             /*
-             *
+             *  
              */
             createLayer: function() {
 
                 var that = this,
                     slidedata = this.slidedata,
                     slidectrl = this.slidectrl,
-                    insertlayer = this.layerinsertbelow,
+                    insertlayer = this.insertslidebelow,
                     slidesource = slidectrl.source;
 
                 this.map.addSource(slidesource, {
@@ -308,8 +412,8 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 this.map.addLayer(slidectrl, insertlayer);
                 // ======================================
 
-                this.map.on('click', function(e) { // console.log("clicked",e);
-                    // 
+                this.map.on('click', function(e) {
+                    // console.log("clicked", e, e.point);
                     that.slideinfoget(e.point);
                 });
 
@@ -334,7 +438,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
                     this.map.on('moveend', function() {
                         // trigger overlay-request after every "map-move" 
-                        //if (that.serviceflag) that.servicetrigger();
+                        //if (that.serviceflag) that.servicetrigger(); // better bind(this)
                         if (this.serviceflag) this.servicetrigger();
                     }.bind(this));
 
@@ -366,9 +470,9 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             // (?? or at mapcenter after render-event ??)	
             slideinfoget: function(qpoint) {
                 if (!qpoint) return;
-                console.log("slideinfoget", qpoint);
-                let formatter = this.preformatter;
-                let slidename = this.slidectrl.id;
+                var formatter = this.preformatter,
+                    slidename = this.slidectrl.id;
+                // console.log("slideinfoget for pnt, formatter", qpoint, formatter);
 
                 var features = map.queryRenderedFeatures(qpoint, {
                     layers: [slidename]
@@ -383,9 +487,13 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                         else frameindex = index;
                         slideinfo[frameindex] = formatter(item);
                     })
-                    this.slideinfo = JSON.stringify(slideinfo, null, '\n');
+
+                    // Tranform Array into string
+                    // this.slideinfo = JSON.stringify(slideinfo, null, '\n');
+                    // this.slideinfo = JSON.stringify(slideinfo);
+                    this.slideinfo = slideinfo;
                 }
-                console.log("slideinfoget", this.slideinfo);
+                // console.log("slideinfoget", this.slideinfo);
                 // optionally show in map-context
                 if (true) this.$.popup.open();
             },
@@ -395,13 +503,15 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
              */
             popupopen: function(item) {
                 if (!item) return;
-                var txt = JSON.stringify(item, null, '\n');
+                var txt = typeof item == "string" ? item : JSON.stringify(item, null, '\n');
                 this.$.popupbody.innerText = txt;
                 this.$.popup.open();
             },
 
-
-            zoomall: function() {
+            /**
+             * 
+             */
+            zoomslide: function() {
                 if (!this.slidebox) return;
                 this.serviceflag = false;
                 var bb = this.slidebox; // console.log("fitToSlide", bb);

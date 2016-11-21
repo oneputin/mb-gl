@@ -27,4 +27,4 @@ Target-box centered on client-map-viewbox.
 ### \<mb-api\>
 Wraps the mapbox-gl-api as separate element
 
-
+### \<mb-info\>
