@@ -15,8 +15,8 @@ The visual signature can be toogled in sync with the value of the exported servi
 
         <style>
             :host {
-                display: block;
                 position: absolute;
+                display: block;
                 left: 50%;
                 top: 50%;      
                 /* sync target-center to location */
@@ -24,6 +24,8 @@ The visual signature can be toogled in sync with the value of the exported servi
             }
 
             paper-icon-button.target {
+                border-radius: 50%; 
+                /*box-sizing:border-box;*/
                 color: var(--paper-pink-500);
                 opacity: 0.8;
                 --paper-icon-button-ink-color: var(--paper-indigo-500);

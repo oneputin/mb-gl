@@ -52,7 +52,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
         </style>
 
         <template is="dom-if" if="[[serviceflag]]">
-            <!-- async query for new {{slidedata}} -->
+            <!-- Async query for new {{slidedata}} -->
             <kml-json 
                 url     = "[[serviceurl]]"
                 service = "[[_servicequery]]"
@@ -153,7 +153,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                  */
                 cbox: {
                     type: String,
-                    observer: "locationrequest"
+                    observer: ('locationrequest')
                 },
 
                 _servicequery: {
@@ -236,9 +236,14 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             },
 
             observers: [
-                'servicerequest(serviceparams.card, serviceparams.slide)',
-                'serviceresponse(slidedata.*)'
+                'servicerequest(serviceflag, serviceparams.card, serviceparams.slide)',
+                'serviceresponse(slidedata.*)',
+                'requestlog(serviceurl, _servicequery.*)'
             ],
+
+            requestlog: function(a, b) {
+                // console.log("requestlog", a, b, b.value);
+            },
 
             attached: function() {
 
@@ -258,8 +263,8 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             },
 
             locationrequest: function(n, o) {
-                if (this.map && this.map.getBounds()) {
-                    // don't request for very small 'movements'
+                // don't request for very small 'movements' of cbox
+                if (n && o && this.map && this.map.getBounds()) {
                     var mindy = 0.01, //  
                         mb = this.map.getBounds(),
                         dlat = Math.abs(mb.getNorth() - mb.getSouth()),
@@ -267,15 +272,16 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     // console.log("locationrequest", dlat, dy);
                     if ((dy / dlat) < mindy) return;
                 }
-                this.servicerequest();
+                // console.log("locationrequest", n, o);
+                this.servicerequest(this.serviceflag);
             },
 
             /**
              *   Action triggers new slide-request after any of the service-parameters had changed
              *   mainly : cbox (mapcenter)
              */
-            servicerequest: function() {
-                if (!this.cbox || !this.serviceflag) return;
+            servicerequest: function(serviceflag) {
+                if (!serviceflag || !this.cbox) return;
 
                 this.$.loadspinner.active = true;
 
@@ -538,7 +544,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 that.map.setPaintProperty(that.slidectrl.id, 'fill-opacity', opacity);
             },
 
-
             /*
              *  
              */
@@ -577,7 +582,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             },
 
             /**
-             *  setting 
+             *  setting up the 
              */
             setupthetrigger: function(newmap) { // console.log("setupthetrigger", newmap);
                 if (newmap) {
@@ -585,11 +590,10 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
                     this.map.on('moveend', function() {
                         // trigger overlay-request after every "map-move" 
-                        //if (that.serviceflag) that.servicetrigger(); // better bind(this)
                         if (this.serviceflag) this.servicetrigger();
                     }.bind(this));
 
-                    // trigger initial service-request
+                    // console.log("trigger initial service-request on", this.map);
                     this.serviceflag = true;
                     this.servicetrigger();
                 } else {
@@ -607,8 +611,8 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 var that = this;
                 this.debounce('triggering', function() {
                     var cbox = that.map.getCenter();
-                    that.cbox = cbox.lng + ',' + cbox.lat; // the TRIGGER 
-                    that.serviceparams.cbox = that.cbox;
+                    cbox = cbox.lng + ',' + cbox.lat;
+                    that.serviceparams.cbox = cbox; // the TRIGGER
                     // console.log("Triggering service", that.serviceparams, that.serviceflag);
                 }, 300);
             },
@@ -660,9 +664,20 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
              */
             zoomslide: function() {
                 if (!this.slidebox) return;
-                this.serviceflag = false;
-                var bb = this.slidebox; // console.log("fitToSlide", bb);
-                this.map.fitBounds(bb);
+
+                if (this.$.loadspinner.active) {
+                    // B. reset old slide if NO server-response
+                    console.log("NO-SERVER-RESPONSE");
+                    this.$.loadspinner.active = false;
+                    this.map.setLayoutProperty("slide", 'visibility', 'visible');
+                } else {
+                    // A. deactivate service-trigger
+                    this.serviceflag = false;
+                    // C. 
+                    var bb = this.slidebox; // console.log("fitToSlide", bb);
+                    this.map.fitBounds(bb);
+                }
+
             },
 
             // utilities
