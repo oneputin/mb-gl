@@ -1,0 +1,271 @@
+<script>
+    MbLayerAnimation = {
+        properties: {
+            /**
+             * animation of layers coming in 
+             */
+            layeranimation: {
+                type: Object,
+                value: function() {
+                    return {};
+                }
+            },
+
+        },
+
+        created: function() {
+            console.log('LayerAnimation enabled for ', this);
+        },
+
+
+        /*
+         *  setup layer-ANIMATOR
+         */
+        setupLayerAnimation: function(layerctrl, mode, pathdata) {
+            // setup animation-ctrl from scratch 
+            var animation = {};
+            animation.context = this;
+            animation.layerctrl = layerctrl;
+            animation.mode = mode;
+
+            animation.layer = layerctrl.id;
+            animation.count = 60; // default 
+
+            // sample of function creating a path in actual viewport
+            var oscillation = function(count, maxcount) {
+                var p = Math.cos(2 * Math.PI * count / maxcount);
+                return p;
+            }
+
+            animation.fade = this.layerFade;
+            animation.path = this.geojsonPath;
+            animation.move = this.geojsonMove;
+
+            if (mode == "fade") {
+                // layer opacity 
+            }
+
+            if (mode == "viewpath") {
+                // pathes of layercoordinates are calculated relative to viewport(center) 
+                if (pathdata) {
+                    animation.pathdata = pathdata;
+                } else {
+                    animation.pathmodel = oscillation;
+                }
+
+                // sample of "relative" steps (diagonale Bewegung)
+                animation.pathdatasample = [
+                    "1, 1",
+                    "1, 1",
+                    "1, 1",
+                    "1, 1",
+                    "1, 1",
+
+                    "-1, -1",
+                    "-1, -1",
+                    "-1, -1",
+                    "-1, -1",
+                    "-1, -1",
+                    "-1, -1",
+                    "-1, -1",
+                    "-1, -1",
+                    "-1, -1",
+                    "-1, -1",
+
+                    "1, 1",
+                    "1, 1",
+                    "1, 1",
+                    "1, 1",
+                    "1, 1"
+                ]
+            }
+
+            if (mode == "route") {
+                // apply an "absolute" route into lagrange-step-path   
+                if (pathdata && pathdata.length) {
+                    var relpath = [],
+                        lastp, dp;
+                    pathdata.forEach(function(p) {
+                        p = p.split(",");
+                        if (!lastp) lastp = p;
+                        dp = (p[0] - lastp[0]) + "," + (p[1] - lastp[1]);
+                        console.log(lastp, p, dp);
+                        relpath.push(dp);
+                    })
+                    animation.pathdata = relpath;
+                }
+            }
+
+            if (mode == "slide") {
+                // animation as translation-sliding 
+                var bb = this.map.getBounds();
+                animation.dx0 = (bb.getEast() - bb.getWest()) / 2;
+                animation.dy0 = (bb.getNorth() - bb.getSouth()) / 2;
+                animation.dx = 0 - (animation.dx0 / animation.count);
+                animation.dy = 0 - (animation.dy0 / animation.count);
+            }
+            return animation;
+        },
+
+        /*
+         *  run layer-ANIMATOR
+         */
+        runLayerAnimation: function(animation, flag) {
+            if (!flag) flag = "hide";
+
+            animation.index = 0;
+
+            var updateFrame = (function updateFrame() {
+
+                // run animation-STEP
+                if (animation.path) {
+                    // any move along path
+                    animation.path(animation.index, animation.context);
+
+                } else if (animation.move && (animation.dx || animation.dy)) {
+                    // linear translation
+                    animation.move(animation.dx, animation.dy, animation.context);
+                }
+
+                if (animation.fade) {
+                    animation.fade(animation.count, animation.index, animation.context)
+                }
+
+                // run animation-CTRL 
+                animation.index += 1;
+                if (animation.index == animation.count) return;
+                // console.log("next animation-step:", animation.index);
+                requestAnimationFrame(updateFrame);
+
+            }).bind(this);
+
+            if (flag == "show") {
+
+                // 1. Setup START-situation 
+                //    (initialize animation-object in the OFF (location and/or opacity))
+                if (animation.fade) {
+                    animation.fade(0, 0, animation.context); // animation-start-opacity=0
+                }
+                if (animation.move && (animation.dx0 || animation.dy0)) {
+                    animation.move(animation.dx0, animation.dy0, animation.context); // animation-start-location
+                }
+
+                // 2. make layer visible 
+                this.map.setLayoutProperty(animation.layer, 'visibility', 'visible');
+
+                // 3. start show-animation  
+                updateFrame();
+
+            } else {
+                // 1. start hide-animation
+                updateFrame();
+                // 2. make layer invisible 
+                this.map.setLayoutProperty(animation.layer, 'visibility', 'none');
+            }
+
+        },
+
+        // geojsonMove, geojsonPath, layerFade called ONLY from inside ANIMATOR
+        /*
+         *  moves/translates geojsonlayer by dx,dy
+         */
+        geojsonMove: function(dx, dy, that) {
+            var anim = this;
+
+            // console.log("animation-object", anim);
+            if (!that) that = this.context;
+            // var layerdata = that.slidedata,
+            var layerdata = anim.layerdata,
+                layerctrl = anim.layerctrl;
+
+            // console.log("BEFORE locate:", "dx=" + dx, "dy=" + dy, Date.now());
+            if (!dx) dx = anim.dx;
+            if (!dy) dy = anim.dy;
+            if (!dx && !dy) {
+                that.map.getSource(layerctrl.source).setData(layerdata);
+                return;
+            }
+
+            // MOVE all layer-coordinates !!
+            layerdata.features.forEach(function(f) {
+
+                // Handle alternative geojson-geometry-struktures (with/without substructures)
+                var gg = f.geometry.geometries;
+                if (!gg) gg = [f.geometry];
+
+                gg.forEach(function(g) {
+                    g.coordinates.forEach(function(cc) {
+                        cc.forEach(function(c) {
+                            c[0] = c[0] + dx;
+                            c[1] = c[1] + dy;
+                        })
+                    })
+                })
+            })
+
+            // console.log("AFTER locate of:", layerdata, Date.now());
+            that.map.getSource(layerctrl.source).setData(layerdata);
+        },
+        /*
+         *  moves geojson-layer along a path 
+         *  either predefined or calculated online  
+         */
+        geojsonPath: function(count, that) {
+
+            var animation = this,
+                apath = animation.pathdata,
+                amodel = animation.pathmodel;
+
+            if (!that) that = animation.context;
+            if (!count) count = 0;
+
+            var ampl = 0.02,
+                p1, p2, dx, dy,
+                bb = that.map.getBounds(),
+                bbdx = bb.getEast() - bb.getWest(),
+                bbdy = bb.getNorth() - bb.getSouth();
+
+            if (amodel) {
+                // calc animation-steps (fi. as harmonic oscillation)  
+                p1 = amodel(count, animation.count);
+                p2 = amodel(count + 1, animation.count);
+
+                dx = ampl * (p2 - p1);
+
+                dy = dx * bbdy;
+                dx = dx * bbdx;
+                // console.log(count, dx, dy);
+            } else {
+                pc = apath[count];
+                if (!pc) return;
+                dx = ampl * pc.split(",")[0] * bbdx;
+                dy = ampl * pc.split(",")[1] * bbdy;
+            }
+            // console.log("BEFORE locate:", "dx=" + dx, "dy=" + dy, Date.now());
+            // that.geojsonMove(dx, dy, that);
+            animation.move(dx, dy, that);
+        },
+        /*
+         *  fades layer-opacity by fraction of target-opacity
+         */
+        layerFade: function(maxcount, count, that) {
+
+            var animation = this;
+            if (!that) that = animation.context; // !!!
+            if (!maxcount) maxcount = 100;
+            if (!count) count = 0;
+
+            var opacity = 0,
+                targetopacity = animation.layerctrl.paint["fill-opacity"],
+                maxopacity = targetopacity ? targetopacity : 1;
+
+            if (count > 0 && maxcount > 0) {
+                var countopacity = maxopacity * count / maxcount;
+                opacity = countopacity < 1 ? countopacity : 1;
+            }
+
+            that.map.setPaintProperty(animation.layer, 'fill-opacity', opacity);
+        }
+
+    };
+</script>

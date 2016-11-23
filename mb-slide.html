@@ -8,6 +8,7 @@
 <link rel="import" href="../iron-icons/iron-icons.html">
 
 <link rel="import" href="mb-api.html">
+<link rel="import" href="mb-layer-animation.html">
 
 <!--
 `mb-slide`
@@ -110,6 +111,10 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
         Polymer({
             is: 'mb-slide',
 
+            behaviors: [
+                MbLayerAnimation
+            ],
+
             properties: {
                 /**
                  *  map-object of related mb-gl-map
@@ -169,6 +174,13 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     value: function() {
                         return {};
                     }
+                },
+
+                /**
+                 * animation of slides coming in 
+                 */
+                slideanimation: {
+                    type: Object
                 },
 
                 /*
@@ -283,6 +295,9 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             servicerequest: function(serviceflag) {
                 if (!serviceflag || !this.cbox) return;
 
+                var servicelayer = this.slidectrl.id,
+                    animation = this.slideanimation;
+
                 this.$.loadspinner.active = true;
 
                 this.debounce('request', function() {
@@ -295,10 +310,10 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     this._servicequery = {};
                     this._servicequery = servicequery;
 
-                    // Hide actually active slide
-                    if (this.map && this.map.getLayer("slide")) {
-                        this.map.setLayoutProperty("slide", 'visibility', 'none');
-                        // this.animateSlide("hide");
+                    // Hide actually active slide (tacked or animated ??)
+                    if (this.map && this.map.getLayer(servicelayer)) {
+                        this.map.setLayoutProperty(servicelayer, 'visibility', 'none');
+                        // this.runLayerAnimation(animation, "hide");
                     }
                 }, 300)
             },
@@ -328,224 +343,31 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 // console.log("ServiceResponse=slidelayer:", this.slidekeys, slidedata, this.slidebox);
 
                 // Specifically mb-gl: ? Test for source (not for layer) ?
-                var slidesource = this.slidectrl.source;
+                var slidesource = this.slidectrl.source,
+                    slidename = this.slidectrl.id;
 
                 if (!this.map.getSource(slidesource)) {
                     // create NEW slidelayer
                     this.createSlideLayer();
 
                 } else {
-                    // Modify datasource in ACTUAL slidelayer     
-                    if (this.animateSlide) {
-                        // FLOWIN (ANIMATED) 
-                        this.animateSlide("show");
+                    // Modify slide-data (insert NEW slide)     
+                    if (this.slideanimation) {
+                        // insert data as ANIMATED 
+                        this.slideanimation.layerdata = slidedata;
+                        this.runLayerAnimation(this.slideanimation, "show");
+
                     } else {
-                        // STAMPIN (DEFAULT) 
+                        // insert data as STAMPED 
                         this.map.getSource(slidesource).setData(slidedata);
-                        this.map.setLayoutProperty("slide", 'visibility', 'visible');
+                        this.map.setLayoutProperty(slidename, 'visibility', 'visible');
                     }
 
                 }
             },
 
             /*
-             *  ANIMATOR
-             */
-            animateSlide: function(flag) {
-                if (!flag) flag = "hide";
-
-                var animation = {};
-
-                animation.count = 60;
-                animation.context = this;
-                animation.index = 0;
-
-                if (0) {
-                    animation.fade = this.slideFade;
-                }
-                if (1) {
-                    animation.path = this.slidePath;
-                    animation.pathdatax = [
-                        "0.1, 0.1",
-                        "0.1, 0.1",
-                        "0.1, 0.1",
-                        "0.1, 0.1",
-                        "0.1, 0.1",
-
-                        "-0.1, -0.1",
-                        "-0.1, -0.1",
-                        "-0.1, -0.1",
-                        "-0.1, -0.1",
-                        "-0.1, -0.1",
-                        "-0.1, -0.1",
-                        "-0.1, -0.1",
-                        "-0.1, -0.1",
-                        "-0.1, -0.1",
-                        "-0.1, -0.1",
-
-                        "0.1, 0.1",
-                        "0.1, 0.1",
-                        "0.1, 0.1",
-                        "0.1, 0.1",
-                        "0.1, 0.1"
-                    ]
-                }
-                if (0) {
-                    animation.move = this.slideMove;
-                    var bb = this.map.getBounds();
-                    animation.dx0 = (bb.getEast() - bb.getWest()) / 2;
-                    animation.dy0 = (bb.getNorth() - bb.getSouth()) / 2;
-                    animation.dx = 0 - (animation.dx0 / animation.count);
-                    animation.dy = 0 - (animation.dy0 / animation.count);
-                }
-
-                var updateFrame = (function updateFrame() {
-
-                    if (animation.path) {
-                        // any move along path
-                        animation.path(animation.index, animation.context);
-
-                    } else if (animation.move && (animation.dx || animation.dy)) {
-                        // linear translation
-                        animation.move(animation.dx, animation.dy, animation.context);
-                    }
-
-                    if (animation.fade) {
-                        animation.fade(animation.count, animation.index, animation.context)
-                    }
-
-                    animation.index += 1;
-                    if (animation.index == animation.count) return;
-
-                    // console.log("next animation-step:", animation.index);
-                    requestAnimationFrame(updateFrame);
-
-                }).bind(this);
-
-                if (flag == "show") {
-
-                    // 1. initialize animation-object in the OFF (location and opacity)
-                    if (animation.fade) {
-                        animation.fade(0, 0, animation.context); // animation-start-opacity=0
-                    }
-                    if (animation.move && (animation.dx0 || animation.dy0)) {
-                        animation.move(animation.dx0, animation.dy0, animation.context); // animation-start-location
-                    }
-
-                    // 2. make layer visible 
-                    this.map.setLayoutProperty("slide", 'visibility', 'visible');
-
-                    // 3. start show-animation  
-                    updateFrame();
-
-                } else {
-
-                    // 1. start hide-animation
-                    updateFrame();
-                    // 2. make layer invisible 
-                    this.map.setLayoutProperty("slide", 'visibility', 'none');
-                }
-
-            },
-
-            // slideMove, slidePath, slideFade called ONLY from inside ANIMATOR
-            /*
-             *  moves/translates slide by dx,dy
-             */
-            slideMove: function(dx, dy, that) {
-                // slideMove: function(slidesource, startdata, dx, dy) {
-                var anim = this;
-                if (!that) that = this.context;
-                // console.log("BEFORE locate:", "dx=" + dx, "dy=" + dy, Date.now());
-                if (!dx) dx = anim.dx;
-                if (!dy) dy = anim.dy;
-                if (!dx && !dy) {
-                    that.map.getSource(that.slidectrl.source).setData(that.slidedata); // slidedata);
-                    return;
-                }
-
-                var slidedata = that.slidedata;
-
-                slidedata.features.forEach(function(f) {
-
-                    // Handle alternative geojson-geometry-struktures (with/without substructures)
-                    var gg = f.geometry.geometries;
-                    if (!gg) gg = [f.geometry];
-
-                    gg.forEach(function(g) {
-                        g.coordinates.forEach(function(cc) {
-                            cc.forEach(function(c) {
-                                c[0] = c[0] + dx;
-                                c[1] = c[1] + dy;
-                            })
-                        })
-                    })
-                })
-
-                // console.log("AFTER locate:", slidedata, Date.now());
-
-                that.map.getSource(that.slidectrl.source).setData(slidedata);
-                // return slidedata;
-            },
-            /*
-             *  moves slide along a path
-             */
-            slidePath: function(count, that) {
-                var animation = this,
-                    spath = animation.pathdata;
-
-                if (!that) that = animation.context;
-                if (!count) count = 0;
-
-                var ampl = 0.02,
-                    p1, p2, dx, dy,
-                    bb = that.map.getBounds(),
-                    bbdx = bb.getEast() - bb.getWest(),
-                    bbdy = bb.getNorth() - bb.getSouth();
-
-                // calc animation-step 
-                if (!spath) {
-                    p1 = Math.cos(2 * Math.PI * count / animation.count);
-                    p2 = Math.cos(2 * Math.PI * (count + 1) / animation.count);
-                    dx = ampl * (p2 - p1);
-                    dy = dx * bbdy;
-                    dx = dx * bbdx;
-                    // console.log(count, dx, dy);
-                } else {
-                    pc = spath[count];
-                    if (!pc) return;
-                    dx = ampl * pc.split(",")[0] * bbdx;
-                    dy = ampl * pc.split(",")[1] * bbdy;
-                }
-                // console.log("BEFORE locate:", "dx=" + dx, "dy=" + dy, Date.now());
-
-                that.slideMove(dx, dy, that);
-            },
-            /*
-             *  fades slide-opacity by fraction of target-opacity
-             */
-            slideFade: function(maxcount, count, that) {
-                // slideMove: function(slidesource, startdata, dx, dy) {
-                // translate slide by dx,dy
-                if (!that) that = this.context; // !!!
-                if (!maxcount) maxcount = 100;
-                if (!count) count = 0;
-
-                var opacity = 0,
-                    targetopacity = that.slidectrl.paint["fill-opacity"],
-                    maxopacity = targetopacity ? targetopacity : 1;
-
-                if (count > 0 && maxcount > 0) {
-                    var countopacity = maxopacity * count / maxcount;
-                    opacity = countopacity < 1 ? countopacity : 1;
-                }
-                //console.log(that.slidectrl.id, maxopacity, opacity);
-
-                that.map.setPaintProperty(that.slidectrl.id, 'fill-opacity', opacity);
-            },
-
-            /*
-             *  
+             *  create a layer for slide-ctrl and slide-data are prepared 
              */
             createSlideLayer: function() {
 
@@ -555,18 +377,34 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     insertlayer = this.insertslidebelow,
                     slidesource = slidectrl.source;
 
+                // A. add slide-source to map    
                 this.map.addSource(slidesource, {
                     type: 'geojson',
                     data: slidedata
                 });
 
-                // SlideLayer with insert-point in baseLayerStack
+                // B. create slide-layer with insert-point in baseLayerStack
                 this.map.addLayer(slidectrl, insertlayer);
                 // ======================================
 
+                // C. setup slide-in-animation 
+                if (this.setupLayerAnimation) {
+                    this.slideanimation = this.setupLayerAnimation(slidectrl, "viewpath");
+                }
+
+                // D. setup events to observe on slide-layer
                 this.map.on('click', function(e) {
                     // console.log("clicked", e, e.point);
                     that.slideinfoget(e.point);
+                });
+
+                // Indicate that the slides are clickable
+                // by changing the cursor style to 'pointer'.
+                this.map.on('mousemove', function(e) {
+                    var features = map.queryRenderedFeatures(e.point, {
+                        layers: [slidectrl.id]
+                    });
+                    map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
                 });
 
                 /* Optional for autotracing of center-info
@@ -669,7 +507,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     // B. reset old slide if NO server-response
                     console.log("NO-SERVER-RESPONSE");
                     this.$.loadspinner.active = false;
-                    this.map.setLayoutProperty("slide", 'visibility', 'visible');
+                    this.map.setLayoutProperty(this.slidectrl.id, 'visibility', 'visible');
                 } else {
                     // A. deactivate service-trigger
                     this.serviceflag = false;
