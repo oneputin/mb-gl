@@ -55,6 +55,7 @@
         
         <div class="container flex-horizontal">
             
+            <!-- LEFT container: Map -->
             <div class="mapbox">
                 <mb-map 
                     mapapikey="[[mbkey]]"
@@ -84,11 +85,13 @@
             
             </div>
 
-            <!--  -->
+            <!-- RIGHT container: Info -->
             <div class="ctrlbox flexchild">
 
+                <!-- A. external map-zoom-ctrl -->
                 <mb-zoom map="{{map}}"></mb-zoom>
 
+                <!-- B. external map-center input -->
                 <paper-input 
                     label="actual cbox(LonLat) = [[cbox]]" 
                     value="{{cboxinput}}" 
@@ -96,6 +99,7 @@
                     on-focused-changed="focuschanged">
                 </paper-input>
 
+                <!-- C. Quer-data-viewer -->
                 <h4>SlideLogger</h4>
                 <p>[[slideinfo]]</p>
 
@@ -141,7 +145,6 @@
             }
             //  app.cbox = v;
         }
-
 
         document.addEventListener('WebComponentsReady', function() {
             // var cboxin = document.querySelector('#cboxin');

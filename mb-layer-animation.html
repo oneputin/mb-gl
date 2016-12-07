@@ -1,8 +1,13 @@
 <script>
+    /**
+     * 
+     */
+
     MbLayerAnimation = {
+
         properties: {
             /**
-             * animation of layers coming in 
+             * template of animation-object 
              */
             layeranimation: {
                 type: Object,
@@ -16,7 +21,6 @@
         created: function() {
             console.log('LayerAnimation enabled for ', this);
         },
-
 
         /*
          *  setup layer-ANIMATOR
@@ -42,11 +46,12 @@
             animation.move = this.geojsonMove;
 
             if (mode == "fade") {
-                // layer opacity 
+                // smoothly change layer opacity  
             }
 
             if (mode == "viewpath") {
-                // pathes of layercoordinates are calculated relative to viewport(center) 
+                // pathes of layercoordinates are calculated 
+                // relative to viewport-reference (center) 
                 if (pathdata) {
                     animation.pathdata = pathdata;
                 } else {
@@ -57,31 +62,18 @@
                 animation.pathdatasample = [
                     "1, 1",
                     "1, 1",
-                    "1, 1",
-                    "1, 1",
-                    "1, 1",
-
                     "-1, -1",
                     "-1, -1",
                     "-1, -1",
                     "-1, -1",
-                    "-1, -1",
-                    "-1, -1",
-                    "-1, -1",
-                    "-1, -1",
-                    "-1, -1",
-                    "-1, -1",
-
-                    "1, 1",
-                    "1, 1",
-                    "1, 1",
                     "1, 1",
                     "1, 1"
                 ]
             }
 
             if (mode == "route") {
-                // apply an "absolute" route into lagrange-step-path   
+                // convert an "absolute" route (of e reference point) 
+                // into lagrange-step-pathes applied to all geometry-points equally     
                 if (pathdata && pathdata.length) {
                     var relpath = [],
                         lastp, dp;
@@ -89,7 +81,7 @@
                         p = p.split(",");
                         if (!lastp) lastp = p;
                         dp = (p[0] - lastp[0]) + "," + (p[1] - lastp[1]);
-                        console.log(lastp, p, dp);
+                        // console.log(lastp, p, dp);
                         relpath.push(dp);
                     })
                     animation.pathdata = relpath;
@@ -97,7 +89,8 @@
             }
 
             if (mode == "slide") {
-                // animation as translation-sliding 
+                // animation as translation-sliding-in/out
+                // starting from an OFF-pont (dx0, dy0)  
                 var bb = this.map.getBounds();
                 animation.dx0 = (bb.getEast() - bb.getWest()) / 2;
                 animation.dy0 = (bb.getNorth() - bb.getSouth()) / 2;
