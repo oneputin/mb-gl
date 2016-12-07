@@ -1,0 +1,722 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+
+<link rel="import" href="mb-api.html">
+<!--
+`mb-routes`
+creates anf follow animated routes 
+along waypoint file loaded from url
+
+@demo demo/routing.html 
+-->
+<dom-module id="mb-routes">
+
+<template>
+    
+    <iron-ajax
+         auto
+         url="[[url]]"
+         handle-as="json"
+         on-response="routeStarter">
+    </iron-ajax>
+    
+</template>
+
+<script>
+    /**
+     * { A waypoint bordering a routes leg }
+     */
+    class Waypoint {
+        /**
+         * Constructs the object.
+         *
+         * @param      {array}   coordinates  The wp's coordinates as [lng,lat]-array
+         * @param      {string}  id           The wp's identifier
+         * @param      {string}  icon         The mapbox-icon name 
+         */
+        constructor(coordinates, id, icon) {
+            if (!id) id = "wp";
+            if (!icon) icon = "star";
+            this.type = "Feature";
+            this.geometry = {
+                "type": "Point",
+                "coordinates": coordinates
+            }
+            this.id = id;
+            this.properties = {
+                "title": id,
+                "icon": icon
+            }
+        };
+    };
+
+    /**
+     * A mapbox-point-feature describing ??? 
+     */
+    class Plane {
+        /**
+         * Constructs the object.
+         *
+         * @param      {array}  coordinates   The coordinates
+         * @param      {string}  routeid      The identifier of route
+         * @param      {string}  plane        The id(name) of the obj (fi plane-code)
+         * @return     {mb-feature}  { mapbox point feature }
+         */
+        constructor(coordinates, routeid, plane) {
+            if (!plane) plane = routeid;
+            this.type = "Feature";
+            this.geometry = {
+                "type": "Point",
+                "coordinates": coordinates
+            }
+            this.id = routeid;
+            this.properties = {
+                "id": routeid,
+                "title": plane,
+                "bearing": 90,
+                "time": 0,
+                "speed": 0,
+                "getbearing": function() {
+                    return 180;
+                }
+            }
+        };
+    };
+
+    /**
+     * A mapbox-feature describing a route-segment
+     */
+    class Leg {
+        /**
+         * Constructs the object.
+         *
+         * @param      {array}  coordinates  The coordinates of the legs start/stop
+         */
+
+        constructor(coordinates) {
+            this.type = "Feature";
+            this.geometry = {
+                "type": "LineString",
+                "coordinates": coordinates
+            }
+            this.properties = {
+
+            }
+        }
+    };
+
+    /**
+     * multi-object, multi-leg routes
+     */
+    class Route {
+        /**
+         * Constructs the object.
+         *
+         * @param      {<type>}  coordinates  The coordinates
+         * @param      {<type>}  data         The data
+         * @param      {<type>}  wps          The wps
+         */
+        constructor(coordinates, data, wps) { // coordinates = array of coordinate-arrays (multiLine) 
+            this.type = "Feature";
+            this.geometry = {
+                    "type": "MultiLineString",
+                    "coordinates": coordinates
+                }
+                /**
+                 * Metadata of route-componets 
+                 */
+            this.properties = {
+                "legs": data,
+                "wps": wps
+            }
+        }
+    };
+
+    Polymer({
+        is: 'mb-routes',
+
+        properties: {
+
+            map : {
+                type: Object
+            },
+
+            /**
+             * Animation counter
+             */
+            counter: {
+                type: Number
+            },
+
+            flystatus : {
+                type: Boolean
+            },
+
+            /**
+             * FramePerSecond of animation
+             */
+            fps: {
+                type: Number,
+                value: 60
+            },
+            /**
+             * Url to source of routed waypoints
+             */
+            url: {
+                type: String,
+                observer: 'loadRoute'
+            },
+            /**
+             * { item_description }
+             */
+            timescale: {
+                type: Number
+            },
+            /**
+             * { item_description }
+             */
+            routedata : {
+                type: Object
+                // observer: 'routeStarter'
+            },
+
+        },
+
+        observers: [
+            'animatectrl(counter, flystatus)'
+        ],
+
+        ready: {
+
+        },
+
+        /**
+         * { function_description }
+         *
+         * @param      {number}  counter    The counter
+         * @param      {<type>}  flystatus  The flystatus
+         */
+        animatectrl: function(counter, flystatus) {
+            //
+            if (flystatus) {
+
+                requestAnimationFrame(this.animateAll);
+
+            } else {
+
+                cancelAnimationFrame(this.requestframeref);
+
+                if (counter == 0) {
+                    // Update the source layer
+                    // Set the coordinates of the original point back to origin
+                    this.initPlanes(counter, this.routedata);
+                    
+                    this.map.getSource('planes').setData(this.planes);
+                } 
+
+            }
+        },
+
+        /**
+         * { function_description }
+         */
+        animateAll : function() {
+            // Update point geometries to new positions 
+            // based on counter denoting the index to access the route-position.
+
+            var located = this.calcLocations(counter);
+
+            this.counter = this.counter + 1;
+
+            // Request the next frame of animation so long 
+            // as not all planes have reached their destination (located != null) 
+            if (located) {
+
+                // Update the source of animated objects with this new data.
+                this.map.getSource('planes').setData(planes);
+
+                if (this.fps && (this.fps < 60)) {
+                    setTimeout(function() {
+                        requestframeref = requestAnimationFrame(this.animateAll);
+                    }, 1000 / this.fps);
+                } else {
+                    requestframeref = requestAnimationFrame(this.animateAll);
+                }
+
+
+            } else {
+                console.log("STOP of animation");
+            }
+
+        },
+
+        /**
+         * Actions connected with every Animationstep 
+         *
+         * @param      {number}  counter  The animation-counter
+         * @return     {Boolean}  Flag = truem when an object could be located
+         */
+        calcLocations: function(counter) {
+
+            var located;
+
+            this.planes.features.forEach(function(plane, j) {
+
+                var cc, cclast, leginfo = {},
+                    cntPositionsBeforeLeg = 0,
+
+                    route = routes.features[j],
+                    typ = route.geometry.type,
+                    legs = route.geometry.coordinates,
+
+                    routeinfo = route.properties,
+                    legdata = routeinfo.legs;
+
+                if (typ == "MultiLineString") {
+                    // legs = coords;
+                } else {
+                    // one leg only 
+                    legs = [legs];
+                }
+
+                legs.every(function(legPositions, i) {
+                    // B????
+                    if (counter < (cntPositionsBeforeLeg + legPositions.length)) {
+                        cc = legPositions[counter - cntPositionsBeforeLeg];
+                        if (cc) {
+                            leginfo = legdata[i];
+                            return false;
+                        }
+                    }
+                    cntPositionsBeforeLeg = cntPositionsBeforeLeg + legPositions.length;
+                    return true; // wichtig !!
+                })
+
+                if (cc) {
+                    located = 1;
+
+                    plane.geometry.coordinates = cc;
+
+                    var lastPos = plane.properties.lastPos;
+                    
+                    if (lastPos) {
+                        // calc last steps bearing (between plane and its 'lastPosition')
+                        var bearing = turf.bearing(new Plane(lastPos), plane);
+                        if (bearing < 0) bearing = bearing + 360;
+
+                        var legToArrival = new Leg([cc, leginfo.to.coords]),
+                            dta = turf.lineDistance(legToArrival, "kilometers");
+
+                        var v = leginfo.speed;
+                        if (v && Math.round(dta / 10)) { // 
+                            var t = dta / parseFloat(v),
+                                h = Math.floor(t),
+                                m = Math.round((t - h) * 60);
+                            h = h ? h + "h " : "";
+                            m = m ? m + "min" : "";
+                            var tta = h || m ? h + m : "arrived";
+                            // console.log(v, t, h, m);
+                            plane.properties.bearing = Math.round(bearing) + "°";
+                            plane.properties.speed = v + " km/h";
+                            plane.properties.dta = Math.round(dta / 10) * 10 + "km";
+                            plane.properties.tta = tta;
+                        } else {
+                            plane.properties.bearing = 0;
+                            plane.properties.speed = 0;
+                            plane.properties.dta = 0;
+                            plane.properties.tta = "arrived";
+                        }
+                    }
+                    
+                    plane.properties.lastPos = cc;
+
+                    // update content and location of the animator-popup
+                    if (popup && (popupid == plane.properties.id)) {
+                        popuphtml = calcPlaneInfo(plane);
+                        popup.setHTML(popuphtml); //console.log("popup", popup, popuphtml, cc);
+                        popup.setLngLat(cc);
+                    }
+                }
+
+            });
+            return located;
+        },
+
+        /**
+         * Create html-dom to view with animated object
+         *
+         * @param      {<type>}  feature  The animated mb-feature
+         * @param      {number}  counter  The animation-counter
+         * @return     {string}  The plane information.
+         */
+        calcPlaneInfo: function(feature, counter) {
+            // console.log(feature.properties);
+            var iplane = "<b>" + feature.properties.id + "</b>" + "<br>";
+            if (feature.properties.bearing) iplane += "Bearing: " + feature.properties.bearing + "<br>";
+            if (feature.properties.speed) iplane += "Sog: " + feature.properties.speed + "<hr>";
+            if (feature.properties.dta) iplane += "DTA: " + feature.properties.dta + "<br>";
+            if (feature.properties.tta) iplane += "TTL: " + feature.properties.tta + "<br>";
+
+            // if (counter) iplane += "Counter: " + counter + "<br>";
+            // ;
+            return iplane;
+        },
+
+        /**
+         * Setup of animation framework from new wp-dataset
+         *
+         * @param      {<type>}  routedata  Routedata as wp-dataset
+         */
+        routeStarter: function(routedata) {
+
+            this.counter = 0;
+
+            var routelayers = {};
+
+            routelayers['waypoints'] = this.setupWaypoints(routedata);
+
+            routelayers['routes'] = this.setupRoutes(routedata, this.timescale);
+
+            routelayers['planes'] = this.initPlanes(time, routedata);
+
+            // console.log("routelayers created", routelayers);
+
+            this.setupMap(routedata, routelayers);
+
+            // this.setupAnimationCtrls(routedata);
+        },
+
+        /**
+         * { function_description }
+         *
+         * @param      {<type>}  routedata    The routedata
+         * @param      {<type>}  routelayers  The routelayers
+         */
+        setupMap : function(routedata, routelayers) {
+
+            var jsonlayers = this.routelayers;
+            // mapboxgl.accessToken = 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw';
+
+            // Collect waypoint-coordinates
+            var coordinates = [],
+                bounds, center,
+                startmode = false; // routedata[0].waypoints[0].coords ];
+
+            routedata.forEach(function(route, j) {
+                route.waypoints.forEach(function(wp, i) {
+                    coordinates.push(wp.coords);
+                    startmode = startmode || (wp.coords[0] > 150);
+                })
+            });
+
+            // 
+            if (startmode) { // workaround for coords around dateline
+                center = coordinates[0];
+            } else { // create bounds around all wp-coordinates
+                bounds = coordinates.reduce(function(bounds, coord) {
+                        return bounds.extend(coord);
+                    },
+                    new mapboxgl.LngLatBounds(coordinates[0], coordinates[0])
+                );
+                center = bounds.getCenter();
+            }
+            // console.log("center, wp-coordinates", center, coordinates);
+
+            var map = this.map; 
+            /*map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v9',
+                center: center,
+                zoom: 3
+            });*/
+
+            if (bounds) map.fitBounds(bounds, {
+                padding: 20
+            });
+
+            // add json-sources and layers for required     
+            var layernames = Object.keys(jsonlayers),
+                layerObject;
+
+            layernames.forEach(function(lname, j) {
+
+                layerObject = jsonlayers[lname];
+
+                this.map.addSource(lname, {
+                    "type": "geojson",
+                    "data": layerObject['data']
+                });
+                
+                this.map.addLayer(layerObject['layer']);
+            }.bind(this))
+
+            popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false
+            });
+
+            map.on('mousemove', function(e) {
+
+                // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
+
+                var features = map.queryRenderedFeatures(e.point, {
+                    layers: ['planes']
+                });
+
+                if (!features || !features.length) {
+                    // strategy 1:
+                    // popup.remove();
+                    return;
+                }
+
+                // Change the cursor style as a UI indicator.
+                // var cursor = "";
+                // if (features.length)  
+                map.getCanvas().style.cursor = 'pointer';
+
+                // strategy 2: 
+                // remove popup, if content changes to another obj
+                popup.remove();
+
+                var plane = features[0]; // console.log("selecting plane:", plane);
+                popupid = plane.properties.id;
+                popuphtml = this.calcPlaneInfo(plane);
+
+                // Populate the popup and set its coordinates
+                // based on the feature found.
+                popup.setLngLat(plane.geometry.coordinates)
+                    .setHTML(popuphtml)
+                    .addTo(map);
+            });
+        },
+
+        /**
+         * { function_description }
+         *
+         * @param      {<type>}  routedata  The routedata
+         * @return     {<type>}  { description_of_the_return_value }
+         */
+        setupWaypoints: function(routedata) {
+            
+            this.waypoints.features = [];
+
+            var wp;
+            routedata.forEach(function(route, j) {
+                // locate plane at 'origin'
+                // console.log("route-" + j, route.waypoints);
+                route.waypoints.forEach(function(wp, p) {
+                    this.waypoints.features.push(new Waypoint(wp.coords, wp.id));
+                });
+            });
+            // console.log("all waypoints collected", waypoints.features);
+
+            // 
+            var jsonlayer = {};
+            
+            jsonlayer['data'] = waypoints;
+            
+            jsonlayer['layer'] = {
+                "id": "waypoints",
+                "type": "symbol",
+                "source": "waypoints",
+                "layout": {
+                    "icon-image": "{icon}-15",
+                    //"icon-image": "harbor-15",
+                    "text-field": "{title}",
+                    "text-anchor": "bottom",
+                    "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                    "text-offset": [0, -0.6]
+                }
+            };
+            return jsonlayer;
+        },
+
+        // A. Setup animated objects for all sets of routedata
+
+        /**
+         * { function_description }
+         *
+         * @param      {number}  startcounter  The startcounter
+         * @param      {<type>}  routedata     The routedata
+         * @return     {<type>}  { description_of_the_return_value }
+         */
+        initPlanes: function(startcounter, routedata) {
+            if (!startcounter) startcounter = 0;
+
+            var jsonlayer = {};
+
+            // setup data 
+            planes.features = [];
+
+            routedata.forEach(function(route, j) {
+                // locate plane at 'origin'
+                var aplane = new Plane(route.waypoints[startcounter].coords, route.id, route.plane);
+                planes.features.push(aplane);
+            });
+
+            jsonlayer['data'] = planes;
+
+            // planes = planes; // local to global !!??
+
+            // setup styling
+            jsonlayer['layer'] = {
+                "id": "planes",
+                "source": "planes",
+                "type": "symbol",
+                "layout": {
+                    "icon-image": "airport-15",
+                    "icon-size": 2,
+                    "icon-rotate": 90,
+                    //"icon-image": "{icon}-15",
+                    //"icon-rotate": "{getbearing}", // 
+                    "text-field": "{title}",
+                    "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                    "text-size": 12,
+                    "text-offset": [0, 0.6],
+                    "text-anchor": "top"
+                }
+            };
+            return jsonlayer;
+        },
+
+
+        
+        /**
+         * Setup routes for animation with "requestAnimationFrame (60 fps)"
+         *
+         * @param      {<type>}  routedata  The routedata
+         * @param      {number}  timeScale  The time scale
+         * @return     {<type>}  { description_of_the_return_value }
+         */
+        setupRoutes : function (routedata, timeScale) {
+            if (!timeScale) timeScale = this.timescale;  
+            if (!timeScale) timeScale = 360;            // Animationszeit 1s=360s=6min, 10s=1h Echtzeit 
+
+            var demoSpeed = 900;
+            var fpsmax = 60; // this.fpsmax;    
+            // if (!fpsmax) fpsmax = 60;            // Animationszeit 1s=360s=6min, 10s=1h Echtzeit 
+           
+            var frameTime = timeScale / fpsmax; // Bsp: frame: 6 s fuer scale = 360 und fps=60 !!
+
+            this.routes.features = [];
+
+            // Interpolate the Routes between waypoints 
+            // based on info about speed and/or arrival-/departure-times at waypoints
+
+            var wpnext, legDistance, legStepCount;
+
+            routedata.forEach(function(data, j) {
+
+                // Initialize 
+                var legdata = [],   // mean props of every leg    
+                    legs = [],      // routepoints of every leg
+                    legTimeSec, legStopSec,
+                    legSpeed, routeSpeed = data.speed;
+                    if (!routeSpeed) routeSpeed = demoSpeed;
+
+                // Create route-legs between 2 waypoints at any one time 
+                var waypoints = data.waypoints, // wps as given
+                waypoints.forEach(function(wp, p) {
+
+                    wpnext = waypoints[p + 1];
+
+                    // Calculate leg-properties
+                    if (wpnext) {
+                        // console.log("waypoints:" + p, wp, wpnext);
+                        // Calculate the distance in kilometers between waypoints
+                        legSpeed = routeSpeed;
+                        var leg = new Leg([wp.coords, wpnext.coords]),
+                            legDistance = turf.lineDistance(leg, 'kilometers');
+
+                        // console.log("Route-" + j + ", leg to", wpnext, leg); // , legPositions);
+
+                        // options to calculate a leg-specific speed between wp's
+                        if (wpnext.speed) {
+                            legSpeed = wpnext.speed;
+                        }
+                        if (wpnext.stopover) {
+                            legStopSec = wpnext.stopover;
+                        }
+
+
+                        // Calc number of animation-steps to travel between waypoints in legTimeSec
+                        // console.log("legspeed=", legSpeed);
+                        legTimeSec = legDistance / legSpeed * 3600;
+                        legStepCount = Math.round(legTimeSec / frameTime);
+
+                        // Assign basic leg-properties
+                        var leginfo = {};
+                        leginfo.from = wp;
+                        leginfo.to = wpnext;
+                        leginfo.dist = legDistance;
+                        leginfo.speed = legSpeed;
+
+                        leginfo.time = legTimeSec;
+                        leginfo.steps = legStepCount;
+
+                        // Assign time-properties
+                        var h = Math.floor(legTimeSec / 3600),
+                            m = Math.round((legTimeSec - (h * 3600)) / 60);
+                        leginfo.timetext = h + "h" + m + "min";
+
+                        // Calc animation-positions on the leg
+                        var legPositions = [];
+
+                        for (let i = 0; i < legStepCount; i++) {
+                            let dist = i * (legDistance / legStepCount);
+                            let position = turf.along(leg, dist, 'kilometers');
+                            // if (i == 10) console.log(i, dist, position);
+                            legPositions.push(position.geometry.coordinates);
+                        }
+
+                        if (legStopSec) {
+                            // INSERT some "zero-steps" at stopover waypoint 
+                            h = Math.floor(legStopSec / 3600);
+                            m = Math.round((legStopSec - (h * 3600)) / 60);
+                            leginfo.stopTime = h + "h" + m + "min";
+
+                            var n = Math.round(legStopSec / frameTime);
+                            leginfo.stopSteps = n;
+
+                            // append "stop-coordinates" to the leg 
+                            for (let i = 0; i < n; i++) {
+                                legPositions.push(legPositions[legPositions.length - 1]);
+                            }
+
+                        }
+
+                        legdata.push(leginfo);
+                        legs.push(legPositions);
+                    }
+                });
+
+                // Add next route-object consisting of some legs
+                var r = new Route(legs, legdata, waypoints);
+                
+                console.log("SETUP route-" + j, r);
+
+                routes.features.push(r);
+
+            }); // console.log("routes", routes);
+
+            var jsonlayer = {};
+
+            jsonlayer['data'] = routes;
+
+            jsonlayer['layer'] = {
+                "id": "routes",
+                "source": "routes",
+                "type": "line",
+                "paint": {
+                    "line-width": 2,
+                    "line-color": "#007cbf"
+                }
+            };
+
+            return jsonlayer;
+        }
+
+    });
+
+</script>
+</dom-module>

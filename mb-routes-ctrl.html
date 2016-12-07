@@ -1,0 +1,150 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="mb-api.html">
+
+<!--
+`mb-routes-ctrl`
+ctrl buttons controling flow of animated objects
+
+@demo demo/routing.html 
+-->
+
+<dom-module id="mb-routes-ctrl">
+
+    <template>
+    
+    	<style type="text/css">
+	        .overlay {
+	            position: absolute;
+	            top: 10px;
+	            left: 10px;
+	        }
+	        
+	        .overlay button {
+	            font: 600 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+	            background-color: #3386c0;
+	            color: #fff;
+	            display: inline-block;
+	            margin: 0;
+	            padding: 10px 20px;
+	            border: none;
+	            cursor: pointer;
+	            border-radius: 3px;
+	        }
+	        
+	        .overlay button:hover {
+	            background-color: #4ea0da;
+	        }
+	        
+	        .overlay button img {
+	            width: 32px;
+	            height: 32px;
+	        }
+    	</style>
+	
+		<div class="overlay">        
+	        <button id='replay'>
+	            <img src="assets/media-step-backward.svg" alt="restart">
+	        </button>
+	        <button id='toggle'>
+	            <img src="assets/media-play.svg" alt="media-play">
+	        </button>
+	        <input id='fps' type='range' min='1' max='60' step='0' value='60' />
+
+	        <label><span id='slider-value'>60</span>Hz</label>
+	    </div>
+
+    </template>
+
+    <script>
+        Polymer({
+            is: 'mb-routes-ctrl',
+
+            properties: {
+
+            	/**
+            	 * Animation counter
+            	 */
+            	counter: {
+            		type: Number,
+                    notify: true
+            	},
+
+            	/**
+            	 * Animation frequency
+            	 */
+            	fps : {
+            		type: Number,
+            		value: 60,
+            		notify: true
+            	},
+
+            	/**
+            	 * Animation status
+            	 */
+            	flystatus : {
+            		type: Boolean,
+            		value: false,
+            		notify: true
+            	}
+            },
+
+            ready: function() {
+            	this.setupAnimationCtrls();
+            },
+
+	        /**
+	         * Setup the Ctrl-actions (start/stop, restart, fps-slider) 
+	         *
+	         */
+	        setupAnimationCtrls : function () {
+
+	            var ctrl1 = document.getElementById('replay'),
+	                ctrl2 = document.getElementById('toggle');
+
+	            //     
+	            var slider = document.getElementById('fps');
+	            var sliderValue = document.getElementById('slider-value');
+
+	            // ReStart-Button-event
+	            ctrl1.addEventListener('click', function() {
+
+	                this.flystatus = false;
+	                
+	                ctrl2.childNodes[1].src = "assets/media-play.svg";
+
+	            }.bind(this));
+
+	            // Start/Stop-Button-event
+	            ctrl2.addEventListener('click', function() {
+	                // console.log(this, ctrl2.childNodes);
+	                if (this.flystatus) {
+	                    this.flystatus = false;
+
+	                    ctrl2.childNodes[1].src = "assets/media-play.svg";
+	                    // console.log("stopped", ctrl2.childNodes);
+	                } else {
+	                    this.flystatus = true;
+
+	                    ctrl2.childNodes[1].src = "assets/media-pause.svg";
+	                    // console.log("started", ctrl2.childNodes);
+	                }
+	            }.bind(this));
+
+	            /**
+	             * { item_description }
+	             */
+	            slider.addEventListener('input', function(e) {
+	                // Adjust the global value fps (animation-frequency) 
+	                this.fps = parseInt(e.target.value);
+	                // Value indicator
+	                sliderValue.textContent = this.fps; //  + '%';
+	            });
+
+	        }
+
+        });
+    </script>
+
+</dom-module>
