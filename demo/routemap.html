@@ -13,6 +13,7 @@
 
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-routes.html">
+    <!--<link rel="import" href="../mb-routes-info.html">-->
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
@@ -52,8 +53,15 @@
             <mb-routes
                 map="[[map]]" 
                 url="[[url]]"
-                flystatus="[[flystatus]]">
+                flystatus="[[flystatus]]"
+                trackobj = "{{trackobj}}"
+                trackinfo="[[trackinfo]]">
             </mb-routes>                
+
+            <!--<mb-routes-info
+                trackobj = "[[trackobj]]"
+                trackinfo="{{trackinfo}}">
+            </mb-routes-info>-->    
 
         </div>
 
@@ -63,7 +71,7 @@
         var app = document.querySelector('#app');
         app.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
         app.cbox = "13.7,52.4";
-        app.zoom = 3;
+        app.zoom = 1;
         app.mapctrl = {};
 
         app.url = "wp-data/wps-viewing.json";

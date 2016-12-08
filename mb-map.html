@@ -42,7 +42,6 @@ the map-object can be ctrld from outside
                 // container: 'map',     // useless as map is in shadowdom  
                 // center: [13.5, 52.5], // must be synced by client with service
                 style: 'mapbox://styles/mapbox/streets-v9',
-                zoom: 8,
                 insertlayer: 'water'
             },
 
@@ -84,8 +83,8 @@ the map-object can be ctrld from outside
                 cbox: {
                     type: String,
                     value: "13.5,52.5",
-                    observer: "centerthemap",
-                    notify: true
+                    notify: true,
+                    observer: 'centerthemap'
                 },
                 /**
                  *  boundingbox of vidible mapview : LL,UR as Lon,Lat-csv
@@ -93,8 +92,18 @@ the map-object can be ctrld from outside
                 bbox: {
                     type: String,
                     notify: true
+                },
+
+                zoom: {
+                    type: Number,
+                    value: 8,
+                    observer: 'zoomthemap'
                 }
             },
+
+            observers: [
+                // 'centerthemap(cbox, zoom)'
+            ],
 
             attached: function() {
 
@@ -120,7 +129,11 @@ the map-object can be ctrld from outside
                 this.installmap();
             },
 
-            centerthemap: function(cbox, cboxold) {
+            zoomthemap: function(zoom) {
+                if (this.map) this.map.setZoom(zoom)
+            },
+
+            centerthemap: function(cbox) {
                 cbox = cbox.split(",");
                 cbox = new mapboxgl.LngLat(cbox[0], cbox[1]);
                 if (this.map) this.map.setCenter(cbox);
@@ -152,6 +165,9 @@ the map-object can be ctrld from outside
 
                         that.cbox = cb.lng + "," + cb.lat;
                         that.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
+
+                        let z = map.getZoom();
+                        that.zoom = z;
                         // console.log(cb,bb,that.cbox,that.bbox);
                     });
 
