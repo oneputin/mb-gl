@@ -7,7 +7,7 @@
 `mb-routes-ctrl`
 ctrl buttons controling flow of animated objects
 
-@demo demo/routing.html 
+@demo demo/routemap.html 
 -->
 
 <dom-module id="mb-routes-ctrl">
@@ -63,86 +63,86 @@ ctrl buttons controling flow of animated objects
 
             properties: {
 
-            	/**
-            	 * Animation counter
-            	 */
-            	counter: {
-            		type: Number,
+                /**
+                 * Animation counter
+                 */
+                counter: {
+                    type: Number,
                     notify: true
-            	},
+                },
 
-            	/**
-            	 * Animation frequency
-            	 */
-            	fps : {
-            		type: Number,
-            		value: 60,
-            		notify: true
-            	},
+                /**
+                 * Animation frequency
+                 */
+                fps: {
+                    type: Number,
+                    value: 60,
+                    notify: true
+                },
 
-            	/**
-            	 * Animation status
-            	 */
-            	flystatus : {
-            		type: Boolean,
-            		value: false,
-            		notify: true
-            	}
+                /**
+                 * Animation status
+                 */
+                flystatus: {
+                    type: Boolean,
+                    value: false,
+                    notify: true
+                }
             },
 
             ready: function() {
-            	this.setupAnimationCtrls();
+                this.setupAnimationCtrls();
             },
 
-	        /**
-	         * Setup the Ctrl-actions (start/stop, restart, fps-slider) 
-	         *
-	         */
-	        setupAnimationCtrls : function () {
+            /**
+             * Setup the Ctrl-actions (start/stop, restart, fps-slider) 
+             *
+             */
+            setupAnimationCtrls: function() {
 
-	            var ctrl1 = document.getElementById('replay'),
-	                ctrl2 = document.getElementById('toggle');
+                var ctrl1 = document.getElementById('replay'),
+                    ctrl2 = document.getElementById('toggle');
 
-	            //     
-	            var slider = document.getElementById('fps');
-	            var sliderValue = document.getElementById('slider-value');
+                //     
+                var slider = document.getElementById('fps');
+                var sliderValue = document.getElementById('slider-value');
 
-	            // ReStart-Button-event
-	            ctrl1.addEventListener('click', function() {
+                // ReStart-Button-event
+                ctrl1.addEventListener('click', function() {
 
-	                this.flystatus = false;
-	                
-	                ctrl2.childNodes[1].src = "assets/media-play.svg";
+                    this.flystatus = false;
 
-	            }.bind(this));
+                    ctrl2.childNodes[1].src = "assets/media-play.svg";
 
-	            // Start/Stop-Button-event
-	            ctrl2.addEventListener('click', function() {
-	                // console.log(this, ctrl2.childNodes);
-	                if (this.flystatus) {
-	                    this.flystatus = false;
+                }.bind(this));
 
-	                    ctrl2.childNodes[1].src = "assets/media-play.svg";
-	                    // console.log("stopped", ctrl2.childNodes);
-	                } else {
-	                    this.flystatus = true;
+                // Start/Stop-Button-event
+                ctrl2.addEventListener('click', function() {
+                    // console.log(this, ctrl2.childNodes);
+                    if (this.flystatus) {
+                        this.flystatus = false;
 
-	                    ctrl2.childNodes[1].src = "assets/media-pause.svg";
-	                    // console.log("started", ctrl2.childNodes);
-	                }
-	            }.bind(this));
+                        ctrl2.childNodes[1].src = "assets/media-play.svg";
+                        // console.log("stopped", ctrl2.childNodes);
+                    } else {
+                        this.flystatus = true;
 
-	            /**
-	             * { item_description }
-	             */
-	            slider.addEventListener('input', function(e) {
-	                // Adjust the global value fps (animation-frequency) 
-	                this.fps = parseInt(e.target.value);
-	                // Value indicator
-	                sliderValue.textContent = this.fps; //  + '%';
-	            });
+                        ctrl2.childNodes[1].src = "assets/media-pause.svg";
+                        // console.log("started", ctrl2.childNodes);
+                    }
+                }.bind(this));
 
-	        }
+                /**
+                 * { item_description }
+                 */
+                slider.addEventListener('input', function(e) {
+                    // Adjust the global value fps (animation-frequency) 
+                    this.fps = parseInt(e.target.value);
+                    // Value indicator
+                    sliderValue.textContent = this.fps; //  + '%';
+                });
+
+            }
 
         });
     </script>
