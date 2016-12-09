@@ -16,11 +16,11 @@
             // console.log(trackObj.properties);
             var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
 
-            if (trackObj.properties.bearing) trackInfo += "Bearing: " + trackObj.properties.bearing + "<br>";
+            if (trackObj.properties.bearing) trackInfo += "Bearing: " + trackObj.properties.bearing + "°<br>";
 
-            if (trackObj.properties.speed) trackInfo += "Sog: " + trackObj.properties.speed + "<hr>";
+            if (trackObj.properties.speed) trackInfo += "Sog: " + trackObj.properties.speed + "km/h<hr>";
 
-            if (trackObj.properties.dta) trackInfo += "DTA: " + trackObj.properties.dta + "<br>";
+            if (trackObj.properties.dta) trackInfo += "DTA: " + trackObj.properties.dta + "km <br>";
 
             if (trackObj.properties.tta) trackInfo += "TTL: " + trackObj.properties.tta + "<br>";
 

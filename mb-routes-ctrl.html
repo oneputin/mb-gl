@@ -1,7 +1,9 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-slider/paper-slider.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
-<link rel="import" href="mb-api.html">
+<link rel="import" href="icons-svg.html">
 
 <!--
 `mb-routes-ctrl`
@@ -15,61 +17,46 @@ ctrl buttons controling flow of animated objects
     <template>
     
     	<style type="text/css">
-	        .overlay {
+	        .ctrlbox {
 	            position: absolute;
-	            top: 10px;
+	            bottom: 10px;
 	            left: 10px;
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
 	        }
-	        
-	        .overlay button {
-	            font: 600 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
-	            background-color: #3386c0;
-	            color: #fff;
-	            display: inline-block;
-	            margin: 0;
-	            padding: 10px 20px;
-	            border: none;
-	            cursor: pointer;
-	            border-radius: 3px;
-	        }
-	        
-	        .overlay button:hover {
-	            background-color: #4ea0da;
-	        }
-	        
-	        .overlay button img {
-	            width: 32px;
-	            height: 32px;
-	        }
+            
+            paper-icon-button.blue {
+                --paper-icon-button-ink-color: var(--paper-orange-500);
+                background-color: var(--paper-light-blue-500);
+                color: white;
+                border-radius: 3px;
+                padding: 2px;
+                margin: 5px; 
+            }
+
     	</style>
 	
-		<div class="overlay">        
-	        <button id='replay'>
-	            <img src="assets/media-step-backward.svg" alt="restart">
-	        </button>
-	        <button id='toggle'>
-	            <img src="assets/media-play.svg" alt="media-play">
-	        </button>
-	        <input id='fps' type='range' min='1' max='60' step='0' value='60' />
+		<div class="ctrlbox"> 
+            
+            <paper-icon-button id="replay" icon="{{_icon1}}" title="restart" class="blue"></paper-icon-button>
+            
+            <paper-icon-button id="toggle" icon="{{_icon2}}" title="startstop" class="blue"></paper-icon-button>
+            
+            <div>with speedCtrl</div>
+            <paper-slider id="fpsctrl" value="{{val}}"  min="1" max='4' step='1' pin snaps ></paper-slider>
 
-	        <label><span id='slider-value'>60</span>Hz</label>
+            <paper-icon-button id="viewmode" icon="{{_icon3}}" title="viewmode" class="blue"></paper-icon-button>
+
 	    </div>
 
     </template>
 
     <script>
+        // on-change="fpsChange"
         Polymer({
             is: 'mb-routes-ctrl',
 
             properties: {
-
-                /**
-                 * Animation counter
-                 */
-                counter: {
-                    type: Number,
-                    notify: true
-                },
 
                 /**
                  * Animation frequency
@@ -83,15 +70,47 @@ ctrl buttons controling flow of animated objects
                 /**
                  * Animation status
                  */
-                flystatus: {
+                trackctrl: {
                     type: Boolean,
                     value: false,
                     notify: true
+                },
+
+                /**
+                 * viewmode (euler, lagrange)
+                 */
+                trackview: {
+                    type: Boolean,
+                    value: false,
+                    notify: true
+                },
+
+                _icon1: {
+                    type: String,
+                    value: "ctrl:skip-previous"
+                },
+                _icon2: {
+                    type: String,
+                    value: "ctrl:play-arrow"
+                },
+                _icon3: {
+                    type: String,
+                    value: "ctrl:near-me"
                 }
+            },
+
+            // 'fpsChange': 'fpsChangeHandler',
+            listeners: {
+                'change': 'changeHandler'
             },
 
             ready: function() {
                 this.setupAnimationCtrls();
+            },
+
+            changeHandler: function(v) {
+                // console.log(this.val, "::", this.fps);
+                this.fps = 15 * this.val;
             },
 
             /**
@@ -100,51 +119,56 @@ ctrl buttons controling flow of animated objects
              */
             setupAnimationCtrls: function() {
 
-                var ctrl1 = document.getElementById('replay'),
-                    ctrl2 = document.getElementById('toggle');
+                this.val = 4;
+                this.fps = 60;
+
+                var ctrl1 = this.$.replay,
+                    ctrl2 = this.$.toggle;
+                ctrl3 = this.$.viewmode;
 
                 //     
-                var slider = document.getElementById('fps');
-                var sliderValue = document.getElementById('slider-value');
+                var slider = this.$.fps;
+                var sliderValue = this.$.slidervalue;
 
                 // ReStart-Button-event
                 ctrl1.addEventListener('click', function() {
 
-                    this.flystatus = false;
-
-                    ctrl2.childNodes[1].src = "assets/media-play.svg";
-
+                    this.trackctrl = "reset";
+                    this._icon2 = "ctrl:play-arrow";
                 }.bind(this));
 
                 // Start/Stop-Button-event
                 ctrl2.addEventListener('click', function() {
-                    // console.log(this, ctrl2.childNodes);
-                    if (this.flystatus) {
-                        this.flystatus = false;
+                    // console.log("clicked at:" + this.trackctrl, ctrl2.childNodes);
+                    if (this.trackctrl) {
 
-                        ctrl2.childNodes[1].src = "assets/media-play.svg";
-                        // console.log("stopped", ctrl2.childNodes);
+                        this.trackctrl = false;
+                        this._icon2 = "ctrl:play-arrow";
                     } else {
-                        this.flystatus = true;
 
-                        ctrl2.childNodes[1].src = "assets/media-pause.svg";
-                        // console.log("started", ctrl2.childNodes);
+                        this.trackctrl = true;
+                        this._icon2 = "ctrl:pause";
                     }
                 }.bind(this));
 
-                /**
-                 * { item_description }
-                 */
-                slider.addEventListener('input', function(e) {
-                    // Adjust the global value fps (animation-frequency) 
-                    this.fps = parseInt(e.target.value);
-                    // Value indicator
-                    sliderValue.textContent = this.fps; //  + '%';
-                });
+                // Viewmode
+                ctrl3.addEventListener('click', function() {
+                    // console.log("clicked at:" + this.trackctrl, ctrl2.childNodes);
+                    if (this.trackview) {
+                        this.trackview = false;
+                        this._icon3 = "ctrl:near-me";
+                    } else {
+                        this.trackview = true;
+                        this._icon3 = "ctrl:pause";
+                    }
+                }.bind(this));
+
 
             }
 
         });
     </script>
+
+</dom-module>
 
 </dom-module>

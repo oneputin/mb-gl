@@ -146,6 +146,9 @@ along waypoint file loaded from url
                 map: {
                     type: Object
                 },
+                popup: {
+                    type: Object
+                },
 
                 /**
                  * Url to source of routed waypoints
@@ -154,8 +157,19 @@ along waypoint file loaded from url
                     type: String
                 },
 
-                flystatus: {
-                    type: Boolean
+                trackctrl: {
+                    type: Boolean,
+                    notify: true
+                },
+
+                trackview: {
+                    type: Boolean,
+                    value: false,
+                    observer: 'viewctrl'
+                },
+
+                trackid: {
+                    type: String
                 },
 
                 trackobj: {
@@ -177,7 +191,8 @@ along waypoint file loaded from url
                 },
 
                 requestframeref: {
-                    type: String
+                    type: String,
+                    value: '1'
                 },
                 /**
                  * FramePerSecond of animation
@@ -211,7 +226,8 @@ along waypoint file loaded from url
 
             observers: [
                 'applyToMap(map, routedata, routelayers)',
-                'animateCtrl(flystatus)'
+                'animateCtrl(trackctrl)',
+                'viewCtrl(trackview, trackid)'
             ],
 
             attached: function() {
@@ -236,27 +252,66 @@ along waypoint file loaded from url
              * { function_description }
              *
              * @param      {number}  counter    The counter
-             * @param      {<type>}  flystatus  The flystatus
+             * @param      {<type>}  trackctrl  The trackctrl
              */
-            animateCtrl: function(flystatus) {
-                //
-                if (flystatus) {
+            animateCtrl: function(trackctrl) {
+                // console.log("trackctrl", trackctrl)
 
-                    mba.requestframeref = requestAnimationFrame(mba.animateStep);
+                if (trackctrl) {
+                    if (trackctrl == "reset") {
+                        this.trackctrl = false; // triggers this function again 
 
-                } else {
-
-                    cancelAnimationFrame(mba.requestframeref);
-
-                    if (this.counter == 0) {
-                        // Update the source layer
-                        // Set the coordinates of the original point back to origin
-                        this.initTracks(this.counter, this.routedata);
-
-                        this.map.getSource('tracks').setData(this.tracks);
+                        this.counter = 0;
+                        this.trackid = 0; // z.B. popup.remove();
+                    } else {
+                        this.requestframeref = requestAnimationFrame(this.animateStep);
                     }
-
+                } else {
+                    console.log("PAUSED animation along routes");
+                    cancelAnimationFrame(this.requestframeref);
                 }
+
+                // 
+                if (this.counter == 0) {
+                    // Update the source layer
+                    // Set the coordinates of the original point back to origin
+                    this.initTracks(this.counter, this.routedata);
+                    this.map.getSource('tracks').setData(this.tracks);
+                }
+
+            },
+
+            viewCtrl: function(trackview, trackid) {
+
+                this.trackctrl = false;
+
+                var map = this.map,
+                    zoom = Math.round(map.getZoom());
+                var trackobj = this.trackobj,
+                    cc = trackobj.geometry.coordinates;
+                // 
+                if (!this.trackid) {
+                    this.popup.remove;
+                    trackview = false;
+                }
+
+                if (trackview) {
+                    bearing = trackobj.properties.bearing;
+                    if (zoom < 4) zoom = 4;
+                } else {
+                    bearing = 0;
+                    if (zoom > 4) zoom = 4;
+                }
+
+                console.log("trackview change for ", trackobj.properties.id, cc, bearing, zoom);
+                map.flyTo({
+                    center: cc,
+                    bearing: bearing,
+                    zoom: zoom
+                        //speed: 0.2, // make the flying slow
+                        //curve: 1, // change the speed at which it zooms out
+                });
+
             },
 
             /**
@@ -266,7 +321,7 @@ along waypoint file loaded from url
                 // Update point geometries to new positions 
                 // based on counter denoting the index to access the route-position.
 
-                var located = mba.calcTrackLocations(mba.counter);
+                var located = mba.calcTrackStep(mba.counter);
                 // if (mba.counter > 1) return;
 
                 mba.counter = mba.counter + 1;
@@ -275,15 +330,16 @@ along waypoint file loaded from url
                 // Request the next frame of animation so long 
                 // as not all trackObjs have reached their destination (located != null) 
                 if (located) {
-                    // Update the source of animated objects with this new data.
+                    // Update the animated objects updating their sources with new data.
                     mba.map.getSource('tracks').setData(mba.tracks);
-
-                    if (mba.fps && (mba.fps < 60)) {
-                        setTimeout(function() {
+                    if (mba.trackctrl) {
+                        if (mba.fps && (mba.fps < 60)) {
+                            setTimeout(function() {
+                                mba.requestframeref = requestAnimationFrame(mba.animateStep);
+                            }, 1000 / mba.fps);
+                        } else {
                             mba.requestframeref = requestAnimationFrame(mba.animateStep);
-                        }, 1000 / mba.fps);
-                    } else {
-                        mba.requestframeref = requestAnimationFrame(mba.animateStep);
+                        }
                     }
 
                 } else {
@@ -300,9 +356,10 @@ along waypoint file loaded from url
              * @param      {number}  counter  The animation-counter
              * @return     {Boolean}  Flag = truem when an object could be located
              */
-            calcTrackLocations: function(counter) {
+            calcTrackStep: function(counter) {
 
                 var located = 0;
+                var map = mba.map;
                 // flag returns the number of trackObjects animated at step counter
                 // some finish earlier than others 
                 // if all are finished the animation must be stopped !!
@@ -329,6 +386,7 @@ along waypoint file loaded from url
                     // Checkout the routes leg the trackObj is located  
                     // at animation-step "counter", get legInfo and cc 
                     var legInfo, cc;
+
                     legSet.every(function(legPositions, i) {
                         // B????
                         if (counter < (cntPositionsBeforeLeg + legPositions.length)) {
@@ -348,6 +406,7 @@ along waypoint file loaded from url
                         located += 1;
 
                         trackObj.geometry.coordinates = cc;
+                        //********************************
 
                         if (trackObj.properties.lastPos) {
 
@@ -358,10 +417,21 @@ along waypoint file loaded from url
                         trackObj.properties.lastPos = cc;
 
                         // update content and location of the animator-popup
-                        if (popup && (mba.trackid == trackObj.properties.id)) {
+                        // if (mba.popup && 
+                        if (mba.trackid == trackObj.properties.id) {
+
                             mba.trackinfo = mba.calcTrackInfo(trackObj);
-                            popup.setHTML(mba.trackinfo); //console.log("popup", popup, trackinfo, cc);
-                            popup.setLngLat(cc);
+                            mba.popup.setHTML(mba.trackinfo); //console.log("popup", mba.popup, trackinfo, cc);
+                            mba.popup.setLngLat(cc);
+
+                            if (mba.trackview) { // lagrange mode
+                                console.log("viewing along track of", mba.trackid);
+                                /*mba.map.flyTo({
+                                    center: cc,
+                                    bearing: trackObj.properties.bearing,
+                                    pitch: 45
+                                });*/
+                            }
                         }
                     }
 
@@ -397,9 +467,9 @@ along waypoint file loaded from url
                     m = m ? m + "min" : "";
                     var tta = h || m ? h + m : "arrived";
                     // console.log(v, t, h, m);
-                    trackObj.properties.bearing = Math.round(bearing) + "°";
-                    trackObj.properties.speed = v + " km/h";
-                    trackObj.properties.dta = Math.round(dta / 10) * 10 + "km";
+                    trackObj.properties.bearing = Math.round(bearing); // °
+                    trackObj.properties.speed = v; // km/h
+                    trackObj.properties.dta = Math.round(dta / 10) * 10; // km
                     trackObj.properties.tta = tta;
                 } else {
                     trackObj.properties.bearing = 0;
@@ -487,8 +557,8 @@ along waypoint file loaded from url
                     map.addLayer(layerObject['layer']);
                 });
 
-                popup = new mapboxgl.Popup({
-                    closeButton: false,
+                this.popup = new mapboxgl.Popup({
+                    closeButton: true,
                     closeOnClick: false
                 });
 
@@ -502,7 +572,7 @@ along waypoint file loaded from url
 
                     if (!features || !features.length) {
                         // strategy 1: Remove popup if pointer not on any feature
-                        // popup.remove();
+                        // this.popup.remove();
                         return;
                     }
 
@@ -512,21 +582,21 @@ along waypoint file loaded from url
                     map.getCanvas().style.cursor = 'pointer';
 
                     // strategy 2: 
-                    // A. remove popup, if pointed object changes
-                    popup.remove();
+                    // A. remove popup, if referenced object changes
+                    mba.popup.remove();
 
-                    // B. Update and reconnect the popup to the map at new objectnew 
+                    // B. Update and reconnect the this.popup to the map at new objectnew 
                     mba.trackobj = features[0];
                     mba.trackid = mba.trackobj.properties.id;
 
                     mba.trackinfo = mba.calcTrackInfo(mba.trackobj);
-                    popup.setLngLat(mba.trackobj.geometry.coordinates)
+                    mba.popup.setLngLat(mba.trackobj.geometry.coordinates)
                         .setHTML(mba.trackinfo)
                         .addTo(map);
                 });
 
-                // trigger animation-start 
-                this.flystatus = true;
+                // trigger animation-start if no ctrls available 
+                if (0) this.trackctrl = true;
                 this.counter = 1;
             },
 
