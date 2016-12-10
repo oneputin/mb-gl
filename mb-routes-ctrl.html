@@ -82,7 +82,8 @@ ctrl buttons controling flow of animated objects
                 trackview: {
                     type: Boolean,
                     value: false,
-                    notify: true
+                    notify: true,
+                    observer: ''
                 },
 
                 _icon1: {
@@ -104,6 +105,10 @@ ctrl buttons controling flow of animated objects
                 'change': 'changeHandler'
             },
 
+            observers: [
+                'controlupdate(trackctrl, trackview)'
+            ],
+
             ready: function() {
                 this.setupAnimationCtrls();
             },
@@ -111,6 +116,22 @@ ctrl buttons controling flow of animated objects
             changeHandler: function(v) {
                 // console.log(this.val, "::", this.fps);
                 this.fps = 15 * this.val;
+            },
+
+            controlupdate: function(trackctrl, trackview) {
+                // ctrls must reflect the handling options during actual status 
+                if (trackctrl) {
+                    if (trackctrl == "reset") {
+                        this._icon2 = "ctrl:play-arrow";
+                    } else {
+                        this._icon2 = "ctrl:pause";
+                    }
+                } else {
+                    this._icon2 = "ctrl:play-arrow";
+                }
+
+                // simple toggle 
+                this._icon3 = trackview ? "language" : "ctrl:near-me";
             },
 
             /**
@@ -132,35 +153,22 @@ ctrl buttons controling flow of animated objects
 
                 // ReStart-Button-event
                 ctrl1.addEventListener('click', function() {
-
                     this.trackctrl = "reset";
-                    this._icon2 = "ctrl:play-arrow";
                 }.bind(this));
 
                 // Start/Stop-Button-event
                 ctrl2.addEventListener('click', function() {
                     // console.log("clicked at:" + this.trackctrl, ctrl2.childNodes);
                     if (this.trackctrl) {
-
                         this.trackctrl = false;
-                        this._icon2 = "ctrl:play-arrow";
                     } else {
-
                         this.trackctrl = true;
-                        this._icon2 = "ctrl:pause";
                     }
                 }.bind(this));
 
-                // Viewmode
+                // Toggle viewMode
                 ctrl3.addEventListener('click', function() {
-                    // console.log("clicked at:" + this.trackctrl, ctrl2.childNodes);
-                    if (this.trackview) {
-                        this.trackview = false;
-                        this._icon3 = "ctrl:near-me";
-                    } else {
-                        this.trackview = true;
-                        this._icon3 = "ctrl:pause";
-                    }
+                    this.trackview = !this.trackview;
                 }.bind(this));
 
 

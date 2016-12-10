@@ -165,11 +165,12 @@ along waypoint file loaded from url
                 trackview: {
                     type: Boolean,
                     value: false,
-                    observer: 'viewctrl'
+                    notify: true
                 },
 
                 trackid: {
-                    type: String
+                    type: String,
+                    value: ""
                 },
 
                 trackobj: {
@@ -260,9 +261,10 @@ along waypoint file loaded from url
                 if (trackctrl) {
                     if (trackctrl == "reset") {
                         this.trackctrl = false; // triggers this function again 
-
+                        this.trackview = false;
                         this.counter = 0;
-                        this.trackid = 0; // z.B. popup.remove();
+                        this.trackid = undefined; // z.B. popup.remove();
+                        this.zoomToRoutes();
                     } else {
                         this.requestframeref = requestAnimationFrame(this.animateStep);
                     }
@@ -273,7 +275,7 @@ along waypoint file loaded from url
 
                 // 
                 if (this.counter == 0) {
-                    // Update the source layer
+                    console.log("Reset tracking objects");
                     // Set the coordinates of the original point back to origin
                     this.initTracks(this.counter, this.routedata);
                     this.map.getSource('tracks').setData(this.tracks);
@@ -281,36 +283,48 @@ along waypoint file loaded from url
 
             },
 
+            /**
+             */
             viewCtrl: function(trackview, trackid) {
 
-                this.trackctrl = false;
+                // 
+                if (!trackid) {
+                    if (this.popup) this.popup.remove;
+                    this.trackview = false;
+                    return;
+                }
 
                 var map = this.map,
                     zoom = Math.round(map.getZoom());
+
                 var trackobj = this.trackobj,
                     cc = trackobj.geometry.coordinates;
-                // 
-                if (!this.trackid) {
-                    this.popup.remove;
-                    trackview = false;
-                }
 
                 if (trackview) {
+
+                    this.trackctrl = false;
+
+                    console.log("aligning map-bearing with ", trackobj.properties.id);
                     bearing = trackobj.properties.bearing;
                     if (zoom < 4) zoom = 4;
+                    map.flyTo({
+                        center: cc,
+                        bearing: bearing,
+                        zoom: zoom
+                    });
+
                 } else {
+
                     bearing = 0;
                     if (zoom > 4) zoom = 4;
-                }
 
-                console.log("trackview change for ", trackobj.properties.id, cc, bearing, zoom);
-                map.flyTo({
-                    center: cc,
-                    bearing: bearing,
-                    zoom: zoom
-                        //speed: 0.2, // make the flying slow
-                        //curve: 1, // change the speed at which it zooms out
-                });
+                    map.easeTo({
+                        bearing: bearing,
+                        zoom: zoom
+                            //speed: 0.2, // make the flying slow
+                            //curve: 1, // change the speed at which it zooms out
+                    });
+                }
 
             },
 
@@ -370,10 +384,11 @@ along waypoint file loaded from url
                     var route = mba.routes.features[j],
 
                         typ = route.geometry.type,
-                        routeInfo = route.properties,
-                        legdata = routeInfo.legs,
-
                         legSet = route.geometry.coordinates,
+                        routeInfo = route.properties,
+
+                        legdata = routeInfo.legs,
+                        wpdata = routeInfo.wps,
                         cntPositionsBeforeLeg = 0; // 
 
                     if (typ == "MultiLineString") {
@@ -425,13 +440,23 @@ along waypoint file loaded from url
                             mba.popup.setLngLat(cc);
 
                             if (mba.trackview) { // lagrange mode
-                                console.log("viewing along track of", mba.trackid);
-                                /*mba.map.flyTo({
+                                let map = mba.map;
+                                map.easeTo({
                                     center: cc,
                                     bearing: trackObj.properties.bearing,
-                                    pitch: 45
-                                });*/
+                                });
                             }
+                        }
+                    } else {
+                        if (!trackObj.landed) {
+                            console.log("landed", trackObj);
+                            trackObj.landed = 1;
+                        } else if (trackObj.landed == 100) {
+                            // remove trackObj from map
+                            console.log("can be removed", trackObj);
+                            // mba.tracks.features.splice(j, 1);
+                        } else if (trackObj.landed < 100) {
+                            trackObj.landed += 1;
                         }
                     }
 
@@ -447,14 +472,13 @@ along waypoint file loaded from url
 
                 var cc = trackObj.geometry.coordinates,
                     lastPos = trackObj.properties.lastPos,
-                    legTargetPos = legInfo.to.coords,
-                    legTargetStop = legInfo.to.stopover;
+                    legTarget = legInfo.to;
 
                 // calc last steps bearing (between plane and its 'lastPosition')
                 var bearing = turf.bearing(new Track(lastPos), trackObj);
                 if (bearing < 0) bearing = bearing + 360;
 
-                var legToArrival = new Leg([cc, legTargetPos]),
+                var legToArrival = new Leg([cc, legTarget.coords]),
                     dta = turf.lineDistance(legToArrival, "kilometers");
 
                 var v = legInfo.speed;
@@ -475,8 +499,12 @@ along waypoint file loaded from url
                     trackObj.properties.bearing = 0;
                     trackObj.properties.speed = 0;
                     trackObj.properties.dta = 0;
-                    if (legTargetStop) trackObj.properties.tta = "stopover";
-                    else trackObj.properties.tta = "arrived";
+                    if (legTarget.ab) {
+                        let stop = (legTarget.dep - legTarget.arv);
+                        trackObj.properties.tta = "stopover: " + stop + " h";;
+                    } else {
+                        trackObj.properties.tta = "arrived";
+                    }
                 }
             },
 
@@ -500,17 +528,9 @@ along waypoint file loaded from url
                 // this.setupAnimationCtrls(routedata);
             },
 
-            /**
-             * { function_description }
-             *
-             * @param      {<type>}  routedata    The routedata
-             * @param      {<type>}  routelayers  The routelayers
-             */
-            applyToMap: function(map, routedata, routelayers) {
-                console.log("map, routedata, routelayers", map, routedata, routelayers);
 
-                // var jsonlayers = this.routelayers;
-                // mapboxgl.accessToken = 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw';
+            zoomToRoutes: function(routedata, routeid) {
+                if (!routedata) routedata = this.routedata;
 
                 // Collect waypoint-coordinates
                 var coordinates = [],
@@ -524,7 +544,7 @@ along waypoint file loaded from url
                     })
                 });
 
-                // 
+                // Specialcase !!
                 if (startmode) { // workaround for coords around dateline
                     center = coordinates[0];
                 } else { // create bounds around all wp-coordinates
@@ -541,7 +561,21 @@ along waypoint file loaded from url
                     padding: 20
                 });
 
-                // add json-sources and layers for required     
+            },
+
+
+            /**
+             * { function_description }
+             *
+             * @param      {<type>}  routedata    The routedata
+             * @param      {<type>}  routelayers  The routelayers
+             */
+            applyToMap: function(map, routedata, routelayers) {
+                console.log("SetRoutesToMap: map, routedata, routelayers", map, routedata, routelayers);
+                // var jsonlayers = this.routelayers;
+                // mapboxgl.accessToken = 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw';
+
+                // 1. add json-sources and layers for required     
                 var layernames = Object.keys(routelayers),
                     layerObject;
 
@@ -557,11 +591,18 @@ along waypoint file loaded from url
                     map.addLayer(layerObject['layer']);
                 });
 
+                // 2. Prepare 
                 this.popup = new mapboxgl.Popup({
                     closeButton: true,
                     closeOnClick: false
                 });
 
+                // 3. Start-Zoom & trigger animation-start if no ctrls available 
+                this.zoomToRoutes(routedata);
+                if (0) this.trackctrl = true;
+                this.counter = 1;
+
+                // 4. 
                 map.on('mousemove', function(e) {
                     // console.log(this, map, e)
                     // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
@@ -595,9 +636,6 @@ along waypoint file loaded from url
                         .addTo(map);
                 });
 
-                // trigger animation-start if no ctrls available 
-                if (0) this.trackctrl = true;
-                this.counter = 1;
             },
 
 
@@ -686,9 +724,9 @@ along waypoint file loaded from url
                         "text-anchor": "top"
                     }
                 };
+
                 return jsonlayer;
             },
-
 
             /**
              * Setup routes for animation with "requestAnimationFrame (60 fps)"
@@ -730,25 +768,40 @@ along waypoint file loaded from url
                     waypoints.forEach(function(wp, p) {
 
                         wpnext = waypoints[p + 1];
+                        legStopSec = 0;
 
                         // Calculate leg-properties
                         if (wpnext) {
                             // console.log("waypoints:" + p, wp, wpnext);
                             // Calculate the distance in kilometers between waypoints
-                            legSpeed = routeSpeed;
                             var leg = new Leg([wp.coords, wpnext.coords]),
                                 legDistance = turf.lineDistance(leg, 'kilometers');
+                            legDistance = Math.round(legDistance);
+                            // console.log("Route-" + j + ", leg to", wpnext, legDistance); 
 
-                            // console.log("Route-" + j + ", leg to", wpnext, leg); // , legPositions);
-
-                            // options to calculate a leg-specific speed between wp's
-                            if (wpnext.speed) {
+                            // options to calculate a mean leg-speed (between wp's)
+                            legSpeed = routeSpeed;
+                            if (wpnext.an && wp.ab) {
+                                let dep = mba.gTime(wp.ab, wp.coords, "h"),
+                                    arv = mba.gTime(wpnext.an, wpnext.coords, "h");
+                                legSpeed = legDistance / (arv - dep);
+                                wpnext.arv = arv;
+                            } else if (wpnext.speed) {
                                 legSpeed = wpnext.speed;
                             }
-                            if (wpnext.stopover) {
+                            legSpeed = Math.round(legSpeed);
+                            console.log("speed for ", legDistance, legSpeed);
+
+                            if (wpnext.an && wpnext.ab) {
+                                let arv = mba.gTime(wpnext.an, wpnext.coords, "h"),
+                                    dep = mba.gTime(wpnext.ab, wpnext.coords, "h");
+                                legStopSec = (dep - arv) * 3600;
+                                wpnext.arv = arv;
+                                wpnext.dep = dep;
+                            } else if (wpnext.stopover) {
                                 legStopSec = wpnext.stopover;
                             }
-
+                            if (legStopSec) console.log("STOPover at ", wpnext, legStopSec);
 
                             // Calc number of animation-steps to travel between waypoints in legTimeSec
                             // console.log("legspeed=", legSpeed);
@@ -825,7 +878,26 @@ along waypoint file loaded from url
                 };
 
                 return jsonlayer;
+            },
+
+            /**
+             */
+            gTime: function(t, lonlat, unit) {
+                // MONTH numbered from 0 .. 11
+                var t = t.replace(",", "."),
+                    a = t.split("."),
+                    tlocal = new Date(parseInt(a[0]), parseInt(a[1]) - 1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4])),
+                    tg = tlocal,
+                    tunit = tg;
+                if (unit == "h") tunit = tg / (1000 * 3600);
+                else if (unit == "s") tunit = tg / 1000;
+                else tunit = tg;
+                // console.log(a[0], a[1], a[2], a[3], a[4]);
+                // console.log(t, unit, tunit);
+                return tunit;
             }
+
+
 
         });
     </script>
