@@ -17,18 +17,65 @@
             // console.log(trackObj.properties);
             var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
 
+            if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
+
             if (trackObj.properties.bearing) trackInfo += "Bearing: " + trackObj.properties.bearing + "°<br>";
 
             if (trackObj.properties.speed) trackInfo += "Sog: " + trackObj.properties.speed + " km/h<hr>";
 
             if (trackObj.properties.dta) trackInfo += "DTA: " + trackObj.properties.dta + " km <br>";
 
-            if (trackObj.properties.tta) trackInfo += "TTL: " + trackObj.properties.tta + "<br>";
+            if (trackObj.properties.tta) trackInfo += "TTA: " + trackObj.properties.tta + "<br>";
 
-            if (trackObj.properties.stop) trackInfo += trackObj.properties.stop + "<br>";
+            if (trackObj.properties.arrived) trackInfo += trackObj.properties.arrived + "<br>";
 
             return trackInfo;
+        },
+
+        // derive comparable/calculable times
+        utcTime: function(t, lonlat, unit) {
+            // !! for parser the MONTH must be numbered 0 .. 11 !!
+            var t = t.replace(",", "."),
+                a = t.split("."),
+                tlocal = new Date(parseInt(a[0]), parseInt(a[1]) - 1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4])),
+                tg = tlocal,
+                tunit = tg;
+            if (unit == "h") tunit = tg / (1000 * 3600);
+            else if (unit == "s") tunit = tg / 1000;
+            else tunit = tg;
+            return tunit;
+        },
+
+        // Create readable time period h:min
+        deltaT: function(t, fallback) {
+            var h = Math.floor(t),
+                m = Math.round((t - h) * 60);
+            if (h > 0) h = h < 10 ? "0" + h + "h" : h + "h";
+            else h = "";
+            m = (m < 10) ? "0" + m : m;
+            return h || m ? h + m + "min" : fallback;
+        },
+
+        logTime: function(ms1970) {
+            var logtime = new Date(ms1970);
+            //  logtime = logtime.getDate() + "." + (logtime.getMonth() + 1) + ", " + logtime.getHours() + ":" + logtime.getMinutes();
+            //  console.log(ms1970, logtime);
+
+            var D = logtime.getDate(),
+                D = D < 10 ? "0" + D : D,
+                M = logtime.getMonth() + 1,
+                M = M < 10 ? "0" + M : M,
+                h = logtime.getHours(),
+                h = h < 10 ? "0" + h : h,
+                m = logtime.getMinutes(),
+                m = m < 10 ? "0" + m : m;
+
+            logtime = D + "." + M + ", " + h + ":" + m;
+            return logtime;
         }
+
+
+
     };
 
     /** @polymerBehavior */
