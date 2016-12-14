@@ -274,12 +274,12 @@ along waypoint file loaded from url
                     cancelAnimationFrame(this.requestframeref);
                 }
 
-                // 
+                // Reset 
                 if (this.counter == 0) {
                     console.log("Reset tracking objects");
                     // Set the coordinates of the original point back to origin
                     this.initTracks(this.routedata, this.trackTimer);
-                    this.setupRoutes(this.routedata, this.trackTimer, this.timescale);
+                    this.setupRoutes(this.routedata, this.trackTimer);
 
                     this.map.getSource('tracks').setData(this.tracks);
                     this.map.getSource('routes').setData(this.routes);
@@ -291,7 +291,7 @@ along waypoint file loaded from url
              */
             viewCtrl: function(trackview, trackid) {
 
-                // 
+                // No trackview if no trackObj selected
                 if (!trackid) {
                     if (this.popup) this.popup.remove;
                     this.trackview = false;
@@ -305,12 +305,11 @@ along waypoint file loaded from url
                     cc = trackobj.geometry.coordinates;
 
                 if (trackview) {
-
-                    this.trackctrl = false;
-
-                    console.log("aligning map-bearing with ", trackobj.properties.id);
+                    // this.trackctrl = false; // temporarily STOP ??
                     bearing = trackobj.properties.bearing;
+                    console.log("aligning map-bearing with ", trackobj.properties.id);
                     if (zoom < 4) zoom = 4;
+
                     map.flyTo({
                         center: cc,
                         bearing: bearing,
@@ -467,73 +466,45 @@ along waypoint file loaded from url
 
                             // C. update content and location of the trackObj's info-popup
                             if (mba.trackid == trackObj.properties.id) {
+                                // sync coordinates of trackobj
+                                mba.trackobj.geometry.coordinates = cc;
 
                                 mba.trackinfo = mba.calcTrackInfo(trackObj);
 
                                 mba.popup.setHTML(mba.trackinfo); //console.log("popup", mba.popup, trackinfo, cc);
+                                
                                 mba.popup.setLngLat(cc);
 
-                                if (mba.trackview) { // lagrange mode
+                                // in lagrange-mode the trackObj is conituously 
+                                // centered on map and aligned to bearing  
+                                if (mba.trackview) { 
                                     let map = mba.map;
                                     map.easeTo({
                                         center: cc,
                                         bearing: trackObj.properties.bearing,
                                     });
                                 }
+
+                                if (trackObj.properties.arrived) {
+                                    mba.trackview = false;
+                                } 
                             }
 
                             // D. 
                             trackObj.properties.lastPos = cc;
-
-                        } else {
-
-                            // waitcounter counts the number of animation steps after landing
-                            // to remove landed track(and route) after critical number
-                            if (!trackObj.waitcounter) {
-                                console.log("Track along route[" + routeid + "] finished!", trackObj);
-                                trackObj.waitcounter = 1;
-                            } else if (trackObj.waitcounter == 100) {
-                                // tracksFinished.push(routeid);
-                                if (trackObj.properties.id == mba.trackid) mba.popup.remove();
-
-                            } else if (trackObj.waitcounter < 100) {
-                                trackObj.waitcounter = trackObj.waitcounter + 1;
-                            }
-
                         }
+
                     } else {
 
                     }
 
                 });
 
-                /*if (tracksFinished.length) {
-
-                    console.log("REMOVE some tracker(s) and its route-feature(s)", tracksFinished);
-
-                    // var routesRemain = [], tracksRemain = [];
-
-                    mba.tracks.features.forEach(function(f) {
-                        var routeid = f.id; // ***  
-                        if (tracksFinished.indexOf(routeid) < 0) {
-                            // tracksRemain.push(f);
-                        }
-                    });
-                    mba.routes.features.forEach(function(f) {
-                        var routeid = f.properties.id; // ***
-                        if (tracksFinished.indexOf(routeid) < 0) {
-                            // routesRemain.push(f);
-                        }
-                    });
-
-                    // mba.tracks.features = tracksRemain;
-                    // mba.routes.features = routesRemain;
-                }*/
                 located = 1; // mba.tracks.features.length;
                 return located;
             },
 
-            // 
+            // Calc status-parameters at mapTime and save as properties
             calcTrackStatus: function(trackObj, legInfo, mapTime) {
                 // console.log(legInfo, trackObj);
                 trackObj.properties.time = this.logTime(mapTime * 3600 * 1000);
@@ -550,8 +521,6 @@ along waypoint file loaded from url
                     dta = turf.lineDistance(legToArrival, "kilometers");
 
                 var v = legInfo.speed;
-
-
                 if (v && Math.round(dta / 10)) {
                     // Moving 
                     // trackObj.properties.stop = 0;
@@ -598,7 +567,7 @@ along waypoint file loaded from url
 
                 if (!this.routelayers) this.routelayers = {};
                 this.routelayers['waypoints'] = this.setupWaypoints(routedata);
-                this.routelayers['routes'] = this.setupRoutes(routedata, this.trackTimer, this.timescale);
+                this.routelayers['routes'] = this.setupRoutes(routedata, this.trackTimer);
                 this.routelayers['tracks'] = this.initTracks(routedata, this.trackTimer);
                 console.log("RouteAppData Ready", this.routelayers, this.routedata);
                 // this.setupAnimationCtrls(routedata);
@@ -1062,10 +1031,11 @@ along waypoint file loaded from url
                             this.trackctrl = false;
                             this.trackview = false;
                             if (this.popup) {
-                                // this.popup.remove;
+                                console.log()
+                                this.popup.remove;
                                 this.popup
                                     .setLngLat(this.map.getCenter())
-                                    .setHTML("Stopped!")
+                                    .setHTML("Animation Stopped!")
                                     .addTo(this.map);
                             }
                         } else {
