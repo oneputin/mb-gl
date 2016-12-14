@@ -42,10 +42,9 @@ ctrl buttons controling flow of animated objects
             
             <paper-icon-button id="toggle" icon="{{_icon2}}" title="startstop" class="blue"></paper-icon-button>
             
-            <div>with speedCtrl</div>
-            <paper-slider id="fpsctrl" value="{{val}}"  min="1" max='4' step='1' pin snaps ></paper-slider>
+            <div>slomo</div>
 
-            <paper-icon-button id="viewmode" icon="{{_icon3}}" title="viewmode" class="blue"></paper-icon-button>
+            <paper-slider id="fpsctrl" value="{{val}}"  min="1" max='4' step='1' pin snaps ></paper-slider>
 
 	    </div>
 
@@ -76,16 +75,6 @@ ctrl buttons controling flow of animated objects
                     notify: true
                 },
 
-                /**
-                 * viewmode (euler, lagrange)
-                 */
-                trackview: {
-                    type: Boolean,
-                    value: false,
-                    notify: true,
-                    observer: ''
-                },
-
                 _icon1: {
                     type: String,
                     value: "ctrl:skip-previous"
@@ -93,10 +82,6 @@ ctrl buttons controling flow of animated objects
                 _icon2: {
                     type: String,
                     value: "ctrl:play-arrow"
-                },
-                _icon3: {
-                    type: String,
-                    value: "ctrl:near-me"
                 }
             },
 
@@ -106,7 +91,7 @@ ctrl buttons controling flow of animated objects
             },
 
             observers: [
-                'controlupdate(trackctrl, trackview)'
+                'controlupdate(trackctrl)'
             ],
 
             ready: function() {
@@ -115,10 +100,10 @@ ctrl buttons controling flow of animated objects
 
             changeHandler: function(v) {
                 // console.log(this.val, "::", this.fps);
-                this.fps = 15 * this.val;
+                this.fps = 60 / this.val;
             },
 
-            controlupdate: function(trackctrl, trackview) {
+            controlupdate: function(trackctrl, trackmode) {
                 // ctrls must reflect the handling options during actual status 
                 if (trackctrl) {
                     if (trackctrl == "reset") {
@@ -130,8 +115,6 @@ ctrl buttons controling flow of animated objects
                     this._icon2 = "ctrl:play-arrow";
                 }
 
-                // simple toggle 
-                this._icon3 = trackview ? "language" : "ctrl:near-me";
             },
 
             /**
@@ -140,16 +123,15 @@ ctrl buttons controling flow of animated objects
              */
             setupAnimationCtrls: function() {
 
-                this.val = 4;
+                this.val = 1;
                 this.fps = 60;
 
                 var ctrl1 = this.$.replay,
                     ctrl2 = this.$.toggle;
-                ctrl3 = this.$.viewmode;
 
                 //     
-                var slider = this.$.fps;
-                var sliderValue = this.$.slidervalue;
+                var slider = this.$.fpsctrl;
+                // var sliderValue = this.$.slidervalue;
 
                 // ReStart-Button-event
                 ctrl1.addEventListener('click', function() {
@@ -165,12 +147,6 @@ ctrl buttons controling flow of animated objects
                         this.trackctrl = true;
                     }
                 }.bind(this));
-
-                // Toggle viewMode
-                ctrl3.addEventListener('click', function() {
-                    this.trackview = !this.trackview;
-                }.bind(this));
-
 
             }
 

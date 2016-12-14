@@ -52,7 +52,7 @@ Info-area for short msges
                 /**
                  * LonLat in csv-format
                  */
-                lonlat: {
+                lnglat: {
                     type: String
                 },
 
@@ -61,7 +61,7 @@ Info-area for short msges
                  */
                 info: {
                     type: String,
-                    computed: 'formatlonlat(lonlat)'
+                    computed: 'formatlonlat(lnglat)'
                 }
 
             },
@@ -73,13 +73,21 @@ Info-area for short msges
             /**
              * toggles the 'serviceflag' and the visual signature of the target 
              */
-            formatlonlat: function(cbox, zoom) {
-                // console.log("apply formatlonlat:", cbox, zoom);
-                if (!cbox) return "";
+            formatlonlat: function(lnglat, zoom) {
+                if (!lnglat) return "";
+                if (!zoom) zoom = 5;
+                // console.log("apply formatlonlat on:", lnglat, zoom);
+
                 var prec = zoom > 10 ? 1 : 0;
-                var lon = cbox.split(",")[0],
-                    lat = cbox.split(",")[1],
-                    lonunit = lon < 0 ? " W" : " E",
+                var lon, lat;
+                if (typeof(lnglat) == "string") {
+                    lon = lnglat.split(",")[0];
+                    lat = lnglat.split(",")[1]
+                } else {
+                    lon = lnglat.lng;
+                    lat = lnglat.lat;
+                }
+                var lonunit = lon < 0 ? " W" : " E",
                     latunit = lat < 0 ? " S" : " N",
                     trafo = this.ddtodm; // ddtodms;
                 return trafo(lon, "lon") + lonunit + "  " + trafo(lat) + latunit;

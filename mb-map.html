@@ -98,7 +98,13 @@ the map-object can be ctrld from outside
                     type: Number,
                     value: 8,
                     observer: 'zoomthemap'
+                },
+
+                lnglat: {
+                    type: Object,
+                    notify: true
                 }
+
             },
 
             observers: [
@@ -169,6 +175,10 @@ the map-object can be ctrld from outside
                         let z = map.getZoom();
                         that.zoom = z;
                         // console.log(cb,bb,that.cbox,that.bbox);
+                    });
+
+                    map.on('mousemove', function(e) {
+                        that.lnglat = e.lngLat;
                     });
 
                     //if zoom is NOT communicated to app via map-object : 

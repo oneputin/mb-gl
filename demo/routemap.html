@@ -11,9 +11,15 @@
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
 
+    <link rel="import" href="../../paper-item/paper-item.html">
+    <link rel="import" href="../../paper-listbox/paper-listbox.html">
+    <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-routes.html">
     <link rel="import" href="../mb-routes-ctrl.html">
+    <link rel="import" href="../mb-routes-ctrl-mode.html">
+    <link rel="import" href="../mb-info.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
@@ -30,13 +36,17 @@
         .flexchild {
             @apply(--layout-flex);
         }
+        
+        paper-dropdown-menu {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+        }
     </style>
 
 </head>
 
 <body>
-
-    <h1>element-demo: mb-routes</h1>
 
     <template is="dom-bind" id="app">
         
@@ -47,6 +57,7 @@
                 map="{{map}}"
                 cbox="{{cbox}}"
                 zoom="{{zoom}}"
+                lnglat="{{lnglat}}"
                 mapctrl="[[mapctrl]]">
             </mb-map>
 
@@ -54,17 +65,33 @@
                 map="[[map]]" 
                 url="[[url]]"
                 fps="[[fps]]"
+                timescale="[[timescale]]"
                 trackctrl="{{trackctrl}}"
-                trackview="[[trackview]]"
+                trackmode="{{trackmode}}"
                 trackobj = "{{trackobj}}"
                 trackinfo="[[trackinfo]]">
             </mb-routes>                
 
             <mb-routes-ctrl
                 trackctrl="{{trackctrl}}"
-                trackview="{{trackview}}"
                 fps="{{fps}}">
             </mb-routes-ctrl>    
+
+            <mb-routes-ctrl-mode
+                trackmode="{{trackmode}}">
+            </mb-routes-ctrl-mode>    
+
+            <paper-dropdown-menu label="Flightplans">
+                <paper-listbox class="dropdown-content" on-iron-select="selectedurl" attr-for-selected="value">
+                    <paper-item value="wps-test">Testset</paper-item>
+                    <paper-item value="wps-europe">Europe</paper-item>
+                    <paper-item value="wps-transatlantic">Transatlantic</paper-item>
+                </paper-listbox>
+            </paper-dropdown-menu>
+
+            <mb-info 
+                lnglat="[[lnglat]]">
+            </mb-info>
 
             <!--<mb-routes-info
                 trackobj = "[[trackobj]]"
@@ -77,12 +104,18 @@
 
     <script>
         var app = document.querySelector('#app');
-        app.url = "wp-data/wps-viewing.json";
+        app.url = "wp-data/wps-test.json";
 
         app.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
         app.cbox = "13.7,52.4";
+        app.lnglat = "13.7,52.4";
         app.zoom = 1;
         app.mapctrl = {};
+        app.selectedurl = function(e) {
+            var v = e.detail.item.attributes[0].value;
+            this.url = "wp-data/" + v + ".json";
+            console.log("selected value", v, this.url);
+        }
     </script>
 </body>
 

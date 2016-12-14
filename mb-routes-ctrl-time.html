@@ -1,0 +1,129 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-slider/paper-slider.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="icons-svg.html">
+
+<!--
+`mb-routes-ctrl`
+ctrl buttons controling flow of animated objects
+
+@demo demo/routemap.html 
+-->
+
+<dom-module id="mb-routes-ctrl">
+
+    <template>
+    
+    	<style type="text/css">
+	        .ctrlbox {
+	            position: absolute;
+	            bottom: 10px;
+	            left: 10px;
+                @apply(--layout-vertical);
+                @apply(--layout-center);
+	        }
+            
+            paper-icon-button.blue {
+                --paper-icon-button-ink-color: var(--paper-orange-500);
+                background-color: var(--paper-light-blue-500);
+                color: white;
+                border-radius: 3px;
+                padding: 2px;
+                margin: 5px; 
+            }
+
+    	</style>
+	
+		<div class="ctrlbox"> 
+            
+            <div>TimeScale</div>
+            <paper-slider id="scalectrl" value="{{scaleval}}"  min="1" max='4' step='1' pin snaps ></paper-slider>
+
+            <div>slomo</div>
+            <paper-slider id="fpsctrl" value="{{fpsval}}"  min="1" max='4' step='1' pin snaps ></paper-slider>
+
+	    </div>
+
+    </template>
+
+    <script>
+        // on-change="fpsChange"
+        Polymer({
+            is: 'mb-routes-ctrl',
+
+            properties: {
+
+                /**
+                 * Animation frequency
+                 */
+                fps: {
+                    type: Number,
+                    value: 60,
+                    notify: true
+                },
+
+                /**
+                 * Animation TimeScale
+                 */
+                timescale: {
+                    type: Number,
+                    value: 60,
+                    notify: true
+                },
+
+
+            },
+
+            // 'fpsChange': 'fpsChangeHandler',
+            listeners: {
+                'fpschange': 'fpsChangeHandler',
+                'scalechange': 'scaleChangeHandler'
+            },
+
+            observers: [
+                'controlupdate(trackctrl)'
+            ],
+
+            ready: function() {
+                this.setupTimeCtrls();
+            },
+
+            // 
+            fpsChangeHandler: function(v) {
+                // console.log(this.val, "::", this.fps);
+                this.fps = 15 * this.fpsval;
+            },
+
+            scaleChangeHandler: function(v) {
+                // console.log(this.val, "::", this.fps);
+                this.timescale = 60 * this.scaleval;
+            },
+
+            /**
+             * Setup the Ctrl-actions (start/stop, restart, fps-slider) 
+             *
+             */
+            setupTimeCtrls: function() {
+
+                this.fpsval = 4;
+                this.fps = 60;
+
+                this.scaleval = 5;
+                this.timescale = 300;
+
+                //     
+                var fpsSlider = this.$.fpsctrl,
+                    scaleSlider = this.$.scalectrl;
+                var fpsValue = this.$.fpsvalue,
+                    fpsValue = this.$.scalevalue;
+
+            }
+
+        });
+    </script>
+
+</dom-module>
+
+</dom-module>

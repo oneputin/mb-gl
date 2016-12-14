@@ -1,0 +1,111 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-slider/paper-slider.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="icons-svg.html">
+
+<!--
+`mb-routes-ctrl`
+ctrl buttons controling flow of animated objects
+
+@demo demo/routemap.html 
+-->
+
+<dom-module id="mb-routes-ctrl-mode">
+
+    <template>
+    
+    	<style type="text/css">
+	        .ctrlbox {
+	            position: absolute;
+	            bottom: 10px;
+	            right: 10px;
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+	        }
+            
+            paper-icon-button.green {
+                --paper-icon-button-ink-color: var(--paper-orange-500);
+                background-color: var(--paper-light-green-500);
+                color: white;
+                border-radius: 3px;
+                padding: 2px;
+                margin: 5px; 
+            }
+
+    	</style>
+	
+		<div class="ctrlbox"> 
+
+            <paper-icon-button id="trackmode" icon="{{_icon3}}" title="trackmode" class="green"></paper-icon-button>
+
+	    </div>
+
+    </template>
+
+    <script>
+        // on-change="fpsChange"
+        Polymer({
+            is: 'mb-routes-ctrl-mode',
+
+            properties: {
+
+                /**
+                 * Animation frequency
+                 */
+                fps: {
+                    type: Number,
+                    value: 60,
+                    notify: true
+                },
+
+                /**
+                 * trackmode (euler, lagrange)
+                 */
+                trackmode: {
+                    type: Boolean,
+                    value: false,
+                    notify: true,
+                    observer: 'controlupdate'
+                },
+
+                _icon3: {
+                    type: String,
+                    value: "ctrl:near-me"
+                }
+            },
+
+            observers: [],
+
+            ready: function() {
+                this.setupCtrls();
+            },
+
+            controlupdate: function(trackmode) {
+                console.log("toggle ctrl for trackmode", trackmode);
+                // icon must reflect the action to trigger with next click 
+                this._icon3 = trackmode ? "language" : "ctrl:near-me";
+            },
+
+            /**
+             * Setup the Ctrl-actions (map-) 
+             *
+             */
+            setupCtrls: function() {
+
+                var ctrl3 = this.$.trackmode;
+
+                // Toggle trackmode
+                ctrl3.addEventListener('click', function() {
+                    this.trackmode = !this.trackmode;
+                }.bind(this));
+
+            }
+
+        });
+    </script>
+
+</dom-module>
+
+</dom-module>
