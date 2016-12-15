@@ -1,0 +1,13 @@
+[{
+        "title": "Devdata",
+        "url": "wp-data/wps-test.json"
+    },
+    {
+        "title": "Europe",
+        "url": "wp-data/wps-europe.json"
+    },
+    {
+        "title": "Transatlantic",
+        "url": "wp-data/wps-transatlantic.json"
+    }
+]

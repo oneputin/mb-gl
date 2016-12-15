@@ -49,7 +49,14 @@
 <body>
 
     <template is="dom-bind" id="app">
-        
+
+        <iron-ajax
+            auto
+            url="[[setupurl]]"
+            handle-as="json"
+            on-response="setupme">
+        </iron-ajax>
+    
         <div class="container flex-horizontal">
         
             <mb-map 
@@ -81,30 +88,30 @@
                 trackmode="{{trackmode}}">
             </mb-routes-ctrl-mode>    
 
-            <paper-dropdown-menu label="Flightplans">
-                <paper-listbox class="dropdown-content" on-iron-select="selectedurl" attr-for-selected="value">
-                    <paper-item value="wps-test">Testset</paper-item>
-                    <paper-item value="wps-europe">Europe</paper-item>
-                    <paper-item value="wps-transatlantic">Transatlantic</paper-item>
-                </paper-listbox>
-            </paper-dropdown-menu>
+            <paper-dropdown-menu label="Flight sets">
+                <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+                    <template is="dom-repeat" items="{{wpdocs}}">
+                        <paper-item url="{{item.url}}">{{item.title}}</paper-item>
+                    </template>
+    </paper-listbox>
+    </paper-dropdown-menu>
 
-            <mb-info 
-                lnglat="[[lnglat]]">
-            </mb-info>
+    <mb-info lnglat="[[lnglat]]">
+    </mb-info>
 
-            <!--<mb-routes-info
+    <!--<mb-routes-info
                 trackobj = "[[trackobj]]"
                 trackinfo="{{trackinfo}}">
-            </mb-routes-info>-->    
+            </mb-routes-info>-->
 
-        </div>
+    </div>
 
     </template>
 
     <script>
         var app = document.querySelector('#app');
-        app.url = "wp-data/wps-test.json";
+        app.setupurl = "routemap.json";
+        app.url = "";
 
         app.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
         app.cbox = "13.7,52.4";
@@ -112,9 +119,13 @@
         app.zoom = 1;
         app.mapctrl = {};
         app.selectedurl = function(e) {
-            var v = e.detail.item.attributes[0].value;
-            this.url = "wp-data/" + v + ".json";
-            console.log("selected value", v, this.url);
+            // after selection in paper-listbox
+            this.url = e.detail.item.url;
+        }
+        app.setupme = function(ajaxresponse) {
+            // iron-ajax response
+            this.wpdocs = ajaxresponse.detail.response;
+            // console.log("setupdata", this.wpdocs);
         }
     </script>
 </body>

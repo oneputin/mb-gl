@@ -160,10 +160,10 @@ the map-object can be ctrld from outside
                     var von, bis, dist;
 
                     map.on('movestart', function() {
-                        // 
                         // this.start = map.getCenter();
                     });
 
+                    // inform about map-center after move 
                     map.on('moveend', function() {
 
                         let cb = map.getCenter(),
@@ -177,6 +177,7 @@ the map-object can be ctrld from outside
                         // console.log(cb,bb,that.cbox,that.bbox);
                     });
 
+                    // inform about mouse-coordinates
                     map.on('mousemove', function(e) {
                         that.lnglat = e.lngLat;
                     });

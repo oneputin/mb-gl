@@ -140,30 +140,43 @@ along waypoint file loaded from url
 
             properties: {
 
+                /**
+                 * Mapbox-js map to place routes on 
+                 */
                 map: {
                     type: Object
                 },
+                /**
+                 * Basic Info-popup 
+                 */
                 popup: {
                     type: Object
                 },
 
                 /**
-                 * Url to source of routed waypoints
+                 * Url to source of trackable routes/waypoints
                  */
                 url: {
                     type: String
                 },
 
+                /**
+                 * AnimationCtrlFlag
+                 */
                 trackctrl: {
                     type: Boolean,
                     notify: true
                 },
 
+                /**
+                 * Toggles TrackingMap/NorthMap 
+                 */
                 trackmode: {
                     type: Boolean,
                     value: false,
                     notify: true
                 },
+
 
                 trackid: {
                     type: String,
@@ -224,7 +237,7 @@ along waypoint file loaded from url
             ],
 
             observers: [
-                'dataToMap(map, routelayers, routedata)',
+                'dataToMap(map, routelayers.*, routedata)',
                 'ctrlTrackmove(trackctrl)',
                 'ctrlTrackmode(trackmode, trackid, map)'
             ],
@@ -250,12 +263,12 @@ along waypoint file loaded from url
             dataToApp: function(ajaxresponse) {
 
                 var routedata = ajaxresponse.detail.response;
+                if (!routedata) return;
+                console.log("routedata", routedata);
 
                 this.counter = 0;
-
                 this.routedata = routedata;
                 this.trackTimer = this.setupTrackTimer(routedata);
-                // return;
                 if (!this.routelayers) this.routelayers = {};
                 this.routelayers['waypoints'] = this.setupTrackWaypoints(routedata);
                 this.routelayers['routes'] = this.setupTrackRoutes(routedata, this.trackTimer);
@@ -272,16 +285,19 @@ along waypoint file loaded from url
              * @param      {object}  map           The map to show routetracker
              */
             dataToMap: function(map, layerObjects, routedata) {
-                console.log("SetRoutesToMap: layerObjects, routedata, ", layerObjects, routedata);
+                if (layerObjects.path == 'routelayers') layerObjects = layerObjects.value;
+                console.log("Set Routes To Map: layerObjects, routedata, ", layerObjects, routedata);
 
-                // 1. add json-based layers (sources and layers)     
-                var layerObject, layerData, layerSourec, layer,
-                    layernames = Object.keys(layerObjects);
+                var layerObject, layerData, layerSourec, layer;
 
+                // 1. Create/Refresh json-based layers (sources and layers)
+                //    (of tracking-layers)     
+                var layernames = Object.keys(layerObjects);
                 layernames.forEach(function(lname, j) {
                     layerObject = layerObjects[lname];
                     layerData = layerObject['data'];
-                    // A. 
+
+                    // 1.A. (Re)Set datasources
                     layerSource = map.getSource(lname);
                     if (!layerSource) {
                         map.addSource(lname, {
@@ -292,18 +308,20 @@ along waypoint file loaded from url
                         layerSource.setData(layerData);
                     }
 
-                    // B. 
+                    // 1.B. Create layers 
                     if (!map.getLayer(lname)) {
                         map.addLayer(layerObject['layer']);
                     }
                 });
 
 
-                // 2. Prepare Info-Popup
-                this.popup = new mapboxgl.Popup({
-                    closeButton: true,
-                    closeOnClick: false
-                });
+                // 2. Prepare a "" Info-Popup
+                if (!this.popup) {
+                    this.popup = new mapboxgl.Popup({
+                        closeButton: true,
+                        closeOnClick: false
+                    });
+                }
 
                 // 3. Start-Zoom & trigger animation-start if no ctrls available 
                 this.trackRoutesZoomTo(routedata);
@@ -311,12 +329,15 @@ along waypoint file loaded from url
 
                 this.counter = 1;
 
-                // 4. 
+                // 4. Query track-features in "mouseover" and show info-popup 
                 map.on('mousemove', function(e) {
                     // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
-                    var features = map.queryRenderedFeatures(e.point, {
-                        layers: ['tracks']
-                    });
+                    var features = [];
+                    if (map.getLayer('tracks')) {
+                        features = map.queryRenderedFeatures(e.point, {
+                            layers: ['tracks']
+                        });
+                    }
 
                     if (!features || !features.length) {
                         // strategy 1: 
@@ -343,6 +364,7 @@ along waypoint file loaded from url
                         .setLngLat(mba.trackobj.geometry.coordinates)
                         .setHTML(mba.trackinfo)
                         .addTo(map);
+
                 });
 
                 // Update visible tracking content at different times  
@@ -1043,10 +1065,11 @@ along waypoint file loaded from url
                     if (!trackObjs.length) {
                         mba.trackctrl = false;
                         mba.trackmode = false;
-                        flag = "LAST " + flag;
-                        console.log(flag, evtTime, "All trackObjects removed");
+                        // flag = flag;
+                        console.log(flag, evtTime, "No trackObjects active now");
 
                     } else {
+
                         var routeids = [],
                             routeid;
                         trackObjs.forEach(function(to) {
