@@ -201,6 +201,7 @@ along waypoint file loaded from url
                     type: Number
                 },
 
+                //
                 requestframeref: {
                     type: String,
                     value: '1'
@@ -217,7 +218,7 @@ along waypoint file loaded from url
                  */
                 timescale: {
                     type: Number,
-                    value: 1080 // 720 // 360 //
+                    value: 1080
                 },
                 /**
                  * { item_description }
@@ -226,6 +227,7 @@ along waypoint file loaded from url
                     type: Object
                 },
 
+                // 
                 routelayers: {
                     type: Object
                 },
@@ -237,6 +239,7 @@ along waypoint file loaded from url
             ],
 
             observers: [
+                'setupTracking(routedata, timescale)',
                 'dataToMap(map, routelayers.*, routedata)',
                 'ctrlTrackmove(trackctrl)',
                 'ctrlTrackmode(trackmode, trackid, map)'
@@ -264,17 +267,24 @@ along waypoint file loaded from url
 
                 var routedata = ajaxresponse.detail.response;
                 if (!routedata) return;
-                console.log("routedata", routedata);
+                this.routedata = routedata; // triggers 'setupTracking'
+            },
+
+            setupTracking: function(routedata, timescale) {
+                console.log("ORIGINAL routedata:", routedata, " with timescale=" + timescale);
 
                 this.counter = 0;
-                this.routedata = routedata;
-                this.trackTimer = this.setupTrackTimer(routedata);
-                if (!this.routelayers) this.routelayers = {};
-                this.routelayers['waypoints'] = this.setupTrackWaypoints(routedata);
-                this.routelayers['routes'] = this.setupTrackRoutes(routedata, this.trackTimer);
-                this.routelayers['tracks'] = this.setupTrackObjects(routedata, this.trackTimer);
-                console.log("RouteAppData Ready", this.routelayers, this.routedata);
-                // this.setupAnimationCtrls(routedata);
+                this.trackTimer = this.setupTrackTimer(routedata, this.timescale);
+
+                var routelayers = {};
+                routelayers['waypoints'] = this.setupTrackWaypoints(routedata);
+                routelayers['routes'] = this.setupTrackRoutes(routedata, this.trackTimer);
+                routelayers['tracks'] = this.setupTrackObjects(routedata, this.trackTimer);
+                // console.log("RouteAppData Ready", this.routelayers, this.routedata);
+
+                // Double assignment to trigger multi-parameter observer 
+                this.routelayers = {};
+                this.routelayers = routelayers; // triggers "dataToMap""
             },
 
             /**
@@ -286,7 +296,7 @@ along waypoint file loaded from url
              */
             dataToMap: function(map, layerObjects, routedata) {
                 if (layerObjects.path == 'routelayers') layerObjects = layerObjects.value;
-                console.log("Set Routes To Map: layerObjects, routedata, ", layerObjects, routedata);
+                // console.log("Set Routes To Map: layerObjects, routedata, ", layerObjects, routedata);
 
                 var layerObject, layerData, layerSourec, layer;
 
@@ -368,10 +378,9 @@ along waypoint file loaded from url
                 });
 
                 // Update visible tracking content at different times  
-                mba.trackMapFilter(mba.trackTimer["start"], "FIRST START");
+                mba.syncTrackFilter(mba.trackTimer["start"], "FIRST START");
 
-                console.log("dataToMap OK!");
-
+                // console.log("dataToMap OK!");
             },
 
             // B. TrackCtrls
@@ -385,6 +394,7 @@ along waypoint file loaded from url
                 // console.log("trackctrl", trackctrl)
 
                 if (trackctrl) {
+
                     if (trackctrl == "reset") {
                         this.trackctrl = false; // triggers this function again 
                         this.trackmode = false;
@@ -395,13 +405,16 @@ along waypoint file loaded from url
                         this.requestframeref = requestAnimationFrame(this.trackStepContainer);
                         // this.trackctrl = false; // triggers this function again 
                     }
+
                 } else {
 
-                    var trackObjs = [];
-                    if (this.map) trackObjs = this.map.queryRenderedFeatures({
-                        layers: ['tracks']
-                    });
-                    console.log("STOPPED animation at counter=" + this.counter + " with ", trackObjs);
+                    if (this.counter) {
+                        var trackObjs = [];
+                        if (this.map) trackObjs = this.map.queryRenderedFeatures({
+                            layers: ['tracks']
+                        });
+                        console.log("STOPPED animation at counter=" + this.counter + " with ", trackObjs);
+                    }
                     cancelAnimationFrame(this.requestframeref);
                 }
 
@@ -432,7 +445,8 @@ along waypoint file loaded from url
                     return;
                 }
 
-                var zoom = Math.round(map.getZoom());
+                var zoom = map.getZoom();
+                // zoom = Math.round(zoom); // may cause irritation
 
                 if (trackmode) {
                     // this.trackctrl = false; // temporarily STOP ??
@@ -440,9 +454,9 @@ along waypoint file loaded from url
                         cc = trackobj.geometry.coordinates;
 
                     bearing = trackobj.properties.bearing;
-                    console.log("aligning map-bearing with ", trackobj.properties.id);
-                    if (zoom < 4) zoom = 4;
+                    console.log("Aligning map with bearing of", trackobj.properties.id);
 
+                    if (zoom < 4) zoom = 4;
                     map.flyTo({
                         center: cc,
                         bearing: bearing,
@@ -471,6 +485,12 @@ along waypoint file loaded from url
              */
             trackStepContainer: function() {
 
+                if (!mba.trackTimer) {
+                    mba.trackMapInfo("OOPS. trackTimer n.a.");
+                    return;
+                }
+                // console.log("trackStepContainer", mba.tracks);
+
                 // A. Animation ACTION 
                 // Calculate track geometries at new positions 
                 // based on counter denoting the index to access the route-position.
@@ -481,7 +501,13 @@ along waypoint file loaded from url
                 // B. Transfer to map 
 
                 if (!located) {
-                    mba.trackMapInfo("IDLE: " + mba.logTime(mapTime * 3600 * 1000));
+                    var msg, s = mba.getNextStart(mapTime);
+                    if (s) {
+                        msg = "NextStart at:" + mba.logTime(s * 3600 * 1000);
+                    } else {
+                        msg = "IDLE: " + mba.logTime(mapTime * 3600 * 1000);
+                    }
+                    mba.trackMapInfo(msg);
                 } else {
                     mba.map.getSource('tracks').setData(mba.tracks);
                 }
@@ -511,7 +537,7 @@ along waypoint file loaded from url
              */
             trackStepAction: function(counter, mapTime) {
                 // Function ctrls 
-                // - the visibility (using trackMapFilter)  and  
+                // - the visibility (using syncTrackFilter)  and  
                 // - location of trackObjects 
                 // at mapTime related to counter                
                 if (!mapTime) mapTime = (mba.trackTimer["start"]) + (counter * mba.frameTime / 3600);
@@ -529,15 +555,15 @@ along waypoint file loaded from url
 
                     var routeProps = route.properties,
                         routeid = routeProps.id,
-                        legStartCounter = routeProps.startCounter; // 0; // 
-                    // trackStart = routeProps.start; // mba.trackTimer[routeid]["start"];
+                        legStartCounter = routeProps.startCounter;
 
+                    // console.log(mapTime, routeprops);
                     if (mapTime > routeProps.stop) {
 
                         if (legStartCounter != null) { // must be valid for 0 too
                             routeProps.startCounter = null;
                             // console.log("STOP track on route:" + routeid, counter, mapTime, routeProps);
-                            mba.trackMapFilter(mapTime, "STOP:" + routeid);
+                            mba.syncTrackFilter(mapTime, "STOP:" + routeid);
                         }
 
                     } else if (mapTime >= routeProps.start) {
@@ -546,7 +572,7 @@ along waypoint file loaded from url
                             legStartCounter = counter - 1;
                             routeProps.startCounter = legStartCounter;
                             // console.log("START track on route:" + routeid, legStartCounter, counter, mapTime, routeProps);
-                            mba.trackMapFilter(mapTime, "START:" + routeid);
+                            mba.syncTrackFilter(mapTime, "START:" + routeid);
                         }
 
                         var typ = route.geometry.type,
@@ -691,7 +717,7 @@ along waypoint file loaded from url
                 var fpsmax = 60; // Animationszeit 1s=360s=6min, 10s=1h Echtzeit 
 
                 this.frameTime = timeScale / fpsmax; // Bsp: frameTime: 6 s fuer scale = 360 und fps=60 !!
-                console.log("timeScale,frameTime", timeScale, this.frameTime);
+                // console.log("timeScale=" + timeScale, ", frameTime=" + this.frameTime + "sec");
 
                 var start, trackTimer = {};
 
@@ -720,18 +746,21 @@ along waypoint file loaded from url
                     if (!start || (routestart < start)) start = routestart;
                 }.bind(this));
 
-                var routeStarts = [];
-                for (var id in trackTimer)
-                    routeStarts.push([id, trackTimer[id]["start"]]);
-
-                routeStarts.sort(function(a, b) {
-                    return a[1] - b[1]
-                })
+                // 
+                var routeStarts = {},
+                    startTimes = [];
+                for (let id in trackTimer) {
+                    let t = trackTimer[id]["start"];
+                    if (!startTimes.length || (startTimes[0] <= t)) startTimes.push(t);
+                    else startTimes.splice(0, 0, t);
+                }
 
                 trackTimer["start"] = start;
-                trackTimer["sorted"] = routeStarts;
+                trackTimer["startList"] = startTimes;
+                trackTimer["timeScale"] = timeScale;
+                trackTimer["frameTime"] = this.frameTime;
 
-                console.log("trackTimer collected", start, trackTimer);
+                console.log("APPLIED trackTimer:", trackTimer);
 
                 return trackTimer;
             },
@@ -755,7 +784,7 @@ along waypoint file loaded from url
                         allwaypoints.features.push(new Waypoint(wp.coords, wp.id, route.id));
                     });
                 });
-                console.log("all waypoints collected", allwaypoints.features);
+                // console.log("all waypoints collected", allwaypoints.features);
 
                 // 
                 var wpLayer = {};
@@ -823,7 +852,7 @@ along waypoint file loaded from url
                         "icon-rotate": 90,
                         //"icon-image": "{icon}-15",
                         //"icon-rotate": "{bearing}",  
-                        "text-field": "{title}",
+                        "text-field": "{routeid}",
                         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
                         "text-size": 12,
                         "text-offset": [0, 0.6],
@@ -871,22 +900,7 @@ along waypoint file loaded from url
                 return routeLayer;
             },
 
-            // E. Additional Functions
-
-            // 
-            trackFeaturesInit: function() {
-                this.routes = {
-                    "type": "FeatureCollection"
-                };
-                this.waypoints = {
-                    "type": "FeatureCollection"
-                };
-                this.tracks = {
-                    "type": "FeatureCollection"
-                };
-            },
-
-            // 
+            //  
             trackRouteCreate: function(data, trackTimer, frameTime) {
                 // Initialize 
                 var demoSpeed = 900;
@@ -913,9 +927,8 @@ along waypoint file loaded from url
 
                 waypoints.forEach(function(wp, p) {
 
-                    wpnext = waypoints[p + 1];
                     legStopSec = 0;
-
+                    wpnext = waypoints[p + 1];
                     // Calculate leg-properties
                     if (wpnext) {
                         // console.log("waypoints:" + p, wp, wpnext);
@@ -925,7 +938,7 @@ along waypoint file loaded from url
                         legDistance = Math.round(legDistance);
                         // console.log("Route-" + j + ", leg to", wpnext, legDistance); 
 
-                        // options to calculate a mean leg-speed (between wp's)
+                        // Calculate a mean leg-speed between wp's with ab/an times
                         legSpeed = routeSpeed;
                         if (wpnext.an && wp.ab) {
                             let dep = mba.utcTime(wp.ab, wp.coords, "h"),
@@ -938,6 +951,7 @@ along waypoint file loaded from url
                         legSpeed = Math.round(legSpeed);
                         // console.log("leg-speed for dx=", legDistance, legSpeed);
 
+                        // Calculate arv and dep at "stopover"
                         if (wpnext.an && wpnext.ab) {
                             let arv = mba.utcTime(wpnext.an, wpnext.coords, "h"),
                                 dep = mba.utcTime(wpnext.ab, wpnext.coords, "h");
@@ -948,8 +962,9 @@ along waypoint file loaded from url
                             legStopSec = wpnext.stopover;
                         }
 
-                        // Calc number of animation-steps to travel between waypoints in legTimeSec
-                        // console.log("legspeed=", legSpeed);
+                        // 3. Calc leg-animation 
+
+                        // Time and number of animation-steps to travel between waypoints in legTimeSec
                         legTimeSec = legDistance / legSpeed * 3600;
                         legStepCount = Math.round(legTimeSec / frameTime);
 
@@ -980,36 +995,53 @@ along waypoint file loaded from url
                             legPositions.push(position.geometry.coordinates);
                         }
 
+                        // 4. Calc stopover-animation 
+
                         if (legStopSec) {
                             // console.log("INSERT STOPover at ", wpnext, legStopSec);
-
                             // INSERT some "zero-steps" at stopover waypoint 
                             h = Math.floor(legStopSec / 3600);
                             m = Math.round((legStopSec - (h * 3600)) / 60);
                             legInfo.stopTime = h + "h" + m + "min";
-
                             var n = Math.round(legStopSec / frameTime);
                             legInfo.stopSteps = n;
-
-                            // append "stop-coordinates" to the leg 
+                            // append the "stop-coordinates" to the leg 
                             for (let i = 0; i < n; i++) {
                                 legPositions.push(legPositions[legPositions.length - 1]);
                             }
-
                         }
 
+                        // 4. Compile leg-data in route-collections of legs  
                         legdata.push(legInfo);
                         legs.push(legPositions);
                     }
+
                 });
 
-                // Add next route-object consisting of some legs
+                // Create route-object consisting of 1-n legs
                 var r = new Route(routeid, props, legs, legdata, waypoints);
 
                 return r;
-            }, // console.log("routes", routes);
+            },
+
+
+
+            // E. Additional Functions
 
             // 
+            trackFeaturesInit: function() {
+                this.routes = {
+                    "type": "FeatureCollection"
+                };
+                this.waypoints = {
+                    "type": "FeatureCollection"
+                };
+                this.tracks = {
+                    "type": "FeatureCollection"
+                };
+            },
+
+            // Zoom to all bbox of all waypoints
             trackRoutesZoomTo: function(routedata, routeid) {
                 if (!routedata) routedata = this.routedata;
 
@@ -1043,9 +1075,20 @@ along waypoint file loaded from url
                 });
             },
 
-            // Update visible tracking content at different times  
-            trackMapFilter: function(mapTime, flag) {
+            // Sync map-layers with TrackObjects "visible" at "mapTime"
+            syncTrackFilter: function(mapTime, flag) {
+
+                // apply startfilter "immediately"
+                // but stopfilter "after some delay"
+                // to let user observe arrived objects for 2 more seconds before removing the tracker and related features 
+                var stopDelay = 200;
+
                 // show trackObjects(and it's routes) only as long as they are tracked 
+                if (!map.getLayer("tracks")) {
+                    mba.trackMapInfo("<b>Nothing to track</b>" + " at " + evtTime);
+                    return;
+                }
+
                 var startstopfilter = [
                     'all', ['<=', 'start', mapTime],
                     ['>=', 'stop', mapTime]
@@ -1054,45 +1097,54 @@ along waypoint file loaded from url
                 var evtTime = this.logTime(mapTime * 3600 * 1000);
 
                 function applyFilters() {
+                    // PRIMARY FILTER of trackObjects  
+                    // on MAP 
+                    mba.map.setFilter('tracks', startstopfilter);
+                    // on DATA
+                    var trackObjs = this.map.querySourceFeatures("tracks", {
+                        filter: startstopfilter
+                    });
 
-                    //mba.map.setFilter('routes', startstopfilter);
-                    var trackObjs = mba.map
-                        .setFilter('tracks', startstopfilter)
-                        .queryRenderedFeatures({
-                            layers: ['tracks']
-                        });
+                    // Use SECONDARY FILTER 
+                    // to Sync the MAP-filters for "related" layers (routes waypoints)  
+                    if (!trackObjs.length) { // CHECK for STOP
+                        if (!mba.getNextStart(mapTime)) {
+                            mba.trackctrl = false;
+                            mba.trackmode = false;
+                            console.log(flag, evtTime, "No more starts");
+                            mba.map.setFilter('routes', null);
+                            mba.map.setFilter('waypoints', null);
+                        }
+                    } else { // APPLY 
 
-                    if (!trackObjs.length) {
-                        mba.trackctrl = false;
-                        mba.trackmode = false;
-                        // flag = flag;
-                        console.log(flag, evtTime, "No trackObjects active now");
-
-                    } else {
-
-                        var routeids = [],
+                        var trackids = [],
+                            routeids = [],
                             routeid;
+
+                        // collect ROUTES of all actually "visible" trackObjs    
                         trackObjs.forEach(function(to) {
                             routeid = to.properties.routeid;
-                            if (routeid) routeids.push(routeid);
-                        })
-                        var ids = routeids.filter(function(item, pos, self) {
+                            if (routeid) trackids.push(routeid);
+                        });
+                        // remove duplicates
+                        routeids = trackids.filter(function(item, pos, self) {
                             return self.indexOf(item) == pos;
                         })
-                        if (ids.length) {
+
+                        // Filter  related mapFeatures on MAP 
+                        if (routeids.length) {
+                            // BUILD secondary filter
                             var routeFilter = ["in", "routeid"]
-                            ids.forEach(function(id) {
+                            routeids.forEach(function(id) {
                                 routeFilter.push(id);
-                            })
-                            console.log("apply routeFilter", routeFilter);
+                            });
+                            console.log("Refreshed SecondaryFilter", routeFilter);
                             mba.map.setFilter('routes', routeFilter);
                             mba.map.setFilter('waypoints', routeFilter);
-                        }
-                        console.log(flag, evtTime, trackObjs);
+                        } // console.log(flag, evtTime, trackObjs);
                     }
 
                     mba.trackMapInfo("<b>" + flag + "</b>" + " at " + evtTime);
-
                 };
 
                 if (flag.indexOf("STOP") < 0) {
@@ -1100,15 +1152,28 @@ along waypoint file loaded from url
                     applyFilters();
 
                 } else {
-                    // let user observe arrived object for 2 more seconds 
-                    // before removing the tracker 
+
                     setTimeout(function() {
                         applyFilters();
-                    }, 2000);
+                    }, stopDelay);
                 }
 
             },
 
+            // Check if more starts 
+            getNextStart: function(mapTime) {
+                var starts = mba.trackTimer.startList,
+                    nextStart;
+                starts.some(function(start) {
+                    if (mapTime < start) {
+                        nextStart = start;
+                        return false;
+                    }
+                }); //console.log(mapTime, "nextStart=" + nextStart, starts);
+                return nextStart;
+            },
+
+            // Refresh the appInfo at map-center 
             trackMapInfo: function(html) {
                 if (mba && mba.popup) { //  console.log("check popup", mba.popup)
                     mba.popup.remove;
@@ -1118,7 +1183,6 @@ along waypoint file loaded from url
                         .addTo(mba.map);
                 }
             }
-
 
         });
     </script>

@@ -15,7 +15,7 @@
         // for plane-tracks 
         calcTrackInfo: function(trackObj) {
             // console.log(trackObj.properties);
-            var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
+            var trackInfo = "<b>" + trackObj.properties.title + "</b>" + "<br>";
 
             if (trackObj.properties.dta) trackInfo += "DTA: " + trackObj.properties.dta + " km <br>";
 
@@ -27,7 +27,7 @@
 
             if (trackObj.properties.arrived) trackInfo += trackObj.properties.arrived + "<br>";
 
-            if (trackObj.properties.time) trackInfo += trackObj.properties.time ;
+            if (trackObj.properties.time) trackInfo += trackObj.properties.time;
 
             return trackInfo;
         },

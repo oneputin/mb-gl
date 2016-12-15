@@ -6,24 +6,24 @@
 <link rel="import" href="icons-svg.html">
 
 <!--
-`mb-routes-ctrl`
-ctrl buttons controling flow of animated objects
+`mb-routes-ctrl-time`
+slider ctrls to modify timing of animated objects
 
 @demo demo/routemap.html 
 -->
 
-<dom-module id="mb-routes-ctrl">
+<dom-module id="mb-routes-ctrl-time">
 
     <template>
     
     	<style type="text/css">
+
 	        .ctrlbox {
-	            position: absolute;
-	            bottom: 10px;
-	            left: 10px;
+                background-color: var(--paper-orange-500);
+                opacity: 0.5;
+                padding: 20px;
                 @apply(--layout-vertical);
-                @apply(--layout-center);
-	        }
+            }
             
             paper-icon-button.blue {
                 --paper-icon-button-ink-color: var(--paper-orange-500);
@@ -38,11 +38,11 @@ ctrl buttons controling flow of animated objects
 	
 		<div class="ctrlbox"> 
             
-            <div>TimeScale</div>
-            <paper-slider id="scalectrl" value="{{scaleval}}"  min="1" max='4' step='1' pin snaps ></paper-slider>
+            <div>TimeScale [min/s]</div>
+            <paper-slider id="scalectrl" value="{{scalevalue}}" on-change="scaleChangeHandler" min="1" max='10' pin snaps editable></paper-slider>
 
-            <div>slomo</div>
-            <paper-slider id="fpsctrl" value="{{fpsval}}"  min="1" max='4' step='1' pin snaps ></paper-slider>
+            <div>Slomo [% of TimeScale]</div>
+            <paper-slider id="fpsctrl" value="{{fpsvalue}}" on-change="fpsChangeHandler" min="10" max='100' step='10' pin snaps ></paper-slider>
 
 	    </div>
 
@@ -51,7 +51,7 @@ ctrl buttons controling flow of animated objects
     <script>
         // on-change="fpsChange"
         Polymer({
-            is: 'mb-routes-ctrl',
+            is: 'mb-routes-ctrl-time',
 
             properties: {
 
@@ -60,7 +60,6 @@ ctrl buttons controling flow of animated objects
                  */
                 fps: {
                     type: Number,
-                    value: 60,
                     notify: true
                 },
 
@@ -69,36 +68,24 @@ ctrl buttons controling flow of animated objects
                  */
                 timescale: {
                     type: Number,
-                    value: 60,
                     notify: true
                 },
 
-
             },
-
-            // 'fpsChange': 'fpsChangeHandler',
-            listeners: {
-                'fpschange': 'fpsChangeHandler',
-                'scalechange': 'scaleChangeHandler'
-            },
-
-            observers: [
-                'controlupdate(trackctrl)'
-            ],
 
             ready: function() {
                 this.setupTimeCtrls();
             },
 
             // 
-            fpsChangeHandler: function(v) {
-                // console.log(this.val, "::", this.fps);
-                this.fps = 15 * this.fpsval;
+            fpsChangeHandler: function() {
+                var fps = this.fpsMax * this.fpsvalue / 100; //console.log("fps", fps)
+                this.fps = fps;
             },
 
-            scaleChangeHandler: function(v) {
-                // console.log(this.val, "::", this.fps);
-                this.timescale = 60 * this.scaleval;
+            scaleChangeHandler: function() {
+                var timescale = this.scaleMin * this.scalevalue; //console.log("timescale", timescale);
+                this.timescale = timescale;
             },
 
             /**
@@ -107,15 +94,18 @@ ctrl buttons controling flow of animated objects
              */
             setupTimeCtrls: function() {
 
-                this.fpsval = 4;
-                this.fps = 60;
+                this.fpsMax = 60;
+                this.fpsvalue = 100;
+                this.fps = this.fpsvalue / this.fpsMax * 100;
 
-                this.scaleval = 5;
-                this.timescale = 300;
+                this.scaleMin = 60; // for 1min = 60s  
+                this.scalevalue = 5;
+                this.timescale = this.scaleMin * this.scalevalue;
 
                 //     
                 var fpsSlider = this.$.fpsctrl,
                     scaleSlider = this.$.scalectrl;
+
                 var fpsValue = this.$.fpsvalue,
                     fpsValue = this.$.scalevalue;
 
