@@ -501,11 +501,12 @@ along waypoint file loaded from url
                 // B. Transfer to map 
 
                 if (!located) {
-                    var msg, s = mba.getNextStart(mapTime);
+                    var msg = mba.logTime(mapTime * 3600 * 1000),
+                        s = mba.getNextStart(mapTime);
                     if (s) {
-                        msg = "NextStart at:" + mba.logTime(s * 3600 * 1000);
+                        msg = "NextStart at:" + mba.logTime(s * 3600 * 1000) + "<hr>" + msg;
                     } else {
-                        msg = "IDLE: " + mba.logTime(mapTime * 3600 * 1000);
+                        msg = "IDLE: " + msg;
                     }
                     mba.trackMapInfo(msg);
                 } else {

@@ -19,12 +19,26 @@ slider ctrls to modify timing of animated objects
     	<style type="text/css">
 
 	        .ctrlbox {
-                background-color: var(--paper-orange-500);
-                opacity: 0.5;
+                /*background-color: var(--paper-orange-500);
+                opacity: 0.5;*/
                 padding: 20px;
                 @apply(--layout-vertical);
             }
             
+            paper-slider {
+                /*--paper-slider-bar-color: white;*/
+                /*--paper-slider-container-color: yellow;*/
+                border-style: solid;
+                border-width: 1px;
+                
+                margin-bottom: 1em;
+                --paper-slider-height: 5px;
+            }
+            paper-slider.slomo {     
+                --paper-slider-knob-color: var(--paper-red-500);
+                --paper-slider-active-color: var(--paper-red-500);
+            }
+
             paper-icon-button.blue {
                 --paper-icon-button-ink-color: var(--paper-orange-500);
                 background-color: var(--paper-light-blue-500);
@@ -37,12 +51,13 @@ slider ctrls to modify timing of animated objects
     	</style>
 	
 		<div class="ctrlbox"> 
-            
             <div>TimeScale [min/s]</div>
-            <paper-slider id="scalectrl" value="{{scalevalue}}" on-change="scaleChangeHandler" min="1" max='10' pin snaps editable></paper-slider>
+            <div class="slider">
+                <paper-slider id="scalectrl" value="{{scalevalue}}" on-change="scaleChangeHandler" min="1" max='10' pin editable></paper-slider>
+            </div>
 
             <div>Slomo [% of TimeScale]</div>
-            <paper-slider id="fpsctrl" value="{{fpsvalue}}" on-change="fpsChangeHandler" min="10" max='100' step='10' pin snaps ></paper-slider>
+            <paper-slider id="fpsctrl" class="slomo" value="{{fpsvalue}}" on-change="fpsChangeHandler" min="10" max='100' step='10' pin ></paper-slider>
 
 	    </div>
 
