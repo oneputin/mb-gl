@@ -20,8 +20,8 @@ slider ctrls to modify timing of animated objects
 
 	        .ctrlbox {
                 /*background-color: var(--paper-orange-500);
-                opacity: 0.5;*/
-                padding: 20px;
+                opacity: 0.5;
+                padding: 20px;*/
                 @apply(--layout-vertical);
             }
             
@@ -53,11 +53,11 @@ slider ctrls to modify timing of animated objects
 		<div class="ctrlbox"> 
             <div>TimeScale [min/s]</div>
             <div class="slider">
-                <paper-slider id="scalectrl" value="{{scalevalue}}" on-change="scaleChangeHandler" min="1" max='10' pin editable></paper-slider>
+                <paper-slider id="scalectrl" class="slomo" value="{{scalevalue}}" on-change="scaleChangeHandler" min="1" max='10' pin editable></paper-slider>
             </div>
 
             <div>Slomo [% of TimeScale]</div>
-            <paper-slider id="fpsctrl" class="slomo" value="{{fpsvalue}}" on-change="fpsChangeHandler" min="10" max='100' step='10' pin ></paper-slider>
+            <paper-slider id="fpsctrl" value="{{fpsvalue}}" on-change="fpsChangeHandler" min="10" max='100' step='10' pin ></paper-slider>
 
 	    </div>
 

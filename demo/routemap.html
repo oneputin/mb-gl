@@ -16,12 +16,13 @@
     <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
 
     <link rel="import" href="../mb-map.html">
+    <link rel="import" href="../mb-info.html">
+
     <link rel="import" href="../mb-routes.html">
     <link rel="import" href="../mb-routes-ctrl.html">
     <link rel="import" href="../mb-routes-ctrl-mode.html">
     <link rel="import" href="../mb-routes-ctrl-time.html">
-
-    <link rel="import" href="../mb-info.html">
+    <link rel="import" href="../mb-routes-card.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
@@ -30,6 +31,13 @@
             left: 50%;
             margin-right: -50%;
             transform: translate(-50%, 0)
+        }
+        
+        mb-routes-card {
+            position: absolute;
+            top: 50%;
+            margin-bottom: -50%;
+            transform: translate(0, -50%)
         }
         
         paper-dropdown-menu {
@@ -60,6 +68,14 @@
             top: 40px;
             right: 20px;
         }
+        
+        label.test {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, 0)
+        }
     </style>
 
 </head>
@@ -76,7 +92,7 @@
         </iron-ajax>
     
         <div class="container">
-        
+
             <mb-map 
                 mapapikey="[[mbkey]]"
                 map="{{map}}"
@@ -91,10 +107,9 @@
                 url="[[url]]"
                 fps="[[fps]]"
                 timescale="[[timescale]]"
-                trackctrl="{{trackctrl}}"
-                trackmode="{{trackmode}}"
-                trackobj = "{{trackobj}}"
-                trackinfo="[[trackinfo]]">
+                trackctrl= "{{trackctrl}}"
+                trackmode= "{{trackmode}}"
+                trackdata=" {{trackdata}}">
             </mb-routes>                
 
             <mb-routes-ctrl
@@ -113,16 +128,26 @@
             <mb-info lnglat="[[lnglat]]">
             </mb-info>
 
-            <paper-dropdown-menu label="Flight sets">
-                <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-                    <template is="dom-repeat" items="{{wpdocs}}">
-                        <paper-item url="{{item.url}}">
-                            {{item.title}}
-                        </paper-item>
-                    </template>
+            <mb-routes-card 
+                popupflag="{{popupflag}}"
+                popupdata="[[trackdata]]">
+            </mb-routes-card>
+
+            <label class="test">
+                <b>Insert some text:</b>
+                <br><input type="text" value="{{trackdata.text}}" placeholder="trackdata">
+                <br><p>{{trackdata.html}}</p>
+            </label>        
+           
+    <paper-dropdown-menu label="Flight sets">
+        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+            <template is="dom-repeat" items="{{wpdocs}}">
+                <paper-item url="{{item.url}}">
+                    {{item.title}}
+                </paper-item>
+            </template>
     </paper-listbox>
     </paper-dropdown-menu>
-
     </div>
 
     </template>
@@ -136,16 +161,28 @@
         app.cbox = "13.7,52.4";
         app.lnglat = "13.7,52.4";
         app.zoom = 1;
+
         app.mapctrl = {};
+
         app.selectedurl = function(e) {
             // after selection in paper-listbox
             this.url = e.detail.item.url;
         }
         app.setupme = function(ajaxresponse) {
-            // iron-ajax response
-            this.wpdocs = ajaxresponse.detail.response;
-            // console.log("setupdata", this.wpdocs);
-        }
+                // iron-ajax response
+                this.wpdocs = ajaxresponse.detail.response;
+                // console.log("setupdata", this.wpdocs);
+            }
+            // The dom-change event signifies when the template has stamped its DOM.
+        app.addEventListener('dom-change', function() {
+            // auto-binding template is ready.
+            console.log("dom changed");
+            app.trackdata = {
+                "title": "tracktitle",
+                "text": "this is testdata",
+                "html": "<h3>this is html</h3>"
+            }
+        });
     </script>
 </body>
 

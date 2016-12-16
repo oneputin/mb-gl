@@ -177,35 +177,6 @@ along waypoint file loaded from url
                     notify: true
                 },
 
-
-                trackid: {
-                    type: String,
-                    value: ""
-                },
-
-                trackobj: {
-                    type: Object,
-                    notify: true
-                },
-
-                trackinfo: {
-                    type: String
-                },
-
-                // internal variables
-
-                /**
-                 * Animation counter
-                 */
-                counter: {
-                    type: Number
-                },
-
-                //
-                requestframeref: {
-                    type: String,
-                    value: '1'
-                },
                 /**
                  * FramePerSecond of animation
                  */
@@ -219,6 +190,44 @@ along waypoint file loaded from url
                 timescale: {
                     type: Number,
                     value: 1080
+                },
+
+
+                trackid: {
+                    type: String,
+                    value: ""
+                },
+
+                trackobj: {
+                    type: Object,
+                    observer: 'checkTrackobj'
+                },
+
+                // for use in popups !!
+                trackinfo: {
+                    type: String,
+                },
+
+                // for external use  
+                trackdata: {
+                    type: Object,
+                    notify: true,
+                    observer: 'checkTrackdata'
+                },
+
+                // INTERNAL variables
+
+                /**
+                 * Animation counter
+                 */
+                counter: {
+                    type: Number
+                },
+
+                //
+                requestframeref: {
+                    type: String,
+                    value: '1'
                 },
                 /**
                  * { item_description }
@@ -256,6 +265,12 @@ along waypoint file loaded from url
 
             },
 
+            checkTrackdata: function(trackinfo) {
+                console.log("trackdata", trackinfo);
+            },
+            checkTrackobj: function(trackobj) {
+                console.log("new obj", trackobj);
+            },
             // A. 
 
             /**
@@ -321,6 +336,12 @@ along waypoint file loaded from url
                     // 1.B. Create layers 
                     if (!map.getLayer(lname)) {
                         map.addLayer(layerObject['layer']);
+                        // Optional: selectlayer of the same source
+                        var sl = layerObject['selectlayer'];
+                        if (sl) {
+                            map.addLayer(sl);
+                            map.setFilter(sl.id, ["==", "id", ""]);
+                        }
                     }
                 });
 
@@ -342,39 +363,7 @@ along waypoint file loaded from url
                 // 4. Query track-features in "mouseover" and show info-popup 
                 map.on('mousemove', function(e) {
                     // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
-                    var features = [];
-                    if (map.getLayer('tracks')) {
-                        features = map.queryRenderedFeatures(e.point, {
-                            layers: ['tracks']
-                        });
-                    }
-
-                    if (!features || !features.length) {
-                        // strategy 1: 
-                        // Remove popup if pointer not on any feature
-                        // this.popup.remove();
-                        return;
-                    }
-                    // console.log("mousemove-event", e);
-
-                    // Change the cursor style as a UI indicator.
-                    map.getCanvas().style.cursor = 'pointer';
-
-                    // strategy 2: 
-                    // A. remove popup, if object selected (changes)
-                    mba.popup.remove();
-
-                    // B. Update and reconnect the this.popup to the map at new objectnew 
-                    mba.trackobj = features[0];
-                    mba.trackid = mba.trackobj.properties.id;
-
-                    mba.trackinfo = mba.calcTrackInfo(mba.trackobj);
-
-                    mba.popup
-                        .setLngLat(mba.trackobj.geometry.coordinates)
-                        .setHTML(mba.trackinfo)
-                        .addTo(map);
-
+                    mba.trackObjSelect(e);
                 });
 
                 // Update visible tracking content at different times  
@@ -823,19 +812,19 @@ along waypoint file loaded from url
                 // setup data 
                 this.tracks.features = [];
                 var allTracks = this.tracks,
-                    props = {};
+                    startort, props = {};
 
                 routedata.forEach(function(route, j) {
-                    // locate plane at 'origin'
-
+                    // locate each trackObj at 'startcounter'
+                    startort = route.waypoints[startcounter].coords;
                     props = {
                         "routeid": route.id,
                         "title": route.plane,
                         "start": trackTimer[route.id]["start"],
                         "stop": trackTimer[route.id]["stop"]
                     }
-                    var aTrack = new Track(route.waypoints[startcounter].coords, route.id, props);
 
+                    var aTrack = new Track(startort, route.id, props);
                     allTracks.features.push(aTrack);
                 });
 
@@ -851,6 +840,27 @@ along waypoint file loaded from url
                         "icon-image": "airport-15",
                         "icon-size": 2,
                         "icon-rotate": 90,
+                        //"icon-image": "{icon}-15",
+                        //"icon-rotate": "{bearing}",  
+                        "text-field": "{routeid}",
+                        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                        "text-size": 12,
+                        "text-offset": [0, 0.6],
+                        "text-anchor": "top"
+                    }
+                };
+
+                // setup styling
+                trackLayer['selectlayer'] = {
+                    "id": "tracks-select",
+                    "source": "tracks",
+                    "type": "symbol",
+
+                    "layout": {
+                        "icon-image": "airport-15",
+                        "icon-size": 4,
+                        "icon-rotate": 45,
+
                         //"icon-image": "{icon}-15",
                         //"icon-rotate": "{bearing}",  
                         "text-field": "{routeid}",
@@ -1026,7 +1036,6 @@ along waypoint file loaded from url
             },
 
 
-
             // E. Additional Functions
 
             // 
@@ -1082,7 +1091,7 @@ along waypoint file loaded from url
                 // apply startfilter "immediately"
                 // but stopfilter "after some delay"
                 // to let user observe arrived objects for 2 more seconds before removing the tracker and related features 
-                var stopDelay = 200;
+                var stopDelay = 2000;
 
                 // show trackObjects(and it's routes) only as long as they are tracked 
                 if (!map.getLayer("tracks")) {
@@ -1154,6 +1163,9 @@ along waypoint file loaded from url
 
                 } else {
 
+                    console.log("reset tracks-select");
+                    mba.map.setFilter("tracks-select", ["==", "id", ""]);
+
                     setTimeout(function() {
                         applyFilters();
                     }, stopDelay);
@@ -1183,6 +1195,52 @@ along waypoint file loaded from url
                         .setHTML(html)
                         .addTo(mba.map);
                 }
+            },
+
+            trackObjSelect: function(e) {
+                var features = [];
+                if (map.getLayer('tracks')) {
+                    features = map.queryRenderedFeatures(e.point, {
+                        layers: ['tracks']
+                    });
+                }
+
+                if (!features.length) {
+                    // popup-strategy 1: 
+                    // Remove popup if pointer not on any feature
+                    // this.popup.remove();
+                    return;
+                } // console.log("mousemove-event", e);
+
+                // map.setFilter("tracks-select", ["==", "id", ""]);
+                if (mba.trackid == features[0].properties.id) {
+                    return;
+                }
+
+                mba.trackobj = features[0];
+                mba.trackid = mba.trackobj.properties.id;
+                map.setFilter("tracks-select", ["==", "id", mba.trackid]);
+
+                // Change the cursor style as a UI indicator.
+                // map.getCanvas().style.cursor = 'pointer';
+
+                // popup-strategy 2: 
+                // Update and reconnect the this.popup to the map at new object
+                mba.popup.remove();
+                mba.trackinfo = mba.calcTrackInfo(mba.trackobj);
+
+                // Trackdata with "Override dirty checking" 
+                mba.trackdata = {};
+                mba.trackdata = {
+                    "title": mba.trackid,
+                    "html": mba.calcTrackInfo(mba.trackobj),
+                    "properties": mba.trackobj.properties
+                };
+
+                mba.popup
+                    .setLngLat(mba.trackobj.geometry.coordinates)
+                    .setHTML(mba.trackinfo)
+                    .addTo(map);
             }
 
         });
