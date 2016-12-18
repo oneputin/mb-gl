@@ -135,11 +135,8 @@ along waypoint file loaded from url
 
 
         Polymer({
-
             is: 'mb-routes',
-
             properties: {
-
                 /**
                  * Mapbox-js map to place routes on 
                  */
@@ -151,6 +148,12 @@ along waypoint file loaded from url
                  */
                 popup: {
                     type: Object
+                },
+                /**
+                 * Basic Info-popup 
+                 */
+                popupmode: {
+                    type: Number
                 },
 
                 /**
@@ -211,6 +214,7 @@ along waypoint file loaded from url
                 // for external use  
                 trackdata: {
                     type: Object,
+                    value: {},
                     notify: true,
                     observer: 'checkTrackdata'
                 },
@@ -255,21 +259,19 @@ along waypoint file loaded from url
             ],
 
             attached: function() {
-
                 /**
                  * quasiglobal context for animation 
                  */
                 mba = this;
-
                 this.trackFeaturesInit();
-
             },
 
-            checkTrackdata: function(trackinfo) {
-                console.log("trackdata", trackinfo);
+            checkTrackdata: function(trackdata) {
+                // console.log("trackdata", trackdata);
             },
+
             checkTrackobj: function(trackobj) {
-                console.log("new obj", trackobj);
+                // console.log("New TRACK obj", trackobj);
             },
             // A. 
 
@@ -279,7 +281,6 @@ along waypoint file loaded from url
              * @param      {<type>}  routedata  Routedata as wp-dataset
              */
             dataToApp: function(ajaxresponse) {
-
                 var routedata = ajaxresponse.detail.response;
                 if (!routedata) return;
                 this.routedata = routedata; // triggers 'setupTracking'
@@ -402,7 +403,7 @@ along waypoint file loaded from url
                         if (this.map) trackObjs = this.map.queryRenderedFeatures({
                             layers: ['tracks']
                         });
-                        console.log("STOPPED animation at counter=" + this.counter + " with ", trackObjs);
+                        console.log("PAUSED track-animation at cnt=" + this.counter + " with ", trackObjs);
                     }
                     cancelAnimationFrame(this.requestframeref);
                 }
@@ -579,7 +580,7 @@ along waypoint file loaded from url
 
                         // Checkout the routes leg the trackObj is located  
                         // at animation-step "counter", get legInfo and cc 
-                        var legInfo, cc;
+                        var legInfo, cc, trackdata;
 
                         legSet.every(function(legPositions, i) {
                             // return true if xxx, false if xxx
@@ -612,13 +613,22 @@ along waypoint file loaded from url
                             // C. update content and location of the trackObj's info-popup
                             if (mba.trackid == trackObj.properties.id) {
                                 // sync coordinates of trackobj
+
                                 mba.trackobj.geometry.coordinates = cc;
-
                                 mba.trackinfo = mba.calcTrackInfo(trackObj);
-
-                                mba.popup.setHTML(mba.trackinfo); //console.log("popup", mba.popup, trackinfo, cc);
-
-                                mba.popup.setLngLat(cc);
+                                
+                                if (!mba.popupmode) {
+                                    mba.trackdata = {} ;
+                                    mba.trackdata = {
+                                        // "open": 1,
+                                        "title": mba.trackid,
+                                        "html": mba.trackinfo,
+                                        "properties": mba.trackobj.properties
+                                    };
+                                } else {
+                                    mba.popup.setHTML(mba.trackinfo); //console.log("popup", mba.popup, trackinfo, cc);
+                                    mba.popup.setLngLat(cc);
+                                }
 
                                 // in lagrange-mode the trackObj is conituously 
                                 // centered on map and aligned to bearing  
@@ -1035,7 +1045,6 @@ along waypoint file loaded from url
                 return r;
             },
 
-
             // E. Additional Functions
 
             // 
@@ -1199,22 +1208,21 @@ along waypoint file loaded from url
 
             trackObjSelect: function(e) {
                 var features = [];
-                if (map.getLayer('tracks')) {
+                if (map.getLayer('tracks')||map.getLayer('tracks-select')) {
                     features = map.queryRenderedFeatures(e.point, {
-                        layers: ['tracks']
+                        layers: ['tracks','tracks-select']
                     });
                 }
-
                 if (!features.length) {
+                    // mba.trackdata = {};
                     // popup-strategy 1: 
                     // Remove popup if pointer not on any feature
                     // this.popup.remove();
                     return;
                 } // console.log("mousemove-event", e);
 
-                // map.setFilter("tracks-select", ["==", "id", ""]);
                 if (mba.trackid == features[0].properties.id) {
-                    return;
+                //    return;
                 }
 
                 mba.trackobj = features[0];
@@ -1230,17 +1238,20 @@ along waypoint file loaded from url
                 mba.trackinfo = mba.calcTrackInfo(mba.trackobj);
 
                 // Trackdata with "Override dirty checking" 
-                mba.trackdata = {};
-                mba.trackdata = {
-                    "title": mba.trackid,
-                    "html": mba.calcTrackInfo(mba.trackobj),
-                    "properties": mba.trackobj.properties
-                };
-
-                mba.popup
-                    .setLngLat(mba.trackobj.geometry.coordinates)
-                    .setHTML(mba.trackinfo)
-                    .addTo(map);
+                // mba.trackdata = {} ;
+                if (mba.popupmode) {
+                    mba.popup
+                        .setLngLat(mba.trackobj.geometry.coordinates)
+                        .setHTML(mba.trackinfo)
+                        .addTo(map);
+                } else {
+                    mba.trackdata = {
+                        "open": 1,
+                        "title": mba.trackid,
+                        "html": mba.calcTrackInfo(mba.trackobj),
+                        "properties": mba.trackobj.properties
+                    };
+                }
             }
 
         });

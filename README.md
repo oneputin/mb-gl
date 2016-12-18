@@ -28,3 +28,10 @@ Target-box centered on client-map-viewbox.
 Wraps the mapbox-gl-api as separate element
 
 ### \<mb-info\>
+
+
+### \<mb-routes\>
+The auto-ctrl of trackInfo open/close (start-stop) is organized by property "routeProps.stop" 
++ start if flag stop is not set
++ stop: remove flag stop 
+main 

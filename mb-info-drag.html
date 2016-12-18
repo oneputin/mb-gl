@@ -1,0 +1,177 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-card/paper-card.html">
+
+<!--
+`mb-info-drag`
+Info-card related to a selected feature. Can be vertically dragged & horizontally resized. 
+Close with click anywhere on the card
+
+@demo demo/routemap.html 
+-->
+<dom-module id="mb-info-drag">
+
+    <template>
+
+        <style is="custom-style">
+            :host {
+                display: none; /*inline-block;*/
+                opacity: 1; 
+                top: 50%;
+                margin-bottom: -50%;
+                transform: translate(0, -50%);
+            }
+
+            paper-card.info { 
+                @apply(--layout-horizontal); 
+                align-items: flex-start;
+            }
+
+            .info-content {
+                @apply(--layout-flex);
+                float: left;
+            }
+
+            .card-image {
+                width: 100px;
+                height: 170px;
+                /*background: url('./donuts.png');*/
+                background-color: red;
+                background-size: cover;
+            }
+
+            .info-html { 
+                color: var(--paper-grey-600); 
+                opacity: 1;
+            }
+            
+            .info-link { 
+                color: var(--google-blue-500); 
+            }
+
+            paper-icon-button {
+                background-color: var(--paper-light-blue-500);
+            }
+
+        </style>
+
+        <paper-card heading="{{carddata.title}}" class="info">
+
+            <div class="card-image"></div>
+            
+            <div class="info-content">
+
+                <div class="card-content">
+
+                    <div>{{dragctrl.msg}}</div>
+
+                    <div id="div1" class="info-html">
+
+                    </div>
+
+                </div>
+
+                <div class="card-actions">
+                    <paper-button class="info-link">more...</paper-button>
+                </div>
+
+            </div>
+
+            <!--<paper-button class="info-link" on-click="_onBackClick">X</paper-button>-->
+            <!--<paper-icon-button icon="close" on-click="_onBackClick"></paper-icon-button>-->
+
+        </paper-card>
+
+    </template>
+
+    <script>
+        Polymer({
+            is: 'mb-info-drag',
+
+            properties: {
+                carddata: {
+                    type: Object,
+                    value: {}
+                },
+
+                dragctrl: {
+                    type: Object,
+                    value: {}
+                }
+            },
+
+            observers: [
+                '_drag(dragctrl.x,dragctrl.y)',
+                '_toggle(carddata.open)',
+                'refresh(carddata.html)'
+            ],
+
+            'listeners': {
+                "track": '_trackHandler',
+                "tap": '_onBackClick'
+            },
+
+            _trackHandler: function (e) {
+                e.cancelBubble = true;
+                e.stopPropagation();
+                var style = window.getComputedStyle(this),
+                    top = parseFloat(style.getPropertyValue('top')),
+                    left = parseFloat(style.getPropertyValue('left')),
+                    dy = e.detail.y - top,
+                    dx = e.detail.x - left,
+                    x, y;
+
+                switch (e.detail.state) {
+                    case 'start':
+                        this.dragctrl.msg = 'Tracking started at top=';
+                        this.dragctrl.dx = dx;
+                        this.dragctrl.dy = dy;
+                        this.unlisten(this, 'tap', '_onBackClick');
+                        // console.log("start:x,y,dx,dy",left, top, dx, dy);
+                        break;
+                    case 'track':
+                        // console.log(this.dragctrl);
+                        this.dragctrl.msg = "Tracking...";
+                        this.set('dragctrl.x', left + dx - this.dragctrl.dx);
+                        this.set('dragctrl.y', top + dy - this.dragctrl.dy);
+                        break;
+                    case 'end':
+                        this.dragctrl.msg = 'Tracking ended!';
+                        this.listen(this, 'tap', '_onBackClick');
+                        break;
+                }
+            },
+
+            attached: function () {
+                // console.log("target attached");
+            },
+
+            refresh: function (data) {
+                // console.log("imported card-data", this.carddata);
+                this.$.div1.innerHTML = data;
+                //this.$.title.innerHTML = this.carddata.id;
+            },
+
+            _drag: function (x, y) {
+                //console.log("drag", x, y);
+                this.style.left = x + "px";
+                this.style.top = y + "px";
+            },
+            _toggle: function (open) {
+                if (open == 0) {
+                    this.style.display = "none";
+                } else if (open == 1) {
+                    this.style.display = "inline-block";
+                    this.style.right = "0px";
+                }
+            },
+
+            _onBackClick: function () {
+                this.style.display = "none";
+            }
+        });
+    </script>
+
+</dom-module>

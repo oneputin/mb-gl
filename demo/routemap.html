@@ -10,20 +10,21 @@
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+    <link rel="import" href="../../iron-collapse/iron-collapse.html">
 
     <link rel="import" href="../../paper-item/paper-item.html">
     <link rel="import" href="../../paper-listbox/paper-listbox.html">
     <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
 
     <link rel="import" href="../mb-map.html">
-    <link rel="import" href="../mb-info.html">
+    <link rel="import" href="../mb-info-lnglat.html">
+    <link rel="import" href="../mb-info-drag.html">
 
     <link rel="import" href="../mb-routes.html">
     <link rel="import" href="../mb-routes-ctrl.html">
     <link rel="import" href="../mb-routes-ctrl-mode.html">
     <link rel="import" href="../mb-routes-ctrl-time.html">
-    <link rel="import" href="../mb-routes-card.html">
-
+    
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
     <style is="custom-style">
@@ -33,11 +34,8 @@
             transform: translate(-50%, 0)
         }
         
-        mb-routes-card {
+        mb-info-drag {
             position: absolute;
-            top: 50%;
-            margin-bottom: -50%;
-            transform: translate(0, -50%)
         }
         
         paper-dropdown-menu {
@@ -84,104 +82,81 @@
 
     <template is="dom-bind" id="app">
 
-        <iron-ajax
-            auto
-            url="[[setupurl]]"
-            handle-as="json"
-            on-response="setupme">
+        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
         </iron-ajax>
-    
+
         <div class="container">
 
-            <mb-map 
-                mapapikey="[[mbkey]]"
-                map="{{map}}"
-                cbox="{{cbox}}"
-                zoom="{{zoom}}"
-                lnglat="{{lnglat}}"
-                mapctrl="[[mapctrl]]">
+            <mb-map mapapikey="[[mbkey]]" map="{{map}}" cbox="{{cbox}}" zoom="{{zoom}}" lnglat="{{lnglat}}" mapctrl="[[mapctrl]]">
             </mb-map>
 
-            <mb-routes
-                map="[[map]]" 
-                url="[[url]]"
-                fps="[[fps]]"
-                timescale="[[timescale]]"
-                trackctrl= "{{trackctrl}}"
-                trackmode= "{{trackmode}}"
-                trackdata=" {{trackdata}}">
-            </mb-routes>                
+            <mb-routes map="[[map]]" url="[[url]]" fps="[[fps]]" timescale="[[timescale]]" trackctrl="{{trackctrl}}" trackmode="{{trackmode}}"
+                trackdata="{{trackdata}}">
+            </mb-routes>
 
-            <mb-routes-ctrl
-                trackctrl="{{trackctrl}}">
-            </mb-routes-ctrl>    
+            <mb-routes-ctrl trackctrl="{{trackctrl}}">
+            </mb-routes-ctrl>
 
-            <mb-routes-ctrl-mode
-                trackmode="{{trackmode}}">
-            </mb-routes-ctrl-mode>    
+            <mb-routes-ctrl-mode trackmode="{{trackmode}}">
+            </mb-routes-ctrl-mode>
 
-            <mb-routes-ctrl-time
-                timescale="{{timescale}}"
-                fps="{{fps}}">
-            </mb-routes-ctrl-time>    
+            <mb-routes-ctrl-time timescale="{{timescale}}" fps="{{fps}}">
+            </mb-routes-ctrl-time>
 
-            <mb-info lnglat="[[lnglat]]">
-            </mb-info>
+            <mb-info-lnglat lnglat="[[lnglat]]">
+            </mb-info-lnglat>
 
-            <mb-routes-card 
-                popupflag="{{popupflag}}"
-                popupdata="[[trackdata]]">
-            </mb-routes-card>
+            <!--<iron-collapse id="collapse1" tabindex="0" opened="{{opened1}}">
+                <div class="content">
+                    <div>
+                    </div>
+                </div>
+            </iron-collapse>-->
 
-            <label class="test">
-                <b>Insert some text:</b>
-                <br><input type="text" value="{{trackdata.text}}" placeholder="trackdata">
-                <br><p>{{trackdata.html}}</p>
-            </label>        
-           
-    <paper-dropdown-menu label="Flight sets">
-        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-            <template is="dom-repeat" items="{{wpdocs}}">
-                <paper-item url="{{item.url}}">
-                    {{item.title}}
-                </paper-item>
-            </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
-    </div>
+            <paper-dropdown-menu label="Flight sets">
+                <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+                    <template is="dom-repeat" items="{{wpdocs}}">
+                        <paper-item url="{{item.url}}">
+                            {{item.title}}
+                        </paper-item>
+                    </template>
+                </paper-listbox>
+            </paper-dropdown-menu>
+
+            <mb-info-drag carddata="[[trackdata]]"><!-- ctrl={{cardctrl}}>-->
+            </mb-info-drag>
+
+        </div>
 
     </template>
 
     <script>
-        var app = document.querySelector('#app');
-        app.setupurl = "routemap.json";
-        app.url = "";
+        var scope = document.querySelector('#app');
+        scope.setupurl = "routemap.json";
+        scope.url = "";
 
-        app.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-        app.cbox = "13.7,52.4";
-        app.lnglat = "13.7,52.4";
-        app.zoom = 1;
+        scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+        scope.cbox = "13.7,52.4";
+        scope.lnglat = "13.7,52.4";
+        scope.zoom = 1;
 
-        app.mapctrl = {};
+        scope.mapctrl = {};
+        scope.cardctrl = {};
 
-        app.selectedurl = function(e) {
+        scope.selectedurl = function (e) {
             // after selection in paper-listbox
             this.url = e.detail.item.url;
         }
-        app.setupme = function(ajaxresponse) {
-                // iron-ajax response
-                this.wpdocs = ajaxresponse.detail.response;
-                // console.log("setupdata", this.wpdocs);
-            }
-            // The dom-change event signifies when the template has stamped its DOM.
-        app.addEventListener('dom-change', function() {
+        scope.setupme = function (ajaxresponse) {
+            // iron-ajax response
+            this.wpdocs = ajaxresponse.detail.response;
+            // console.log("setupdata", this.wpdocs);
+        }
+
+        // The dom-change event signifies when the template has stamped its DOM.
+        scope.addEventListener('dom-change', function () {
             // auto-binding template is ready.
             console.log("dom changed");
-            app.trackdata = {
-                "title": "tracktitle",
-                "text": "this is testdata",
-                "html": "<h3>this is html</h3>"
-            }
         });
     </script>
 </body>

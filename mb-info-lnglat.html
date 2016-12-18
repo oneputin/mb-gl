@@ -1,0 +1,136 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<!--
+`mb-info-lnglat`
+Info-area for short msges 
+
+@demo demo/index1.html 
+-->
+
+<dom-module id="mb-info-lnglat">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                position: absolute;
+
+                left: 0%;
+                bottom: 0%;
+                height: 1.5em;
+
+                font: 0.8em Courier, Lucida;
+                background-color: rgba(255,64,129,0.8); /*#ff4081*/
+                color: white;                    
+                /*opacity: 0.7;*/ /*related to all content bg,fg*/
+            }
+
+            #innerarea {
+                padding: 0.2em;
+            }
+        </style>
+
+        <div id="innerarea">[[info]]</div>
+        
+    </template>
+
+    <script>
+        Polymer({
+            is: 'mb-info-lnglat',
+
+            properties: {
+                /**
+                 * optional zoominfo for variable formatting of info (lonlat)
+                 */
+                zoom: {
+                    type: Number
+                },
+
+                /**
+                 * LonLat in csv-format
+                 */
+                lnglat: {
+                    type: String
+                },
+
+                /**
+                 * info created from different sources
+                 */
+                info: {
+                    type: String,
+                    computed: 'formatlonlat(lnglat)'
+                }
+
+            },
+
+            attached: function() {
+                // console.log("target attached");
+            },
+
+            /**
+             * toggles the 'serviceflag' and the visual signature of the target 
+             */
+            formatlonlat: function(lnglat, zoom) {
+                if (!lnglat) return "";
+                if (!zoom) zoom = 5;
+                // console.log("apply formatlonlat on:", lnglat, zoom);
+
+                var prec = zoom > 10 ? 1 : 0;
+                var lon, lat;
+                if (typeof(lnglat) == "string") {
+                    lon = lnglat.split(",")[0];
+                    lat = lnglat.split(",")[1]
+                } else {
+                    lon = lnglat.lng;
+                    lat = lnglat.lat;
+                }
+                var lonunit = lon < 0 ? " W" : " E",
+                    latunit = lat < 0 ? " S" : " N",
+                    trafo = this.ddtodm; // ddtodms;
+                return trafo(lon, "lon") + lonunit + "  " + trafo(lat) + latunit;
+            },
+
+            /**
+             *  transform digitaldegree to dms
+             */
+            ddtodms: function(dd, prec) {
+                if (!prec) prec = 0;
+                dd = parseFloat(dd);
+                if (dd < 0) dd = 0 - dd;
+                let d = Math.floor(dd), // console.log("dd,d=", dd, d)
+                    mm = (dd - d) * 60, // [minutes]
+                    m = Math.floor(mm), // [minutes]
+                    ss = ((mm - m) * 60).toFixed(prec);
+                if (ss == "60") {
+                    m = m + 1;
+                    ss = "00";
+                }
+                return d + "°" + m + "'" + ss + '"';
+
+            },
+
+            /**
+             *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
+             *  "maritime formatting"  
+             */
+            ddtodm: function(dd, lonflag, prec) {
+                if (!prec) prec = 3;
+                dd = parseFloat(dd);
+                if (dd < 0) dd = 0 - dd;
+
+                let d = Math.floor(dd), // console.log("dd,d=", dd, d)
+                    mm = (dd - d) * 60; // [minutes]
+                m = mm.toFixed(3);
+
+                if (d < 10) d = "0" + d;
+                if (d < 100 && lonflag) d = "0" + d
+                if (mm < 10) m = "0" + m;
+
+                return d + "°" + m;
+
+            }
+        });
+    </script>
+</dom-module>
