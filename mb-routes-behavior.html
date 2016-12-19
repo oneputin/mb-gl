@@ -33,9 +33,11 @@
         },
 
         // derive comparable/calculable times
+        // from dates of type "2016.12.11,16.00" or "2016.12.16,16:00"
         utcTime: function(t, lonlat, unit) {
             // !! for parser the MONTH must be numbered 0 .. 11 !!
             var t = t.replace(",", "."),
+                t = t.replace(":", "."),
                 a = t.split("."),
                 tlocal = new Date(parseInt(a[0]), parseInt(a[1]) - 1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4])),
                 tg = tlocal,
@@ -73,8 +75,6 @@
             logtime = D + "." + M + ", " + h + ":" + m;
             return logtime;
         }
-
-
 
     };
 

@@ -79,6 +79,7 @@ Info-area for short msges
 
                 var prec = zoom > 10 ? 1 : 0;
                 var lon, lat;
+
                 if (typeof(lnglat) == "string") {
                     lon = lnglat.split(",")[0];
                     lat = lnglat.split(",")[1]
@@ -129,8 +130,9 @@ Info-area for short msges
                 if (mm < 10) m = "0" + m;
 
                 return d + "°" + m;
+            },
 
-            }
+
         });
     </script>
 </dom-module>

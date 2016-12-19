@@ -2,6 +2,7 @@
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <link rel="import" href="mb-api.html">
+<link rel="import" href="mb-routes-behavior.html">
 
 <!--
 `mb-vendee`
@@ -169,7 +170,7 @@ along waypoints of file loaded from url
             },
 
             behaviors: [
-                //    Polymer.RoutesBehavior
+                Polymer.RoutesBehavior
             ],
 
             observers: [
@@ -178,6 +179,14 @@ along waypoints of file loaded from url
                     'ctrlTrackmove(trackctrl)',
                     'ctrlTrackmode(trackmode, trackid, map)'*/
             ],
+
+            attached: function() {
+                /**
+                 * quasiglobal context for animation 
+                 */
+                mba = this;
+                // this.trackFeaturesInit();
+            },
 
             /**
              * Setup of animation framework from new track(wp)-dataset
@@ -191,7 +200,7 @@ along waypoints of file loaded from url
             },
 
             setupTracking: function(routedata, timescale) {
-                console.log("ORIGINAL routedata:", routedata, " with timescale=" + timescale);
+                // console.log("ORIGINAL routedata:", routedata, " with timescale=" + timescale);
 
                 this.counter = 0;
                 this.trackTimer = this.setupTrackTimer(routedata, this.timescale);
@@ -234,29 +243,36 @@ along waypoints of file loaded from url
                         route = [];
                         routes[id] = route;
                     }
+
                     var wpx = {};
-                    Object.keys(wp).forEach(function() {
-                        wpx.t = wp.Date + "," + wp.Time;
-                        wpx.lat = wp.Lat;
-                        wpx.lng = wp.Lng;
-                    })
+                    wpx.t = mba.utcTime(wp.Date + "." + wp.Time);
+                    wpx.lat = mba.dmtodd(wp.Lat);
+                    wpx.lng = mba.dmtodd(wp.Lng);
                     route.push(wpx);
                 });
-                console.log("routes", routes);
-                return;
+
+                routedata = [];
+                Object.keys(routes).forEach(function(id){
+                    var rec = {"id":id, "waypoints":routes[id]};
+                    routedata.push(rec);
+                });
+                console.log("routes", routes, routedata);
 
                 var start, trackTimer = {};
 
                 routedata.forEach(function(route, j) {
                     var starts = [],
-                        stops = [];
+                        stops = [],
+                        passes = [];
                     route.waypoints.forEach(function(wp, p) {
                         if (wp.ab) starts.push(wp);
                         if (wp.an) stops.push(wp);
+                        if (wp.t) passes.push(wp);
                     }.bind(this));
-                    trackTimer[route.id] = [starts, stops];
+                    trackTimer[route.id] = [starts, stops, passes];
                 }.bind(this));
-                // console.log("trackTimerRaw", trackTimer);
+                console.log("trackTimerRaw", trackTimer);
+                return; 
 
                 Object.keys(trackTimer).forEach(function(id) {
                     var starts = trackTimer[id][0],
@@ -326,6 +342,20 @@ along waypoints of file loaded from url
                 };
                 return wpLayer;
             },
+
+
+            /**
+             *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
+             *  "maritime formatting"  
+             */
+            dmtodd: function(dm, lonflag, prec) {
+                if (!prec) prec = 6;
+                dm = dm.split("°");  // console.log("dm-array", dm);
+                dd = parseInt(dm[0])+parseFloat(dm[1])/60;
+                if (dm[1].slice(-1)=="W") dd = 0-dd;
+                if (dm[1].slice(-1)=="S") dd = 0-dd;
+                return dd ; 
+            }
 
 
         })
