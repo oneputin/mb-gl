@@ -20,10 +20,7 @@
     <link rel="import" href="../mb-info-lnglat.html">
     <link rel="import" href="../mb-info-drag.html">
 
-    <link rel="import" href="../mb-routes.html">
-    <link rel="import" href="../mb-routes-ctrl.html">
-    <link rel="import" href="../mb-routes-ctrl-mode.html">
-    <link rel="import" href="../mb-routes-ctrl-time.html">
+    <link rel="import" href="../mb-vendee.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
@@ -105,7 +102,7 @@
                 lnglat="{{lnglat}}" 
                 mapctrl="[[mapctrl]]">
 
-                <mb-routes 
+                <mb-vendee 
                     map="[[map]]" 
                     url="[[url]]" 
                     fps="[[fps]]" 
@@ -113,7 +110,7 @@
                     trackctrl="{{trackctrl}}" 
                     trackmode="{{trackmode}}"
                     trackdata="{{trackdata}}">
-                </mb-routes>
+                </mb-vendee>
 
                 <mb-routes-ctrl trackctrl="{{trackctrl}}">
                 </mb-routes-ctrl>
@@ -128,28 +125,30 @@
                 </mb-info-drag>
             </mb-map>
 
-    <div class="ctrls">
+        <div class="ctrls">
 
-        <mb-routes-ctrl-time timescale="{{timescale}}" fps="{{fps}}">
-        </mb-routes-ctrl-time>
+            <mb-routes-ctrl-time timescale="{{timescale}}" fps="{{fps}}">
+            </mb-routes-ctrl-time>
 
-        <paper-dropdown-menu label="Flight sets">
-            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-                <template is="dom-repeat" items="{{wpdocs}}">
-                    <paper-item url="{{item.url}}">
-                        {{item.title}}
-                    </paper-item>
-                </template>
+            <paper-dropdown-menu label="Position sets">
+                <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+                    <template is="dom-repeat" items="{{wpdocs}}">
+                        <paper-item url="{{item.url}}">
+                            {{item.title}}
+                        </paper-item>
+                    </template>
     </paper-listbox>
     </paper-dropdown-menu>
+
     </div>
+
     </div>
 
     </template>
 
     <script>
         var scope = document.querySelector('#app');
-        scope.setupurl = "data-planes.json";
+        scope.setupurl = "data-vendee.json";
         scope.url = "";
 
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
