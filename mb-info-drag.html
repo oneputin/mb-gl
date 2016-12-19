@@ -17,6 +17,7 @@ Close with click anywhere on the card
 
         <style is="custom-style">
             :host {
+                position: absolute;
                 display: none; /*inline-block;*/
                 opacity: 1; 
                 top: 50%;
@@ -99,23 +100,37 @@ Close with click anywhere on the card
                 dragctrl: {
                     type: Object,
                     value: {}
+                },
+
+                // Behavior of drag-element
+                // flow, left, right
+                dragtype: {
+                    type: String,
+                    value: "flow"
                 }
+
             },
 
             observers: [
-                '_drag(dragctrl.x,dragctrl.y)',
+                '_drag(dragctrl.x,dragctrl.y, dragtype)',
                 '_toggle(carddata.open)',
                 'refresh(carddata.html)'
             ],
+
 
             'listeners': {
                 "track": '_trackHandler',
                 "tap": '_onBackClick'
             },
 
-            _trackHandler: function (e) {
-                e.cancelBubble = true;
-                e.stopPropagation();
+            /**
+             * Combine last track(tap)-coordinates with coordinates at start  
+             * into new location of tracked element 
+             * @param      {<type>}  e       { parameter_description }
+             */
+            _trackHandler: function(e) {
+                //e.cancelBubble = true;
+                //e.stopPropagation();
                 var style = window.getComputedStyle(this),
                     top = parseFloat(style.getPropertyValue('top')),
                     left = parseFloat(style.getPropertyValue('left')),
@@ -144,22 +159,35 @@ Close with click anywhere on the card
                 }
             },
 
-            attached: function () {
+            attached: function() {
                 // console.log("target attached");
             },
 
-            refresh: function (data) {
+            refresh: function(data) {
                 // console.log("imported card-data", this.carddata);
                 this.$.div1.innerHTML = data;
                 //this.$.title.innerHTML = this.carddata.id;
             },
 
-            _drag: function (x, y) {
+            /**
+             * Translate ctrl-values into style-properties
+             *
+             * @param      {string}  x         { parameter_description }
+             * @param      {string}  y         { parameter_description }
+             * @param      {<type>}  dragtype  drag-behavior
+             */
+            _drag: function(x, y, dragtype) {
                 //console.log("drag", x, y);
                 this.style.left = x + "px";
                 this.style.top = y + "px";
+                if (dragtype) this.style.right = "auto";
             },
-            _toggle: function (open) {
+            /**
+             * Toggle visibility of drag-element
+             *
+             * @param      {number}  open    The status to toggle into 
+             */
+            _toggle: function(open) {
                 if (open == 0) {
                     this.style.display = "none";
                 } else if (open == 1) {
@@ -168,7 +196,7 @@ Close with click anywhere on the card
                 }
             },
 
-            _onBackClick: function () {
+            _onBackClick: function() {
                 this.style.display = "none";
             }
         });
