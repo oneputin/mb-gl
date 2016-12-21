@@ -1,0 +1,124 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+
+<!--
+`import-vendee`
+transfer raw vendee-data 
+into dataformat required by mb-routes-api
+
+@demo demo/vendeemap.html 
+-->
+<dom-module id="import-vendee">
+
+    <template>
+        <iron-ajax
+            auto
+            url="[[url]]"
+            handle-as="json"
+            on-response="getrawdata">
+        </iron-ajax>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'import-vendee',
+            properties: {
+                url: {
+                    type: String
+                },
+                rawdata: {
+                    type: Object,
+                    observer: 'importVendee'
+                },
+                routedata: {
+                    type: Object,
+                    notify: true
+                },
+                wpicon: {
+                    value: "lighthouse"
+                },
+                trackicon: {
+                    value: "harbor"
+                }
+            },
+
+            /**
+             * Setup of animation framework from new track(wp)-dataset
+             *
+             * @param      {<type>}  routedata  Routedata as wp-dataset
+             */
+            getrawdata: function(ajaxresponse) {
+                var routedata = ajaxresponse.detail.response;
+                if (!routedata) return;
+                this.rawdata = routedata; // triggers 'setupTracking'
+            },
+
+            // SPECIFIC import
+            importVendee: function(rawdata) {
+                /**
+                 *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
+                 *  "maritime formatting"  
+                 */
+                function dmtodd(dm, lonflag, prec) {
+                    if (!prec) prec = 6;
+                    dm = dm.split("°"); // console.log("dm-array", dm);
+                    dd = parseInt(dm[0]) + parseFloat(dm[1]) / 60;
+                    if (dm[1].slice(-1) == "W") dd = 0 - dd;
+                    if (dm[1].slice(-1) == "S") dd = 0 - dd;
+                    return dd;
+                }
+
+                // A. Redistribute wp-records into temporary routes-object 
+                var routes = {},
+                    route, id;
+                rawdata.forEach(function(wp, j) {
+                    //  
+                    var wpx = {},
+                        lng, lat;
+                    var pass = mba.utcTime(wp.Date + "." + wp.Time);
+                    wpx.ab = pass;
+                    wpx.an = pass;
+
+                    lat = dmtodd(wp.Lat);
+                    lng = dmtodd(wp.Lng);
+                    wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
+                    wpx.icon = this.wpicon;
+
+                    //  
+                    id = wp.ID;
+                    route = routes[id];
+                    if (!route) {
+                        route = [];
+                        routes[id] = route;
+                    }
+                    route.push(wpx);
+                }.bind(this));
+
+                // B. reformat temporary routes-object 
+                // into array of api-conform routes with wps sorted by time 
+                var routedata = [];
+                Object.keys(routes).forEach(function(id) {
+                    var wps = routes[id];
+                    wps.sort(function(wp1, wp2) {
+                        return wp1.ab - wp2.ab;
+                    });
+                    // 
+                    var key = id.split(">")[1];
+                    id = id.replace("<br>", "/")
+                    var route = {
+                        "id": id,
+                        "key": key,
+                        "obj": "ship",
+                        "icon": this.trackicon,
+                        "waypoints": wps
+                    };
+                    routedata.push(route);
+                }.bind(this));
+                // console.log("IMPORTED vendee-data", routedata, rawdata);
+                this.routedata = routedata;
+            }
+
+        })
+    </script>
+
+</dom-module>

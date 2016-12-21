@@ -14,14 +14,7 @@ along waypoint file loaded from url
 <dom-module id="mb-routes">
 
     <template>
-    
-        <iron-ajax
-            auto
-            url="[[url]]"
-            handle-as="json"
-            on-response="dataToApp">
-        </iron-ajax>
-    
+
     </template>
 
     <script>
@@ -36,11 +29,12 @@ along waypoint file loaded from url
              * Constructs the object.
              *
              * @param      {array}   coordinates  The wp's coordinates as [lng,lat]-array
-             * @param      {string}  id           The wp's identifier
+             * @param      {string}  id           The wp's identifier on maps
+             * @param      {string}  routeid      The wp's identifier
              * @param      {string}  icon         The mapbox-icon name 
              */
             constructor(coordinates, id, routeid, icon) {
-                if (!id) id = "wp";
+                // if (!id) id = "wp";
                 if (!icon) icon = "star";
                 this.type = "Feature";
                 this.geometry = {
@@ -48,6 +42,7 @@ along waypoint file loaded from url
                     "coordinates": coordinates
                 }
                 this.id = id;
+
                 this.properties = {
                     'routeid': routeid,
                     "title": id,
@@ -100,6 +95,7 @@ along waypoint file loaded from url
                  */
                 this.id = routeid;
                 props.routeid = routeid;
+                props.trackid = props.key;
                 props.legs = legdata;
                 props.wps = wps;
                 this.properties = props;
@@ -114,17 +110,19 @@ along waypoint file loaded from url
              * Constructs the object.
              * @param      {array}  coordinates   The coordinates
              * @param      {string}  routeid      The identifier of route
-             * @param      {string}  plane        The id(name) of the obj (fi plane-code)
+             * @param      {string}  props        Some props
              * @return     {mb-feature}  { mapbox point feature }
              */
             constructor(coordinates, routeid, props) {
-                if (!props) props = {};
+                this.id = routeid;
                 this.type = "Feature";
                 this.geometry = {
                     "type": "Point",
                     "coordinates": coordinates
                 };
-                this.id = routeid;
+
+                // variable properties
+                if (!props) props = {};
                 props.id = routeid;
                 props.bearing = 45;
                 props.time = 0;
@@ -275,22 +273,12 @@ along waypoint file loaded from url
             },
             // A. 
 
-            /**
-             * Setup of animation framework from new track(wp)-dataset
-             *
-             * @param      {<type>}  routedata  Routedata as wp-dataset
-             */
-            dataToApp: function(ajaxresponse) {
-                var routedata = ajaxresponse.detail.response;
-                if (!routedata) return;
-                this.routedata = routedata; // triggers 'setupTracking'
-            },
 
             setupTracking: function(routedata, timescale) {
-                console.log("ORIGINAL routedata:", routedata, " with timescale=" + timescale);
+                // console.log("ORIGINAL routedata:", routedata, " with timescale=" + timescale);
 
                 this.counter = 0;
-                this.trackTimer = this.setupTrackTimer(routedata, this.timescale);
+                this.trackTimer = this.setupTrackTimer(routedata, timescale);
 
                 var routelayers = {};
                 routelayers['waypoints'] = this.setupTrackWaypoints(routedata);
@@ -616,9 +604,9 @@ along waypoint file loaded from url
 
                                 mba.trackobj.geometry.coordinates = cc;
                                 mba.trackinfo = mba.calcTrackInfo(trackObj);
-                                
+
                                 if (!mba.popupmode) {
-                                    mba.trackdata = {} ;
+                                    mba.trackdata = {};
                                     mba.trackdata = {
                                         // "open": 1,
                                         "title": mba.trackid,
@@ -656,14 +644,15 @@ along waypoint file loaded from url
 
             // Calc status-parameters at mapTime and save as properties
             trackStepStatus: function(trackObj, legInfo, mapTime) {
-                // console.log(legInfo, trackObj);
+                var objType = trackObj.properties.obj;
+                // console.log("trackStepStatus of " + objType, legInfo, trackObj);
                 trackObj.properties.time = this.logTime(mapTime * 3600 * 1000);
 
                 var cc = trackObj.geometry.coordinates,
                     lastPos = trackObj.properties.lastPos,
                     legTarget = legInfo.to;
 
-                // calc last steps bearing (between plane and its 'lastPosition')
+                // calc last steps bearing (between "actual" and 'last' Position of trackObj )
                 var bearing = turf.bearing(new Track(lastPos), trackObj);
                 if (bearing < 0) bearing = bearing + 360;
 
@@ -677,11 +666,17 @@ along waypoint file loaded from url
                     var t = dta / parseFloat(v),
                         tta = this.deltaT(t, "Arrived");
 
-                    trackObj.properties.bearing = Math.round(bearing); // °
-                    trackObj.properties.speed = v; // km/h
-                    trackObj.properties.dta = Math.round(dta / 10) * 10; // km
                     trackObj.properties.tta = tta;
+                    trackObj.properties.bearing = Math.round(bearing); // °
                     trackObj.properties.arrived = null;
+
+                    if (objType == "ship") {
+                        trackObj.properties.speed = Math.round(v / 1.856); // nds
+                        trackObj.properties.dta = Math.round(dta / 1.856); // nm
+                    } else {
+                        trackObj.properties.speed = v; // km/h
+                        trackObj.properties.dta = Math.round(dta / 10) * 10; // km
+                    }
 
                 } else {
                     // Resting
@@ -690,10 +685,12 @@ along waypoint file loaded from url
                     trackObj.properties.dta = 0;
                     trackObj.properties.tta = 0;
                     if (legTarget.ab) {
-                        let stoptime = this.deltaT(legTarget.dep - legTarget.arv, "");
-                        let ttt = this.deltaT(legTarget.dep - mapTime, "TakeOff");
-                        trackObj.properties.time = "Start - " + ttt;
-                        trackObj.properties.arrived = "Stopover: " + stoptime;
+                        if (legTarget.ab != legTarget.an) {
+                            let stoptime = this.deltaT(legTarget.dep - legTarget.arv, "");
+                            let ttt = this.deltaT(legTarget.dep - mapTime, "TakeOff");
+                            trackObj.properties.time = "Start - " + ttt;
+                            trackObj.properties.arrived = "Stopover: " + stoptime;
+                        }
                     } else {
                         trackObj.properties.arrived = "Arrived !";
                     }
@@ -715,12 +712,11 @@ along waypoint file loaded from url
                 if (!timeScale) timeScale = 360; // Animationszeit 1s=360s=6min, 10s=1h Echtzeit 
 
                 var fpsmax = 60; // Animationszeit 1s=360s=6min, 10s=1h Echtzeit 
-
                 this.frameTime = timeScale / fpsmax; // Bsp: frameTime: 6 s fuer scale = 360 und fps=60 !!
-                // console.log("timeScale=" + timeScale, ", frameTime=" + this.frameTime + "sec");
+                console.log("timeScale=" + timeScale, ", frameTime=" + this.frameTime + "sec");
 
-                var start, trackTimer = {};
-
+                // 
+                var trackTimer = {};
                 routedata.forEach(function(route, j) {
                     var starts = [],
                         stops = [];
@@ -728,25 +724,38 @@ along waypoint file loaded from url
                         if (wp.ab) starts.push(wp);
                         if (wp.an) stops.push(wp);
                     }.bind(this));
-                    trackTimer[route.id] = [starts, stops];
+
+                    // Collect 
+                    trackTimer[route.id] = {
+                        "starts": starts,
+                        "stops": stops
+                    }; // [starts, stops, passes];
                 }.bind(this));
                 // console.log("trackTimerRaw", trackTimer);
+                // return;
 
+                // get every routes overall start/stop times 
+                var start;
                 Object.keys(trackTimer).forEach(function(id) {
-                    var starts = trackTimer[id][0],
-                        stops = trackTimer[id][1],
-                        wpstart = starts[0],
-                        wpstop = stops[stops.length - 1],
-                        routestart = this.utcTime(wpstart.ab, wpstart.coords, "h"),
-                        routestop = this.utcTime(wpstop.an, wpstop.coords, "h");
+                    var starts = trackTimer[id]["starts"],
+                        stops = trackTimer[id]["stops"],
+                        wpstart, wpstop, routestart, routestop;
+
+                    if (starts.length) wpstart = starts[0];
+                    if (stops.length) wpstop = stops[stops.length - 1];
+
+                    routestart = this.utcTime(wpstart.ab, wpstart.coords, "h");
+                    routestop = this.utcTime(wpstop.an, wpstop.coords, "h");
+
                     trackTimer[id] = {
                         "start": routestart,
                         "stop": routestop
                     };
                     if (!start || (routestart < start)) start = routestart;
                 }.bind(this));
-
-                // 
+                // console.log("trackTimer2", trackTimer);
+                // return;
+                // Get the 
                 var routeStarts = {},
                     startTimes = [];
                 for (let id in trackTimer) {
@@ -761,7 +770,6 @@ along waypoint file loaded from url
                 trackTimer["frameTime"] = this.frameTime;
 
                 console.log("APPLIED trackTimer:", trackTimer);
-
                 return trackTimer;
             },
 
@@ -772,16 +780,20 @@ along waypoint file loaded from url
              * @return     {<type>}  { description_of_the_return_value }
              */
             setupTrackWaypoints: function(routedata) {
-
+                // console.log("routedata at setupTrackWaypoints", routedata);
                 this.waypoints.features = [];
                 var allwaypoints = this.waypoints;
 
                 routedata.forEach(function(route, j) {
-                    // locate plane at 'origin'
+                    // locate trackObj at 'origin'
                     // console.log("route-" + j, route.waypoints);
 
                     route.waypoints.forEach(function(wp, p) {
-                        allwaypoints.features.push(new Waypoint(wp.coords, wp.id, route.id));
+                        var key, icon;
+                        if (wp.key) key = wp.key;
+                        else key = wp.id;
+                        if (wp.icon) icon = wp.icon;
+                        allwaypoints.features.push(new Waypoint(wp.coords, key, route.id, icon));
                     });
                 });
                 // console.log("all waypoints collected", allwaypoints.features);
@@ -815,6 +827,7 @@ along waypoint file loaded from url
              * @return     {<type>}  { description_of_the_return_value }
              */
             setupTrackObjects: function(routedata, trackTimer, startcounter) {
+                // console.log("routedata at setupTrackObjects", routedata);
                 if (!startcounter) startcounter = 0;
 
                 var trackLayer = {};
@@ -829,7 +842,8 @@ along waypoint file loaded from url
                     startort = route.waypoints[startcounter].coords;
                     props = {
                         "routeid": route.id,
-                        "title": route.plane,
+                        "title": route.key,
+                        "obj": route.obj,
                         "start": trackTimer[route.id]["start"],
                         "stop": trackTimer[route.id]["stop"]
                     }
@@ -852,7 +866,7 @@ along waypoint file loaded from url
                         "icon-rotate": 90,
                         //"icon-image": "{icon}-15",
                         //"icon-rotate": "{bearing}",  
-                        "text-field": "{routeid}",
+                        "text-field": "{title}",
                         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
                         "text-size": 12,
                         "text-offset": [0, 0.6],
@@ -957,7 +971,6 @@ along waypoint file loaded from url
                         var leg = new Leg([wp.coords, wpnext.coords]),
                             legDistance = turf.lineDistance(leg, 'kilometers');
                         legDistance = Math.round(legDistance);
-                        // console.log("Route-" + j + ", leg to", wpnext, legDistance); 
 
                         // Calculate a mean leg-speed between wp's with ab/an times
                         legSpeed = routeSpeed;
@@ -1130,7 +1143,7 @@ along waypoint file loaded from url
                         if (!mba.getNextStart(mapTime)) {
                             mba.trackctrl = false;
                             mba.trackmode = false;
-                            console.log(flag, evtTime, "No more starts");
+                            console.log(flag, evtTime, "No more data");
                             mba.map.setFilter('routes', null);
                             mba.map.setFilter('waypoints', null);
                         }
@@ -1157,7 +1170,7 @@ along waypoint file loaded from url
                             routeids.forEach(function(id) {
                                 routeFilter.push(id);
                             });
-                            console.log("Refreshed SecondaryFilter", routeFilter);
+                            // console.log("Refreshed SecondaryFilter", routeFilter);
                             mba.map.setFilter('routes', routeFilter);
                             mba.map.setFilter('waypoints', routeFilter);
                         } // console.log(flag, evtTime, trackObjs);
@@ -1208,9 +1221,9 @@ along waypoint file loaded from url
 
             trackObjSelect: function(e) {
                 var features = [];
-                if (map.getLayer('tracks')||map.getLayer('tracks-select')) {
+                if (map.getLayer('tracks') || map.getLayer('tracks-select')) {
                     features = map.queryRenderedFeatures(e.point, {
-                        layers: ['tracks','tracks-select']
+                        layers: ['tracks', 'tracks-select']
                     });
                 }
                 if (!features.length) {
@@ -1222,7 +1235,7 @@ along waypoint file loaded from url
                 } // console.log("mousemove-event", e);
 
                 if (mba.trackid == features[0].properties.id) {
-                //    return;
+                    //    return;
                 }
 
                 mba.trackobj = features[0];
@@ -1248,7 +1261,7 @@ along waypoint file loaded from url
                     mba.trackdata = {
                         "open": 1,
                         "title": mba.trackid,
-                        "html": mba.calcTrackInfo(mba.trackobj),
+                        "html": mba.trackinfo,
                         "properties": mba.trackobj.properties
                     };
                 }

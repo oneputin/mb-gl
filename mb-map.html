@@ -6,7 +6,7 @@
 <!--
 `mb-map`
 wraps a map created with mapbox-gl-api.  
-the map-object can be ctrld from outside
+the map-ctrls can be placed as map-overlay or anywhere else 
 
 @demo demo/index1.html 
 -->
@@ -18,8 +18,10 @@ the map-object can be ctrld from outside
         <style>
             :host {
                 display: block;
+                position: absolute;
             }
             #map {
+                position:absolute;
                 width: 100%;
                 height: 100%;
             }    

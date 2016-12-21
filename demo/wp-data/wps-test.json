@@ -1,6 +1,6 @@
 [{
     "id": "AB123",
-    "plane": "A320",
+    "key": "A320",
     "waypoints": [{
         "coords": [13.5, 52.37],
         "id": "SXF",
@@ -20,7 +20,7 @@
     "speed": 700
 }, {
     "id": "BA003",
-    "plane": "B747",
+    "key": "B747",
     "waypoints": [{
         "coords": [-122.414, 37.776],
         "id": "SFO",
@@ -33,7 +33,7 @@
     "speed": 1000
 }, {
     "id": "AA221",
-    "plane": "B777",
+    "key": "B777",
     "waypoints": [{
         "coords": [-122.414, 37.776],
         "id": "SFO",
