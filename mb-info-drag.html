@@ -6,7 +6,10 @@
 
 <!--
 `mb-info-drag`
-Info-card related to a selected feature. Can be vertically dragged & horizontally resized. 
+RICH-content Info-card related to one selected feature,  
+absolutely positioned as map-overlay   
+Mode-A: Can be vertically dragged & horizontally resized.  
+Mode-B: Free drag   
 Close with click anywhere on the card
 
 @demo demo/routemap.html 
@@ -85,6 +88,9 @@ Close with click anywhere on the card
 
         </paper-card>
 
+        <content>
+        </content>    
+
     </template>
 
     <script>
@@ -114,7 +120,7 @@ Close with click anywhere on the card
             observers: [
                 '_drag(dragctrl.x,dragctrl.y, dragtype)',
                 '_toggle(carddata.open)',
-                'refresh(carddata.html)'
+                'refreshHtml(carddata.html)'
             ],
 
 
@@ -163,7 +169,7 @@ Close with click anywhere on the card
                 // console.log("target attached");
             },
 
-            refresh: function(data) {
+            refreshHtml: function(data) {
                 // console.log("imported card-data", this.carddata);
                 this.$.div1.innerHTML = data;
                 //this.$.title.innerHTML = this.carddata.id;

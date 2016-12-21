@@ -1,0 +1,60 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+
+<!--
+`import-routes`
+import raw route-data (created intentially for app-testing)
+with no changes into dataformat required by mb-routes-api
+
+@demo demo/routemap.html 
+-->
+<dom-module id="import-routes">
+
+    <template>
+        <iron-ajax
+            auto
+            url="[[url]]"
+            handle-as="json"
+            on-response="getrawdata">
+        </iron-ajax>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'import-routes',
+            properties: {
+                url: {
+                    type: String
+                },
+                rawdata: {
+                    type: Object,
+                    observer: 'importroutes'
+                },
+                routedata: {
+                    type: Object,
+                    notify: true
+                }
+            },
+
+            /**
+             * Setup of animation framework from new track(wp)-dataset
+             * @param      {<type>}  routedata  Routedata as wp-dataset
+             */
+            getrawdata: function(ajaxresponse) {
+                if (!this.url) return;
+                var routedata = ajaxresponse.detail.response;
+                if (!routedata) return;
+                // console.log("RAW routes from: " + this.url, routedata);
+                this.rawdata = routedata; // triggers 'setupTracking'
+            },
+
+            // import as copy 
+            importroutes: function(rawdata) {
+                // console.log("IMPORT", rawdata);
+                this.routedata = rawdata;
+            }
+
+        })
+    </script>
+
+</dom-module>

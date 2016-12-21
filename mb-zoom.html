@@ -1,13 +1,11 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../paper-slider/paper-slider.html">
-
 <link rel="import" href="mb-api.html">
-
+<link rel="import" href="../paper-slider/paper-slider.html">
 <!--
 `mb-zoom`
-Zoom-Ctrl of related mb-gl-map 
+wraps an external zoom-slider
 
-@demo demo/index1.html 
+@demo demo/slidemap.html 
 -->
 
 <dom-module id="mb-zoom">
@@ -23,8 +21,13 @@ Zoom-Ctrl of related mb-gl-map
                 background-color: #ff4081;
                 color: white;
             }   
+            .title {
+                padding: 3px;
+                margin: 2px;
+            }
         </style>
         <div>        
+            <div class="title">[[title]]</div> 
             <!--   snap   step=1   min="[[min]]"  max="[[max]]"--> 
             <paper-slider 
                 id = "slider"
@@ -52,7 +55,6 @@ Zoom-Ctrl of related mb-gl-map
                     observer: 'setupmaptool',
                     notify: true
                 },
-
                 /**
                  *  mb-gl zoomlevel(1-22)
                  *  (int or float)   
@@ -62,7 +64,10 @@ Zoom-Ctrl of related mb-gl-map
                     observer: 'setmapzoom',
                     notify: true
                 },
-
+                // 
+                title: {
+                    type: String
+                },
                 /**
                  * min zoom-level 
                  */

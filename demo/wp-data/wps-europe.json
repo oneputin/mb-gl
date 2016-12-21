@@ -1,6 +1,6 @@
 [{
         "id": "AB123",
-        "plane": "A320",
+        "key": "A320",
         "waypoints": [{
             "coords": [13.5, 52.37],
             "id": "SXF",
@@ -20,7 +20,7 @@
         "speed": 700
     }, {
         "id": "BA003",
-        "plane": "A330",
+        "key": "A330",
         "waypoints": [{
             "coords": [13.5, 52.37],
             "id": "SXF",
@@ -33,7 +33,7 @@
         "speed": 1000
     }, {
         "id": "AF017",
-        "plane": "B737",
+        "key": "B737",
         "waypoints": [{
             "coords": [13.5, 52.37],
             "id": "SXF",
@@ -52,7 +52,7 @@
     },
     {
         "id": "LH017",
-        "plane": "A320",
+        "key": "A320",
         "waypoints": [{
             "coords": [8.5, 50.05],
             "id": "FRA",

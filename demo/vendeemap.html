@@ -1,17 +1,18 @@
 <!doctype html>
 <html>
+<!--
+Demo to view ship-data animation 
+-->
 
 <head>
     <title>mb-routes demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
     <link rel="import" href="../../iron-collapse/iron-collapse.html">
-
     <link rel="import" href="../../paper-item/paper-item.html">
     <link rel="import" href="../../paper-listbox/paper-listbox.html">
     <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
@@ -20,10 +21,14 @@
     <link rel="import" href="../mb-info-lnglat.html">
     <link rel="import" href="../mb-info-drag.html">
 
-    <link rel="import" href="../mb-vendee.html">
+    <link rel="import" href="../mb-routes.html">
+    <link rel="import" href="../mb-routes-ctrl.html">
+    <link rel="import" href="../mb-routes-ctrl-mode.html">
+    <link rel="import" href="../mb-routes-ctrl-time.html">
+
+    <link rel="import" href="../import-vendee.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
-
     <style is="custom-style">
         .container {
             @apply(--layout-horizontal);
@@ -31,7 +36,7 @@
         }
         
         .ctrls {
-            /*position: absolute;*/
+            /* itself flex layouted div */
             @apply(--layout-horizontal);
             align-items: flex-start;
             width: 50%;
@@ -44,7 +49,7 @@
             height: 600px;
         }
         
-        mb-info {
+        mb-info-lnglat {
             left: 50%;
             margin-right: -50%;
             transform: translate(-50%, 0)
@@ -63,14 +68,14 @@
         }
         
         paper-dropdown-menu {
-            /*position: absolute;*/
-            /*background-color: var(--paper-light-green-500);
-            opacity: 0.8;*/
             border-style: solid;
             border-width: 1px;
             padding: 10px;
+            /*position: absolute;*/
+            /*background-color: var(--paper-light-green-500);
+              opacity: 0.8;*/
             /*top: 40px;
-            left: 30px;*/
+              left: 30px;*/
         }
         
         mb-routes-ctrl-time {
@@ -78,22 +83,22 @@
             border-width: 1px;
             padding: 10px;
             /*position: absolute;
-            top: 40px;
-            right: 20px; */
+              top: 40px;
+              right: 20px; */
         }
     </style>
-
 </head>
 
 <body>
-
     <template is="dom-bind" id="app">
-
         <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
         </iron-ajax>
-
-        <div class="container">    
+        <import-vendee url="[[importurl]]" routedata="{{routedata}}">
+        </import-vendee>
+        
+        <div class="container">
             
+            <!-- Left block: Map -->
             <mb-map 
                 mapapikey="[[mbkey]]" 
                 map="{{map}}" 
@@ -101,79 +106,70 @@
                 zoom="{{zoom}}" 
                 lnglat="{{lnglat}}" 
                 mapctrl="[[mapctrl]]">
-
-                <mb-vendee 
-                    map="[[map]]" 
-                    url="[[url]]" 
-                    fps="[[fps]]" 
-                    timescale="[[timescale]]" 
-                    trackctrl="{{trackctrl}}" 
-                    trackmode="{{trackmode}}"
-                    trackdata="{{trackdata}}">
-                </mb-vendee>
-
+                
+                <!-- Elements to show in map-overlay  -->
                 <mb-routes-ctrl trackctrl="{{trackctrl}}">
                 </mb-routes-ctrl>
-
                 <mb-routes-ctrl-mode trackmode="{{trackmode}}">
                 </mb-routes-ctrl-mode>
-
                 <mb-info-lnglat lnglat="[[lnglat]]">
                 </mb-info-lnglat>
-
                 <mb-info-drag carddata="[[trackdata]]">
                 </mb-info-drag>
+
             </mb-map>
 
-        <div class="ctrls">
-
-            <mb-routes-ctrl-time timescale="{{timescale}}" fps="{{fps}}">
-            </mb-routes-ctrl-time>
-
-            <paper-dropdown-menu label="Position sets">
-                <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-                    <template is="dom-repeat" items="{{wpdocs}}">
-                        <paper-item url="{{item.url}}">
-                            {{item.title}}
-                        </paper-item>
-                    </template>
+            <!-- Right Block: several external app-controls -->
+            <div class="ctrls">
+                <!-- invisible -->
+                <mb-routes map="[[map]]" routedata=[[routedata]] fps="[[fps]]" timescale="[[timescale]]" trackctrl="{{trackctrl}}" trackmode="{{trackmode}}" trackdata="{{trackdata}}">
+                </mb-routes>
+                <!-- Left -->
+                <mb-routes-ctrl-time timescale="{{timescale}}" timescalemax="[[timescalemax]]" fps="{{fps}}">
+                </mb-routes-ctrl-time>
+                <!-- Right -->
+                <paper-dropdown-menu label="Position sets">
+                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+                        <template is="dom-repeat" items="{{wpdocs}}">
+                            <paper-item url="{{item.url}}">
+                                {{item.title}}
+                            </paper-item>
+                        </template>
     </paper-listbox>
     </paper-dropdown-menu>
-
     </div>
 
     </div>
-
     </template>
 
     <script>
         var scope = document.querySelector('#app');
-        scope.setupurl = "data-vendee.json";
-        scope.url = "";
+        scope.setupurl = "data-vendee.json"; // list of available datasets
+        scope.importurl = ""; // url to selected dataset
 
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-        scope.cbox = "13.7,52.4";
-        scope.lnglat = "13.7,52.4";
-        scope.zoom = 1;
+
+        // Map-initialization
+        scope.cbox = "-50,-40";
+        scope.lnglat = "-50,-40";
+        scope.zoom = 2;
+        // Timescale to view tracks of boats over several days
+        scope.timescalemax = 3600; // 1s = 1h
 
         scope.mapctrl = {};
         scope.cardctrl = {};
 
+        /**
+         * Put selected url from menu-selection into import-element
+         */
         scope.selectedurl = function(e) {
-            // after selection in paper-listbox
-            this.url = e.detail.item.url;
-        }
-        scope.setupme = function(ajaxresponse) {
-            // iron-ajax response
-            this.wpdocs = ajaxresponse.detail.response;
-            // console.log("setupdata", this.wpdocs);
+            this.importurl = e.detail.item.url;
         }
 
-        // The dom-change event signifies when the template has stamped its DOM.
-        scope.addEventListener('dom-change', function() {
-            // auto-binding template is ready.
-            console.log("dom changed");
-        });
+        // eval the response of content-list 
+        scope.setupme = function(ajaxresponse) {
+            this.wpdocs = ajaxresponse.detail.response;
+        }
     </script>
 </body>
 

@@ -55,12 +55,13 @@ slider ctrls to modify timing of animated objects
     	</style>
 	
 		<div class="ctrlbox"> 
-            <div>TimeScale [min/s]</div>
+            <h3>Animation setup</h3>
+            <div>1min ~ [[scalestring]] reality</div>
             <div class="slider">
-                <paper-slider id="scalectrl" class="slomo" value="{{scalevalue}}" on-change="scaleChangeHandler" min="1" max='10' pin editable></paper-slider>
+                <paper-slider id="scalectrl" class="slomo" value="{{scalevalue}}" on-change="scaleChangeHandler" min="1" max='10'></paper-slider>
             </div>
 
-            <div>Slomo [% of TimeScale]</div>
+            <div>Throttle [[fpsvalue]][%]</div>
             <paper-slider id="fpsctrl" value="{{fpsvalue}}" on-change="fpsChangeHandler" min="10" max='100' step='10' pin ></paper-slider>
 
 	    </div>
@@ -87,7 +88,13 @@ slider ctrls to modify timing of animated objects
                  */
                 timescale: {
                     type: Number,
+                    observer: 'formatScale',
                     notify: true
+                },
+
+                timescalemax: {
+                    type: Number,
+                    observer: 'setupTimeCtrls'
                 },
 
             },
@@ -103,8 +110,16 @@ slider ctrls to modify timing of animated objects
             },
 
             scaleChangeHandler: function() {
-                var timescale = this.scaleMin * this.scalevalue; //console.log("timescale", timescale);
+                var timescale = this.scalemin * this.scalevalue;
+                console.log("new timescale", timescale);
                 this.timescale = timescale;
+            },
+
+            resetTimeScale: function(timescalemax) {
+                if (!timescalemax) timescalemax = 600; // 10 h
+                this.scalemin = timescalemax / 10;
+                this.scalevalue = 5;
+                this.timescale = this.scalemin * this.scalevalue;
             },
 
             /**
@@ -113,13 +128,11 @@ slider ctrls to modify timing of animated objects
              */
             setupTimeCtrls: function() {
 
+                this.resetTimeScale(this.timescalemax);
+
                 this.fpsMax = 60;
                 this.fpsvalue = 100;
                 this.fps = this.fpsvalue / this.fpsMax * 100;
-
-                this.scaleMin = 60; // for 1min = 60s  
-                this.scalevalue = 5;
-                this.timescale = this.scaleMin * this.scalevalue;
 
                 //     
                 var fpsSlider = this.$.fpsctrl,
@@ -127,6 +140,22 @@ slider ctrls to modify timing of animated objects
 
                 var fpsValue = this.$.fpsvalue,
                     fpsValue = this.$.scalevalue;
+
+            },
+
+            formatScale: function(minutes) {
+                var h, m, s;
+                if (minutes < 60) {
+                    m = minutes;
+                    this.scalestring = m + " min";
+                } else if (minutes < 1440) {
+                    h = Math.floor(minutes / 60);
+                    m = minutes - (60 * h);
+                    s = m ? h + " h, " + m + " min" : h + " h";
+                    this.scalestring = s;
+                } else {
+                    this.scalestring = (minutes / 1440).toFixed(2) + " d";
+                }
 
             }
 

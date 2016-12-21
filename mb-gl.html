@@ -1,17 +1,19 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../kml-json/kml-json.html">
 
+<link rel="import" href="../kml-json/kml-json.html">
 <link rel="import" href="mb-api.html">
 
 <!--
 `mb-gl`
-wraps a map based on mapbox-gl-api and a dynamic feature overlay with minimum parameters. 
-
+wraps a map based on mapbox-gl-api 
+and a dynamic feature overlay with minimum parameters. 
+NO additional elements 
 @demo demo/index.html 
 -->
 
 <dom-module id="mb-gl">
     <template>
+        
         <style>
             :host {
                 display: block;
@@ -21,10 +23,25 @@ wraps a map based on mapbox-gl-api and a dynamic feature overlay with minimum pa
                 width: 100%;
                 height: 100%;
             }
+
+            .container {
+                position: relative;
+                width: 100%;
+                height: 100%;
+            }    
+
         </style>
 
         <h3>Slide-Service at: [[serviceurl]]</h3>
 
+        <div class="container">
+            <div id='map'>
+            </div>
+            <content>
+            </content>
+        </div>
+
+        <!-- checkout slidedata from server -->
         <template is="dom-if" if="[[serviceflag]]">
             <kml-json 
                 url     = "[[serviceurl]]"
@@ -33,24 +50,21 @@ wraps a map based on mapbox-gl-api and a dynamic feature overlay with minimum pa
             </kml-json>
         </template>
 
-        <div id='map'></div>
-
     </template>
 
     <script>
         var map,
+
             setup = {
 
-                mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
-
                 serviceurl: "http://iimaps.de/npp/if_slides.php",
-
                 serviceparams: {
                     mapclient: "ol2",
                     card: "default",
                     slide: "basin"
                 },
 
+                mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
                 map: {
                     // container: 'map',     // useless as map is in shadowdom  
                     // center: [13.5, 52.5], // must be synced by client with service
@@ -138,7 +152,7 @@ wraps a map based on mapbox-gl-api and a dynamic feature overlay with minimum pa
             ],
 
             attached: function() {
-                console.log("log setup",setup);
+                console.log("log setup", setup);
 
                 this.mapapikey = setup.mapapikey;
 
@@ -228,7 +242,7 @@ wraps a map based on mapbox-gl-api and a dynamic feature overlay with minimum pa
                 var qpoint, cbox;
                 if (e.point) {
                     qpoint = e.point;
-                    cbox = e.lonlat; 
+                    cbox = e.lonlat;
                 } else if (e.target) {
                     var c = e.target._canvas;
                     qpoint = new mapboxgl.Point(c.width / 2, c.height / 2);
@@ -244,16 +258,17 @@ wraps a map based on mapbox-gl-api and a dynamic feature overlay with minimum pa
                     // Optionally features or its ids or its properties 
                     this.slideinfo = features;
                     if (cbox) {
-                        this.cbox = cbox[0].toFixed(3)+', '+cbox[1].toFixed(3);
+                        this.cbox = cbox[0].toFixed(3) + ', ' + cbox[1].toFixed(3);
                     }
                 }
             },
+
 
             sliderequest: function() {
                 var cbox = map.getCenter();
                 this.cbox = cbox.lng + "," + cbox.lat;
                 this.serviceparams.cbox = this.cbox;
-                console.log("map triggered sliderequest", this.serviceparams);
+                // console.log("map triggered sliderequest", this.serviceparams);
             },
 
             installmap: function() {
@@ -276,6 +291,9 @@ wraps a map based on mapbox-gl-api and a dynamic feature overlay with minimum pa
                 });
             },
 
+            /**
+                utility to integrate url-arguments into a property-object
+            */
             extend: function(dest) { // utility
                 for (let i = 1; i < arguments.length; i++) {
                     const src = arguments[i];
@@ -286,6 +304,6 @@ wraps a map based on mapbox-gl-api and a dynamic feature overlay with minimum pa
                 return dest;
             }
 
-        });   
+        });
     </script>
 </dom-module>

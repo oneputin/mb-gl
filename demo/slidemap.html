@@ -11,16 +11,22 @@
     <link rel="import" href="../../paper-input/paper-input.html">
 
     <link rel="import" href="../mb-map.html">
+    <link rel="import" href="../mb-info-lnglat.html">
+
     <link rel="import" href="../mb-slide.html">
-    <link rel="import" href="../mb-zoom.html">
     <link rel="import" href="../mb-target.html">
-    <link rel="import" href="../mb-info.html">
+    <link rel="import" href="../mb-zoom.html">
 
     <style is="custom-style">
-        div.mapbox {
-            position: relative;
+        mb-map {
             width: 50%;
             height: 400px;
+        }
+        
+        mb-info-lnglat {
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, 0)
         }
         
         .flex-horizontal {
@@ -43,6 +49,10 @@
             background-color: var(--paper-light-green-50);
             color: var(--paper-green-500);
         }
+        
+        paper-input.slidecenter {
+            background-color: var(--paper-light-blue-50);
+        }
     </style>
 
 </head>
@@ -56,14 +66,14 @@
         <div class="container flex-horizontal">
             
             <!-- LEFT container: Map -->
-            <div class="mapbox">
-                <mb-map 
-                    mapapikey="[[mbkey]]"
-                    map="{{map}}"
-                    cbox="{{cbox}}"
-                    zoom="{{zoom}}"
-                    mapctrl="[[mapctrl]]">
-                </mb-map>
+            <!-- <div class="mapbox"> -->
+            <!--zoom="[[zoom]]"-->
+            <mb-map 
+                mapapikey="[[mbkey]]"
+                map="{{map}}"
+                cbox="{{cbox}}"
+                zoom="{{zoom}}"
+                mapctrl="[[mapctrl]]">
 
                 <mb-slide
                     map="[[map]]"
@@ -78,77 +88,78 @@
                     serviceflag="{{flag}}">
                 </mb-target>
 
-                <mb-info 
-                    lonlat="[[cbox]]">
-                </mb-info>
-               <!--zoom="[[zoom]]"-->
-            
-            </div>
+                <mb-info-lnglat 
+                    lnglat="[[cbox]]">
+                </mb-info-lnglat>
+
+            </mb-map>
+            <!--</div>-->
 
             <!-- RIGHT container: Info -->
             <div class="ctrlbox flexchild">
 
                 <!-- A. external map-zoom-ctrl -->
-                <mb-zoom map="{{map}}"></mb-zoom>
-
-                <!-- B. external map-center input -->
+                <mb-zoom map="{{map}}" title="External mapZoom"></mb-zoom>
+                <hr>
+                <!-- B. external input to change map-center -->
                 <paper-input 
-                    label="actual cbox(LonLat) = [[cbox]]" 
+                    class="slidecenter"
+                    label="actual target at (lngLat) = [[cbox]]" 
                     value="{{cboxinput}}" 
                     always-float-label 
                     on-focused-changed="focuschanged">
                 </paper-input>
 
                 <!-- C. Quer-data-viewer -->
-                <h4>SlideLogger</h4>
+                <ul>
+                    <li>Slidesquery action can be toggled with the central  <b>target marker</b> red-selecting, black-inert.</li> 
+                    <li>The FAB forces a zoom to the actually selected slide (disabling selection-mode).</li>
+                </ul>
+                <h4>SlideLog</h4>
                 <p>[[slideinfo]]</p>
 
             </div>
+            
         </div>
-
-        <!--<paper-dialog id="popup" class="colored">
-            <h2 id="popup-headline">[[popuptitle]]</h2>
-            <p>[[slideinfo]]</p>
-        </paper-dialog>-->
 
     </template>
 
     <script>
-        var app = document.querySelector('#app-demo');
-        app.map = null;
-        app.serviceparams = {
+        var scope = document.querySelector('#app-demo');
+        scope.map = null;
+        scope.serviceparams = {
             slide: "basintree"
         };
-        app.cbox = "13.7,52.4";
-        app.cboxinput = "";
-        app.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-        app.mapctrl = {};
-        app.layerctrl = {};
-        app.popuptitle = "slideinfo";
-        app.slidekeys = "";
+        scope.cbox = "13.7,52.4";
+        scope.cboxinput = "";
+        scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+        scope.mapctrl = {};
+        scope.layerctrl = {};
+        scope.popuptitle = "slideinfo";
+        scope.slidekeys = "";
 
-        app.asstring = function(slideinfo) {
+        scope.asstring = function(slideinfo) {
             console.log(slideinfo);
             var txt = JSON.stringify(slideinfo, null, '\n')
             return txt;
         };
 
         // 
-        app.focuschanged = function(e) {
+        scope.focuschanged = function(e) {
             // console.log("focus changed", e);
             if (!e.detail.value) {
-                app.cbox = app.cboxinput;
-                app.cboxinput = "";
+                scope.cbox = scope.cboxinput;
+                scope.cboxinput = "";
             } else {
-                let cbox = app.cbox.split(",");
-                app.cboxinput = parseFloat(cbox[0]).toFixed(3) + "," + parseFloat(cbox[1]).toFixed(3);
+                let cbox = scope.cbox.split(",");
+                scope.cboxinput = parseFloat(cbox[0]).toFixed(3) + "," + parseFloat(cbox[1]).toFixed(3);
             }
             //  app.cbox = v;
         }
 
         document.addEventListener('WebComponentsReady', function() {
             // var cboxin = document.querySelector('#cboxin');
-            var cboxin = app.$.cboxin; // console.log("cboxin:", cboxin);
+            var cboxin = scope.$.cboxin; // console.log("cboxin:", cboxin);
             /* cboxin.addEventListener('value-changed', function() { 
                 console.log("cboxin", this.value);
                 app.cbox = cboxin.value;

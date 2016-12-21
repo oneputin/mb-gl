@@ -9,6 +9,7 @@
 
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
 
     <link rel="import" href="../mb-gl.html">
@@ -16,16 +17,18 @@
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
     <style is="custom-style">
-
-        div.mapbox {
-            width: 400px;
-            height: 400px;
+        mb-gl {
+            width: 50%;
+            height: 600px;
         }
+        
         .flex-horizontal {
             @apply(--layout-horizontal);
         }
+        
         .flexchild {
             @apply(--layout-flex);
+            margin-left: 10px;
         }
     </style>
 
@@ -33,40 +36,41 @@
 
 <body>
 
-    <h1>slide-map</h1>
-    
+    <h1>demo all-in-one map-element with dynamic overlay</h1>
+
     <template is="dom-bind" id="app">
         
         <div class="container flex-horizontal">
-            <div class="mapbox">
-                <mb-gl 
-                    serviceparams="[[serviceparams]]"
-                    cbox="{{cbox}}"
-                    mapapikey="[[mbkey]]"
-                    mapctrl="[[mapctrl]]"
-                    slidectrl="[[layerctrl]]" 
-                    slideinfo="{{slideinfo}}">
-                </mb-gl>
-            </div>
+
+            <mb-gl 
+                serviceparams="[[serviceparams]]"
+                cbox="{{cbox}}"
+                mapapikey="[[mbkey]]"
+                mapctrl="[[mapctrl]]"
+                slidectrl="[[layerctrl]]" 
+                slideinfo="{{slideinfo}}">
+            </mb-gl>
+
             <div class="flexchild">
-                <p>LonLat=[[cbox]]</p>
+                <p>KML queried at lngLat=[[cbox]], viewed as json</p>
                 <p>[[asstring(slideinfo)]]</p>
             </div>
+        
         </div>
-        </template>
-    </div>
+
+    </template>
 
     <script>
-        var app = document.querySelector('#app');
-        app.serviceparams = {
+        var scope = document.querySelector('#app');
+        scope.serviceparams = {
             slide: "basintree"
         };
-        app.cbox = "13.7,52.4";
-        app.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-        app.mapctrl = {};
-        app.layerctrl = {};
+        scope.cbox = "13.7,52.4";
+        scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+        scope.mapctrl = {};
+        scope.layerctrl = {};
 
-        app.asstring = function(item) {
+        scope.asstring = function(item) {
             var txt = JSON.stringify(item, null, '\n')
                 // console.log(txt, item);
             return txt;

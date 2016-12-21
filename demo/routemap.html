@@ -6,17 +6,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
     <link rel="import" href="../../iron-collapse/iron-collapse.html">
-
     <link rel="import" href="../../paper-item/paper-item.html">
     <link rel="import" href="../../paper-listbox/paper-listbox.html">
     <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
-
     <link rel="import" href="../mb-map.html">
+
+    <link rel="import" href="../import-routes.html">
+
     <link rel="import" href="../mb-info-lnglat.html">
     <link rel="import" href="../mb-info-drag.html">
 
@@ -29,25 +29,19 @@
 
     <style is="custom-style">
         .container {
-            @apply(--layout-horizontal);
-            align-items: flex-start;
-        }
-        
-        .ctrls {
-            /*position: absolute;*/
-            @apply(--layout-horizontal);
-            align-items: flex-start;
-            width: 50%;
-            height: 50%;
-            margin-left: 10px;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            /*@apply(--layout-horizontal);
+            align-items: flex-start;*/
         }
         
         mb-map {
-            width: 50%;
-            height: 600px;
+            width: 100%;
+            height: 800px;
         }
         
-        mb-info {
+        mb-info-lnglat {
             left: 50%;
             margin-right: -50%;
             transform: translate(-50%, 0)
@@ -66,37 +60,35 @@
         }
         
         paper-dropdown-menu {
-            /*position: absolute;*/
-            /*background-color: var(--paper-light-green-500);
-            opacity: 0.8;*/
             border-style: solid;
             border-width: 1px;
             padding: 10px;
-            /*top: 40px;
-            left: 30px;*/
+            position: absolute;
+            background-color: var(--paper-light-green-500);
+            opacity: 0.8;
+            top: 40px;
+            left: 30px;
         }
         
         mb-routes-ctrl-time {
             border-style: solid;
             border-width: 1px;
             padding: 10px;
-            /*position: absolute;
+            position: absolute;
             top: 40px;
-            right: 20px; */
+            right: 20px;
         }
     </style>
-
 </head>
 
 <body>
-
     <template is="dom-bind" id="app">
-
         <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
         </iron-ajax>
+        <import-routes url="[[importurl]]" routedata="{{routedata}}">
+        </import-routes>
 
-        <div class="container">    
-            
+        <div class="container">
             <mb-map 
                 mapapikey="[[mbkey]]" 
                 map="{{map}}" 
@@ -104,55 +96,53 @@
                 zoom="{{zoom}}" 
                 lnglat="{{lnglat}}" 
                 mapctrl="[[mapctrl]]">
-
+                
                 <mb-routes 
                     map="[[map]]" 
-                    url="[[url]]" 
+                    routedata=[[routedata]]  
                     fps="[[fps]]" 
                     timescale="[[timescale]]" 
                     trackctrl="{{trackctrl}}" 
-                    trackmode="{{trackmode}}"
+                    trackmode="{{trackmode}}" 
                     trackdata="{{trackdata}}">
                 </mb-routes>
-
+                
                 <mb-routes-ctrl trackctrl="{{trackctrl}}">
                 </mb-routes-ctrl>
-
+                
                 <mb-routes-ctrl-mode trackmode="{{trackmode}}">
                 </mb-routes-ctrl-mode>
-
+                
                 <mb-info-lnglat lnglat="[[lnglat]]">
                 </mb-info-lnglat>
-
+                
+                <mb-routes-ctrl-time timescale="{{timescale}}" fps="{{fps}}">
+                </mb-routes-ctrl-time>
+                
                 <mb-info-drag carddata="[[trackdata]]">
                 </mb-info-drag>
-            </mb-map>
 
-    <div class="ctrls">
-
-        <mb-routes-ctrl-time timescale="{{timescale}}" fps="{{fps}}">
-        </mb-routes-ctrl-time>
-
-        <paper-dropdown-menu label="Flight sets">
-            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-                <template is="dom-repeat" items="{{wpdocs}}">
-                    <paper-item url="{{item.url}}">
-                        {{item.title}}
-                    </paper-item>
-                </template>
+                <paper-dropdown-menu label="Flight sets">
+                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+                        <template is="dom-repeat" items="{{wpdocs}}">
+                            <paper-item url="{{item.url}}">
+                                {{item.title}}
+                            </paper-item>
+                        </template>
     </paper-listbox>
     </paper-dropdown-menu>
-    </div>
-    </div>
 
+    </mb-map>
+    </div>
     </template>
 
     <script>
         var scope = document.querySelector('#app');
         scope.setupurl = "data-planes.json";
-        scope.url = "";
+        scope.importurl = "";
 
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+
         scope.cbox = "13.7,52.4";
         scope.lnglat = "13.7,52.4";
         scope.zoom = 1;
@@ -161,20 +151,11 @@
         scope.cardctrl = {};
 
         scope.selectedurl = function(e) {
-            // after selection in paper-listbox
-            this.url = e.detail.item.url;
+            this.importurl = e.detail.item.url;
         }
         scope.setupme = function(ajaxresponse) {
-            // iron-ajax response
             this.wpdocs = ajaxresponse.detail.response;
-            // console.log("setupdata", this.wpdocs);
         }
-
-        // The dom-change event signifies when the template has stamped its DOM.
-        scope.addEventListener('dom-change', function() {
-            // auto-binding template is ready.
-            console.log("dom changed");
-        });
     </script>
 </body>
 

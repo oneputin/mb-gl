@@ -8,6 +8,7 @@
 <link rel="import" href="../iron-icons/iron-icons.html">
 
 <link rel="import" href="mb-api.html">
+<link rel="import" href="mb-info-drag.html">
 <link rel="import" href="mb-layer-animation.html">
 
 <!--
@@ -17,12 +18,13 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 - interactive queries (f.i. map-click) produce slideinfo-object 
 - optional layer-bound POPUP (paper-dialog) to view slideinfo ontop of map  
 
-@demo demo/index1.html 
+@demo demo/slidemap.html 
 -->
 
 
 <dom-module id="mb-slide">
     <template>
+
         <style>
             :host {
                 display: block;
@@ -47,14 +49,23 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 --paper-spinner-color: var(--paper-pink-500);
                 opacity: 1; 
             }
-            #popupbody {
-                line-height: 0.8;
-            }
 
         </style>
 
+        <!-- optically grouped -->
+        <paper-spinner-lite id="loadspinner" alt="loading next slide" active>
+        </paper-spinner-lite>
+        <paper-fab id="slidezoom" class="fab" icon="all-out" title="heart" on-tap="zoomslide">
+        </paper-fab>
+
+        <mb-info-drag carddata="[[slidecard]]">
+        </mb-info-drag>
+
+        <content>
+        </content>    
+
+        <!-- Async query for new {{slidedata}} -->
         <template is="dom-if" if="[[serviceflag]]">
-            <!-- Async query for new {{slidedata}} -->
             <kml-json 
                 url     = "[[serviceurl]]"
                 service = "[[_servicequery]]"
@@ -62,25 +73,12 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             </kml-json>
         </template>
 
-    <paper-spinner-lite id="loadspinner" alt="loading next slide" active></paper-spinner-lite>
-    <paper-fab id="slidezoom" class="fab" icon="all-out" title="heart" on-tap="zoomslide"></paper-fab>
-
-    <paper-dialog id="popup" class="colored" entry-animation="scale-up-animation" exit-animation="fade-out-animation" with-backdrop>
-        <!--  -->
-        <h2 id="popupheadline">[[popuptitle]]</h2>
-        <paper-dialog-scrollable>
-            <pre><code id="popupbody">[[slideinfo]]</code></pre>
-        </paper-dialog-scrollable>
-    </paper-dialog>
-
-    <!--<div id='map'></div>-->
-
     </template>
 
     <script>
         var slidesetup = {
 
-            
+
             serviceurl: "http://iimaps.de/npp/if_slides.php",
 
             serviceparams: {
@@ -206,7 +204,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 slideinfo: {
                     type: String,
                     notify: true,
-                    observer: 'popupopen'
+                    observer: 'createCarddata'
                 },
 
                 /*
@@ -238,15 +236,8 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 insertslidebelow: {
                     type: String,
                     value: "water"
-                },
-
-                /*
-                 *  title of "internal" info-popup
-                 */
-                popuptitle: {
-                    type: String,
-                    value: "Slideinfo"
                 }
+
             },
 
             observers: [
@@ -479,24 +470,22 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                         slideinfo[frameindex] = formatter(item);
                     })
 
-                    // Tranform Array into string
-                    // this.slideinfo = JSON.stringify(slideinfo, null, '\n');
-                    // this.slideinfo = JSON.stringify(slideinfo);
                     this.slideinfo = slideinfo;
                 }
                 // console.log("slideinfoget", this.slideinfo);
-                // optionally show in map-context
-                if (true) this.$.popup.open();
             },
 
             /**
              * 
              */
-            popupopen: function(item) {
+            createCarddata: function(item) {
                 if (!item) return;
+                console.log("createCarddata of:", item);
                 var txt = typeof item == "string" ? item : JSON.stringify(item, null, '\n');
-                this.$.popupbody.innerText = txt;
-                this.$.popup.open();
+                this.slidecard = {
+                    "html": '<pre><code id="popupbody">' + txt + '</code></pre>',
+                    "open": 1
+                };
             },
 
             /**
