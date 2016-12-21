@@ -26,11 +26,19 @@ Close with click anywhere on the card
                 top: 50%;
                 margin-bottom: -50%;
                 transform: translate(0, -50%);
+
+                /*  */
+                --paper-card-header-text: {
+                    padding: 8px;
+                    font-size: 12px;
+                    font-weight: 400;
+                }
             }
 
             paper-card.info { 
                 @apply(--layout-horizontal); 
                 align-items: flex-start;
+                --paper-card-header-color: #f00;
             }
 
             .info-content {
@@ -61,15 +69,15 @@ Close with click anywhere on the card
 
         </style>
 
-        <paper-card heading="{{carddata.title}}" class="info">
+        <paper-card heading="{{carddata.title}}" image="./wp-data/{{carddata.img}}" class="info">
 
-            <div class="card-image"></div>
+            <!--<div class="card-image"></div>-->
             
             <div class="info-content">
 
                 <div class="card-content">
 
-                    <div>{{dragctrl.msg}}</div>
+                    <div id="div0"></div>
 
                     <div id="div1" class="info-html">
 
@@ -120,7 +128,7 @@ Close with click anywhere on the card
             observers: [
                 '_drag(dragctrl.x,dragctrl.y, dragtype)',
                 '_toggle(carddata.open)',
-                'refreshHtml(carddata.html)'
+                'refreshContent(carddata)'
             ],
 
 
@@ -169,10 +177,11 @@ Close with click anywhere on the card
                 // console.log("target attached");
             },
 
-            refreshHtml: function(data) {
-                // console.log("imported card-data", this.carddata);
-                this.$.div1.innerHTML = data;
-                //this.$.title.innerHTML = this.carddata.id;
+            refreshContent: function(data) {
+                if (!data || !data.length) return;
+                console.log("refresh card for ", data);
+                this.$.div0.innerHTML = data.headline;
+                this.$.div1.innerHTML = data.html;
             },
 
             /**

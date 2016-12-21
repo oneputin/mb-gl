@@ -11,12 +11,21 @@ into dataformat required by mb-routes-api
 <dom-module id="import-vendee">
 
     <template>
+
         <iron-ajax
             auto
             url="[[url]]"
             handle-as="json"
             on-response="getrawdata">
         </iron-ajax>
+
+        <iron-ajax
+            auto
+            url="[[starterurl]]"
+            handle-as="json"
+            on-response="getstarterdata">
+        </iron-ajax>
+
     </template>
 
     <script>
@@ -26,10 +35,16 @@ into dataformat required by mb-routes-api
                 url: {
                     type: String
                 },
-                rawdata: {
-                    type: Object,
-                    observer: 'importVendee'
+                starterurl: {
+                    type: String
                 },
+                rawdata: {
+                    type: Object
+                },
+                starterdata: {
+                    type: Object
+                },
+
                 routedata: {
                     type: Object,
                     notify: true
@@ -42,23 +57,37 @@ into dataformat required by mb-routes-api
                 }
             },
 
+            observers: [
+                'importVendee(rawdata, starterdata)'
+            ],
+
             /**
              * Setup of animation framework from new track(wp)-dataset
              *
              * @param      {<type>}  routedata  Routedata as wp-dataset
              */
             getrawdata: function(ajaxresponse) {
-                var routedata = ajaxresponse.detail.response;
-                if (!routedata) return;
-                this.rawdata = routedata; // triggers 'setupTracking'
+                var rawdata = ajaxresponse.detail.response;
+                if (!rawdata) return;
+                // console.log("routedata", rawdata);
+                this.rawdata = rawdata; // triggers 'setupTracking'
+            },
+
+            getstarterdata: function(ajaxresponse) {
+                var rawdata = ajaxresponse.detail.response;
+                if (!rawdata) return;
+                // console.log("starterdata", rawdata);
+                this.starterdata = rawdata; // triggers 'setupTracking'
             },
 
             // SPECIFIC import
-            importVendee: function(rawdata) {
+            importVendee: function(rawdata, starterdata) {
                 /**
                  *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
                  *  "maritime formatting"  
                  */
+                // console.log(rawdata, starterdata);
+
                 function dmtodd(dm, lonflag, prec) {
                     if (!prec) prec = 6;
                     dm = dm.split("°"); // console.log("dm-array", dm);
@@ -68,9 +97,22 @@ into dataformat required by mb-routes-api
                     return dd;
                 }
 
-                // A. Redistribute wp-records into temporary routes-object 
+
+                // A. Redistribute raw starter-data and wp-records into temporary objects (starters, routes) 
                 var routes = {},
-                    route, id;
+                    starters = {},
+                    route, starter, id;
+
+                starterdata.forEach(function(st, j) {
+                    //  
+                    id = st.ID;
+                    starter = starters[id];
+                    if (!starter) {
+                        starters[id] = st;
+                    }
+                }.bind(this));
+                // console.log("starters", starters);
+
                 rawdata.forEach(function(wp, j) {
                     //  
                     var wpx = {},
@@ -98,11 +140,13 @@ into dataformat required by mb-routes-api
                 // into array of api-conform routes with wps sorted by time 
                 var routedata = [];
                 Object.keys(routes).forEach(function(id) {
-                    var wps = routes[id];
-                    wps.sort(function(wp1, wp2) {
+                    var waypoints = routes[id];
+                    waypoints.sort(function(wp1, wp2) {
                         return wp1.ab - wp2.ab;
                     });
-                    // 
+
+                    var starter = starters[id];
+
                     var key = id.split(">")[1];
                     id = id.replace("<br>", "/")
                     var route = {
@@ -110,11 +154,12 @@ into dataformat required by mb-routes-api
                         "key": key,
                         "obj": "ship",
                         "icon": this.trackicon,
-                        "waypoints": wps
+                        "waypoints": waypoints,
+                        "starter": starter
                     };
                     routedata.push(route);
                 }.bind(this));
-                // console.log("IMPORTED vendee-data", routedata, rawdata);
+                console.log("IMPORTED vendee-data", routedata); // , rawdata);
                 this.routedata = routedata;
             }
 

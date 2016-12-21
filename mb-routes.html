@@ -508,6 +508,21 @@ along waypoint file loaded from url
                 }
             },
 
+            // Build app-specific trackViewData
+            calcTrackData: function(trackObj) {
+                var trackinfo = this.calcTrackInfo(trackObj);
+                var trackdata = {
+                    // "open": 1,
+                    "title": this.trackid,
+                    "html": trackinfo,
+                    "properties": trackobj.properties
+                };
+                if (trackobj.properties.starter) {
+                    trackdata.headline = mba.trackobj.properties.starter.Name;
+                }
+                return trackdata;
+            },
+
             /**
              * Actions connected with every Animationstep 
              *
@@ -603,17 +618,16 @@ along waypoint file loaded from url
                                 // sync coordinates of trackobj
 
                                 mba.trackobj.geometry.coordinates = cc;
-                                mba.trackinfo = mba.calcTrackInfo(trackObj);
 
+
+                                // alternative 
                                 if (!mba.popupmode) {
                                     mba.trackdata = {};
-                                    mba.trackdata = {
-                                        // "open": 1,
-                                        "title": mba.trackid,
-                                        "html": mba.trackinfo,
-                                        "properties": mba.trackobj.properties
-                                    };
+                                    mba.trackdata = mba.calcTrackData(); // specific for every app
+
                                 } else {
+
+                                    mba.trackinfo = mba.calcTrackInfo(trackObj); // from library 'mb-routes-behavior.html'
                                     mba.popup.setHTML(mba.trackinfo); //console.log("popup", mba.popup, trackinfo, cc);
                                     mba.popup.setLngLat(cc);
                                 }

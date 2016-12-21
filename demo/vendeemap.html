@@ -93,7 +93,8 @@ Demo to view ship-data animation
     <template is="dom-bind" id="app">
         <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
         </iron-ajax>
-        <import-vendee url="[[importurl]]" routedata="{{routedata}}">
+
+        <import-vendee url="[[importurl]]" starterurl="[[starterurl]]" routedata="{{routedata}}">
         </import-vendee>
         
         <div class="container">
@@ -144,7 +145,9 @@ Demo to view ship-data animation
 
     <script>
         var scope = document.querySelector('#app');
-        scope.setupurl = "data-vendee.json"; // list of available datasets
+        scope.setupurl = "vendeedata.json"; // list of available datasets
+        scope.starterurl = "wp-data/vendee-starter.json"; // list of available datasets
+
         scope.importurl = ""; // url to selected dataset
 
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
