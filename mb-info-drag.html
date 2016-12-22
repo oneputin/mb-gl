@@ -41,6 +41,12 @@ Close with click anywhere on the card
                 --paper-card-header-color: #f00;
             }
 
+            #div0 {
+                font-size: 12px;
+                font-weight: 400;
+                border-bottom: 1px solid #e8e8e8;
+                padding: 2px 2px;
+            }
             .info-content {
                 @apply(--layout-flex);
                 float: left;
@@ -49,7 +55,6 @@ Close with click anywhere on the card
             .card-image {
                 width: 100px;
                 height: 170px;
-                /*background: url('./donuts.png');*/
                 background-color: red;
                 background-size: cover;
             }
@@ -69,10 +74,8 @@ Close with click anywhere on the card
 
         </style>
 
-        <paper-card heading="{{carddata.title}}" image="./wp-data/{{carddata.img}}" class="info">
+        <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
 
-            <!--<div class="card-image"></div>-->
-            
             <div class="info-content">
 
                 <div class="card-content">
@@ -109,6 +112,9 @@ Close with click anywhere on the card
                 carddata: {
                     type: Object,
                     value: {}
+                },
+                cardimgurl: {
+                    type: String
                 },
 
                 dragctrl: {
@@ -178,10 +184,34 @@ Close with click anywhere on the card
             },
 
             refreshContent: function(data) {
-                if (!data || !data.length) return;
-                console.log("refresh card for ", data);
-                this.$.div0.innerHTML = data.headline;
-                this.$.div1.innerHTML = data.html;
+                // console.log("refreshCardContent", data);
+                var nbsp = "&nbsp;"; //"~"; 
+                if (!data) return;
+                if (data.properties && data.properties.master) {
+                    // console.log("refreshCardContent-master", data.properties.master);
+                    // DIV0
+                    var imgurl = data.properties.master.img,
+                        skipper = data.properties.master.skipper,
+                        boat = data.properties.master.ship,
+                        header = "";
+
+                    if (imgurl) this.cardimgurl = "wp-data/" + imgurl;
+                    if (skipper && boat) {
+
+                        // to show items with no line-breaks (fi. in flex-formatted cards)
+                        // replace many spaces 
+                        skipper = skipper.split(' ').join(nbsp);
+                        boat = boat.split(' ').join(nbsp);
+                        // statt: 
+                        // skipper = skipper.replace(" ", nbsp);
+                        // boat = boat.replace(" ", nbsp);
+
+                        header = "<b>" + boat + "</b>" + "<br>" + skipper;
+                        this.$.div0.innerHTML = header;
+                    }
+                }
+                // DIV1
+                if (data.html) this.$.div1.innerHTML = data.html;
             },
 
             /**

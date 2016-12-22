@@ -1,42 +1,9 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <script>
-    Polymer.RoutesBehaviorImpl = {
+    Polymer.BehaviorRoutesImpl = {
 
         properties: {},
-
-        /**
-         * Insert formatted html-text(dom?) to view properties of animated object (animation status)
-         *
-         * @param      {<type>}  trackObj  The animated trackObj (as mb-feature)
-         * @return     {string}  A formatted information about trackObj-status.
-         */
-
-        // for plane-tracks 
-        calcTrackInfo: function(trackObj) {
-            // console.log(trackObj.properties);
-            var trackInfo = "<b>" + trackObj.properties.title + "</b>" + "<br>";
-            if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
-
-            if (trackObj.properties.obj == "ship") {
-
-                if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
-                if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
-
-
-
-            } else {
-
-                if (trackObj.properties.dta) trackInfo += "DTA: " + trackObj.properties.dta + " km <br>";
-                if (trackObj.properties.speed) trackInfo += "Sog: " + trackObj.properties.speed + " km/h<br>";
-                if (trackObj.properties.bearing) trackInfo += "Heading: " + trackObj.properties.bearing + "°<hr>";
-
-                if (trackObj.properties.arrived) trackInfo += trackObj.properties.arrived + "<br>";
-                if (trackObj.properties.tta) trackInfo += "TTA: " + trackObj.properties.tta + "<br>";
-            }
-
-            return trackInfo;
-        },
 
         // derive comparable/calculable times
         // from dates of type "2016.12.11,16.00" or "2016.12.16,16:00"
@@ -89,11 +56,10 @@
             logtime = D + "." + M + ", " + h + ":" + m;
             return logtime;
         }
-
     };
 
     /** @polymerBehavior */
-    Polymer.RoutesBehavior = [
-        Polymer.RoutesBehaviorImpl
+    Polymer.BehaviorRoutes = [
+        Polymer.BehaviorRoutesImpl
     ];
 </script>

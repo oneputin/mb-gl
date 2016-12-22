@@ -103,9 +103,10 @@ into dataformat required by mb-routes-api
                     starters = {},
                     route, starter, id;
 
+                // A. Restructure starter-table into collection    
                 starterdata.forEach(function(st, j) {
                     //  
-                    id = st.ID;
+                    id = st.id;
                     starter = starters[id];
                     if (!starter) {
                         starters[id] = st;
@@ -113,21 +114,22 @@ into dataformat required by mb-routes-api
                 }.bind(this));
                 // console.log("starters", starters);
 
+                // B. GROUP all posi-records by id in objects for every boat
                 rawdata.forEach(function(wp, j) {
                     //  
                     var wpx = {},
                         lng, lat;
-                    var pass = mba.utcTime(wp.Date + "." + wp.Time);
+                    var pass = mba.utcTime(wp.date + "." + wp.time);
                     wpx.ab = pass;
                     wpx.an = pass;
 
-                    lat = dmtodd(wp.Lat);
-                    lng = dmtodd(wp.Lng);
+                    lat = dmtodd(wp.lat);
+                    lng = dmtodd(wp.lng);
                     wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
                     wpx.icon = this.wpicon;
 
                     //  
-                    id = wp.ID;
+                    id = wp.id;
                     route = routes[id];
                     if (!route) {
                         route = [];
@@ -136,26 +138,33 @@ into dataformat required by mb-routes-api
                     route.push(wpx);
                 }.bind(this));
 
-                // B. reformat temporary routes-object 
-                // into array of api-conform routes with wps sorted by time 
+                // C. Join temporary starters- and routes-objects 
+                //    into array of api-conform routes with wps sorted by time 
                 var routedata = [];
                 Object.keys(routes).forEach(function(id) {
+
+                    var starter = starters[id];
+
                     var waypoints = routes[id];
                     waypoints.sort(function(wp1, wp2) {
                         return wp1.ab - wp2.ab;
                     });
 
-                    var starter = starters[id];
-
+                    /*************************
+                     * Resolve original id 
+                     * into better readable id and short-key
+                     */
                     var key = id.split(">")[1];
                     id = id.replace("<br>", "/")
+                        // *************************
+
                     var route = {
                         "id": id,
                         "key": key,
                         "obj": "ship",
                         "icon": this.trackicon,
                         "waypoints": waypoints,
-                        "starter": starter
+                        "master": starter
                     };
                     routedata.push(route);
                 }.bind(this));

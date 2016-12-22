@@ -17,6 +17,7 @@ ctrl buttons controling flow of animated objects
     <template>
     
     	<style type="text/css">
+        
 	        .ctrlbox {
                 @apply(--layout-horizontal);
                 @apply(--layout-center);
@@ -31,6 +32,14 @@ ctrl buttons controling flow of animated objects
                 margin: 5px; 
             }
 
+            #trace {
+                @apply(--layout-flex);
+                border-style: solid;
+                border-width: 1px;
+                margin: 5px;
+                --paper-slider-height: 5px;
+            }
+
     	</style>
 	
 		<div class="ctrlbox"> 
@@ -39,9 +48,7 @@ ctrl buttons controling flow of animated objects
             
             <paper-icon-button id="toggle" icon="{{_icon2}}" title="startstop" class="blue"></paper-icon-button>
             
-            <!--<div>slomo</div>
-            <paper-slider id="fpsctrl" value="{{val}}"  min="1" max='4' step='1' pin snaps ></paper-slider>
-            -->
+            <paper-slider id="trace" value="{{val}}"  min="{{start}}" max='{{stop}}' pin></paper-slider>
             
 	    </div>
 
@@ -72,10 +79,22 @@ ctrl buttons controling flow of animated objects
                     notify: true
                 },
 
+                start: {
+                    type: Number,
+                    value: 4000
+                },
+
+                stop: {
+                    type: Number,
+                    value: 4032
+                },
+
+
                 _icon1: {
                     type: String,
                     value: "ctrl:skip-previous"
                 },
+
                 _icon2: {
                     type: String,
                     value: "ctrl:play-arrow"
@@ -126,9 +145,8 @@ ctrl buttons controling flow of animated objects
                 var ctrl1 = this.$.replay,
                     ctrl2 = this.$.toggle;
 
-                //     
-                var slider = this.$.fpsctrl;
-                // var sliderValue = this.$.slidervalue;
+                var tracer = this.$.trace,
+                    tracetime;
 
                 // ReStart-Button-event
                 ctrl1.addEventListener('click', function() {

@@ -32,20 +32,11 @@ Demo to view ship-data animation
     <style is="custom-style">
         .container {
             @apply(--layout-horizontal);
-            align-items: flex-start;
-        }
-        
-        .ctrls {
-            /* itself flex layouted div */
-            @apply(--layout-horizontal);
-            align-items: flex-start;
-            width: 50%;
-            height: 50%;
-            margin-left: 10px;
+            /*align-items: flex-start;*/
         }
         
         mb-map {
-            width: 50%;
+            width: 55%;
             height: 600px;
         }
         
@@ -55,16 +46,27 @@ Demo to view ship-data animation
             transform: translate(-50%, 0)
         }
         
-        mb-routes-ctrl-mode {
+        .ctrls-in {
+            display: inline-block;
             position: absolute;
-            bottom: 10px;
-            right: 10px;
+            @apply(--layout-horizontal);
+            @apply(--layout-center);
+            bottom: 12px;
+            width: 100%;
         }
         
         mb-routes-ctrl {
-            position: absolute;
-            bottom: 10px;
-            left: 30px;
+            @apply(--layout-flex);
+        }
+        
+        mb-routes-ctrl-mode {}
+        
+        .ctrls-out {
+            /* itself flex layouted div */
+            @apply(--layout-horizontal);
+            @apply(--layout-start);
+            width: 40%;
+            margin-left: 10px;
         }
         
         paper-dropdown-menu {
@@ -91,6 +93,7 @@ Demo to view ship-data animation
 
 <body>
     <template is="dom-bind" id="app">
+        
         <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
         </iron-ajax>
 
@@ -109,19 +112,25 @@ Demo to view ship-data animation
                 mapctrl="[[mapctrl]]">
                 
                 <!-- Elements to show in map-overlay  -->
-                <mb-routes-ctrl trackctrl="{{trackctrl}}">
-                </mb-routes-ctrl>
-                <mb-routes-ctrl-mode trackmode="{{trackmode}}">
-                </mb-routes-ctrl-mode>
+                
+                <div class="ctrls-in">
+                    <!-- ctrl of animation and maporientation -->
+                    <mb-routes-ctrl trackctrl="{{trackctrl}}">
+                    </mb-routes-ctrl>
+                    <mb-routes-ctrl-mode trackmode="{{trackmode}}">
+                    </mb-routes-ctrl-mode>
+                </div>
+
                 <mb-info-lnglat lnglat="[[lnglat]]">
                 </mb-info-lnglat>
+
                 <mb-info-drag carddata="[[trackdata]]">
                 </mb-info-drag>
 
             </mb-map>
 
             <!-- Right Block: several external app-controls -->
-            <div class="ctrls">
+            <div class="ctrls_out">
                 <!-- invisible -->
                 <mb-routes map="[[map]]" routedata=[[routedata]] fps="[[fps]]" timescale="[[timescale]]" trackctrl="{{trackctrl}}" trackmode="{{trackmode}}" trackdata="{{trackdata}}">
                 </mb-routes>
