@@ -48,28 +48,17 @@ ctrl buttons controling flow of animated objects
             
             <paper-icon-button id="toggle" icon="{{_icon2}}" title="startstop" class="blue"></paper-icon-button>
             
-            <paper-slider id="trace" value="{{val}}"  min="{{start}}" max='{{stop}}' pin></paper-slider>
+            <paper-slider id="trace" value="{{slidertime}}"  min="{{start}}" max='{{stop}}' on-change="slideChangeHandler" pin></paper-slider>
             
 	    </div>
 
     </template>
 
     <script>
-        // on-change="fpsChange"
         Polymer({
             is: 'mb-routes-ctrl',
 
             properties: {
-
-                /**
-                 * Animation frequency
-                 */
-                fps: {
-                    type: Number,
-                    value: 60,
-                    notify: true
-                },
-
                 /**
                  * Animation status
                  */
@@ -79,16 +68,23 @@ ctrl buttons controling flow of animated objects
                     notify: true
                 },
 
+                tracktimer: {
+                    type: Object,
+                    value: {},
+                    observer: 'sliderinit'
+                },
+
                 start: {
-                    type: Number,
-                    value: 4000
+                    type: Number
                 },
 
                 stop: {
-                    type: Number,
-                    value: 4032
+                    type: Number
                 },
 
+                slidertime: {
+                    type: Number
+                },
 
                 _icon1: {
                     type: String,
@@ -101,22 +97,18 @@ ctrl buttons controling flow of animated objects
                 }
             },
 
-            // 'fpsChange': 'fpsChangeHandler',
             listeners: {
-                'change': 'changeHandler'
+                // for value-sliders
+                //'change': 'changeHandler'
             },
 
             observers: [
-                'controlupdate(trackctrl)'
+                'controlupdate(trackctrl)',
+                'sliderupdate(tracktimer.time)'
             ],
 
             ready: function() {
                 this.setupAnimationCtrls();
-            },
-
-            changeHandler: function(v) {
-                // console.log(this.val, "::", this.fps);
-                this.fps = 60 / this.val;
             },
 
             controlupdate: function(trackctrl, trackmode) {
@@ -133,14 +125,33 @@ ctrl buttons controling flow of animated objects
 
             },
 
+            sliderinit: function(tracktimer) {
+                if (!tracktimer.start) return;
+                console.log("setup timeslider from tracktimer", typeof tracktimer.start, typeof tracktimer.stop);
+
+                var delta = tracktimer.stop - tracktimer.start;
+                this.start = 0;
+                this.stop = delta;
+            },
+
+            sliderupdate: function(tracktime) {
+                console.log("tracktime", tracktime);
+                // this.slidertime = tracktime;
+            },
+
+            slideChangeHandler: function() {
+                var mapTime = this.tracktimer.start + this.slidertime;
+                console.log("slided time", mapTime);
+                this.trackctrl = mapTime;
+            },
+
             /**
-             * Setup the Ctrl-actions (start/stop, restart, fps-slider) 
+             * Setup the Ctrl-actions (start/stop, restart, time-slider) 
              *
              */
             setupAnimationCtrls: function() {
 
                 this.val = 1;
-                this.fps = 60;
 
                 var ctrl1 = this.$.replay,
                     ctrl2 = this.$.toggle;

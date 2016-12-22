@@ -103,11 +103,14 @@
                     fps="[[fps]]" 
                     timescale="[[timescale]]" 
                     trackctrl="{{trackctrl}}" 
+                    tracktimer="{{tracktimer}}" 
                     trackmode="{{trackmode}}" 
                     trackdata="{{trackdata}}">
                 </mb-routes>
                 
-                <mb-routes-ctrl trackctrl="{{trackctrl}}">
+                <mb-routes-ctrl 
+                    tracktimer="[[tracktimer]]"
+                    trackctrl="{{trackctrl}}">
                 </mb-routes-ctrl>
                 
                 <mb-routes-ctrl-mode trackmode="{{trackmode}}">
@@ -140,7 +143,6 @@
         var scope = document.querySelector('#app');
         scope.setupurl = "data-planes.json";
         scope.importurl = "";
-
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
 
         scope.cbox = "13.7,52.4";
@@ -149,6 +151,7 @@
 
         scope.mapctrl = {};
         scope.cardctrl = {};
+        // scope.tracktimer = {};
 
         scope.selectedurl = function(e) {
             this.importurl = e.detail.item.url;
