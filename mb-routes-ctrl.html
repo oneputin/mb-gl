@@ -68,7 +68,7 @@ ctrl buttons controling flow of animated objects
                     notify: true
                 },
 
-                tracktimer: {
+                timer: {
                     type: Object,
                     value: {},
                     observer: 'sliderinit'
@@ -104,7 +104,7 @@ ctrl buttons controling flow of animated objects
 
             observers: [
                 'controlupdate(trackctrl)',
-                'sliderupdate(tracktimer.time)'
+                'sliderupdate(timer.time)'
             ],
 
             ready: function() {
@@ -125,11 +125,11 @@ ctrl buttons controling flow of animated objects
 
             },
 
-            sliderinit: function(tracktimer) {
-                if (!tracktimer.start) return;
-                console.log("setup timeslider from tracktimer", typeof tracktimer.start, typeof tracktimer.stop);
+            sliderinit: function(timer) {
+                if (!timer.start) return;
+                console.log("setup timeslider from timer", typeof timer.start, typeof timer.stop);
 
-                var delta = tracktimer.stop - tracktimer.start;
+                var delta = timer.stop - timer.start;
                 this.start = 0;
                 this.stop = delta;
             },
@@ -140,7 +140,7 @@ ctrl buttons controling flow of animated objects
             },
 
             slideChangeHandler: function() {
-                var mapTime = this.tracktimer.start + this.slidertime;
+                var mapTime = this.timer.start + this.slidertime;
                 console.log("slided time", mapTime);
                 this.trackctrl = mapTime;
             },

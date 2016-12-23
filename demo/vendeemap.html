@@ -115,7 +115,9 @@ Demo to view ship-data animation
                 
                 <div class="ctrls-in">
                     <!-- ctrl of animation and maporientation -->
-                    <mb-routes-ctrl trackctrl="{{trackctrl}}">
+                    <mb-routes-ctrl 
+                        timer="{{timer}}"
+                        trackctrl="{{trackctrl}}">
                     </mb-routes-ctrl>
                     <mb-routes-ctrl-mode trackmode="{{trackmode}}">
                     </mb-routes-ctrl-mode>
@@ -132,10 +134,17 @@ Demo to view ship-data animation
             <!-- Right Block: several external app-controls -->
             <div class="ctrls_out">
                 <!-- invisible -->
-                <mb-routes map="[[map]]" routedata=[[routedata]] fps="[[fps]]" timescale="[[timescale]]" trackctrl="{{trackctrl}}" trackmode="{{trackmode}}" trackdata="{{trackdata}}">
+                <mb-routes 
+                    map="[[map]]" 
+                    timer="{{timer}}"
+                    routedata=[[routedata]] 
+                    trackctrl="{{trackctrl}}" 
+                    trackmode="{{trackmode}}" 
+                    trackdata="{{trackdata}}">
                 </mb-routes>
                 <!-- Left -->
-                <mb-routes-ctrl-time timescale="{{timescale}}" timescalemax="[[timescalemax]]" fps="{{fps}}">
+                <mb-routes-ctrl-time  
+                    timer="{{timer}}">
                 </mb-routes-ctrl-time>
                 <!-- Right -->
                 <paper-dropdown-menu label="Position sets">
@@ -166,8 +175,9 @@ Demo to view ship-data animation
         scope.lnglat = "-50,-40";
         scope.zoom = 2;
         // Timescale to view tracks of boats over several days
-        scope.timescalemax = 3600; // 1s = 1h
-
+        scope.timer = {
+            "timescalemax": 3600
+        };
         scope.mapctrl = {};
         scope.cardctrl = {};
 
