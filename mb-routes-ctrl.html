@@ -7,7 +7,10 @@
 
 <!--
 `mb-routes-ctrl`
-ctrl buttons controling flow of animated objects
+online-ctrls controling flow of animated objects
+- Start/Stop animation
+- Rewind - button
+- Slider for free Timeselection 
 
 @demo demo/routemap.html 
 -->
@@ -48,7 +51,7 @@ ctrl buttons controling flow of animated objects
             
             <paper-icon-button id="toggle" icon="{{_icon2}}" title="startstop" class="blue"></paper-icon-button>
             
-            <paper-slider id="trace" value="{{slidertime}}"  min="{{start}}" max='{{stop}}' on-change="slideChangeHandler" pin></paper-slider>
+            <paper-slider id="trace" value="{{sliderstoptime}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-change="slideChangedHandler" on-immediate-value-change="slideChangeHandler" pin></paper-slider>
             
 	    </div>
 
@@ -139,7 +142,12 @@ ctrl buttons controling flow of animated objects
                 // this.slidertime = tracktime;
             },
 
+            slideChangedHandler: function() {
+                console.log("CHANGED");
+            },
+
             slideChangeHandler: function() {
+                if (!this.timer || !this.timer.start) return;
                 var mapTime = this.timer.start + this.slidertime;
                 console.log("slided time", mapTime);
                 this.trackctrl = mapTime;

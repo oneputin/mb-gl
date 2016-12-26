@@ -6,8 +6,8 @@
 <link rel="import" href="icons-svg.html">
 
 <!--
-`mb-routes-ctrl`
-ctrl buttons controling flow of animated objects
+`mb-routes-ctrl-mode`
+ctrl button controling the map-orientation, ("trackmode" euler, lagrange)
 
 @demo demo/routemap.html 
 -->
@@ -42,23 +42,12 @@ ctrl buttons controling flow of animated objects
     </template>
 
     <script>
-        // on-change="fpsChange"
         Polymer({
             is: 'mb-routes-ctrl-mode',
 
             properties: {
-
                 /**
-                 * Animation frequency
-                 */
-                fps: {
-                    type: Number,
-                    value: 60,
-                    notify: true
-                },
-
-                /**
-                 * trackmode (euler, lagrange)
+                 * map-orientation
                  */
                 trackmode: {
                     type: Boolean,
@@ -66,7 +55,6 @@ ctrl buttons controling flow of animated objects
                     notify: true,
                     observer: 'controlupdate'
                 },
-
                 _icon3: {
                     type: String,
                     value: "ctrl:near-me"
@@ -79,8 +67,12 @@ ctrl buttons controling flow of animated objects
                 this.setupCtrls();
             },
 
+            /**
+             * Toggle Polymer-icons related to map-orientations 
+             * NorthMap: "language"
+             * TrackMode: "ctrl:near-me" 
+             */
             controlupdate: function(trackmode) {
-                // console.log("toggle ctrl for trackmode", trackmode);
                 // icon must reflect the action to trigger with next click 
                 this._icon3 = trackmode ? "language" : "ctrl:near-me";
             },

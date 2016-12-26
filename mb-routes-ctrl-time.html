@@ -7,7 +7,9 @@
 
 <!--
 `mb-routes-ctrl-time`
-slider ctrls to modify timing of animated objects
+Sliders to setup/ctrl timing-parameters of animated objects
+- setup the BASIC time scale of animation-presentation
+- use throttle-slider to temporarily slowdown animation 
 
 @demo demo/routemap.html 
 -->
@@ -77,7 +79,7 @@ slider ctrls to modify timing of animated objects
             properties: {
 
                 /**
-                 * Animation frequency
+                 * Animation frequency, <= fpsmax=60Hz
                  */
                 fps: {
                     type: Number,
@@ -85,7 +87,7 @@ slider ctrls to modify timing of animated objects
                 },
 
                 /**
-                 * Animation TimeScale
+                 * Animation TimeScale  X : 1min animation => Xmin realite 
                  */
                 timescale: {
                     type: Number,
@@ -136,11 +138,10 @@ slider ctrls to modify timing of animated objects
                 this.fps = this.fpsvalue / this.fpsMax * 100;
 
                 //     
-                var fpsSlider = this.$.fpsctrl,
-                    scaleSlider = this.$.scalectrl;
-
-                var fpsValue = this.$.fpsvalue,
-                    fpsValue = this.$.scalevalue;
+                //var fpsSlider = this.$.fpsctrl,
+                //    scaleSlider = this.$.scalectrl;
+                //var fpsValue = this.$.fpsvalue,
+                //    fpsValue = this.$.scalevalue;
 
             },
 
