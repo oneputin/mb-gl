@@ -23,10 +23,10 @@ Demo to view ship-data animation
 
     <link rel="import" href="../mb-routes.html">
     <link rel="import" href="../mb-routes-ctrl.html">
-    <link rel="import" href="../mb-routes-ctrl-mode.html">
+    <link rel="import" href="../mb-map-orientation-ctrl.html">
     <link rel="import" href="../mb-routes-ctrl-time.html">
 
-    <link rel="import" href="../import-vendee.html">
+    <link rel="import" href="../routing-vendee.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
     <style is="custom-style">
@@ -59,7 +59,7 @@ Demo to view ship-data animation
             @apply(--layout-flex);
         }
         
-        mb-routes-ctrl-mode {}
+        mb-map-orientation-ctrl {}
         
         .ctrls-out {
             /* itself flex layouted div */
@@ -97,9 +97,6 @@ Demo to view ship-data animation
         <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
         </iron-ajax>
 
-        <import-vendee url="[[importurl]]" starterurl="[[starterurl]]" routedata="{{routedata}}">
-        </import-vendee>
-        
         <div class="container">
             
             <!-- Left block: Map -->
@@ -119,21 +116,30 @@ Demo to view ship-data animation
                         timer="{{timer}}"
                         trackctrl="{{trackctrl}}">
                     </mb-routes-ctrl>
-                    <mb-routes-ctrl-mode trackmode="{{trackmode}}">
-                    </mb-routes-ctrl-mode>
+                    
+                    <!--<mb-map-orientation-ctrl trackmode="{{trackmode}}">
+                    </mb-map-orientation-ctrl>-->
+                    
                 </div>
 
                 <mb-info-lnglat lnglat="[[lnglat]]">
                 </mb-info-lnglat>
 
-                <mb-info-drag carddata="[[trackdata]]">
-                </mb-info-drag>
+                <!--<mb-info-drag carddata="[[trackdata]]">
+                </mb-info-drag>-->
+
+                <routing-vendee 
+                    url="[[routedataurl]]" 
+                    routedata="{{routedata}}"
+                    basedataurl="[[basedataurl]]" 
+                    trackdata="{{trackdata}}">
+                </routing-vendee>
 
             </mb-map>
 
             <!-- Right Block: several external app-controls -->
             <div class="ctrls_out">
-                <!-- invisible -->
+                <!-- element with n visible features -->
                 <mb-routes 
                     map="[[map]]" 
                     timer="{{timer}}"
@@ -142,10 +148,12 @@ Demo to view ship-data animation
                     trackmode="{{trackmode}}" 
                     trackdata="{{trackdata}}">
                 </mb-routes>
+                
                 <!-- Left -->
                 <mb-routes-ctrl-time  
                     timer="{{timer}}">
                 </mb-routes-ctrl-time>
+
                 <!-- Right -->
                 <paper-dropdown-menu label="Position sets">
                     <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
@@ -164,9 +172,9 @@ Demo to view ship-data animation
     <script>
         var scope = document.querySelector('#app');
         scope.setupurl = "vendeedata.json"; // list of available datasets
-        scope.starterurl = "wp-data/vendee-starter.json"; // list of available datasets
+        scope.basedataurl = "wp-data/vendee-starter.json"; // list of available datasets
 
-        scope.importurl = ""; // url to selected dataset
+        scope.routedataurl = ""; // url to selected dataset
 
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
 
@@ -185,7 +193,7 @@ Demo to view ship-data animation
          * Put selected url from menu-selection into import-element
          */
         scope.selectedurl = function(e) {
-            this.importurl = e.detail.item.url;
+            this.routedataurl = e.detail.item.url;
         }
 
         // eval the response of content-list 

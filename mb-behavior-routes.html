@@ -39,7 +39,8 @@
             return h || m ? h + m + "min" : fallback;
         },
 
-        logTime: function(ms1970) {
+        logTime: function(ms1970, sep) {
+            if (!sep) sep = ", ";
             var logtime = new Date(ms1970);
             //  logtime = logtime.getDate() + "." + (logtime.getMonth() + 1) + ", " + logtime.getHours() + ":" + logtime.getMinutes();
             //  console.log(ms1970, logtime);
@@ -53,7 +54,7 @@
                 m = logtime.getMinutes(),
                 m = m < 10 ? "0" + m : m;
 
-            logtime = D + "." + M + ", " + h + ":" + m;
+            logtime = D + "." + M + sep + h + ":" + m;
             return logtime;
         }
     };

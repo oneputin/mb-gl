@@ -4,7 +4,7 @@
 <!--
 `import-vendee`
 transfer raw vendee-data 
-into dataformat required by mb-routes-api
+into 'routedata' (dataformat required by mb-routes-api)
 
 @demo demo/vendeemap.html 
 -->
@@ -32,9 +32,16 @@ into dataformat required by mb-routes-api
         Polymer({
             is: 'import-vendee',
             properties: {
+
+                routedata: {
+                    type: Object,
+                    notify: true
+                },
+
                 url: {
                     type: String
                 },
+
                 starterurl: {
                     type: String
                 },
@@ -45,10 +52,6 @@ into dataformat required by mb-routes-api
                     type: Object
                 },
 
-                routedata: {
-                    type: Object,
-                    notify: true
-                },
                 wpicon: {
                     value: "lighthouse"
                 },
@@ -62,9 +65,9 @@ into dataformat required by mb-routes-api
             ],
 
             /**
-             * Setup of animation framework from new track(wp)-dataset
+             * Load raw data via ajax
              *
-             * @param      {<type>}  routedata  Routedata as wp-dataset
+             * @param      {<type>} ajaxresponse : Routedata as wp-dataset packaged in default ajax-response
              */
             getrawdata: function(ajaxresponse) {
                 var rawdata = ajaxresponse.detail.response;
@@ -72,6 +75,7 @@ into dataformat required by mb-routes-api
                 // console.log("routedata", rawdata);
                 this.rawdata = rawdata; // triggers 'setupTracking'
             },
+
 
             getstarterdata: function(ajaxresponse) {
                 var rawdata = ajaxresponse.detail.response;

@@ -1,13 +1,16 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-slider/paper-slider.html">
+<link rel="import" href="../paper-material/paper-material.html">
+
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
 <link rel="import" href="icons-svg.html">
 
 <!--
 `mb-routes-ctrl`
-ctrl buttons controling flow of animated objects
+ctrl elements controling behavior of animated objects in map  
+some ctrls (back,forward...) and "slider" are "redundant and should be used exclusively 
 
 @demo demo/routemap.html 
 -->
@@ -44,12 +47,14 @@ ctrl buttons controling flow of animated objects
 	
 		<div class="ctrlbox"> 
             
-            <paper-icon-button id="replay" icon="{{_icon1}}" title="restart" class="blue"></paper-icon-button>
+            <!--<paper-icon-button id="replay" icon="{{_icon1}}" title="restart" class="blue"></paper-icon-button>-->
             
             <paper-icon-button id="toggle" icon="{{_icon2}}" title="startstop" class="blue"></paper-icon-button>
             
-            <paper-slider id="trace" value="{{slidertime}}"  min="{{start}}" max='{{stop}}' on-change="slideChangeHandler" pin></paper-slider>
-            
+            <paper-slider id="trace" value="{{sliderval}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler" pin></paper-slider>
+            <!-- on-value-change="slideValueHandler" -->
+            <paper-material elevation="2" id="logtime">{{logtime}}</paper-material>
+
 	    </div>
 
     </template>
@@ -80,6 +85,11 @@ ctrl buttons controling flow of animated objects
 
                 stop: {
                     type: Number
+                },
+
+                fromtimertime: {
+                    type: Number,
+
                 },
 
                 slidertime: {
@@ -127,7 +137,7 @@ ctrl buttons controling flow of animated objects
 
             sliderinit: function(timer) {
                 if (!timer.start) return;
-                console.log("setup timeslider from timer", typeof timer.start, typeof timer.stop);
+                console.log("Setup timeslider from timer-parameters ", typeof timer.start, typeof timer.stop);
 
                 var delta = timer.stop - timer.start;
                 this.start = 0;
@@ -135,14 +145,36 @@ ctrl buttons controling flow of animated objects
             },
 
             sliderupdate: function(tracktime) {
-                console.log("tracktime", tracktime);
-                // this.slidertime = tracktime;
+                if (!tracktime) return;
+                var sliderval = tracktime - this.timer.start;
+                // console.log("tracktime", tracktime, sliderval);
+                this.sliderval = sliderval;
+                this.logtime = tracktime; // mba.logTime(tracktime * 3600 * 1000, ":");
             },
 
+
+
+            // Sync slider with external changes of slided parameter 
+            // fi. due to animation 
+            slideValueSync: function() {
+                var slidervalue = this.timer.start - this.timer.time;
+                // console.log("slided time", mapTime);
+                this.trackctrl = mapTime; // 
+            },
+
+            // 
+            slideValueHandler: function(val) {
+                console.log("slide-val=", val);
+            },
+
+
+            // Communicate the app-parameter connected to slider-value 
+            // via ctrl-parameter "trackctrl"
             slideChangeHandler: function() {
                 var mapTime = this.timer.start + this.slidertime;
-                console.log("slided time", mapTime);
-                this.trackctrl = mapTime;
+                // var mapTime = this.start + this.slidertime;
+                // console.log("slided time", mapTime);
+                this.trackctrl = mapTime; // 
             },
 
             /**
@@ -159,21 +191,24 @@ ctrl buttons controling flow of animated objects
                 var tracer = this.$.trace,
                     tracetime;
 
-                // ReStart-Button-event
-                ctrl1.addEventListener('click', function() {
-                    this.trackctrl = "reset";
-                }.bind(this));
+                if (ctrl1) {
+                    // ReStart-Button-event
+                    ctrl1.addEventListener('click', function() {
+                        this.trackctrl = "reset";
+                    }.bind(this));
+                }
 
-                // Start/Stop-Button-event
-                ctrl2.addEventListener('click', function() {
-                    // console.log("clicked at:" + this.trackctrl, ctrl2.childNodes);
-                    if (this.trackctrl) {
-                        this.trackctrl = false;
-                    } else {
-                        this.trackctrl = true;
-                    }
-                }.bind(this));
-
+                if (ctrl2) {
+                    // Start/Stop-Button-event
+                    ctrl2.addEventListener('click', function() {
+                        // console.log("clicked at:" + this.trackctrl, ctrl2.childNodes);
+                        if (this.trackctrl) {
+                            this.trackctrl = false;
+                        } else {
+                            this.trackctrl = true;
+                        }
+                    }.bind(this));
+                }
             }
 
         });

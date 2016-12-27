@@ -1,7 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <script>
-    Polymer.BehaviorVendeeImpl = {
+    Polymer.BehaviorPlanesImpl = {
 
         properties: {},
 
@@ -15,13 +15,17 @@
         calcTrackInfo: function(trackObj) {
             if (!trackObj || !trackObj.properties) return; // console.log("calcTrackInfo-object", trackObj);
 
-
             var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
+
             if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
 
-            if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
-            if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
+            if (trackObj.properties.dta) trackInfo += "DTA: " + trackObj.properties.dta + " km <br>";
+            if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " km/h<br>";
+            if (trackObj.properties.bearing) trackInfo += "Heading: " + trackObj.properties.bearing + "°<hr>";
 
+            if (trackObj.properties.arrived) trackInfo += trackObj.properties.arrived + "<br>";
+            if (trackObj.properties.tta) trackInfo += "TTA: " + trackObj.properties.tta + "<br>";
+        
             return trackInfo;
         },
 
@@ -33,28 +37,14 @@
          * @param      {<type>}  openFlag  The open flag
          * @return     {<type>}  The more track data.
          */
-        calcMoreTrackData: function(trackObj, openFlag) {
+        /*calcMoreTrackData: function(trackObj, openFlag) {
             if (!trackObj || !trackObj.properties) return;
-            var trackInfo = mba.calcTrackInfo(trackObj);
-            var trackData = {
-                "title": trackObj.properties.title,
-                "html": trackInfo,
-                "properties": trackObj.properties
-            };
-
-            if (openFlag) {
-                trackData.open = 1;
-            }
-            if (trackObj.properties.master) {
-                trackData.headline = trackObj.properties.master.skipper;
-            }
-            // console.log("calcTrackData", trackObj, trackData)
             return trackData;
-        }
+        }*/
     };
 
     /** @polymerBehavior */
-    Polymer.BehaviorVendee = [
-        Polymer.BehaviorVendeeImpl
+    Polymer.BehaviorPlanes = [
+        Polymer.BehaviorPlanesImpl
     ];
 </script>

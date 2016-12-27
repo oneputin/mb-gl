@@ -1,0 +1,545 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-card/paper-card.html">
+
+<!--
+`routing-vendee`
+Interface for import/export of case-specific routing data
+
+IN: transfer raw vendee-data 
+    into 'routedata' (dataformat required by mb-routes-api)
+
+
+
+OUT: RICH-content Info-card related to one selected feature,  
+absolutely positioned as (mapbox-)map-overlay   
+Mode-A: Can be vertically dragged & horizontally resized.  
+Mode-B: Free drag   
+
+To 'close' 
+    - with click anywhere on the card
+    - with click on specific "cancel"-button
+
+@demo demo/routingvendee.html 
+-->
+
+<dom-module id="routing-vendee">
+
+    <template>
+
+        <style is="custom-style">
+            :host {
+                position: absolute;
+                display: none; /*inline-block;*/
+                opacity: 1; 
+                top: 50%;
+                margin-bottom: -50%;
+                transform: translate(0, -50%);
+
+                /*  */
+                --paper-card-header-text: {
+                    padding: 8px;
+                    font-size: 12px;
+                    font-weight: 400;
+                }
+            }
+
+            paper-card.info { 
+                @apply(--layout-horizontal); 
+                align-items: flex-start;
+                --paper-card-header-color: #f00;
+            }
+
+            #div0 {
+                font-size: 12px;
+                font-weight: 400;
+                border-bottom: 1px solid #e8e8e8;
+                padding: 2px 2px;
+            }
+            .info-content {
+                @apply(--layout-flex);
+                float: left;
+            }
+
+            .card-image {
+                width: 100px;
+                height: 170px;
+                background-color: red;
+                background-size: cover;
+            }
+
+            .info-html { 
+                color: var(--paper-grey-600); 
+                opacity: 1;
+            }
+            
+            .info-link { 
+                color: var(--google-blue-500); 
+            }
+
+            paper-icon-button {
+                background-color: var(--paper-light-blue-500);
+            }
+
+        </style>
+
+        <iron-ajax
+            auto
+            url="[[url]]"
+            handle-as="json"
+            on-response="getrawdata">
+        </iron-ajax>
+
+        <iron-ajax
+            auto
+            url="[[basedataurl]]"
+            handle-as="json"
+            on-response="getrawmasterdata">
+        </iron-ajax>
+
+        <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
+
+            <div class="info-content">
+
+                <div class="card-content">
+
+                    <div id="div0"></div>
+
+                    <div id="div1" class="info-html">
+
+                    </div>
+
+                </div>
+
+                <div class="card-actions">
+                    <paper-button class="info-link">more...</paper-button>
+                </div>
+
+            </div>
+
+            <!--<paper-button class="info-link" on-click="_onBackClick">X</paper-button>-->
+            <!--<paper-icon-button icon="close" on-click="_onBackClick"></paper-icon-button>-->
+
+        </paper-card>
+
+        <content>
+        </content>    
+
+    </template>
+
+    <script>
+        Polymer({
+            is: 'routing-vendee',
+
+            properties: {
+
+                // I. Import properties
+                /**
+                 * data to be used by routing API 
+                 */
+                routedata: {
+                    type: Object,
+                    notify: true
+                },
+
+                // 
+                url: {
+                    type: String
+                },
+
+                basedataurl: {
+                    type: String
+                },
+                rawdata: {
+                    type: Object
+                },
+                rawmasterdata: {
+                    type: Object
+                },
+                masterdata: {
+                    type: Object
+                },
+
+                wpicon: {
+                    value: "lighthouse"
+                },
+                trackicon: {
+                    value: "harbor"
+                },
+
+                // II. Info-compilation
+
+                // id- and location-data as got from APP
+                trackdata: {
+                    type: Object,
+                    value: {}
+                },
+
+                // 
+                trackinfo: {
+                    type: Object,
+                    value: {},
+                    notify: true
+                },
+
+
+                // III. Info-presentation
+
+                carddata: {
+                    type: Object,
+                    value: {}
+                },
+
+                cardimgurl: {
+                    type: String
+                },
+
+                dragctrl: {
+                    type: Object,
+                    value: {}
+                },
+
+                // Behavior of drag-element
+                // flow, left, right
+                dragtype: {
+                    type: String,
+                    value: "flow"
+                }
+
+            },
+
+            observers: [
+                'importVendee(rawdata, rawmasterdata)',
+
+                'processTrackdata(trackdata.*)',
+                '_drag(dragctrl.x, dragctrl.y, dragtype)',
+                '_toggle(carddata.open)',
+                'refreshCardContent(carddata)'
+            ],
+
+
+            'listeners': {
+                "track": '_myPopupTrackHandler',
+                "tap": '_onBackClick'
+            },
+
+
+            /**
+             * Load raw data via ajax
+             *
+             * @param      {<type>} ajaxresponse : Routedata as wp-dataset packaged in default ajax-response
+             */
+            getrawdata: function(ajaxresponse) {
+                var rawdata = ajaxresponse.detail.response;
+                if (!rawdata) return;
+                // console.log("routedata", rawdata);
+                this.rawdata = rawdata; // triggers 'setupTracking'
+            },
+
+
+            getrawmasterdata: function(ajaxresponse) {
+                var rawdata = ajaxresponse.detail.response;
+                if (!rawdata) return;
+                // console.log("rawmasterdata", rawdata);
+                this.rawmasterdata = rawdata; // triggers 'setupTracking'
+            },
+
+            // SPECIFIC import of vendee-data
+            importVendee: function(rawdata, rawmasterdata) {
+                /**
+                 *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
+                 *  "maritime formatting"  
+                 */
+                // console.log(rawdata, rawmasterdata);
+
+                function dmtodd(dm, lonflag, prec) {
+                    if (!prec) prec = 6;
+                    dm = dm.split("°"); // console.log("dm-array", dm);
+                    dd = parseInt(dm[0]) + parseFloat(dm[1]) / 60;
+                    if (dm[1].slice(-1) == "W") dd = 0 - dd;
+                    if (dm[1].slice(-1) == "S") dd = 0 - dd;
+                    return dd;
+                }
+
+
+                // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
+                var routes = {},
+                    masterdata = {},
+                    route, master, id;
+
+                // A. Restructure master-table into collection    
+                rawmasterdata.forEach(function(st, j) {
+                    //  
+                    id = st.id;
+                    id = id.replace("<br>", "/")
+
+                    master = masterdata[id];
+                    if (!master) {
+                        masterdata[id] = st;
+                    }
+                }.bind(this));
+
+                if (!this.connect) {
+                    this.masterdata = masterdata;
+                }
+                // console.log("masters", masterdata);
+
+                // B. GROUP all posi-records by id in objects for every boat
+                rawdata.forEach(function(wp, j) {
+                    //  
+                    var wpx = {},
+                        lng, lat;
+                    var pass = mba.utcTime(wp.date + "." + wp.time);
+                    wpx.ab = pass;
+                    wpx.an = pass;
+
+                    lat = dmtodd(wp.lat);
+                    lng = dmtodd(wp.lng);
+                    wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
+                    wpx.icon = this.wpicon;
+
+                    //  
+                    id = wp.id;
+                    route = routes[id];
+                    if (!route) {
+                        route = [];
+                        routes[id] = route;
+                    }
+                    route.push(wpx);
+                }.bind(this));
+
+                // C. Join temporary masters- and routes-objects 
+                //    into array of api-conform routes with wps sorted by time 
+                var routedata = [];
+
+                Object.keys(routes).forEach(function(id) {
+
+                    var waypoints = routes[id];
+                    waypoints.sort(function(wp1, wp2) {
+                        return wp1.ab - wp2.ab;
+                    });
+
+                    /*************************
+                     * Resolve original id 
+                     * into better readable id and short-key
+                     */
+                    var key = id.split(">")[1];
+                    id = id.replace("<br>", "/")
+                        // *************************
+
+                    var route = {
+                        "id": id,
+                        "key": key,
+                        "icon": this.trackicon,
+                        "waypoints": waypoints
+                    };
+
+                    // include Stammdaten
+                    if (masterdata[id] && this.connect) {
+                        route["master"] = masterdata[id];
+                    }
+
+                    routedata.push(route);
+
+                }.bind(this));
+                console.log("IMPORTED vendee-data", routedata); // , rawdata);
+
+                this.routedata = routedata;
+            },
+
+            // processing data of selected trackObj 
+            processTrackdata: function(trackdata) {
+                if (!trackdata || !trackdata.value) return;
+                trackdata = trackdata.value;
+
+                var trackobj = trackdata.trackobj,
+                    lnglat = trackdata.lnglat,
+                    openflag = trackdata.open;
+                if (!trackobj) return;
+                // console.log("processing trackdata", trackdata);
+
+                if (this.calcExtendedInfo) {
+                    // A. 
+                    this.carddata = this.calcExtendedInfo(trackobj, openflag);
+
+                } else {
+                    // B. 
+                    this.trackinfo = {
+                        "html": this.calcBasicInfo(trackobj),
+                        "lnglat": lnglat,
+                        "open": openFlag
+                    }
+                }
+            },
+
+            /**
+             * Create some formatted html-text(dom?) 
+             * to identify basic properties of an animated object (animation status)
+             *
+             * @param      {<type>}  trackObj  The animated trackObj (as mb-feature)
+             * @return     {string}  A formatted information about trackObj-status.
+             */
+            calcBasicInfo: function(trackObj) {
+                if (!trackObj || !trackObj.properties) return; // console.log("calcBasicInfo-object", trackObj);
+
+
+                var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
+                if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
+
+                if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
+                if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
+
+                return trackInfo;
+            },
+
+            /**
+             * Build (app-specific) trackData extending the basic infoSet 
+             * to enable enhanced presentation of trackObj
+             *
+             * @param      {<type>}  trackObj  The track object
+             * @param      {<type>}  openFlag  The open flag
+             * @return     {<type>}  The more track data.
+             */
+            calcExtendedInfo: function(trackObj, openFlag) {
+                if (!trackObj || !trackObj.properties) return;
+
+                var basicInfo = this.calcBasicInfo(trackObj);
+
+                var extendedData = {
+                    "title": trackObj.properties.title,
+                    "html": basicInfo,
+                    "properties": trackObj.properties
+                };
+
+                if (openFlag) {
+                    extendedData.open = 1;
+                }
+
+                if (trackObj.properties.master) {
+                    extendedData.headline = trackObj.properties.master.skipper;
+                }
+                // console.log("calcTrackData", trackObj, trackData)
+                return extendedData;
+            },
+
+
+            /**
+             * Combine last track(tap)-coordinates with coordinates at start  
+             * into new location of tracked element 
+             * @param      {<type>}  e       { parameter_description }
+             */
+            _myPopupTrackHandler: function(e) {
+                //e.cancelBubble = true;
+                //e.stopPropagation();
+                var style = window.getComputedStyle(this),
+                    top = parseFloat(style.getPropertyValue('top')),
+                    left = parseFloat(style.getPropertyValue('left')),
+                    dy = e.detail.y - top,
+                    dx = e.detail.x - left,
+                    x, y;
+
+                switch (e.detail.state) {
+                    case 'start':
+                        this.dragctrl.msg = 'Tracking started at top=';
+                        this.dragctrl.dx = dx;
+                        this.dragctrl.dy = dy;
+                        this.unlisten(this, 'tap', '_onBackClick');
+                        // console.log("start:x,y,dx,dy",left, top, dx, dy);
+                        break;
+                    case 'track':
+                        // console.log(this.dragctrl);
+                        this.dragctrl.msg = "Tracking...";
+                        this.set('dragctrl.x', left + dx - this.dragctrl.dx);
+                        this.set('dragctrl.y', top + dy - this.dragctrl.dy);
+                        break;
+                    case 'end':
+                        this.dragctrl.msg = 'Tracking ended!';
+                        this.listen(this, 'tap', '_onBackClick');
+                        break;
+                }
+            },
+
+            attached: function() {
+                // console.log("target attached");
+            },
+
+            // 
+            refreshCardContent: function(data) {
+                var nbsp = "&nbsp;"; //"~"; 
+                if (!data) return;
+
+                // if (data.properties && data.properties.master) {
+                // var pp = JSON.parse(data.properties.master);
+                if (this.masterdata && data.properties.id) {
+                    // 
+                    pp = this.masterdata[data.properties.id];
+                    if (pp) {
+                        // console.log("rawmasterdata:", pp);
+                        // DIV0
+                        var imgurl = pp.img,
+                            skipper = pp.skipper,
+                            boat = pp.ship,
+                            header = "";
+
+                        if (imgurl) this.cardimgurl = "wp-data/" + imgurl;
+                        // console.log("some data ", imgurl, this.cardimgurl, skipper, boat);
+
+                        if (skipper && boat) {
+
+                            // to show items with no line-breaks (fi. in flex-formatted cards)
+                            // replace many spaces 
+                            skipper = skipper.split(' ').join(nbsp);
+                            boat = boat.split(' ').join(nbsp);
+                            // statt: 
+                            // skipper = skipper.replace(" ", nbsp);
+                            // boat = boat.replace(" ", nbsp);
+
+                            header = "<b>" + boat + "</b>" + "<br>" + skipper;
+
+                            this.$.div0.innerHTML = header;
+                        }
+                    }
+                }
+                // DIV1
+                if (data.html) this.$.div1.innerHTML = data.html;
+            },
+
+            /**
+             * Translate ctrl-values into style-properties
+             *
+             * @param      {string}  x         { parameter_description }
+             * @param      {string}  y         { parameter_description }
+             * @param      {<type>}  dragtype  drag-behavior
+             */
+            _drag: function(x, y, dragtype) {
+                //console.log("drag", x, y);
+                this.style.left = x + "px";
+                this.style.top = y + "px";
+                if (dragtype) this.style.right = "auto";
+            },
+            /**
+             * Toggle visibility of drag-element
+             *
+             * @param      {number}  open    The status to toggle into 
+             */
+            _toggle: function(open) {
+                if (open == 0) {
+                    this.style.display = "none";
+                } else if (open == 1) {
+                    this.style.display = "inline-block";
+                    this.style.right = "0px";
+                }
+            },
+
+            _onBackClick: function() {
+                this.style.display = "none";
+            }
+        });
+    </script>
+
+</dom-module>

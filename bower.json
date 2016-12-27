@@ -17,7 +17,8 @@
     "paper-item": "PolymerElements/paper-item#^1.2.1",
     "paper-listbox": "polymerelements/paper-listbox#^1.1.2",
     "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#^1.4.3",
-    "paper-card": "PolymerElements/paper-card#^1.1.4"
+    "paper-card": "PolymerElements/paper-card#^1.1.4",
+    "paper-material": "PolymerElements/paper-material#^1.0.6"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
