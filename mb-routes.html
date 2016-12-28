@@ -4,7 +4,7 @@
 <link rel="import" href="mb-api.html">
 
 <link rel="import" href="mb-behavior-routes.html">
-<link rel="import" href="mb-behavior-info-vendee.html">
+<!--<link rel="import" href="mb-behavior-info-vendee.html">-->
 
 <!--
 `mb-routes`
@@ -259,7 +259,6 @@ along waypoint file loaded from url
 
             behaviors: [
                 Polymer.BehaviorRoutes,
-                Polymer.BehaviorVendee
             ],
 
             observers: [
@@ -566,7 +565,7 @@ along waypoint file loaded from url
                 if (!counter && mapTime) {
                     mba.syncTrackFilter(mapTime, "mapTIME");
                     counter = Math.round((mapTime - (timer["start"])) / (timer.frameTime / 3600));
-                    console.log("mapTime=" + mapTime + ":", "cnt=" + counter);
+                    // console.log("mapTime=" + mapTime + ":", "cnt=" + counter);
                     mba.counter = counter;
                 }
 

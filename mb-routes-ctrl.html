@@ -5,6 +5,7 @@
 
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
+<link rel="import" href="mb-behavior-routes.html">
 <link rel="import" href="icons-svg.html">
 
 <!--
@@ -41,6 +42,13 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 border-width: 1px;
                 margin: 5px;
                 --paper-slider-height: 5px;
+            }
+
+            #logtime {
+                margin: 5px;
+                padding: 5px;
+                background-color: var(--paper-light-blue-500);
+                color: white;
             }
 
     	</style>
@@ -107,6 +115,10 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 }
             },
 
+            behaviors: [
+                Polymer.BehaviorRoutes,
+            ],
+
             listeners: {
                 // for value-sliders
                 //'change': 'changeHandler'
@@ -149,7 +161,8 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 var sliderval = tracktime - this.timer.start;
                 // console.log("tracktime", tracktime, sliderval);
                 this.sliderval = sliderval;
-                this.logtime = tracktime; // mba.logTime(tracktime * 3600 * 1000, ":");
+                var logtime = this.logTime(tracktime * 3600 * 1000, "<br>");
+                this.$.logtime.innerHTML = logtime;
             },
 
 
