@@ -39,7 +39,7 @@ slider ctrls to modify timing of animated objects
                 --paper-slider-height: 5px;
             }
             
-            paper-slider.slomo {     
+            paper-slider.scale {     
                 --paper-slider-knob-color: var(--paper-red-500);
                 --paper-slider-active-color: var(--paper-red-500);
             }
@@ -59,7 +59,7 @@ slider ctrls to modify timing of animated objects
             <h3>Animation setup</h3>
             <div>1min ~ [[scalestring]] reality</div>
             <div class="slider">
-                <paper-slider id="scalectrl" class="slomo" value="{{scalevalue}}" on-change="scaleChangeHandler" min="1" max='10'></paper-slider>
+                <paper-slider id="scalectrl" class="scale" value="{{scaleslidervalue}}" on-change="scaleChangeHandler" min="1" max='10'></paper-slider>
             </div>
 
             <div>Throttle [[fpsvalue]][%]</div>
@@ -77,74 +77,116 @@ slider ctrls to modify timing of animated objects
             properties: {
 
                 /**
-                 * Animation frequency
+                 * Max timescale foreseen for hosting app   
                  */
-                fps: {
+                timescalemax: {
                     type: Number,
+                    value: 600,
+                    observer: '_setupTimeCtrls'
+                },
+
+                // 
+                timer: {
+                    type: Object,
                     notify: true
                 },
 
                 /**
                  * Animation TimeScale
                  */
-                timescale: {
+                _timescale: {
                     type: Number,
-                    observer: 'formatScale',
-                    notify: true
+                    value: 600
                 },
 
-                timescalemax: {
+                /**
+                 * Default Animation frequency of 'js5'  
+                 */
+                _fpsmax: {
                     type: Number,
-                    observer: 'setupTimeCtrls'
+                    value: 60
                 },
+                /**
+                 * Applied animation frequency
+                 */
+                _fps: {
+                    type: Number
+                }
 
             },
 
             ready: function() {
-                this.setupTimeCtrls();
+                this._setupTimeCtrls();
+            },
+
+            observers: [
+                'applyTimer(_timescale, _fps)'
+            ],
+
+            debouncedClickAction: function(e) {
+                // will not call `processClick` more than once per 100ms
+                this.debounce('click', function() {
+                    this.processClick();
+                }, 100);
+            },
+
+
+            applyTimer: function(timescale, fps) {
+
+                this._formatscale(timescale);
+
+                this.debounce('apply', function() {
+                    if (!this.timer) {
+                        this.timer = {};
+                        this.set('timer.timescalemax', this.timescalemax);
+                    }
+                    this.set('timer.timescale', timescale);
+                    this.set('timer.fpsmax', this._fpsmax);
+                    this.set('timer.fps', fps);
+                    console.log("applied timer", this.timer);
+                }, 500);
+
             },
 
             // 
             fpsChangeHandler: function() {
-                var fps = this.fpsMax * this.fpsvalue / 100; //console.log("fps", fps)
-                this.fps = fps;
+                this._fps = this._fpsmax * this.fpsvalue / 100; //console.log("fps", fps)
             },
 
             scaleChangeHandler: function() {
-                var timescale = this.scalemin * this.scalevalue;
+                var timescale = this.scalemin * this.scaleslidervalue;
                 console.log("new timescale", timescale);
-                this.timescale = timescale;
+                this._timescale = timescale;
             },
 
             resetTimeScale: function(timescalemax) {
                 if (!timescalemax) timescalemax = 600; // 10 h
                 this.scalemin = timescalemax / 10;
-                this.scalevalue = 5;
-                this.timescale = this.scalemin * this.scalevalue;
+
+                //if (!this._timescale) 
+                this.scaleslidervalue = 5;
+                //else this.scaleslidervalue = Math.round(this._timescale / this.scalemin);
+
+                this._timescale = this.scalemin * this.scaleslidervalue;
             },
 
             /**
              * Setup the Ctrl-actions (start/stop, restart, fps-slider) 
              *
              */
-            setupTimeCtrls: function() {
+            _setupTimeCtrls: function(timescalemax) {
+                if (!timescalemax) timescalemax = this.timescalemax;
+                this.resetTimeScale(timescalemax);
 
-                this.resetTimeScale(this.timescalemax);
-
-                this.fpsMax = 60;
+                // fps-StartValues
                 this.fpsvalue = 100;
-                this.fps = this.fpsvalue / this.fpsMax * 100;
-
-                //     
-                var fpsSlider = this.$.fpsctrl,
-                    scaleSlider = this.$.scalectrl;
-
-                var fpsValue = this.$.fpsvalue,
-                    fpsValue = this.$.scalevalue;
-
+                this._fps = this._fpsmax;
             },
 
-            formatScale: function(minutes) {
+            // readable presentation of timescale within this element  
+            _formatscale: function(minutes) {
+                if (!minutes) return;
+                console.log("timescale[min] to format:", minutes);
                 var h, m, s;
                 if (minutes < 60) {
                     m = minutes;

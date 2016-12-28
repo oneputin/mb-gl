@@ -61,6 +61,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             
             <paper-slider id="trace" value="{{sliderval}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler" pin></paper-slider>
             <!-- on-value-change="slideValueHandler" -->
+           
             <paper-material elevation="2" id="logtime">{{logtime}}</paper-material>
 
 	    </div>
@@ -83,8 +84,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
                 timer: {
                     type: Object,
-                    value: {},
-                    observer: 'sliderinit'
+                    value: {}
                 },
 
                 start: {
@@ -126,6 +126,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             observers: [
                 'controlupdate(trackctrl)',
+                'sliderinit(timer.stop)', // , timer.stop)',
                 'sliderupdate(timer.time)'
             ],
 
@@ -147,20 +148,21 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             },
 
-            sliderinit: function(timer) {
-                if (!timer.start) return;
-                console.log("Setup timeslider from timer-parameters ", typeof timer.start, typeof timer.stop);
+            sliderinit: function(stoptime) { // , stoptime) {
+                if (!stoptime) return;
+                var starttime = this.timer.start;
+                console.log("Setup timeslider from start-/stop-times ", starttime, stoptime);
 
-                var delta = timer.stop - timer.start;
+                var deltat = Math.round(stoptime - starttime);
                 this.start = 0;
-                this.stop = delta;
+                this.stop = deltat + 1;
             },
 
             sliderupdate: function(tracktime) {
                 if (!tracktime) return;
-                var sliderval = tracktime - this.timer.start;
-                // console.log("tracktime", tracktime, sliderval);
-                this.sliderval = sliderval;
+                // Sync the slider with externally modified tracktime 
+                this.sliderval = tracktime - this.timer.start;
+                // Display readable tracktime  
                 var logtime = this.logTime(tracktime * 3600 * 1000, "<br>");
                 this.$.logtime.innerHTML = logtime;
             },

@@ -204,7 +204,6 @@ along waypoint file loaded from url
                 timer: {
                     type: Object,
                     notify: true,
-                    observer: '_checkTracktimer'
                 },
 
                 trackobj: {
@@ -262,7 +261,8 @@ along waypoint file loaded from url
             ],
 
             observers: [
-                '_setupTracking(routedata, timescale)',
+                '_checkTracktimer(timer.*)',
+                '_setupTracking(routedata, timer.timescale)',
                 'dataToMap(map, routelayers.*, routedata)',
                 'ctrlTrackmove(trackctrl)',
                 'ctrlTrackmode(trackmode, trackid, map)',
@@ -280,7 +280,7 @@ along waypoint file loaded from url
 
             // DEBUG-utilities
             _checkTracktimer: function(timer) {
-                console.log("checking timer", timer.time);
+                // console.log("checking timer", timer.value, timer);
             },
             _checkTrackdata: function(data) {
                 //console.log("checking trackdata", data);
@@ -295,10 +295,11 @@ along waypoint file loaded from url
             // A. 
 
             _setupTracking: function(routedata, timescale) {
-                // console.log("ORIGINAL routedata:", routedata, " with timescale=" + timescale);
+                // console.log("ORIGINAL routedata:", routedata, " with timer=", this.timer, timescale);
 
                 this.counter = 0;
-                this.timer = this.setupTrackTimer(routedata, timescale);
+                this.setupTrackTimer(routedata, timescale);
+                // console.log("ORIGINAL routedata and timer:", routedata, " with timer=", this.timer);
 
                 var routelayers = {};
                 routelayers['waypoints'] = this.setupTrackWaypoints(routedata);
@@ -755,17 +756,18 @@ along waypoint file loaded from url
              * Compile a timer from animated routes
              *
              * @param      {Object}  routedata  The routedata
-             * @param      {Number}  timeScale  The timeScale of animation
+             * @param      {Number}  timescale  The timescale of animation
              * @return     {Object}  Collection of timeCtrls
              */
-            setupTrackTimer: function(routedata, timeScale) {
+            setupTrackTimer: function(routedata, timescale) {
 
                 // A. Setup basic animation-parameters                
-                var timer = {};
-                var fpsmax = 60; // Animationszeit 1s=6*60s=6min, 10s=1h Echtzeit 
-                if (!timeScale) timeScale = 360; // Animationszeit 1s=360s=6min, 10s=1h Echtzeit 
+                var timer = this.timer ? this.timer : {};
+                var fpsmax = timer.fpsmax ? timer.fpsmax : 60; // Animationszeit 1s=6*60s=6min, 10s=1h Echtzeit 
+                if (!timescale) timescale = 360; // Animationszeit 1s=360s=6min, 10s=1h Echtzeit 
 
                 // B. Assemble all waypoint-times for every route 
+                var wptimer = {};
                 routedata.forEach(function(route, j) {
                     var starts = [],
                         stops = [];
@@ -775,20 +777,20 @@ along waypoint file loaded from url
                     }.bind(this));
 
                     // Collect 
-                    timer[route.id] = {
+                    wptimer[route.id] = {
                         "starts": starts,
                         "stops": stops
                     }; // [starts, stops, passes];
                 }.bind(this));
-                // console.log("timer waypoints:", timer, routedata);
                 // return;
 
                 // C. Get start&stop times for every route and overall animation period  
                 var start, stop;
 
-                Object.keys(timer).forEach(function(id) {
-                    var starts = timer[id]["starts"],
-                        stops = timer[id]["stops"],
+                Object.keys(wptimer).forEach(function(id) {
+
+                    var starts = wptimer[id]["starts"],
+                        stops = wptimer[id]["stops"],
                         wpstart, wpstop, routestart, routestop;
 
                     if (starts.length) wpstart = starts[0];
@@ -797,7 +799,7 @@ along waypoint file loaded from url
                     routestart = this.utcTime(wpstart.ab, wpstart.coords, "h");
                     routestop = this.utcTime(wpstop.an, wpstop.coords, "h");
 
-                    timer[id] = {
+                    this.timer[id] = {
                         "start": routestart,
                         "stop": routestop
                     };
@@ -805,26 +807,31 @@ along waypoint file loaded from url
                     if (!start || (routestart < start)) start = routestart;
                     if (!stop || (routestop > stop)) stop = routestop;
                 }.bind(this));
+                // console.log("timer for waypoints:", wptimer, timer);
 
-                timer["timeScale"] = timeScale;
-                timer.frameTime = timeScale / fpsmax; // Bsp: frameTime: 6 s fuer scale = 360 und fps=60 !!
-                timer["start"] = start;
-                timer["time"] = start; // initialize 
-                timer["stop"] = stop;
-                // console.log("timer2", timer);
+                this.timer["timescale"] = timescale;
+                this.timer.frameTime = timescale / fpsmax; // Bsp: frameTime: 6 s fuer scale = 360 und fps=60 !!
+
+                // ** SET explicitely to notify changes for data-binding 
+                this.set("timer.start", start);
+                this.set("timer.stop", stop);
+                this.set("timer.time", start);
 
                 // D. OPTION: Get a list of start-times  
                 var routeStarts = {},
                     startTimes = [];
-                for (let id in timer) {
-                    let t = timer[id]["start"];
-                    if (!startTimes.length || (startTimes[0] <= t)) startTimes.push(t);
-                    else startTimes.splice(0, 0, t);
+                for (let key in this.timer) {
+                    let t = this.timer[key]["start"];
+                    if (t) {
+                        if (!startTimes.length || (startTimes[0] <= t)) startTimes.push(t);
+                        else startTimes.splice(0, 0, t);
+                    }
                 }
-                timer["startList"] = startTimes;
 
-                // console.log("APPLIED timer:", timer);
-                return timer;
+                this.timer["startList"] = startTimes;
+
+                console.log("Timer after setupTrackTimer:", this.timer);
+                // return timer;
             },
 
             /**

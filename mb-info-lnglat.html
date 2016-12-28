@@ -87,8 +87,8 @@ Info-area for short msges
                     lon = lnglat.lng;
                     lat = lnglat.lat;
                 }
-                var lonunit = lon < 0 ? " W" : " E",
-                    latunit = lat < 0 ? " S" : " N",
+                var lonunit = lon < 0 ? " W" : "E",
+                    latunit = lat < 0 ? " S" : "N",
                     trafo = this.ddtodm; // ddtodms;
                 return trafo(lon, "lon") + lonunit + "  " + trafo(lat) + latunit;
             },
