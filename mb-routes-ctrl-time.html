@@ -7,7 +7,9 @@
 
 <!--
 `mb-routes-ctrl-time`
-slider ctrls to modify timing of animated objects
+slider ctrls used to modify timing of routing animations  
+`timescalemax` should be passed in by app  
+ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax     
 
 @demo demo/routemap.html 
 -->
@@ -85,14 +87,16 @@ slider ctrls to modify timing of animated objects
                     observer: '_setupTimeCtrls'
                 },
 
-                // 
+                /**
+                 * collection of ctrl-values
+                 */
                 timer: {
                     type: Object,
                     notify: true
                 },
 
                 /**
-                 * Animation TimeScale
+                 * TimeScale of animation (real-minutes per animation-minute)
                  */
                 _timescale: {
                     type: Number,
@@ -100,14 +104,15 @@ slider ctrls to modify timing of animated objects
                 },
 
                 /**
-                 * Default Animation frequency of 'js5'  
+                 * Default Animation frequency of `requestAnimationFrame`  
                  */
                 _fpsmax: {
                     type: Number,
                     value: 60
                 },
+
                 /**
-                 * Applied animation frequency
+                 * Animation frequency used to slow-down animation (if < fpsmax)
                  */
                 _fps: {
                     type: Number
@@ -123,14 +128,12 @@ slider ctrls to modify timing of animated objects
                 'applyTimer(_timescale, _fps)'
             ],
 
-            debouncedClickAction: function(e) {
-                // will not call `processClick` more than once per 100ms
-                this.debounce('click', function() {
-                    this.processClick();
-                }, 100);
-            },
-
-
+            /**
+             * Setup/Change timer properties with notify-power 
+             *
+             * @param      {<type>}  timescale  Timescale of animation
+             * @param      {<type>}  fps        Optional animation-throttle
+             */
             applyTimer: function(timescale, fps) {
 
                 this._formatscale(timescale);
@@ -148,25 +151,27 @@ slider ctrls to modify timing of animated objects
 
             },
 
-            // 
+            /**
+             * Event-handler of throttle-slider 
+             */
             fpsChangeHandler: function() {
                 this._fps = this._fpsmax * this.fpsvalue / 100; //console.log("fps", fps)
             },
 
+            /**
+             * Event-handler of timescale-slider 
+             */
             scaleChangeHandler: function() {
-                var timescale = this.scalemin * this.scaleslidervalue;
-                console.log("new timescale", timescale);
-                this._timescale = timescale;
+                this._timescale = this.scalemin * this.scaleslidervalue; // console.log("new timescale", this.timescale);
             },
 
-            resetTimeScale: function(timescalemax) {
+            // redundant
+            _resetTimeScale: function(timescalemax) {
                 if (!timescalemax) timescalemax = 600; // 10 h
                 this.scalemin = timescalemax / 10;
-
                 //if (!this._timescale) 
                 this.scaleslidervalue = 5;
                 //else this.scaleslidervalue = Math.round(this._timescale / this.scalemin);
-
                 this._timescale = this.scalemin * this.scaleslidervalue;
             },
 
@@ -175,15 +180,24 @@ slider ctrls to modify timing of animated objects
              *
              */
             _setupTimeCtrls: function(timescalemax) {
-                if (!timescalemax) timescalemax = this.timescalemax;
-                this.resetTimeScale(timescalemax);
+                if (!timescalemax) timescalemax = 600; // this.timescalemax;
+                // A. timescale
+                // this._resetTimeScale(timescalemax);
+                this.scalemin = timescalemax / 10;
+                this.scaleslidervalue = 5;
+                this._timescale = this.scalemin * this.scaleslidervalue;
 
-                // fps-StartValues
+                // B. fps
                 this.fpsvalue = 100;
                 this._fps = this._fpsmax;
             },
 
-            // readable presentation of timescale within this element  
+             
+            /**
+             * Create readable presentation of timescale into scalestring-property  
+             *
+             * @param      {number}  minutes  Number of unix-minutes (1970)
+             */
             _formatscale: function(minutes) {
                 if (!minutes) return;
                 console.log("timescale[minutes] to format:", minutes);
@@ -199,7 +213,6 @@ slider ctrls to modify timing of animated objects
                 } else {
                     this.scalestring = (minutes / 1440).toFixed(2) + " d";
                 }
-
             }
 
         });

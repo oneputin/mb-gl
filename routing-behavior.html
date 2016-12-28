@@ -7,47 +7,75 @@
 
             // I. Import properties
             /**
-             * data to be used by routing API 
+             * collection of trackRoutes (as processed by routing API) 
              */
             routedata: {
                 type: Object,
                 notify: true
             },
 
-            // 
+            /**
+             * url to trackRoute-data
+             */
             url: {
                 type: String
             },
 
+            /**
+             * url to trackObj-masterdata
+             */
             basedataurl: {
                 type: String
             },
+
+            /**
+             * raw trackRoutes (json data)
+             */
             rawdata: {
                 type: Object
             },
+
+            /**
+             * raw trackObjects (as JSON)  
+             */
             rawmasterdata: {
                 type: Object
             },
+
+            /**
+             * collection of trackObjects-data that may be included into INFO-Popup
+             * (masterdata or optionally time dependent)
+             */
             masterdata: {
                 type: Object
             },
 
+            /**
+             * default Icon used for wayPoint-mapping
+             */
             wpicon: {
                 value: "lighthouse"
             },
+            /**
+             * default Symbol used for trackPoint-mapping
+             */
             trackicon: {
                 value: "harbor"
             },
 
             // II. Info-compilation
 
-            // id- and location-data as got from APP
+            /**
+             *  collection of trackObj-data (id-,location-data) describing actual status
+             */
             trackdata: {
                 type: Object,
                 value: {}
             },
 
-            // 
+            /**
+             * tarckObj-data compiled for use as popup in map-api 
+             */
             trackinfo: {
                 type: Object,
                 value: {},
@@ -55,17 +83,26 @@
             },
 
 
-            // III. Info-presentation
+            // III. Presentation as draggable CARD-object
 
+            /**
+             * { item_description }
+             */
             carddata: {
                 type: Object,
                 value: {}
             },
 
+            /**
+             * { item_description }
+             */
             cardimgurl: {
                 type: String
             },
 
+            /**
+             * { item_description }
+             */
             dragctrl: {
                 type: Object,
                 value: {}
@@ -80,6 +117,7 @@
 
         },
 
+        
         observers: [
             'processTrackdata(trackdata.*)',
             'refreshCardContent(carddata)',
@@ -98,7 +136,7 @@
         /**
          * LOAD raw data via ajax
          *
-         * @param      {<type>} ajaxresponse : Routedata as wp-dataset packaged in default ajax-response
+         * @param   {<type>} ajaxresponse : basic routedata as wp-dataset (packaged in default ajax-response)
          */
         getrawdata: function(ajaxresponse) {
             var rawdata = ajaxresponse.detail.response;
@@ -110,7 +148,11 @@
 
         // B. DISPLAY-INTERFACE 
 
-        // processing data of selected trackObj 
+        /**
+         * Manages the alternative ways to create an INFO-POPUP 
+         *
+         * @param      {<type>}  trackdata  data related to a trackObj 
+         */
         processTrackdata: function(trackdata) {
             if (!trackdata || !trackdata.value) return;
             trackdata = trackdata.value;
@@ -138,9 +180,10 @@
         // C: POPUP-Handling
 
         /**
-         * Combine last track(tap)-coordinates with coordinates at start  
-         * into new location of tracked element 
-         * @param      {<type>}  e       { parameter_description }
+         * Manages interactive drag-behavior of     
+         *     Combines last track(tap)-coordinates with coordinates at start  
+         *     into new location of tracked element 
+         * @param      {<type>}  e  { parameter_description }
          */
         _myPopupTrackHandler: function(e) {
             //e.cancelBubble = true;
@@ -174,7 +217,7 @@
         },
 
         /**
-         * Translate ctrl-values into style-properties
+         * Translate ctrl-values of dragObject into style-properties
          *
          * @param      {string}  x         { parameter_description }
          * @param      {string}  y         { parameter_description }
@@ -199,9 +242,12 @@
                 this.style.right = "0px";
             }
         },
-
+        /**
+         * Default tap-action of close elements
+         */
         _onBackClick: function() {
-            this.style.display = "none";
+            this._toggle(0); 
+            // this.style.display = "none";
         }
 
     };
