@@ -1,0 +1,213 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<script>
+    Polymer.BehaviorRoutingImpl = {
+
+        properties: {
+
+            // I. Import properties
+            /**
+             * data to be used by routing API 
+             */
+            routedata: {
+                type: Object,
+                notify: true
+            },
+
+            // 
+            url: {
+                type: String
+            },
+
+            basedataurl: {
+                type: String
+            },
+            rawdata: {
+                type: Object
+            },
+            rawmasterdata: {
+                type: Object
+            },
+            masterdata: {
+                type: Object
+            },
+
+            wpicon: {
+                value: "lighthouse"
+            },
+            trackicon: {
+                value: "harbor"
+            },
+
+            // II. Info-compilation
+
+            // id- and location-data as got from APP
+            trackdata: {
+                type: Object,
+                value: {}
+            },
+
+            // 
+            trackinfo: {
+                type: Object,
+                value: {},
+                notify: true
+            },
+
+
+            // III. Info-presentation
+
+            carddata: {
+                type: Object,
+                value: {}
+            },
+
+            cardimgurl: {
+                type: String
+            },
+
+            dragctrl: {
+                type: Object,
+                value: {}
+            },
+
+            // Behavior of drag-element
+            // flow, left, right
+            dragtype: {
+                type: String,
+                value: "flow"
+            }
+
+        },
+
+        observers: [
+            'processTrackdata(trackdata.*)',
+            'refreshCardContent(carddata)',
+
+            '_drag(dragctrl.x, dragctrl.y, dragtype)',
+            '_toggle(carddata.open)'
+        ],
+
+        'listeners': {
+            "track": '_myPopupTrackHandler',
+            "tap": '_onBackClick'
+        },
+
+        // A. DATA-INTERFACE 
+
+        /**
+         * LOAD raw data via ajax
+         *
+         * @param      {<type>} ajaxresponse : Routedata as wp-dataset packaged in default ajax-response
+         */
+        getrawdata: function(ajaxresponse) {
+            var rawdata = ajaxresponse.detail.response;
+            if (!rawdata) return;
+            // console.log("routedata", rawdata);
+            this.rawdata = rawdata; // triggers 'setupTracking'
+        },
+
+
+        // B. DISPLAY-INTERFACE 
+
+        // processing data of selected trackObj 
+        processTrackdata: function(trackdata) {
+            if (!trackdata || !trackdata.value) return;
+            trackdata = trackdata.value;
+
+            var trackobj = trackdata.trackobj,
+                lnglat = trackdata.lnglat,
+                openflag = trackdata.open;
+            if (!trackobj) return;
+            // console.log("processing trackdata", trackdata);
+
+            if (this.calcExtendedInfo) {
+                // A. 
+                this.carddata = this.calcExtendedInfo(trackobj, openflag);
+
+            } else {
+                // B. 
+                this.trackinfo = {
+                    "html": this.calcBasicInfo(trackobj),
+                    "lnglat": lnglat,
+                    "open": openflag
+                }
+            }
+        },
+
+        // C: POPUP-Handling
+
+        /**
+         * Combine last track(tap)-coordinates with coordinates at start  
+         * into new location of tracked element 
+         * @param      {<type>}  e       { parameter_description }
+         */
+        _myPopupTrackHandler: function(e) {
+            //e.cancelBubble = true;
+            //e.stopPropagation();
+            var style = window.getComputedStyle(this),
+                top = parseFloat(style.getPropertyValue('top')),
+                left = parseFloat(style.getPropertyValue('left')),
+                dy = e.detail.y - top,
+                dx = e.detail.x - left,
+                x, y;
+
+            switch (e.detail.state) {
+                case 'start':
+                    this.dragctrl.msg = 'Tracking started at top=';
+                    this.dragctrl.dx = dx;
+                    this.dragctrl.dy = dy;
+                    this.unlisten(this, 'tap', '_onBackClick');
+                    // console.log("start:x,y,dx,dy",left, top, dx, dy);
+                    break;
+                case 'track':
+                    // console.log(this.dragctrl);
+                    this.dragctrl.msg = "Tracking...";
+                    this.set('dragctrl.x', left + dx - this.dragctrl.dx);
+                    this.set('dragctrl.y', top + dy - this.dragctrl.dy);
+                    break;
+                case 'end':
+                    this.dragctrl.msg = 'Tracking ended!';
+                    this.listen(this, 'tap', '_onBackClick');
+                    break;
+            }
+        },
+
+        /**
+         * Translate ctrl-values into style-properties
+         *
+         * @param      {string}  x         { parameter_description }
+         * @param      {string}  y         { parameter_description }
+         * @param      {<type>}  dragtype  drag-behavior
+         */
+        _drag: function(x, y, dragtype) {
+            //console.log("drag", x, y);
+            this.style.left = x + "px";
+            this.style.top = y + "px";
+            if (dragtype) this.style.right = "auto";
+        },
+        /**
+         * Toggle visibility of drag-element
+         *
+         * @param      {number}  open    The status to toggle into 
+         */
+        _toggle: function(open) {
+            if (open == 0) {
+                this.style.display = "none";
+            } else if (open == 1) {
+                this.style.display = "inline-block";
+                this.style.right = "0px";
+            }
+        },
+
+        _onBackClick: function() {
+            this.style.display = "none";
+        }
+
+    };
+
+    /** @polymerBehavior */
+    Polymer.BehaviorRouting = [
+        Polymer.BehaviorRoutingImpl
+    ];
+</script>

@@ -4,17 +4,19 @@
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="../paper-card/paper-card.html">
 
+<link rel="import" href="routing-behavior.html">
+
 <!--
-`mb-info-drag`
+`routing-planes`
 RICH-content Info-card related to one selected feature,  
 absolutely positioned as map-overlay   
 Mode-A: Can be vertically dragged & horizontally resized.  
 Mode-B: Free drag   
 Close with click anywhere on the card
 
-@demo demo/routemap.html 
+@demo demo/routingplanes.html 
 -->
-<dom-module id="mb-info-drag">
+<dom-module id="routing-planes">
 
     <template>
 
@@ -74,6 +76,13 @@ Close with click anywhere on the card
 
         </style>
 
+        <iron-ajax
+            auto
+            url="[[url]]"
+            handle-as="json"
+            on-response="getrawdata">
+        </iron-ajax>
+
         <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
 
             <div class="info-content">
@@ -106,144 +115,58 @@ Close with click anywhere on the card
 
     <script>
         Polymer({
-            is: 'mb-info-drag',
+            is: 'routing-planes',
 
-            properties: {
-                carddata: {
-                    type: Object,
-                    value: {}
-                },
-                cardimgurl: {
-                    type: String
-                },
+            properties: {},
 
-                dragctrl: {
-                    type: Object,
-                    value: {}
-                },
-
-                // Behavior of drag-element
-                // flow, left, right
-                dragtype: {
-                    type: String,
-                    value: "flow"
-                }
-
-            },
-
-            observers: [
-                '_drag(dragctrl.x,dragctrl.y, dragtype)',
-                '_toggle(carddata.open)',
-                'refreshContent(carddata)'
+            behaviors: [
+                Polymer.BehaviorRouting,
             ],
 
-
-            'listeners': {
-                "track": '_trackHandler',
-                "tap": '_onBackClick'
-            },
-
-            /**
-             * Combine last track(tap)-coordinates with coordinates at start  
-             * into new location of tracked element 
-             * @param      {<type>}  e       { parameter_description }
-             */
-            _trackHandler: function(e) {
-                //e.cancelBubble = true;
-                //e.stopPropagation();
-                var style = window.getComputedStyle(this),
-                    top = parseFloat(style.getPropertyValue('top')),
-                    left = parseFloat(style.getPropertyValue('left')),
-                    dy = e.detail.y - top,
-                    dx = e.detail.x - left,
-                    x, y;
-
-                switch (e.detail.state) {
-                    case 'start':
-                        this.dragctrl.msg = 'Tracking started at top=';
-                        this.dragctrl.dx = dx;
-                        this.dragctrl.dy = dy;
-                        this.unlisten(this, 'tap', '_onBackClick');
-                        // console.log("start:x,y,dx,dy",left, top, dx, dy);
-                        break;
-                    case 'track':
-                        // console.log(this.dragctrl);
-                        this.dragctrl.msg = "Tracking...";
-                        this.set('dragctrl.x', left + dx - this.dragctrl.dx);
-                        this.set('dragctrl.y', top + dy - this.dragctrl.dy);
-                        break;
-                    case 'end':
-                        this.dragctrl.msg = 'Tracking ended!';
-                        this.listen(this, 'tap', '_onBackClick');
-                        break;
-                }
-            },
+            observers: [
+                'importPlanes(rawdata)',
+            ],
 
             attached: function() {
                 // console.log("target attached");
             },
 
-            refreshContent: function(data) {
-                // console.log("refreshCardContent", data);
+            // import as copy 
+            importPlanes: function(rawdata) {
+                // console.log("IMPORT", rawdata);
+                this.routedata = rawdata;
+            },
+
+            // B. 
+
+            /**
+             * Create some formatted html-text(dom?) 
+             * to identify basic properties of an animated object (animation status)
+             *
+             * @param      {<type>}  trackObj  The animated trackObj (as mb-feature)
+             * @return     {string}  A formatted information about trackObj-status.
+             */
+            calcBasicInfo: function(trackObj) {
+                if (!trackObj || !trackObj.properties) return; // console.log("calcBasicInfo-object", trackObj);
+
+
+                var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
+                if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
+
+                if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
+                if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
+
+                return trackInfo;
+            },
+
+            refreshCardContent: function(data) {
                 var nbsp = "&nbsp;"; //"~"; 
                 if (!data) return;
-                if (data.properties && data.properties.master) {
-                    // console.log("refreshCardContent-master", data.properties.master);
-                    // DIV0
-                    var imgurl = data.properties.master.img,
-                        skipper = data.properties.master.skipper,
-                        boat = data.properties.master.ship,
-                        header = "";
 
-                    if (imgurl) this.cardimgurl = "wp-data/" + imgurl;
-                    if (skipper && boat) {
-
-                        // to show items with no line-breaks (fi. in flex-formatted cards)
-                        // replace many spaces 
-                        skipper = skipper.split(' ').join(nbsp);
-                        boat = boat.split(' ').join(nbsp);
-                        // statt: 
-                        // skipper = skipper.replace(" ", nbsp);
-                        // boat = boat.replace(" ", nbsp);
-
-                        header = "<b>" + boat + "</b>" + "<br>" + skipper;
-                        this.$.div0.innerHTML = header;
-                    }
-                }
                 // DIV1
                 if (data.html) this.$.div1.innerHTML = data.html;
-            },
-
-            /**
-             * Translate ctrl-values into style-properties
-             *
-             * @param      {string}  x         { parameter_description }
-             * @param      {string}  y         { parameter_description }
-             * @param      {<type>}  dragtype  drag-behavior
-             */
-            _drag: function(x, y, dragtype) {
-                //console.log("drag", x, y);
-                this.style.left = x + "px";
-                this.style.top = y + "px";
-                if (dragtype) this.style.right = "auto";
-            },
-            /**
-             * Toggle visibility of drag-element
-             *
-             * @param      {number}  open    The status to toggle into 
-             */
-            _toggle: function(open) {
-                if (open == 0) {
-                    this.style.display = "none";
-                } else if (open == 1) {
-                    this.style.display = "inline-block";
-                    this.style.right = "0px";
-                }
-            },
-
-            _onBackClick: function() {
-                this.style.display = "none";
             }
+
         });
     </script>
 

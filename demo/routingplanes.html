@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>mb-routes demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+    <link rel="import" href="../../iron-collapse/iron-collapse.html">
+    <link rel="import" href="../../paper-item/paper-item.html">
+    <link rel="import" href="../../paper-listbox/paper-listbox.html">
+    <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+
+    <link rel="import" href="../mb-map.html">
+    <link rel="import" href="../mb-routes.html">
+
+    <!--<link rel="import" href="../import-routes.html">-->
+
+    <link rel="import" href="../routing-planes.html">
+
+    <link rel="import" href="../mb-info-lnglat.html">
+    <link rel="import" href="../mb-routes-ctrl.html">
+    <link rel="import" href="../mb-routes-ctrl-time.html">
+    <link rel="import" href="../mb-map-orientation-ctrl.html">
+
+    <link rel="import" href="../../paper-styles/demo-pages.html">
+
+    <style is="custom-style">
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            /*@apply(--layout-horizontal);
+            align-items: flex-start;*/
+        }
+        
+        mb-map {
+            width: 100%;
+            height: 800px;
+        }
+        
+        mb-info-lnglat {
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, 0)
+        }
+        
+        mb-routes-ctrl-mode {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        
+        mb-routes-ctrl {
+            position: absolute;
+            bottom: 10px;
+            left: 30px;
+        }
+        
+        paper-dropdown-menu {
+            border-style: solid;
+            border-width: 1px;
+            padding: 10px;
+            position: absolute;
+            background-color: var(--paper-light-green-500);
+            opacity: 0.8;
+            top: 40px;
+            left: 30px;
+        }
+        
+        mb-routes-ctrl-time {
+            border-style: solid;
+            border-width: 1px;
+            padding: 10px;
+            position: absolute;
+            top: 40px;
+            right: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <template is="dom-bind" id="app">
+        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
+        </iron-ajax>
+
+        <import-routes url="[[importurl]]" routedata="{{routedata}}">
+        </import-routes>
+
+        <div class="container">
+            <mb-map 
+                mapapikey="[[mbkey]]" 
+                map="{{map}}" 
+                cbox="{{cbox}}" 
+                zoom="{{zoom}}" 
+                lnglat="{{lnglat}}" 
+                mapctrl="[[mapctrl]]">
+                
+                <mb-routes-ctrl 
+                    timer="[[timer]]"
+                    trackctrl="{{trackctrl}}">
+                </mb-routes-ctrl>
+                
+                <mb-map-orientation-ctrl trackmode="{{trackmode}}">
+                </mb-map-orientation-ctrl>
+                
+                <mb-info-lnglat lnglat="[[lnglat]]">
+                </mb-info-lnglat>
+                
+                <mb-routes 
+                    map="[[map]]" 
+                    timer="{{timer}}" 
+                    routedata=[[routedata]]  
+                    trackctrl="{{trackctrl}}" 
+                    trackmode="{{trackmode}}" 
+                    trackdata="{{trackdata}}"
+                    trackinfo="[[trackinfo]]">
+                </mb-routes>
+                
+                <mb-routes-ctrl-time timer="{{timer}}">
+                </mb-routes-ctrl-time>
+
+                <routing-planes 
+                    url="[[importurl]]" 
+                    routedata="{{routedata}}"
+                    trackdata="{{trackdata}}"
+                    trackinfo="{{trackinfo}}">
+                </routing-planes>
+
+                <paper-dropdown-menu label="Flight sets">
+                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+                        <template is="dom-repeat" items="{{wpdocs}}">
+                            <paper-item url="{{item.url}}">
+                                {{item.title}}
+                            </paper-item>
+                        </template>
+    </paper-listbox>
+    </paper-dropdown-menu>
+
+    </mb-map>
+    </div>
+    </template>
+
+    <script>
+        var scope = document.querySelector('#app');
+        scope.setupurl = "data-planes.json";
+        scope.importurl = "";
+        scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+
+        scope.cbox = "13.7,52.4";
+        scope.lnglat = "13.7,52.4";
+        scope.zoom = 1;
+
+        scope.mapctrl = {};
+        // scope.timer = {}; // default 
+
+        scope.selectedurl = function(e) {
+            this.importurl = e.detail.item.url;
+        }
+        scope.setupme = function(ajaxresponse) {
+            this.wpdocs = ajaxresponse.detail.response;
+        }
+    </script>
+</body>
+
+</html>

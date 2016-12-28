@@ -213,7 +213,7 @@ along waypoint file loaded from url
 
                 // for use in popups !!
                 trackinfo: {
-                    type: String,
+                    type: Object,
                     observer: '_checkTrackinfo'
                 },
 
@@ -266,7 +266,7 @@ along waypoint file loaded from url
                 'dataToMap(map, routelayers.*, routedata)',
                 'ctrlTrackmove(trackctrl)',
                 'ctrlTrackmode(trackmode, trackid, map)',
-                'trackMapInfo(trackinfo)'
+                'getMapInfo(trackinfo.*)'
             ],
 
             /**
@@ -289,7 +289,7 @@ along waypoint file loaded from url
                 // console.log("New TRACK obj", trackobj);
             },
             _checkTrackinfo: function(trackinfo) {
-                console.log("New TRACKinfo", trackinfo);
+                // console.log("New TRACKinfo", trackinfo);
             },
 
             // A. 
@@ -1300,13 +1300,22 @@ along waypoint file loaded from url
                 return nextStart;
             },
 
+            getMapInfo: function(trackinfo) {
+                if (!trackinfo.value) return;
+
+                trackinfo = trackinfo.value;
+                this.trackMapInfo(trackinfo);
+            },
+
             // Refresh the appInfo at map-center 
             trackMapInfo: function(trackinfo) {
                 var lnglat;
                 if (typeof trackinfo == "object") {
                     html = trackinfo.html;
                     lnglat = trackinfo.lnglat;
-                } else html = trackinfo;
+                } else {
+                    html = trackinfo;
+                }
 
                 if (mba && mba.popup) { //  console.log("check popup", mba.popup)
                     if (!lnglat) lnglat = mba.map.getCenter();
