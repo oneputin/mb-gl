@@ -58,14 +58,15 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
     	</style>
 	
 		<div class="ctrlbox"> 
-            <h3>Animation scales</h3>
-            <div>Max: 1min ~ [[scalestring]] reality</div>
+            <h3>Animation scales (1 minute)</h3>
+            <div>Max: [[maxscalestring]]</div>
             <div class="slider">
                 <paper-slider id="scalectrl" class="scale" value="{{scaleslidervalue}}" on-change="scaleChangeHandler" min="1" max='10'></paper-slider>
             </div>
 
-            <div>Active: [[fpsslidervalue]][%]</div>
-            <paper-slider id="fpsctrl" value="{{fpsslidervalue}}" on-change="fpsChangeHandler" min="10" max='100' step='10' pin ></paper-slider>
+            <!--<div>Active: [[fpsslidervalue]][%]</div>-->
+            <div>Active: [[scalestring]]</div>
+            <paper-slider id="fpsctrl" value="{{fpsslidervalue}}" on-value-change="fpsChangeHandler" min="10" max='100' step='10' pin ></paper-slider>
 
 	    </div>
 
@@ -124,8 +125,24 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
 
             observers: [
                 'applyTimer(_timescale, _fps)',
+                'setThrottle(timer.ctrl)',
                 '_setupTimeCtrls(timer.timescalemax)'
             ],
+
+            /** 
+             * 
+             */
+            setThrottle: function(ctrl) {
+                // console.log("setThrottle", ctrl);
+                if (!ctrl) return;
+                var throttle = this.$.fpsctrl;
+                if (ctrl == "up") {
+                    throttle.increment();
+                }
+                if (ctrl == "down") {
+                    throttle.decrement();
+                }
+            },
 
             /**
              * Setup/Change timer properties with notify-power 
@@ -135,18 +152,18 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
              */
             applyTimer: function(timescale, fps) {
 
-                this._formatscale(timescale);
-
                 this.debounce('apply', function() {
+                    this.maxscalestring = this._formatscale(timescale);
+                    this.scalestring = this._formatscale(timescale * fps / this._fpsmax);
                     if (!this.timer) {
                         this.timer = {};
                         this.set('timer.timescalemax', this.timescalemax);
+                        this.set('timer.fpsmax', this._fpsmax);
                     }
                     this.set('timer.timescale', timescale);
-                    this.set('timer.fpsmax', this._fpsmax);
                     this.set('timer.fps', fps);
-                    console.log("(re)applied timer", this.timer);
-                }, 500);
+                    // console.log("REFRESHED timer", this.timer, this.maxscalestring, this.scalestring);
+                }, 100);
 
             },
 
@@ -154,7 +171,8 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
              * Event-handler of throttle-slider 
              */
             fpsChangeHandler: function() {
-                console.log("set fps for sliderval", this.fpsslidervalue);
+                if (!this.fpsslidervalue) return;
+                // console.log("set fps for sliderval", this.fpsslidervalue);
                 this._fps = this._fpsmax * this.fpsslidervalue / 100; //console.log("fps", fps)
             },
 
@@ -200,25 +218,26 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
 
 
             /**
-             * Create readable presentation of timescale into scalestring-property  
+             * Create readable presentation of timescale into maxscalestring-property  
              *
              * @param      {number}  minutes  Number of unix-minutes (1970)
              */
             _formatscale: function(minutes) {
                 if (!minutes) return;
-                console.log("timescale[minutes] to format:", minutes);
-                var h, m, s;
+                // console.log("timescale[minutes] to format:", minutes);
+                var h, m, s, scalestring;
                 if (minutes < 60) {
                     m = minutes;
-                    this.scalestring = m + " min";
+                    scalestring = m + " min";
                 } else if (minutes < 1440) {
                     h = Math.floor(minutes / 60);
                     m = minutes - (60 * h);
                     s = m ? h + " h, " + m + " min" : h + " h";
-                    this.scalestring = s;
+                    scalestring = s;
                 } else {
-                    this.scalestring = (minutes / 1440).toFixed(2) + " d";
+                    scalestring = (minutes / 1440).toFixed(2) + " d";
                 }
+                return scalestring;
             }
 
         });

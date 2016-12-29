@@ -124,17 +124,23 @@ Close with click anywhere on the card
             ],
 
             observers: [
-                'importPlanes(rawdata)',
+                'importRawRoutes(rawdata)',
             ],
 
             attached: function() {
                 // console.log("target attached");
             },
 
-            // import as copy 
-            importPlanes: function(rawdata) {
-                // console.log("IMPORT", rawdata);
-                this.routedata = rawdata;
+            // import and modify before copy 
+            importRawRoutes: function(rawdata) {
+
+                var routedata = []; // = rawdata; 
+                rawdata.forEach(function(route) {
+                    route.units = "metric";
+                    routedata.push(route);
+                });
+                // console.log("importplanes: routeDATA", routedata);
+                this.routedata = routedata;
             },
 
             // B. 
@@ -151,10 +157,18 @@ Close with click anywhere on the card
 
 
                 var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
-                if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
+                // if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
+                if (trackObj.properties.dist) trackInfo += "Dist: " + trackObj.properties.dist + " km <hr>";
 
-                if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
-                if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
+                if (trackObj.properties.bearing) trackInfo += "Bearing: " + trackObj.properties.bearing + "°<br>";
+
+                if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " km/h<hr>";
+
+                if (trackObj.properties.dta) trackInfo += "DTA: " + trackObj.properties.dta + " km <br>";
+
+                if (trackObj.properties.tta) trackInfo += "TTA: " + trackObj.properties.tta + "<br>";
+
+                if (trackObj.properties.arrived) trackInfo += trackObj.properties.arrived + "<br>";
 
                 return trackInfo;
             },

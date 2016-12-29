@@ -101,6 +101,7 @@ along waypoint file loaded from url
                 props.legs = legdata;
                 props.wps = wps;
                 this.properties = props;
+                // console.log("ROUTE" + routeid, this.properties);
             }
         };
 
@@ -123,7 +124,7 @@ along waypoint file loaded from url
                     "coordinates": coordinates
                 };
 
-                // variable properties
+                // add variable properties
                 if (!props) props = {};
                 props.id = routeid;
                 props.bearing = 45;
@@ -289,6 +290,13 @@ along waypoint file loaded from url
             attached: function() {
                 mba = this;
                 this.trackFeaturesInit();
+                // 2. Prepare a "" Info-Popup
+                if (!this.popup) {
+                    this.popup = new mapboxgl.Popup({
+                        closeButton: true,
+                        closeOnClick: false
+                    });
+                }
             },
 
             // DEBUG-utilities
@@ -369,14 +377,6 @@ along waypoint file loaded from url
                     }
                 });
 
-
-                // 2. Prepare a "" Info-Popup
-                if (!this.popup) {
-                    this.popup = new mapboxgl.Popup({
-                        closeButton: true,
-                        closeOnClick: false
-                    });
-                }
 
                 // 3. Start-Zoom 
                 this.trackRoutesZoomTo(routedata);
@@ -513,8 +513,16 @@ along waypoint file loaded from url
                 var timer = mba.timer;
                 if (!timer) {
                     mba.trackMapInfo("OOPS. TrackTimer n.a.");
+                    mba.trackctrl = false;
                     return;
                 }
+                var tracks = mba.tracks;
+                if (!tracks || !tracks.features) {
+                    mba.trackMapInfo("OOPS. TrackData n.a.");
+                    mba.trackctrl = false;
+                    return;
+                }
+
                 // console.log("trackStepContainer", mba.tracks);
 
                 // A. Animation ACTION 
@@ -707,10 +715,10 @@ along waypoint file loaded from url
                 return located;
             },
 
-            // Calc status-parameters at mapTime and save as properties
+            // Calc status-parameters at mapTime and save as trackObj-properties
             trackStepStatus: function(trackObj, legInfo, mapTime) {
-                var objType = trackObj.properties.obj;
-                // console.log("trackStepStatus of " + objType, legInfo, trackObj);
+                var routeunits = trackObj.properties.units;
+                // console.log("trackStepStatus with " + routeunits + " units from ", legInfo, trackObj);
                 trackObj.properties.time = this.logTime(mapTime * 3600 * 1000);
 
                 var cc = trackObj.geometry.coordinates,
@@ -724,7 +732,8 @@ along waypoint file loaded from url
                 var legToArrival = new Leg([cc, legTarget.coords]),
                     dta = turf.lineDistance(legToArrival, "kilometers");
 
-                var v = legInfo.speed;
+                var v = legInfo.speed,
+                    dist = legInfo.dist;
                 if (v && Math.round(dta / 10)) {
                     // Moving 
                     // trackObj.properties.stop = 0;
@@ -735,11 +744,13 @@ along waypoint file loaded from url
                     trackObj.properties.bearing = Math.round(bearing); // °
                     trackObj.properties.arrived = null;
 
-                    if (objType == "ship") {
+                    if (routeunits == "nautic") {
                         trackObj.properties.speed = Math.round(v / 1.856); // nds
+                        trackObj.properties.dist = Math.round(dist / 1.856); // nm
                         trackObj.properties.dta = Math.round(dta / 1.856); // nm
                     } else {
                         trackObj.properties.speed = v; // km/h
+                        trackObj.properties.dist = Math.round(dist); // km
                         trackObj.properties.dta = Math.round(dta / 10) * 10; // km
                     }
 
@@ -747,6 +758,7 @@ along waypoint file loaded from url
                     // Resting
                     trackObj.properties.bearing = 0;
                     trackObj.properties.speed = 0;
+                    trackObj.properties.dist = 0;
                     trackObj.properties.dta = 0;
                     trackObj.properties.tta = 0;
                     if (legTarget.ab) {
@@ -843,7 +855,7 @@ along waypoint file loaded from url
 
                 this.timer["startList"] = startTimes;
 
-                console.log("Timer after setupTrackTimer:", this.timer);
+                // console.log("Timer after setupTrackTimer:", this.timer);
                 // return timer;
             },
 
@@ -914,11 +926,13 @@ along waypoint file loaded from url
                     props = {
                         "routeid": route.id,
                         "title": route.key,
-                        "obj": route.obj,
                         "start": timer[route.id]["start"],
-                        "stop": timer[route.id]["stop"],
-                        "master": route.master
+                        "stop": timer[route.id]["stop"]
                     }
+                    if (route.master) props["master"] = route.master;
+                    if (route.units) props["units"] = route.units;
+                    else props["units"] = "metric";
+
                     startort = route.waypoints[0].coords;
                     var aTrack = new Track(startort, route.id, props);
 
@@ -1161,8 +1175,9 @@ along waypoint file loaded from url
                         if (!mba.getNextStart(mapTime)) {
                             mba.trackctrl = false;
                             mba.trackmode = false;
-                            var msgTime = mba.logTime(mapTime * 3600 * 1000);
-                            console.log("At", msgTime, "-no more data to Sync");
+                            var msgTime = mba.logTime(mapTime * 3600 * 1000),
+                                msg = "STOPPED. No more data after: " + msgTime; // console.log(msg);
+                            mba.trackMapInfo(msg);
                             mba.map.setFilter('routes', null);
                             mba.map.setFilter('waypoints', null);
                             return;
@@ -1213,7 +1228,7 @@ along waypoint file loaded from url
                 // STOP-check 
                 if (syncflag.indexOf("STOP") >= 0) {
                     // if STOP flag 
-                    console.log("Reset selected trackobject(s)");
+                    // console.log("Reset selected trackobject(s)");
                     mba.map.setFilter("tracks-select", ["==", "id", ""]);
 
                     setTimeout(function() {
@@ -1304,6 +1319,7 @@ along waypoint file loaded from url
             getNextStart: function(mapTime) {
                 var starts = mba.timer.startList,
                     nextStart;
+                if (!starts) return;
                 starts.some(function(start) {
                     if (mapTime < start) {
                         nextStart = start;
@@ -1323,6 +1339,7 @@ along waypoint file loaded from url
             // Refresh the appInfo at map-center 
             trackMapInfo: function(trackinfo) {
                 var lnglat;
+
                 if (typeof trackinfo == "object") {
                     html = trackinfo.html;
                     lnglat = trackinfo.lnglat;
@@ -1330,9 +1347,9 @@ along waypoint file loaded from url
                     html = trackinfo;
                 }
 
-                if (mba && mba.popup) { //  console.log("check popup", mba.popup)
+                if (mba && mba.map) { //  console.log("check popup", mba.popup)
                     if (!lnglat) lnglat = mba.map.getCenter();
-                    mba.popup.remove;
+                    if (mba.popup) mba.popup.remove;
                     mba.popup
                         .setLngLat(lnglat)
                         .setHTML(html)

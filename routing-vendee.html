@@ -246,10 +246,11 @@ To 'close'
                     var route = {
                         "id": id,
                         "key": key,
+                        "units": "nautic",
                         "waypoints": waypoints
                     };
 
-                    // include Stammdaten
+                    // optionally include Stammdaten
                     if (masterdata[id] && this.connect) {
                         route["master"] = masterdata[id];
                     }

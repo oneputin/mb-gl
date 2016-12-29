@@ -91,7 +91,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
                 timer: {
                     type: Object,
-                    value: {}
+                    notify: true
                 },
 
                 start: {
@@ -169,7 +169,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             sliderinit: function(stoptime) { // , stoptime) {
                 if (!stoptime) return;
                 var starttime = this.timer.start;
-                console.log("Setup timeslider from start-/stop-times ", starttime, stoptime);
+                // console.log("Setup timeslider from start-/stop-times ", starttime, stoptime);
 
                 var deltat = Math.round(stoptime - starttime);
                 this.start = 0;
@@ -178,6 +178,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             sliderupdate: function(tracktime) {
                 if (!tracktime) return;
+                // console.log("timer=", this.timer);
                 // Sync the slider with externally modified tracktime 
                 this.sliderval = tracktime - this.timer.start;
                 // Display readable tracktime  
@@ -248,16 +249,15 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 if (ctrl3a) {
                     // Slowdown/speedup animation
                     ctrl3a.addEventListener('click', function() {
-                        console.log("slowdown");
-                        // this.trackctrl = "reset";
+                        this.set("timer.ctrl", "down"); // console.log("slowdown");
+                        this.set("timer.ctrl", "none");
                     }.bind(this));
+
                     ctrl3b.addEventListener('click', function() {
-                        console.log("speedup");
-                        // this.trackctrl = "reset";
+                        this.set("timer.ctrl", "up"); //console.log("speedup");
+                        this.set("timer.ctrl", "none");
                     }.bind(this));
                 }
-
-
 
             }
 
