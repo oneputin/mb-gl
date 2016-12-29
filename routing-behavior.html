@@ -50,19 +50,6 @@
                 type: Object
             },
 
-            /**
-             * default Icon used for wayPoint-mapping
-             */
-            wpicon: {
-                value: "lighthouse"
-            },
-            /**
-             * default Symbol used for trackPoint-mapping
-             */
-            trackicon: {
-                value: "harbor"
-            },
-
             // II. Info-compilation
 
             /**
@@ -117,7 +104,7 @@
 
         },
 
-        
+
         observers: [
             'processTrackdata(trackdata.*)',
             'refreshCardContent(carddata)',
@@ -246,7 +233,7 @@
          * Default tap-action of close elements
          */
         _onBackClick: function() {
-            this._toggle(0); 
+            this._toggle(0);
             // this.style.display = "none";
         }
 

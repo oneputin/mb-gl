@@ -58,14 +58,14 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
     	</style>
 	
 		<div class="ctrlbox"> 
-            <h3>Animation setup</h3>
-            <div>1min ~ [[scalestring]] reality</div>
+            <h3>Animation scales</h3>
+            <div>Max: 1min ~ [[scalestring]] reality</div>
             <div class="slider">
                 <paper-slider id="scalectrl" class="scale" value="{{scaleslidervalue}}" on-change="scaleChangeHandler" min="1" max='10'></paper-slider>
             </div>
 
-            <div>Throttle [[fpsvalue]][%]</div>
-            <paper-slider id="fpsctrl" value="{{fpsvalue}}" on-change="fpsChangeHandler" min="10" max='100' step='10' pin ></paper-slider>
+            <div>Active: [[fpsslidervalue]][%]</div>
+            <paper-slider id="fpsctrl" value="{{fpsslidervalue}}" on-change="fpsChangeHandler" min="10" max='100' step='10' pin ></paper-slider>
 
 	    </div>
 
@@ -82,9 +82,7 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
                  * Max timescale foreseen for hosting app   
                  */
                 timescalemax: {
-                    type: Number,
-                    value: 600,
-                    observer: '_setupTimeCtrls'
+                    type: Number
                 },
 
                 /**
@@ -125,7 +123,8 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
             },
 
             observers: [
-                'applyTimer(_timescale, _fps)'
+                'applyTimer(_timescale, _fps)',
+                '_setupTimeCtrls(timer.timescalemax)'
             ],
 
             /**
@@ -146,7 +145,7 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
                     this.set('timer.timescale', timescale);
                     this.set('timer.fpsmax', this._fpsmax);
                     this.set('timer.fps', fps);
-                    console.log("applied timer", this.timer);
+                    console.log("(re)applied timer", this.timer);
                 }, 500);
 
             },
@@ -155,23 +154,26 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
              * Event-handler of throttle-slider 
              */
             fpsChangeHandler: function() {
-                this._fps = this._fpsmax * this.fpsvalue / 100; //console.log("fps", fps)
+                console.log("set fps for sliderval", this.fpsslidervalue);
+                this._fps = this._fpsmax * this.fpsslidervalue / 100; //console.log("fps", fps)
             },
 
             /**
              * Event-handler of timescale-slider 
              */
             scaleChangeHandler: function() {
+                console.log("set timescale for sliderval", this.scaleslidervalue);
                 this._timescale = this.scalemin * this.scaleslidervalue; // console.log("new timescale", this.timescale);
             },
 
             // redundant
-            _resetTimeScale: function(timescalemax) {
-                if (!timescalemax) timescalemax = 600; // 10 h
+            _resetTimeScale: function(timescalemax, timescalestart) {
+                if (!timescalestart) timescalestart = timescalemax; //
+
                 this.scalemin = timescalemax / 10;
-                //if (!this._timescale) 
-                this.scaleslidervalue = 5;
-                //else this.scaleslidervalue = Math.round(this._timescale / this.scalemin);
+
+                this.scaleslidervalue = 10 * timescalestart / timescalemax;
+
                 this._timescale = this.scalemin * this.scaleslidervalue;
             },
 
@@ -180,19 +182,23 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
              *
              */
             _setupTimeCtrls: function(timescalemax) {
-                if (!timescalemax) timescalemax = 600; // this.timescalemax;
                 // A. timescale
-                // this._resetTimeScale(timescalemax);
-                this.scalemin = timescalemax / 10;
-                this.scaleslidervalue = 5;
-                this._timescale = this.scalemin * this.scaleslidervalue;
+                if (!timescalemax) {
+                    if (this.timer && this.timer.timescalemax) return;
+                    this.timer = {
+                        timescalemax: 600
+                    }
+                }
+                if (!this.timer.timescalestart) this.timer.timescalestart = timescalemax / 2;
+                this._resetTimeScale(timescalemax, this.timer.timescalestart);
 
                 // B. fps
-                this.fpsvalue = 100;
-                this._fps = this._fpsmax;
+                if (!this.timer.fpsstart) this.timer.fpsstart = this._fpsmax / 2;
+                this.fpsslidervalue = this.timer.fpsstart / this._fpsmax * 100;
+                this._fps = this._fpsmax * this.fpsslidervalue / 100; //console.log("fps", fps)
             },
 
-             
+
             /**
              * Create readable presentation of timescale into scalestring-property  
              *

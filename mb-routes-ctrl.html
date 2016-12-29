@@ -36,6 +36,11 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 margin: 5px; 
             }
 
+            paper-icon-button.trans {
+                color: var(--paper-light-blue-500);
+                margin: 1px; 
+            }
+
             #trace {
                 @apply(--layout-flex);
                 border-style: solid;
@@ -57,7 +62,9 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             
             <!--<paper-icon-button id="replay" icon="{{_icon1}}" title="restart" class="blue"></paper-icon-button>-->
             
+            <paper-icon-button id="slowdown" icon="{{_icon_remove}}" title="slowdown" class="trans"></paper-icon-button>
             <paper-icon-button id="toggle" icon="{{_icon2}}" title="startstop" class="blue"></paper-icon-button>
+            <paper-icon-button id="speedup" icon="{{_icon_add}}" title="speedup" class="trans"></paper-icon-button>
             
             <paper-slider id="trace" value="{{sliderval}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler" pin></paper-slider>
             <!-- on-value-change="slideValueHandler" -->
@@ -112,7 +119,18 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 _icon2: {
                     type: String,
                     value: "ctrl:play-arrow"
-                }
+                },
+
+                _icon_add: {
+                    type: String,
+                    value: "ctrl:add-circle-outline"
+                },
+
+                _icon_remove: {
+                    type: String,
+                    value: "ctrl:remove-circle-outline"
+                },
+
             },
 
             behaviors: [
@@ -201,7 +219,9 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 this.val = 1;
 
                 var ctrl1 = this.$.replay,
-                    ctrl2 = this.$.toggle;
+                    ctrl2 = this.$.toggle,
+                    ctrl3a = this.$.slowdown,
+                    ctrl3b = this.$.speedup;
 
                 var tracer = this.$.trace,
                     tracetime;
@@ -224,6 +244,21 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                         }
                     }.bind(this));
                 }
+
+                if (ctrl3a) {
+                    // Slowdown/speedup animation
+                    ctrl3a.addEventListener('click', function() {
+                        console.log("slowdown");
+                        // this.trackctrl = "reset";
+                    }.bind(this));
+                    ctrl3b.addEventListener('click', function() {
+                        console.log("speedup");
+                        // this.trackctrl = "reset";
+                    }.bind(this));
+                }
+
+
+
             }
 
         });

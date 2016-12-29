@@ -186,10 +186,14 @@ Demo to view ship-data animation
         scope.cbox = "-50,-40";
         scope.lnglat = "-50,-40";
         scope.zoom = 2;
+
         // Timescale to view tracks of boats over several days
         scope.timer = {
-            "timescalemax": 3600
+            "timescalemax": 10000, // 1min ~ 1week
+            "timescalestart": 5000,
+            "fpsstart": 30
         };
+
         scope.mapctrl = {};
         scope.cardctrl = {};
 

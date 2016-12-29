@@ -159,14 +159,14 @@ To 'close'
                 this.rawmasterdata = rawdata; // triggers 'setupTracking'
             },
 
-            // SPECIFIC import of vendee-data
+            // SPECIFIC import of specific vendee-data 
+            // into datastructure of routing-API
             importVendee: function(rawdata, rawmasterdata) {
+
                 /**
                  *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
                  *  "maritime formatting"  
                  */
-                // console.log(rawdata, rawmasterdata);
-
                 function dmtodd(dm, lonflag, prec) {
                     if (!prec) prec = 6;
                     dm = dm.split("°"); // console.log("dm-array", dm);
@@ -199,7 +199,8 @@ To 'close'
                 }
                 // console.log("masters", masterdata);
 
-                // B. GROUP all posi-records by id in objects for every boat
+                // B. GROUP all position-records by id 
+                //    into objects for every boat
                 rawdata.forEach(function(wp, j) {
                     //  
                     var wpx = {},
@@ -245,7 +246,6 @@ To 'close'
                     var route = {
                         "id": id,
                         "key": key,
-                        "icon": this.trackicon,
                         "waypoints": waypoints
                     };
 
@@ -261,7 +261,6 @@ To 'close'
 
                 this.routedata = routedata;
             },
-
 
             // B. COMPILE Feature-data 
             /**
