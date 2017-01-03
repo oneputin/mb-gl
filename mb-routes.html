@@ -33,11 +33,17 @@ along waypoint file loaded from url
              * @param      {array}   coordinates  The wp's coordinates as [lng,lat]-array
              * @param      {string}  id           The wp's identifier on maps
              * @param      {string}  routeid      The wp's identifier
-             * @param      {string}  icon         The mapbox-icon name 
+             * @param      {string}  props        Descriptive wp-properties
              */
-            constructor(coordinates, id, routeid, icon) {
+            constructor(coordinates, id, routeid, props) {
                 // if (!id) id = "wp";
-                if (!icon) icon = "star";
+                if (!props) props = {};
+                props.id = id;
+                props.routeid = routeid;
+                props.title = id;
+                if (!props.icon) props.icon = "star";
+
+
                 this.type = "Feature";
                 this.geometry = {
                     "type": "Point",
@@ -45,11 +51,7 @@ along waypoint file loaded from url
                 }
                 this.id = id;
 
-                this.properties = {
-                    'routeid': routeid,
-                    "title": id,
-                    "icon": icon
-                }
+                this.properties = props;
             };
         };
 
@@ -316,15 +318,16 @@ along waypoint file loaded from url
             // A. 
 
             _setupTracking: function(routedata, timescale) {
-                // console.log("ORIGINAL routedata:", routedata, " with timer=", this.timer, timescale);
-
+                // return;
                 this.counter = 0;
+
                 this.setupTrackTimer(routedata, timescale);
-                // console.log("ORIGINAL routedata and timer:", routedata, " with timer=", this.timer);
+                console.log("ORIGINAL routedata:", routedata, " with timer=", this.timer, timescale);
 
                 var routelayers = {};
+                // REIHENFOLGE wichtig, da wp-reduction possible during route-setup  
+                routelayers['routes'] = this.setupTrackRoutes(routedata, this.timer); // console.log("checked route-data", routedata);
                 routelayers['waypoints'] = this.setupTrackWaypoints(routedata);
-                routelayers['routes'] = this.setupTrackRoutes(routedata, this.timer);
                 routelayers['tracks'] = this.setupTrackObjects(routedata, this.timer);
                 // console.log("RouteAppData Ready", this.routelayers, this.routedata);
 
@@ -341,60 +344,69 @@ along waypoint file loaded from url
              * @param      {object}  map           The map to show routetracker
              */
             dataToMap: function(map, layerObjects, routedata) {
-                if (layerObjects.path == 'routelayers') layerObjects = layerObjects.value;
-                // console.log("Set Routes To Map: layerObjects, routedata, ", layerObjects, routedata);
+                this.debounce('tomap', function() {
 
-                var layerObject, layerData, layerSourec, layer;
+                    if (layerObjects.path == 'routelayers') layerObjects = layerObjects.value;
+                    if (!layerObjects || !Object.keys(layerObjects).length) return;
+                    console.log("Set Routes To Map: layerObjects, routedata, ", layerObjects, routedata);
+                    var layerObject, layerData, layerSourec, layer;
 
-                // 1. Create/Refresh json-based layers (sources and layers)
-                //    (of tracking-layers)     
-                var layernames = Object.keys(layerObjects);
+                    // 1. Create/Refresh json-based layers (sources and layers)
+                    //    (of tracking-layers)     
+                    var layernames = Object.keys(layerObjects);
 
-                layernames.forEach(function(lname, j) {
-                    layerObject = layerObjects[lname];
-                    layerData = layerObject['data'];
+                    layernames.forEach(function(lname, j) {
+                        layerObject = layerObjects[lname];
+                        console.log("addToMap:" + lname, layerObject);
 
-                    // 1.A. (Re)Set datasources
-                    layerSource = map.getSource(lname);
-                    if (!layerSource) {
-                        map.addSource(lname, {
-                            "type": "geojson",
-                            "data": layerData
-                        });
-                    } else {
-                        layerSource.setData(layerData);
-                    }
+                        if (layerObject && layerObject['data']) {
 
-                    // 1.B. Create layers 
-                    if (!map.getLayer(lname)) {
-                        map.addLayer(layerObject['layer']);
-                        // Optional: selectlayer of the same source
-                        var sl = layerObject['selectlayer'];
-                        if (sl) {
-                            map.addLayer(sl);
-                            map.setFilter(sl.id, ["==", "id", ""]);
+                            layerData = layerObject['data'];
+
+                            // 1.A. (Re)Set datasources
+                            layerSource = map.getSource(lname);
+                            if (!layerSource) {
+                                map.addSource(lname, {
+                                    "type": "geojson",
+                                    "data": layerData
+                                });
+                            } else {
+                                layerSource.setData(layerData);
+                            }
+
+                            // 1.B. Create layers 
+                            if (!map.getLayer(lname)) {
+                                map.addLayer(layerObject['layer']);
+                                // Optional: selectlayer of the same source
+                                var sl = layerObject['selectlayer'];
+                                if (sl) {
+                                    map.addLayer(sl);
+                                    map.setFilter(sl.id, ["==", "id", ""]);
+                                }
+                            }
+
                         }
-                    }
-                });
+
+                    });
 
 
-                // 3. Start-Zoom 
-                this.trackRoutesZoomTo(routedata);
+                    // 3. Start-Zoom 
+                    this.trackRoutesZoomTo(routedata);
 
-                // trigger animation-start if no ctrls available 
-                if (0) this.trackctrl = true;
+                    // trigger animation-start if no ctrls available 
+                    if (0) this.trackctrl = true;
 
-                this.counter = 1;
+                    this.counter = 1;
 
-                // 4. Query track-features in "mouseover" and show info-popup 
-                map.on('mousemove', function(e) {
-                    // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
-                    mba.trackObjSelect(e);
-                });
+                    // 4. Query track-features in "mouseover" and show info-popup 
+                    map.on('mousemove', function(e) {
+                        // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
+                        mba.trackObjSelect(e);
+                    });
 
-                // Update visible tracking content at different times  
-                mba.syncTrackFilter(mba.timer["start"], "FIRST START");
-
+                    // Update visible tracking content at different times  
+                    mba.syncTrackFilter(mba.timer["start"], "FIRST START");
+                }, 200);
                 // console.log("dataToMap OK!");
             },
 
@@ -777,6 +789,9 @@ along waypoint file loaded from url
 
             // D. SETUP elements ctrling and/or illustrating the tracking 
 
+
+
+
             /**
              * Compile a timer from animated routes
              *
@@ -794,8 +809,10 @@ along waypoint file loaded from url
                 // B. Assemble all waypoint-times for every route 
                 var wptimer = {};
                 routedata.forEach(function(route, j) {
+                    // console.log("route-" + j, route);
                     var starts = [],
                         stops = [];
+
                     route.waypoints.forEach(function(wp, p) {
                         if (wp.ab) starts.push(wp);
                         if (wp.an) stops.push(wp);
@@ -806,8 +823,9 @@ along waypoint file loaded from url
                         "starts": starts,
                         "stops": stops
                     }; // [starts, stops, passes];
+
                 }.bind(this));
-                // return;
+                // console.log("setupTrackTimer. timer=", wptimer, routedata); // return;
 
                 // C. Get start&stop times for every route and overall animation period  
                 var start, stop;
@@ -820,9 +838,11 @@ along waypoint file loaded from url
 
                     if (starts.length) wpstart = starts[0];
                     if (stops.length) wpstop = stops[stops.length - 1];
+                    else wpstop = starts[starts.length - 1];
 
                     routestart = this.utcTime(wpstart.ab, wpstart.coords, "h");
-                    routestop = this.utcTime(wpstop.an, wpstop.coords, "h");
+                    routestop = wpstop.an ? wpstop.an : wpstop.ab;
+                    routestop = this.utcTime(routestop, wpstop.coords, "h");
 
                     this.timer[id] = {
                         "start": routestart,
@@ -831,6 +851,7 @@ along waypoint file loaded from url
 
                     if (!start || (routestart < start)) start = routestart;
                     if (!stop || (routestop > stop)) stop = routestop;
+
                 }.bind(this));
                 // console.log("timer for waypoints:", wptimer, timer);
 
@@ -852,11 +873,8 @@ along waypoint file loaded from url
                         else startTimes.splice(0, 0, t);
                     }
                 }
-
                 this.timer["startList"] = startTimes;
-
                 // console.log("Timer after setupTrackTimer:", this.timer);
-                // return timer;
             },
 
             /**
@@ -866,20 +884,29 @@ along waypoint file loaded from url
              * @return     {<type>}  { description_of_the_return_value }
              */
             setupTrackWaypoints: function(routedata) {
-                // console.log("routedata at setupTrackWaypoints", routedata);
+                console.log("routedata used by setupTrackWaypoints", routedata);
                 this.waypoints.features = [];
-                var allwaypoints = this.waypoints;
+                var allwaypoints = this.waypoints,
+                    id;
 
                 routedata.forEach(function(route, j) {
                     // locate trackObj at 'origin'
                     // console.log("route-" + j, route.waypoints);
 
                     route.waypoints.forEach(function(wp, p) {
-                        var key, icon;
+                        var key,
+                            props = {};
+
                         if (wp.key) key = wp.key;
-                        else key = wp.id;
-                        if (wp.icon) icon = wp.icon;
-                        allwaypoints.features.push(new Waypoint(wp.coords, key, route.id, icon));
+                        else if (wp.id) key = wp.id;
+                        else key = p;
+
+                        Object.keys(wp).forEach(function(k) {
+                            if (k != "coords") props[k] = wp[k];
+                        });
+                        // console.log("wp-" + p, key, wp, props);
+
+                        allwaypoints.features.push(new Waypoint(wp.coords, key, route.id, props)); // icon));
                     });
                 });
                 // console.log("all waypoints collected", allwaypoints.features);
@@ -934,11 +961,12 @@ along waypoint file loaded from url
                     else props["units"] = "metric";
 
                     startort = route.waypoints[0].coords;
+
                     var aTrack = new Track(startort, route.id, props);
 
                     allTracks.features.push(aTrack);
                 });
-
+                console.log("allTracks", allTracks);
                 trackLayerObj['data'] = allTracks;
 
                 // setup styling for baseLayer
@@ -999,10 +1027,12 @@ along waypoint file loaded from url
                 // Interpolate the Routes between waypoints 
                 // based on info about speed and/or arrival-/departure-times at waypoints
 
-                allroutedata.forEach(function(data, j) {
-                    r = this.trackRouteCreate(data, timer);
+                allroutedata.forEach(function(routedata, j) {
+                    routedata = this.routeDataCheck(routedata, timer);
+                    r = this.trackRouteCreate(routedata, timer);
                     this.routes.features.push(r);
                 }.bind(this));
+                // return;
 
                 var routeLayer = {};
 
@@ -1019,12 +1049,92 @@ along waypoint file loaded from url
                         "line-color": "#007cbf"
                     }
                 };
+
                 return routeLayer;
+            },
+
+            routeDataCheck: function(data, timer) {
+                // Create route-legs between 2 waypoints at any one time 
+                var trackpoints = [],
+                    waypoints = data.waypoints, // wps as given
+                    frameTime = timer.frameTime,
+                    deltaX = 10, // stdDev of device
+                    legspeed, legTimeSec, wp, wpnext;
+
+                // console.log("original trackpoints", waypoints);
+
+                var p = 0;
+
+                while (p < waypoints.length) {
+                    // waypoints.forEach(function(wp, p) {
+                    wp = waypoints[p];
+                    i = 1;
+
+                    while (i > 0) {
+
+                        wpnext = waypoints[p + i];
+                        // Calculate leg-properties
+                        if (wpnext) {
+                            // console.log("waypoints:" + p, wp, wpnext);
+                            // A. Check 
+                            if (wpnext.an && wp.ab) {
+                                let dep = mba.utcTime(wp.ab, wp.coords, "s"),
+                                    arv = mba.utcTime(wpnext.an, wpnext.coords, "s");
+                                legTimeSec = (arv - dep);
+                            } else {
+                                legTimeSec = wp.stopover;
+                            }
+
+                            // CHECK time-diff between wps
+                            // ABANDON wp, if smaller then timeframe 
+                            if (legTimeSec > frameTime / 2) {
+
+                                // B. Check DIST between waypoints
+                                //    ABANDON wp, if smaller then deltaX
+                                var leg = new Leg([wp.coords, wpnext.coords]),
+                                    legDistance = turf.lineDistance(leg, 'kilometers'),
+                                    legDistMeters = Math.round(legDistance * 1000);
+
+                                if (legDistMeters > deltaX) {
+
+                                    // Time and number of animation-steps to travel between waypoints in legTimeSec
+                                    // legTimeSec = legDistance / legSpeed * 3600;
+                                    legStepCount = Math.round(legTimeSec / frameTime);
+
+                                    // console.log("leg-data ", "dx=" + legDistance, "dt=" + legTimeSec, "steps=" + legStepCount); // , frameTime);
+                                    // return;
+                                    p = p + i;
+                                    trackpoints.push(wp)
+                                    i = 0;
+
+                                } else {
+                                    i = i + 1;
+                                }
+
+                            } else {
+                                i = i + 1;
+                            }
+
+                        } else {
+                            p = waypoints.length;
+                            i = 0;
+                        }
+
+                    }
+
+                }
+
+                if (wpnext) trackpoints.push(wpnext);
+                // console.log("checked trackpoints", trackpoints);
+                data.waypoints = trackpoints;
+                return data;
+
             },
 
             //  
             trackRouteCreate: function(data, timer) {
-                // Initialize 
+                // console.log("Initialize route from", data, timer);
+
                 var demoSpeed = 900;
                 var frameTime = timer.frameTime;
 
@@ -1040,9 +1150,11 @@ along waypoint file loaded from url
 
                 var props = {
                     "id": routeid,
+                    "speed": routeSpeed,
                     "start": timer[routeid]["start"],
                     "stop": timer[routeid]["stop"]
-                }
+                };
+                // console.log("Initialize route from", data, timer, props);
 
                 // Create route-legs between 2 waypoints at any one time 
                 var waypoints = data.waypoints; // wps as given
@@ -1057,7 +1169,8 @@ along waypoint file loaded from url
                         // Calculate the distance in kilometers between waypoints
                         var leg = new Leg([wp.coords, wpnext.coords]),
                             legDistance = turf.lineDistance(leg, 'kilometers');
-                        legDistance = Math.round(legDistance);
+
+                        // legDistance = Math.round(legDistance);
 
                         // Calculate a mean leg-speed between wp's with ab/an times
                         legSpeed = routeSpeed;
@@ -1069,8 +1182,8 @@ along waypoint file loaded from url
                         } else if (wpnext.speed) {
                             legSpeed = wpnext.speed;
                         }
-                        legSpeed = Math.round(legSpeed);
-                        // console.log("leg-speed for dx=", legDistance, legSpeed);
+                        // legSpeed = Math.round(legSpeed);
+                        //console.log("leg-speed-calc", legDistance, legSpeed, wpnext, wp);
 
                         // Calculate arv and dep at "stopover"
                         if (wpnext.an && wpnext.ab) {
@@ -1082,12 +1195,13 @@ along waypoint file loaded from url
                         } else if (wpnext.stopover) {
                             legStopSec = wpnext.stopover;
                         }
-
                         // 3. Calc leg-animation 
 
                         // Time and number of animation-steps to travel between waypoints in legTimeSec
                         legTimeSec = legDistance / legSpeed * 3600;
                         legStepCount = Math.round(legTimeSec / frameTime);
+
+                        // console.log(p + ". leg-data for dx=" + legDistance, "n=" + legStepCount);
 
                         // Assign basic leg-properties
                         var legInfo = {};
@@ -1112,7 +1226,6 @@ along waypoint file loaded from url
                         for (let i = 0; i < legStepCount; i++) {
                             let dist = i * (legDistance / legStepCount);
                             let position = turf.along(leg, dist, 'kilometers');
-                            // if (i == 10) console.log(i, dist, position);
                             legPositions.push(position.geometry.coordinates);
                         }
 
@@ -1133,15 +1246,16 @@ along waypoint file loaded from url
                         }
 
                         // 4. Compile leg-data in route-collections of legs  
+                        // console.log("leg-data ", legInfo, legPositions);
+
                         legdata.push(legInfo);
                         legs.push(legPositions);
                     }
-
                 });
 
                 // Create route-object consisting of 1-n legs
                 var r = new Route(routeid, props, legs, legdata, waypoints);
-
+                // console.log("New route: " + routeid, r);
                 return r;
             },
 
@@ -1178,8 +1292,8 @@ along waypoint file loaded from url
                             var msgTime = mba.logTime(mapTime * 3600 * 1000),
                                 msg = "STOPPED. No more data after: " + msgTime; // console.log(msg);
                             mba.trackMapInfo(msg);
-                            mba.map.setFilter('routes', null);
-                            mba.map.setFilter('waypoints', null);
+                            if (mba.map.getLayer("routes")) mba.map.setFilter('routes', null);
+                            if (mba.map.getLayer("waypoints")) mba.map.setFilter('waypoints', null);
                             return;
                         }
                     } else if (flag.indexOf('TIME') >= 0) {
@@ -1198,7 +1312,8 @@ along waypoint file loaded from url
                         routeid = to.properties.routeid;
                         if (routeid) trackids.push(routeid);
                     });
-                    // remove duplicates
+
+                    // remove "duplicates" ? 
                     routeids = trackids.filter(function(item, pos, self) {
                         return self.indexOf(item) == pos;
                     })
@@ -1214,6 +1329,7 @@ along waypoint file loaded from url
                         mba.map.setFilter('routes', routeFilter);
                         mba.map.setFilter('waypoints', routeFilter);
                     }
+
                     var msgTime = mba.logTime(mapTime * 3600 * 1000, "<br>");
                     mba.trackMapInfo("<b>" + flag + "</b>" + " at " + msgTime);
                 };
@@ -1362,24 +1478,41 @@ along waypoint file loaded from url
              *
              */
             trackObjSelect: function(e) {
+                // console.log("mousemove-event", e);
                 var features = [];
+
                 if (map.getLayer('tracks') || map.getLayer('tracks-select')) {
                     features = map.queryRenderedFeatures(e.point, {
                         layers: ['tracks', 'tracks-select']
                     });
                 }
+
                 if (!features.length) {
-                    // mba.trackdata = {};
+                    // Check waypoints(trackpoints)    
+                    if (map.getLayer('waypoints')) {
+                        features = map.queryRenderedFeatures(e.point, {
+                            layers: ['waypoints']
+                        });
+                    }
+                    if (!features.length) return;
                     // popup-strategy 1: 
                     // Remove popup if pointer not on any feature
                     // this.popup.remove();
+                    let wp = features[0];
+                    if (this.wpid != wp.properties.id) {
+                        this.wpid = wp.properties.id;
+                        var msg = "WP/TP " + wp.properties.ab;
+                        this.trackMapInfo(msg); // console.log(msg, wp);
+                    }
                     return;
-                } // console.log("mousemove-event", e);
+                }
 
+                // NO action if INFO already visible
                 if (mba.trackid == features[0].properties.id) {
                     return;
                 }
 
+                // 
                 mba.trackobj = features[0];
                 mba.trackid = mba.trackobj.properties.id;
 
@@ -1387,7 +1520,6 @@ along waypoint file loaded from url
 
                 // Change the cursor style as a UI indicator.
                 // map.getCanvas().style.cursor = 'pointer';
-
 
                 // popup-strategy 2: 
                 // Update and reconnect the this.popup to the map at new object

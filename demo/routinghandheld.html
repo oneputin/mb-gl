@@ -26,7 +26,7 @@ Demo to view ship-data animation
     <link rel="import" href="../mb-map-orientation-ctrl.html">
     <link rel="import" href="../mb-routes-ctrl-time.html">
 
-    <link rel="import" href="../routing-vendee.html">
+    <link rel="import" href="../routing-handheld.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
     <style is="custom-style">
@@ -128,13 +128,13 @@ Demo to view ship-data animation
                 <!--<mb-info-drag carddata="[[trackdata]]">
                 </mb-info-drag>-->
 
-                <routing-vendee 
+                <routing-handheld 
                     url="[[routedataurl]]" 
                     routedata="{{routedata}}"
                     basedataurl="[[basedataurl]]" 
                     trackinfo="[[trackinfo]]" 
                     trackdata="{{trackdata}}">
-                </routing-vendee>
+                </routing-handheld>
 
             </mb-map>
 
@@ -175,22 +175,22 @@ Demo to view ship-data animation
 
     <script>
         var scope = document.querySelector('#app');
-        scope.setupurl = "index-vendee.json"; // list of available datasets
-        scope.basedataurl = "wp-data/vendee-starter.json"; // list of available datasets
+        scope.setupurl = "index-handheld.json"; // list of available datasets
+        scope.basedataurl = ""; // list of available datasets
 
         scope.routedataurl = ""; // url to selected dataset
 
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
 
         // Map-initialization
-        scope.cbox = "-50,-40";
-        scope.lnglat = "-50,-40";
+        scope.cbox = "13,52";
+        scope.lnglat = "13,52";
         scope.zoom = 2;
 
         // Timescale to view tracks of boats over several days
         scope.timer = {
-            "timescalemax": 10000, // 1min ~ 1week
-            "timescalestart": 5000,
+            "timescalemax": 600, // 1min ~ 10h
+            "timescalestart": 300,
             "fpsstart": 30
         };
 

@@ -1,0 +1,423 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-card/paper-card.html">
+
+<link rel="import" href="mb-behavior-routes.html">
+<link rel="import" href="routing-behavior.html">
+
+<!--
+`routing-handheld`
+Interface for import/export of tracking data from handheld gps-devices
+
+IN: transfer raw vendee-data 
+    into 'routedata' (dataformat required by mb-routes-api)
+
+OUT: RICH-content Info-card related to one selected feature,  
+absolutely positioned as (mapbox-)map-overlay   
+Mode-A: Can be vertically dragged & horizontally resized.  
+Mode-B: Free drag   
+
+To 'close' 
+    - with click anywhere on the card
+    - with click on specific "cancel"-button
+
+@demo demo/routinghandheld.html 
+-->
+
+<dom-module id="routing-handheld">
+
+    <template>
+
+        <style is="custom-style">
+            :host {
+                position: absolute;
+                display: none; /*inline-block;*/
+                opacity: 1; 
+                top: 50%;
+                margin-bottom: -50%;
+                transform: translate(0, -50%);
+
+                /*  */
+                --paper-card-header-text: {
+                    padding: 8px;
+                    font-size: 12px;
+                    font-weight: 400;
+                }
+            }
+
+            paper-card.info { 
+                @apply(--layout-horizontal); 
+                align-items: flex-start;
+                --paper-card-header-color: #f00;
+            }
+
+            #div0 {
+                font-size: 12px;
+                font-weight: 400;
+                border-bottom: 1px solid #e8e8e8;
+                padding: 2px 2px;
+            }
+            .info-content {
+                @apply(--layout-flex);
+                float: left;
+            }
+
+            .card-image {
+                width: 100px;
+                height: 170px;
+                background-color: red;
+                background-size: cover;
+            }
+
+            .info-html { 
+                color: var(--paper-grey-600); 
+                opacity: 1;
+            }
+            
+            .info-link { 
+                color: var(--google-blue-500); 
+            }
+
+            paper-icon-button {
+                background-color: var(--paper-light-blue-500);
+            }
+
+        </style>
+
+        <iron-ajax
+            auto
+            url="[[url]]"
+            handle-as="json"
+            on-response="getrawdata">
+        </iron-ajax>
+
+        <iron-ajax
+            auto
+            url="[[basedataurl]]"
+            handle-as="json"
+            on-response="getrawmasterdata">
+        </iron-ajax>
+
+        <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
+
+            <div class="info-content">
+
+                <div class="card-content">
+
+                    <div id="div0"></div>
+
+                    <div id="div1" class="info-html">
+
+                    </div>
+
+                </div>
+
+                <div class="card-actions">
+                    <paper-button class="info-link">more...</paper-button>
+                </div>
+
+            </div>
+
+            <!--<paper-button class="info-link" on-click="_onBackClick">X</paper-button>-->
+            <!--<paper-icon-button icon="close" on-click="_onBackClick"></paper-icon-button>-->
+
+        </paper-card>
+
+        <content>
+        </content>    
+
+    </template>
+
+    <script>
+        Polymer({
+            is: 'routing-handheld',
+
+            properties: {
+                rawmasterdata: {
+                    type: Object,
+                    value: []
+                }
+            },
+
+            behaviors: [
+                Polymer.BehaviorRouting,
+            ],
+
+            observers: [
+                'importVomue(rawdata, rawmasterdata)'
+            ],
+
+            attached: function() {
+                // console.log("target attached");
+            },
+
+            getrawmasterdata: function(ajaxresponse) {
+                var rawdata = ajaxresponse.detail.response;
+                if (!rawdata) return {};
+                console.log("rawmasterdata", rawdata);
+                this.rawmasterdata = rawdata; // triggers 'setupTracking'
+            },
+
+            // SPECIFIC import of gps-device data delivered in csv- or tabbed formats 
+            // into datastructure of routing-API
+            importVomue: function(rawdata, rawmasterdata) {
+                console.log("Handheld raw data", {
+                    "location": rawdata,
+                    "master": rawmasterdata
+                });
+
+                /**
+                 *  transform from raw handheld-data (exported as tabbed text or csv)
+                 */
+                function handheldCoords(cc, format, prec) {
+                    if (!format) format = "dd";
+                    if (!prec) prec = 6;
+                    var coords = cc.split(" ");
+
+                    lat = coords[0];
+                    lat = lat[0] == "N" ? "+" + lat.slice(1) : "-" + lat.slice(1);
+                    lng = coords[2];
+                    lng = lng[0] == "E" ? "+" + lng.slice(1) : "-" + lng.slice(1);
+
+                    if (format == "dd") {
+                        lat = parseInt(lat) + parseFloat(coords[1]) / 60;
+                        lng = parseInt(lng) + parseFloat(coords[3]) / 60;
+                    } else if (format == "dm") {
+                        lng = parseInt(lng) * 60 + parseFloat(coords[3]);
+                        lat = parseInt(lat) * 60 + parseFloat(coords[1]);
+                    }
+                    coords = [lng, lat]; // console.log("dd-array", dd);
+                    return coords;
+                }
+
+                function handheldTime(traw) {
+                    // !! for parser the MONTH must be numbered 0 .. 11 !!
+                    var a, aa, tstandard;
+                    if (typeof traw == "string") {
+                        var t = traw.split(":").join(".");
+                        t = t.split(" ").join(".");
+                        a = t.split(".");
+                        aa = [a[2], a[1], a[0], a[3], a[4], a[5]];
+                        tstandard = aa.join(".");
+                        // tlocal = new Date(parseInt(a[2]), parseInt(a[1]) - 1, parseInt(a[0]), parseInt(a[3]), parseInt(a[4]), parseInt(a[5]));
+                    } else {
+                        tstandard = traw;
+                    }
+                    // console.log("handheldTime", traw, t, a, tlocal)
+
+                    return tstandard;
+                }
+
+                var routes = {},
+                    masterdata = {};
+                if (rawmasterdata) {
+                    // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
+                    var route, master, id;
+                    // A. Restructure master-table into collection    
+                    rawmasterdata.forEach(function(st, j) {
+                        //  
+                        id = st.id;
+                        id = id.replace("<br>", "/")
+
+                        master = masterdata[id];
+                        if (!master) {
+                            masterdata[id] = st;
+                        }
+                    }.bind(this));
+
+                    if (!this.connect) {
+                        this.masterdata = masterdata;
+                    }
+                    // console.log("masters", masterdata);
+                }
+
+                var coords, time, lat, route,
+                    timeunit = "s",
+                    route0 = [],
+                    routes = [];
+
+                // B. GROUP all trackpoint-records by id 
+                //    into objects for every source
+                rawdata.forEach(function(tp, j) {
+
+                    var tpx = {},
+                        lng, lat;
+
+                    //     
+                    var testflag = (tp["Header"] == "Trackpoint") || tp["Pnt"]; // 
+
+                    if (testflag) {
+
+                        Object.keys(tp).forEach(function(k) {
+
+                            if ((k == "Position") || (k == "coords")) {
+                                coords = handheldCoords(tp[k]);
+                                tpx["coords"] = coords;
+                            } else if ((k == "Time") || (k == "Date")) {
+                                time = handheldTime(tp[k]);
+                                tpx["ab"] = time;
+                                tpx["an"] = time; // 
+                            } else {
+                                tpx[k] = tp[k];
+                            }
+                        })
+
+                        // Distribute trackpoints on its routes  
+                        if (tp.id) {
+                            id = tp.id;
+                            route = routes[id];
+                            if (!route) {
+                                route = [];
+                                routes[id] = route;
+                            }
+                        } else {
+                            route = routes["all"];
+                            if (!route) {
+                                route = [];
+                                routes["all"] = route;
+                            }
+                        }
+                        route.push(tpx);
+                    }
+
+                }.bind(this));
+                // console.log("rawroutes", routes);
+
+                // C. Join temporary masters- and routes-objects 
+                //    into array of api-conform routes with wps sorted by time 
+                var routedata = [];
+
+                Object.keys(routes).forEach(function(id) {
+
+                    var waypoints = routes[id];
+
+                    waypoints.sort(function(wp1, wp2) {
+                        return mba.utcTime(wp1.ab) - mba.utcTime(wp2.ab);
+                    });
+
+                    var key = id;
+
+                    var route = {
+                        "id": id,
+                        "key": key,
+                        "units": "land",
+                        "waypoints": waypoints
+                    };
+
+                    // Optionally: include Stammdaten
+                    if (masterdata && masterdata[id] && this.connect) {
+                        route["master"] = masterdata[id];
+                    }
+
+                    routedata.push(route);
+
+                }.bind(this));
+                console.log("Handheld prepared data", routedata); // , rawdata);
+
+                this.routedata = routedata;
+                //**************************
+            },
+
+            // B. COMPILE Feature-data 
+            /**
+             * Create some formatted html-text(dom?) 
+             * to identify basic properties of an animated object (animation status)
+             *
+             * @param      {<type>}  trackObj  The animated trackObj (as mb-feature)
+             * @return     {string}  A formatted information about trackObj-status.
+             */
+            calcBasicInfo: function(trackObj) {
+                if (!trackObj || !trackObj.properties) return;
+
+                var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
+                if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
+
+                if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
+                if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
+
+                return trackInfo;
+            },
+
+            /**
+             * Build (app-specific) trackData extending the basic infoSet 
+             * to enable enhanced presentation of trackObj
+             *
+             * @param      {<type>}  trackObj  The track object
+             * @param      {<type>}  openFlag  The open flag
+             * @return     {<type>}  The more track data.
+             */
+            calcExtendedInfo: function(trackObj, openFlag) {
+                if (!trackObj || !trackObj.properties) return;
+
+                var basicInfo = this.calcBasicInfo(trackObj);
+
+                var extendedData = {
+                    "title": trackObj.properties.title,
+                    "html": basicInfo,
+                    "properties": trackObj.properties
+                };
+
+                if (openFlag) {
+                    extendedData.open = 1;
+                }
+
+                if (trackObj.properties.master) {
+                    extendedData.headline = trackObj.properties.master.skipper;
+                }
+                // console.log("calcTrackData", trackObj, trackData)
+                return extendedData;
+            },
+
+
+            // C.  FORMAT INFO-Card 
+
+            refreshCardContent: function(data) {
+                var nbsp = "&nbsp;"; //"~"; 
+                if (!data) return;
+
+                // if (data.properties && data.properties.master) {
+                // var pp = JSON.parse(data.properties.master);
+                if (this.masterdata && data.properties.id) {
+                    // 
+                    pp = this.masterdata[data.properties.id];
+                    if (pp) {
+                        // console.log("rawmasterdata:", pp);
+                        // DIV0
+                        var imgurl = pp.img,
+                            skipper = pp.skipper,
+                            boat = pp.ship,
+                            header = "";
+
+                        if (imgurl) this.cardimgurl = "wp-data/" + imgurl;
+                        // console.log("some data ", imgurl, this.cardimgurl, skipper, boat);
+
+                        if (skipper && boat) {
+
+                            // to show items with no line-breaks (fi. in flex-formatted cards)
+                            // replace many spaces 
+                            skipper = skipper.split(' ').join(nbsp);
+                            boat = boat.split(' ').join(nbsp);
+                            // statt: 
+                            // skipper = skipper.replace(" ", nbsp);
+                            // boat = boat.replace(" ", nbsp);
+
+                            header = "<b>" + boat + "</b>" + "<br>" + skipper;
+
+                            this.$.div0.innerHTML = header;
+                        }
+                    }
+                }
+
+                // DIV1
+                if (data.html) this.$.div1.innerHTML = data.html;
+            }
+
+        });
+    </script>
+
+</dom-module>

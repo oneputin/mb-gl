@@ -1,0 +1,26 @@
+[{
+        "title": "worldrecords",
+        "type": "gpx",
+        "url": "http://iimaps.de/data/gps/world/gpx/Current.gpx"
+    },
+    {
+        "title": "kamerundata",
+        "type": "gpx",
+        "url": "http://iimaps.de/data/gps/kamerun/gpx/Current.gpx"
+    },
+    {
+        "title": "praharecords",
+        "type": "gpx",
+        "url": "http://iimaps.de/data/gps/prag/gpx/2012-05-01 10.16.20 Day.gpx"
+    },
+    {
+        "title": "SilvesterTag",
+        "type": "gpx-export",
+        "url": "gpx-data/silv2016.json"
+    },
+    {
+        "title": "SilvesterBerg",
+        "type": "gpx-export",
+        "url": "gpx-data/silv2016_berg.json"
+    }
+]

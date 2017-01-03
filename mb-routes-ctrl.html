@@ -10,7 +10,7 @@
 
 <!--
 `mb-routes-ctrl`
-ctrl elements controling behavior of animated objects in map  
+ctrl elements controling animation behavior of track-objects on the map  
 some ctrls (back,forward...) and "slider" are "redundant and should be used exclusively 
 
 @demo demo/routemap.html 
@@ -67,7 +67,6 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             <paper-icon-button id="speedup" icon="{{_icon_add}}" title="speedup" class="trans"></paper-icon-button>
             
             <paper-slider id="trace" value="{{sliderval}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler" pin></paper-slider>
-            <!-- on-value-change="slideValueHandler" -->
            
             <paper-material elevation="2" id="logtime">{{logtime}}</paper-material>
 
@@ -152,6 +151,12 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 this.setupAnimationCtrls();
             },
 
+            /**
+             * Sync button-icons 
+             *
+             * @param      {string}  trackctrl  The trackctrl
+             * @param      {<type>}  trackmode  The trackmode
+             */
             controlupdate: function(trackctrl, trackmode) {
                 // ctrls must reflect the handling options during actual status 
                 if (trackctrl) {
@@ -166,6 +171,11 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             },
 
+            /**
+             * Initialize the progress-slider for imported data
+             *
+             * @param      {number}  stoptime  The stoptime
+             */
             sliderinit: function(stoptime) { // , stoptime) {
                 if (!stoptime) return;
                 var starttime = this.timer.start;
@@ -176,38 +186,37 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 this.stop = deltat + 1;
             },
 
+            /**
+             * Sync animation-status with contrils 
+             *
+             * @param      {number}  tracktime  The tracktime
+             */
             sliderupdate: function(tracktime) {
                 if (!tracktime) return;
                 // console.log("timer=", this.timer);
-                // Sync the slider with externally modified tracktime 
+                
+                // A. Sync the slider with externally modified tracktime 
                 this.sliderval = tracktime - this.timer.start;
-                // Display readable tracktime  
+                // B. Display readable tracktime in special box
                 var logtime = this.logTime(tracktime * 3600 * 1000, "<br>");
                 this.$.logtime.innerHTML = logtime;
             },
 
 
-
             // Sync slider with external changes of slided parameter 
             // fi. due to animation 
-            slideValueSync: function() {
+            /*slideValueSync: function() {
                 var slidervalue = this.timer.start - this.timer.time;
                 // console.log("slided time", mapTime);
                 this.trackctrl = mapTime; // 
-            },
+            },*/
 
-            // 
-            slideValueHandler: function(val) {
-                console.log("slide-val=", val);
-            },
-
-
-            // Communicate the app-parameter connected to slider-value 
-            // via ctrl-parameter "trackctrl"
+            /**
+             * Communicate the app-parameter connected to slider-value 
+             * via ctrl-parameter "trackctrl"
+             */
             slideChangeHandler: function() {
-                var mapTime = this.timer.start + this.slidertime;
-                // var mapTime = this.start + this.slidertime;
-                // console.log("slided time", mapTime);
+                var mapTime = this.timer.start + this.slidertime;// console.log("slided time", mapTime);
                 this.trackctrl = mapTime; // 
             },
 
@@ -258,7 +267,6 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                         this.set("timer.ctrl", "none");
                     }.bind(this));
                 }
-
             }
 
         });

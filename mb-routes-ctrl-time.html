@@ -7,9 +7,10 @@
 
 <!--
 `mb-routes-ctrl-time`
-slider ctrls used to modify timing of routing animations  
-`timescalemax` should be passed in by app  
-ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax     
+slider ctrls used to modify timescale(s) of routing animations  
+- `timescalemax` ctrls general dimension of animation scale (should be passed in by app-shell)
+- `throttle` varies timescale in 10 equal steps, can be remote-controlled 'step'-wise 
+ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, fps, fpsmax     
 
 @demo demo/routemap.html 
 -->
@@ -87,7 +88,7 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
                 },
 
                 /**
-                 * collection of ctrl-values
+                 * collection of timer-ctrl-properties
                  */
                 timer: {
                     type: Object,
@@ -129,11 +130,12 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
                 '_setupTimeCtrls(timer.timescalemax)'
             ],
 
-            /** 
-             * 
+            /**
+             * Processes remotecontrol events for scale-throttle
+             *
+             * @param      {string}  ctrl    remote-event key
              */
             setThrottle: function(ctrl) {
-                // console.log("setThrottle", ctrl);
                 if (!ctrl) return;
                 var throttle = this.$.fpsctrl;
                 if (ctrl == "up") {
@@ -218,9 +220,9 @@ ctrls are exported as `timer`-properties: timescale, timescalemax, fps, fpsmax
 
 
             /**
-             * Create readable presentation of timescale into maxscalestring-property  
-             *
-             * @param      {number}  minutes  Number of unix-minutes (1970)
+             * Create readable presentation of a "minutes-timescale"   
+             * as scalestrings
+             * @param      {number}  minutes  Number of unix-minutes (since 1970)
              */
             _formatscale: function(minutes) {
                 if (!minutes) return;
