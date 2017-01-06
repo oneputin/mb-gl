@@ -102,6 +102,7 @@ Demo to view ship-data animation
             <!-- Left block: Map -->
             <mb-map 
                 mapapikey="[[mbkey]]" 
+                mapstyle="[[mbstyle]]"
                 map="{{map}}" 
                 cbox="{{cbox}}" 
                 zoom="{{zoom}}" 
@@ -113,7 +114,7 @@ Demo to view ship-data animation
                 <div class="ctrls-in">
                     <!-- ctrl of animation and maporientation -->
                     <mb-routes-ctrl 
-                        timer="{{timer}}"
+                        timer="{{tracktimer}}"
                         trackctrl="{{trackctrl}}">
                     </mb-routes-ctrl>
                     
@@ -143,8 +144,9 @@ Demo to view ship-data animation
                 <!-- element with n visible features -->
                 <mb-routes 
                     map="[[map]]" 
-                    timer="{{timer}}"
-                    routedata=[[routedata]] 
+                    timer="{{tracktimer}}"
+                    routedata="[[routedata]]" 
+                    tracksymbol="[[tracksymbol]]" 
                     trackctrl="{{trackctrl}}" 
                     trackmode="{{trackmode}}" 
                     trackdata="{{trackdata}}"
@@ -152,16 +154,15 @@ Demo to view ship-data animation
                 </mb-routes>
                 
                 <!-- Left -->
-                <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
                 <mb-routes-ctrl-time  
-                    timescalemax="[[timer.timescalemax]]" 
-                    timer="{{timer}}">
+                    timescalemax="[[tracktimer.timescalemax]]" 
+                    timer="{{tracktimer}}">
                 </mb-routes-ctrl-time>
 
                 <!-- Right -->
                 <paper-dropdown-menu label="Position sets">
                     <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-                        <template is="dom-repeat" items="{{wpdocs}}">
+                        <template is="dom-repeat" items="{{routedocs}}">
                             <paper-item url="{{item.url}}">
                                 {{item.title}}
                             </paper-item>
@@ -175,28 +176,32 @@ Demo to view ship-data animation
 
     <script>
         var scope = document.querySelector('#app');
-        scope.setupurl = "index-vendee.json"; // list of available datasets
-        scope.basedataurl = "wp-data/vendee-starter.json"; // list of available datasets
 
-        scope.routedataurl = ""; // url to selected dataset
+        // APP-Ctrl
+        scope.mapctrl = {};
+        scope.cardctrl = {};
 
+        // MAP-Environment
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+        scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm';
 
-        // Map-initialization
         scope.cbox = "-50,-40";
         scope.lnglat = "-50,-40";
         scope.zoom = 2;
 
+        // TRACK-Environment 
+        scope.setupurl = "index-vendee.json"; // list of available datasets
+        scope.basedataurl = "wp-data/vendee-starter.json"; // list of available datasets
         // Timescale to view tracks of boats over several days
-        scope.timer = {
+        scope.tracktimer = {
             "timescalemax": 10000, // 1min ~ 1week
             "timescalestart": 5000,
             "fpsstart": 30
         };
+        scope.tracksymbol = 'boat-blue';
 
-        scope.mapctrl = {};
-        scope.cardctrl = {};
-
+        // ROUTES - Env
+        scope.routedataurl = ""; // url to selected dataset
         /**
          * Put selected url from menu-selection into import-element
          */
@@ -206,7 +211,7 @@ Demo to view ship-data animation
 
         // eval the response of content-list 
         scope.setupme = function(ajaxresponse) {
-            this.wpdocs = ajaxresponse.detail.response;
+            this.routedocs = ajaxresponse.detail.response;
         }
     </script>
 </body>

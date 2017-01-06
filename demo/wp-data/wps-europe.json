@@ -1,6 +1,8 @@
 [{
         "id": "AB123",
         "key": "A320",
+        "icon": "airfield-11",
+        "color": "red",
         "waypoints": [{
             "coords": [13.5, 52.37],
             "id": "SXF",
@@ -21,6 +23,8 @@
     }, {
         "id": "BA003",
         "key": "A330",
+        "icon": "airport-15",
+        "color": "blue",
         "waypoints": [{
             "coords": [13.5, 52.37],
             "id": "SXF",
@@ -34,6 +38,8 @@
     }, {
         "id": "AF017",
         "key": "B737",
+        "icon": "rocket-15",
+        "color": "cyan",
         "waypoints": [{
             "coords": [13.5, 52.37],
             "id": "SXF",
@@ -53,6 +59,8 @@
     {
         "id": "LH017",
         "key": "A320",
+        "icon": "heliport-11",
+        "color": "yellow",
         "waypoints": [{
             "coords": [8.5, 50.05],
             "id": "FRA",

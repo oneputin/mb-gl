@@ -138,7 +138,12 @@ To 'close'
         Polymer({
             is: 'routing-vendee',
 
-            properties: {},
+            properties: {
+                icon: {
+                    type: String,
+                    value: "boat-blue"
+                }
+            },
 
             behaviors: [
                 Polymer.BehaviorRouting,
@@ -162,6 +167,9 @@ To 'close'
             // SPECIFIC import of specific vendee-data 
             // into datastructure of routing-API
             importVendee: function(rawdata, rawmasterdata) {
+
+                var icontemplate = "circle-stroked-11"; // this.icon;
+                // var icontemplate = "boat-blue"; // this.icon;
 
                 /**
                  *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
@@ -240,13 +248,17 @@ To 'close'
                      * into better readable id and short-key
                      */
                     var key = id.split(">")[1];
-                    id = id.replace("<br>", "/")
-                        // *************************
+
+                    id = id.replace("<br>", "/");
+                    // *************************
+
+                    var icon = icontemplate; // + "-" + id; // ???? 
 
                     var route = {
                         "id": id,
                         "key": key,
-                        "units": "nautic",
+                        "icon": icon,
+                        "unitsystem": "nautic",
                         "waypoints": waypoints
                     };
 

@@ -44,18 +44,16 @@ the map-ctrls can be placed as map-overlay or anywhere else
     <script>
         var map;
         var setup = {
-
+            // oneputin
             mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
-
+            // My "Light" style
             map: {
-                // container: 'map',     // useless as map is in shadowdom  
+                //style: 'mapbox://styles/mapbox/streets-v9',
+                style: 'mapbox://styles/oneputin/cimlpzor80051zpmctds91fxn',
                 // center: [13.5, 52.5], // must be synced by client with service
-                style: 'mapbox://styles/mapbox/streets-v9',
                 insertlayer: 'water'
             },
-
             cbox: "12,52",
-
         };
 
         Polymer({
@@ -68,6 +66,18 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 map: {
                     type: Object,
                     notify: true
+                },
+                /**
+                 *  mapbox-style  
+                 */
+                mapstyle: {
+                    type: String
+                },
+                /**
+                 *  mapbox-style  
+                 */
+                insertlayer: {
+                    type: String
                 },
                 /**
                  *  access-key to mapbox-gl api
@@ -125,26 +135,39 @@ the map-ctrls can be placed as map-overlay or anywhere else
             ],
 
             attached: function() {
-
                 // console.log("mb-map setup", setup);
-                // 
+                // console.log("this", this.mapapikey, this.mapstyle);
+
+                // Use default apikey if NONE available from app-shell
                 if (!this.mapapikey) this.mapapikey = setup.mapapikey;
 
-                // ************************************
-                // Compile map-parameters from (default)setup, external parameters 
-                // and the local container-object !!
+                // 
                 var mapcontainer = {
                     container: this.$.map // get container as dom-element  
                 };
+
+                // ************************************
+                // Compile basic map-parameters from 
+                //      internal setup (default), 
+                //      external parameters   and
+                //      the local container-object !!
                 var mapctrl = Object.assign({}, setup.map, this.mapctrl, mapcontainer);
                 // ************************************
 
+                // A. Specify app-specific initial INSERT-LAYER
+                if (this.mapstyle) {
+                    mapctrl.style = this.mapstyle;
+                }
+
+                // B. Specify initial MAP-CENTER
                 if (!this.cbox) this.cbox = setup.cbox;
                 if (this.cbox) mapctrl.center = this.cbox.split(",");
 
-                // 
-                this.mapctrl = mapctrl; //console.log(this.mapapikey, this.mapctrl);
+                // C. Specify app-specific initial INSERT-LAYER
+                if (this.insertlayer) mapctrl.insertlayer = this.insertlayer;
 
+                // D. INSTALL the mapbox-map
+                this.mapctrl = mapctrl; //console.log(this.mapapikey, this.mapctrl);
                 this.installmap();
             },
 
@@ -161,12 +184,22 @@ the map-ctrls can be placed as map-overlay or anywhere else
              * setup a mb-gl-map 
              */
             installmap: function() {
-                // 
+                /*<input id='' type='radio' name='rtoggle' value='Basic' checked='checked'>
+                  <label for='Basic'>Basic</label>
+
+                  <input id='ciuz8mtxy01dx2jl8mszelrkm' type='radio' name='rtoggle' value='Light'>
+                  <label for='Light'>Light</label>
+
+                  <input id='ciuv91dl2013z2iqq0y2z7ezg' type='radio' name='rtoggle' value='DEbunt'>
+                  <label for='DEbunt'>DEbunt</label>*/
+
+                // console.log("create map using", this.mapctrl, "apikey= " + this.mapapikey);
+
                 var that = this;
 
                 mapboxgl.accessToken = this.mapapikey;
 
-                map = new mapboxgl.Map(this.mapctrl); // console.log("create map using", this.mapctrl, mapboxgl, map);
+                map = new mapboxgl.Map(this.mapctrl);
 
                 map.on('load', function() { // console.log("map loaded", map);
                     // inform app about new center after any move
@@ -176,7 +209,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         // this.start = map.getCenter();
                     });
 
-                    // inform about map-center after move 
+                    // inform about map-center after map-move 
                     map.on('moveend', function() {
 
                         let cb = map.getCenter(),
@@ -190,7 +223,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         // console.log(cb,bb,that.cbox,that.bbox);
                     });
 
-                    // inform about mouse-coordinates
+                    // inform about mouse-coordinates after mouse-move
                     map.on('mousemove', function(e) {
                         that.lnglat = e.lngLat;
                     });
@@ -199,6 +232,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     //map.on('zoomend', function() { 
                     //console.log("zoomed the map");                
                     //});
+
                     that.map = map;
                 });
             }

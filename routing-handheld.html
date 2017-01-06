@@ -171,6 +171,8 @@ To 'close'
                     "master": rawmasterdata
                 });
 
+                var icontemplate = "circle-stroked-15"; // "pitch-15"; // this.icon;
+
                 /**
                  *  transform from raw handheld-data (exported as tabbed text or csv)
                  */
@@ -276,10 +278,10 @@ To 'close'
                                 routes[id] = route;
                             }
                         } else {
-                            route = routes["all"];
+                            route = routes["track"];
                             if (!route) {
                                 route = [];
-                                routes["all"] = route;
+                                routes["track"] = route;
                             }
                         }
                         route.push(tpx);
@@ -300,12 +302,14 @@ To 'close'
                         return mba.utcTime(wp1.ab) - mba.utcTime(wp2.ab);
                     });
 
-                    var key = id;
+                    var key = id,
+                        icon = icontemplate;
 
                     var route = {
                         "id": id,
                         "key": key,
-                        "units": "land",
+                        "icon": icon,
+                        "unitsystem": "metric",
                         "waypoints": waypoints
                     };
 
@@ -314,9 +318,13 @@ To 'close'
                         route["master"] = masterdata[id];
                     }
 
+                    // *** Required ***  
+                    route.trackmode = true;
+
                     routedata.push(route);
 
                 }.bind(this));
+
                 console.log("Handheld prepared data", routedata); // , rawdata);
 
                 this.routedata = routedata;

@@ -102,6 +102,7 @@ Demo to view ship-data animation
             <!-- Left block: Map -->
             <mb-map 
                 mapapikey="[[mbkey]]" 
+                mapstyle="[[mbstyle]]" 
                 map="{{map}}" 
                 cbox="{{cbox}}" 
                 zoom="{{zoom}}" 
@@ -181,6 +182,7 @@ Demo to view ship-data animation
         scope.routedataurl = ""; // url to selected dataset
 
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+        scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm';
 
         // Map-initialization
         scope.cbox = "13,52";

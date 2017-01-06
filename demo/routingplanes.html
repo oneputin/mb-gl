@@ -94,6 +94,7 @@
         <div class="container">
             <mb-map 
                 mapapikey="[[mbkey]]" 
+                mapstyle="[[mbstyle]]"
                 map="{{map}}" 
                 cbox="{{cbox}}" 
                 zoom="{{zoom}}" 
@@ -149,7 +150,9 @@
         var scope = document.querySelector('#app');
         scope.setupurl = "index-planes.json";
         scope.importurl = "";
+
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+        scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm';
 
         scope.cbox = "13.7,52.4";
         scope.lnglat = "13.7,52.4";
