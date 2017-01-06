@@ -70,7 +70,7 @@ Info-area for short msges
             },
 
             /**
-             * toggles the 'serviceflag' and the visual signature of the target 
+             * formats lonlat into [180W - 180E] if requested from "extended" mapview 
              */
             formatlonlat: function(lnglat, zoom) {
                 if (!lnglat) return "";
@@ -79,6 +79,7 @@ Info-area for short msges
 
                 var prec = zoom > 10 ? 1 : 0;
                 var lon, lat;
+                var trafo = this.ddtodm; // ddtodms;
 
                 if (typeof(lnglat) == "string") {
                     lon = lnglat.split(",")[0];
@@ -87,10 +88,15 @@ Info-area for short msges
                     lon = lnglat.lng;
                     lat = lnglat.lat;
                 }
-                var lonunit = lon < 0 ? " W" : "E",
-                    latunit = lat < 0 ? " S" : "N",
-                    trafo = this.ddtodm; // ddtodms;
-                return trafo(lon, "lon") + lonunit + "  " + trafo(lat) + latunit;
+
+                var lonunit = ((lon < 0) && (lon > -180)) || (lon > 180) ? "W" : "E",
+                    latunit = lat < 0 ? "S" : "N";
+
+                var lonx = trafo(lon, "lon"),
+                    latx  = trafo(lat, "lat");
+                // console.log("lon,lat",lon,lat,"lonx,latx",lonx,latx)
+                
+                return lonx + lonunit + "  " + latx + latunit;
             },
 
             /**
@@ -119,6 +125,11 @@ Info-area for short msges
             ddtodm: function(dd, lonflag, prec) {
                 if (!prec) prec = 3;
                 dd = parseFloat(dd);
+
+                // lon only
+                if (dd > 180) dd = 360 - dd;
+                if (dd < -180) dd = 360 + dd;
+                // lon and lat
                 if (dd < 0) dd = 0 - dd;
 
                 let d = Math.floor(dd), // console.log("dd,d=", dd, d)
