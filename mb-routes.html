@@ -91,6 +91,7 @@ along waypoint file loaded from url
              * @param      {<type>}  nodes        Nodes or trackpoints
              */
             constructor(routeid, props, legsCoords, legsData, routeNodes) { // coordinates = array of coordinate-arrays (multiLine) 
+                this.id = routeid;
                 this.type = "Feature";
                 this.geometry = {
                     "type": "MultiLineString",
@@ -98,18 +99,20 @@ along waypoint file loaded from url
                 };
 
                 /**
-                 * Metadata of route-componets 
+                 * Metadata of route-components 
                  */
-                this.id = routeid;
                 props.routeid = routeid;
                 props.trackid = props.key;
                 props.legs = legsData;
                 props.nodes = routeNodes;
 
+                // Compile all route-pnts into one Array, 
+                // usable for trace-extraction
                 props.trace = [];
                 legsCoords.forEach(function(coords) {
                     props.trace = props.trace.concat(coords);
-                })
+                });
+
                 this.properties = props;
                 // console.log("ROUTE" + routeid, this.properties);
             }
@@ -160,6 +163,7 @@ along waypoint file loaded from url
              */
 
             constructor(coordinates, routeid, props) {
+                this.id = routeid;
                 this.type = "Feature";
                 this.geometry = {
                     "type": "LineString",
@@ -168,10 +172,10 @@ along waypoint file loaded from url
 
                 // add variable properties
                 if (!props) props = {};
+                props.id = routeid;
                 props.routeid = routeid;
 
                 this.properties = props;
-                // console.log("TRACEsource " + routeid, this);
             }
         };
 
@@ -321,7 +325,7 @@ along waypoint file loaded from url
             ],
 
             observers: [
-                '_checkTracktimer(timer.*)',
+                '_animationTimerRefresh(timer.*)',
                 '_animationDataSetup(routedata, timer.timescale)',
                 '_animationLayersRefresh(map, animationSourceData.*)',
                 'ctrlTrackmove(trackctrl)',
@@ -347,7 +351,7 @@ along waypoint file loaded from url
             },
 
             // DEBUG-utilities
-            _checkTracktimer: function(timer) {
+            _animationTimerRefresh: function(timer) {
                 // console.log("checking timer", timer.value, timer);
             },
             _checkTrackdata: function(data) {
@@ -430,7 +434,7 @@ along waypoint file loaded from url
 
                             // 1.B. Create layers 
                             if (!map.getLayer(layername)) {
-                                console.log("adding layer", layername);
+                                // console.log("Adding layer", layername, layerObject['layer'], map.getSource(layername));
                                 map.addLayer(layerObject['layer']);
 
                                 // OPTIONAL: selectlayer of the same source
@@ -1558,7 +1562,7 @@ along waypoint file loaded from url
                         return self.indexOf(item) == pos;
                     })
 
-                    var msgTime = mba.logTime(mapTime * 3600 * 1000, "<br>");
+                    var msgTime = mba.logTime(mapTime * 3600 * 1000, "_");
                     mba.trackMapInfo("<b>" + flag + "</b>" + "<br> at " + msgTime + "<br>" + routeids.length + " tracks active");
 
                     return routeids;
@@ -1570,6 +1574,7 @@ along waypoint file loaded from url
                     var syncFilter = ["in", "routeid"];
                     if (!routeids || !routeids.length) {
                         syncFilter.push(""); // false 
+                        syncFilter = null;
                     } else {
                         // Filter  "related"  mapFeatures on MAP 
                         routeids.forEach(function(id) {
@@ -1577,22 +1582,24 @@ along waypoint file loaded from url
                         });
                     }
                     // syncFilter = syncFilter.concat(routeids);
-                    console.log("Refreshed SyncFilter", syncFilter);
+                    console.log("Refreshed SYNC-Filter", syncFilter);
 
                     if (mba.map.getLayer("routes")) {
                         mba.map.setFilter('routes', syncFilter);
                         var routes = this.map.querySourceFeatures("routes", {
                             filter: syncFilter
                         });
-                        console.log("activated routes", routes, mba.map.getLayer("routes"), mba.map.getSource("routes"));
+                        console.log("SYNCED Route-Layer", routes, mba.map.getLayer("routes"), mba.map.getSource("routes"));
                     }
+
                     if (mba.map.getLayer("nodes")) mba.map.setFilter('nodes', syncFilter);
+
                     if (mba.map.getLayer("traces")) {
                         mba.map.setFilter('traces', syncFilter);
                         var traces = this.map.querySourceFeatures("traces", {
                             filter: syncFilter
                         });
-                        console.log("activated Traces", traces, mba.map.getLayer("traces"), mba.map.getSource("traces"));
+                        console.log("SYNCED Trace-Layer", traces, mba.map.getLayer("traces"), mba.map.getSource("traces"));
                     }
                 };
 
@@ -1606,12 +1613,12 @@ along waypoint file loaded from url
                 // STOP-action with HIDE-Filters
                 if (syncflag.indexOf("STOP") >= 0) {
 
-                    // A. Set HIDE-filters for SELECT-Tracksymbols
+                    // A. Set HIDE-filters for last SELECT-Track
                     mba.map.setFilter("tracks-select", ["==", "id", ""]);
                     mba.map.setFilter("tracks-glow", ["==", "id", ""]);
                     mba.map.setFilter("tracks-glow-strong", ["==", "id", ""]);
 
-                    // B. Apply Filters
+                    // B. Apply Filters on 
                     setTimeout(function() {
                         trackids = applyTrackFilter(mapTime, syncflag);
                         applySyncFilter(trackids);
