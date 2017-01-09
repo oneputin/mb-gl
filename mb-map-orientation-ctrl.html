@@ -42,23 +42,13 @@ ctrl to toglle map-orientation
     </template>
 
     <script>
-        // on-change="fpsChange"
         Polymer({
             is: 'mb-map-orientation-ctrl',
 
             properties: {
 
                 /**
-                 * Animation frequency
-                 */
-                fps: {
-                    type: Number,
-                    value: 60,
-                    notify: true
-                },
-
-                /**
-                 * trackmode (euler, lagrange)
+                 * trackmode (north, align-bearing)
                  */
                 trackmode: {
                     type: Boolean,

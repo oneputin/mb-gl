@@ -17,12 +17,13 @@
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-routes.html">
 
-    <!--<link rel="import" href="../import-routes.html">-->
+    <link rel="import" href="../import-routes.html">
 
     <link rel="import" href="../routing-planes.html">
 
     <link rel="import" href="../mb-info-lnglat.html">
     <link rel="import" href="../mb-routes-ctrl.html">
+
     <link rel="import" href="../mb-routes-ctrl-time.html">
     <link rel="import" href="../mb-map-orientation-ctrl.html">
 
@@ -85,6 +86,7 @@
 <body>
 
     <template is="dom-bind" id="app">
+        
         <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
         </iron-ajax>
 
@@ -172,6 +174,7 @@
         }
         scope.setupme = function(ajaxresponse) {
             this.wpdocs = ajaxresponse.detail.response;
+            console.log(this.wpdocs, ajaxresponse);
         }
     </script>
 </body>

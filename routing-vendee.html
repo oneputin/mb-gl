@@ -238,8 +238,8 @@ To 'close'
 
                 Object.keys(routes).forEach(function(id) {
 
-                    var waypoints = routes[id];
-                    waypoints.sort(function(wp1, wp2) {
+                    var trackpoints = routes[id];
+                    trackpoints.sort(function(wp1, wp2) {
                         return wp1.ab - wp2.ab;
                     });
 
@@ -259,7 +259,7 @@ To 'close'
                         "key": key,
                         "icon": icon,
                         "unitsystem": "nautic",
-                        "waypoints": waypoints
+                        "nodes": trackpoints
                     };
 
                     // optionally include Stammdaten

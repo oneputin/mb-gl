@@ -296,9 +296,9 @@ To 'close'
 
                 Object.keys(routes).forEach(function(id) {
 
-                    var waypoints = routes[id];
+                    var trackpoints = routes[id];
 
-                    waypoints.sort(function(wp1, wp2) {
+                    trackpoints.sort(function(wp1, wp2) {
                         return mba.utcTime(wp1.ab) - mba.utcTime(wp2.ab);
                     });
 
@@ -310,7 +310,7 @@ To 'close'
                         "key": key,
                         "icon": icon,
                         "unitsystem": "metric",
-                        "waypoints": waypoints
+                        "nodes": trackpoints
                     };
 
                     // Optionally: include Stammdaten
