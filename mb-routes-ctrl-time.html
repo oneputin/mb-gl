@@ -67,7 +67,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
 
             <!--<div>Active: [[fpsslidervalue]][%]</div>-->
             <div>Active: [[scalestring]]</div>
-            <paper-slider id="fpsctrl" value="{{fpsslidervalue}}" on-value-change="fpsChangeHandler" min="10" max='100' step='10' pin ></paper-slider>
+            <paper-slider id="fpsctrl" value="{{fpsslidervalue}}" immediate-value="{{fpsslidervalue}}" on-immediate-value-change="fpsChangeHandler" on-value-change="fpsChangeHandler" min="1" max='[[fpsslidermax]]' step='1'></paper-slider>
 
 	    </div>
 
@@ -116,6 +116,14 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                  */
                 _fps: {
                     type: Number
+                },
+
+                /**
+                 * max fps-slider-value, decides about slider-granularity 
+                 */
+                fpsslidermax :{
+                    type: Number,
+                    value:12
                 }
 
             },
@@ -154,9 +162,13 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
              */
             applyTimer: function(timescale, fps) {
 
+                this.maxscalestring = this._formatscale(timescale);
+
                 this.debounce('apply', function() {
+                    
                     this.maxscalestring = this._formatscale(timescale);
                     this.scalestring = this._formatscale(timescale * fps / this._fpsmax);
+
                     if (!this.timer) {
                         this.timer = {};
                         this.set('timer.timescalemax', this.timescalemax);
@@ -164,6 +176,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                     }
                     this.set('timer.timescale', timescale);
                     this.set('timer.fps', fps);
+
                     // console.log("REFRESHED timer", this.timer, this.maxscalestring, this.scalestring);
                 }, 100);
 
@@ -175,7 +188,11 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
             fpsChangeHandler: function() {
                 if (!this.fpsslidervalue) return;
                 // console.log("set fps for sliderval", this.fpsslidervalue);
-                this._fps = this._fpsmax * this.fpsslidervalue / 100; //console.log("fps", fps)
+                var fps = Math.round(this._fpsmax * this.fpsslidervalue / this.fpsslidermax); // console.log("fps", fps)
+                
+                this.scalestring = this._formatscale(this._timescale * fps / this._fpsmax);
+
+                this._fps = fps;
             },
 
             /**
@@ -214,8 +231,8 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
 
                 // B. fps
                 if (!this.timer.fpsstart) this.timer.fpsstart = this._fpsmax / 2;
-                this.fpsslidervalue = this.timer.fpsstart / this._fpsmax * 100;
-                this._fps = this._fpsmax * this.fpsslidervalue / 100; //console.log("fps", fps)
+                this.fpsslidervalue = this.timer.fpsstart / this._fpsmax * this.fpsslidermax;
+                this._fps = this._fpsmax * this.fpsslidervalue / this.fpsslidermax; //console.log("fps", fps)
             },
 
 
