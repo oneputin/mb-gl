@@ -53,7 +53,8 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 // center: [13.5, 52.5], // must be synced by client with service
                 insertlayer: 'water'
             },
-            cbox: "12,52",
+            cbox: "10,52",
+            zoom: 8
         };
 
         Polymer({
@@ -101,7 +102,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
                  */
                 cbox: {
                     type: String,
-                    value: "13.5,52.5",
                     notify: true,
                     observer: 'centerthemap'
                 },
@@ -115,7 +115,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
                 zoom: {
                     type: Number,
-                    value: 8,
                     observer: 'zoomthemap'
                 },
 
@@ -160,25 +159,36 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 }
 
                 // B. Specify initial MAP-CENTER
-                if (!this.cbox) this.cbox = setup.cbox;
+                /*if (!this.cbox) this.cbox = setup.cbox;
                 if (this.cbox) mapctrl.center = this.cbox.split(",");
+                if (!this.zoom) this.zoom = setup.zoom;
+                if (this.zoom) mapctrl.zoom = this.zoom; */
+
 
                 // C. Specify app-specific initial INSERT-LAYER
                 if (this.insertlayer) mapctrl.insertlayer = this.insertlayer;
 
                 // D. INSTALL the mapbox-map
                 this.mapctrl = mapctrl; //console.log(this.mapapikey, this.mapctrl);
+
                 this.installmap();
             },
 
             zoomthemap: function(zoom) {
-                if (this.map) this.map.setZoom(zoom)
+                console.log("zoomthemap", zoom, this.map);
+                if (this.map) this.map.setZoom(zoom);
+                else this.mapctrl.zoom = zoom;
             },
 
             centerthemap: function(cbox) {
+                console.log("centerthemap", cbox, this.map);
                 cbox = cbox.split(",");
-                cbox = new mapboxgl.LngLat(cbox[0], cbox[1]);
-                if (this.map) this.map.setCenter(cbox);
+                if (this.map) {
+                    cbox = new mapboxgl.LngLat(cbox[0], cbox[1]);
+                    this.map.setCenter(cbox);
+                } else {
+                    this.mapctrl.center = cbox;
+                }
             },
             /**
              * setup a mb-gl-map 
@@ -186,14 +196,12 @@ the map-ctrls can be placed as map-overlay or anywhere else
             installmap: function() {
                 /*<input id='' type='radio' name='rtoggle' value='Basic' checked='checked'>
                   <label for='Basic'>Basic</label>
-
                   <input id='ciuz8mtxy01dx2jl8mszelrkm' type='radio' name='rtoggle' value='Light'>
                   <label for='Light'>Light</label>
-
                   <input id='ciuv91dl2013z2iqq0y2z7ezg' type='radio' name='rtoggle' value='DEbunt'>
                   <label for='DEbunt'>DEbunt</label>*/
 
-                // console.log("create map using", this.mapctrl, "apikey= " + this.mapapikey);
+                console.log("install map using", this.mapctrl, "apikey= " + this.mapapikey);
 
                 var that = this;
 
@@ -204,6 +212,10 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 map.on('load', function() { // console.log("map loaded", map);
                     // inform app about new center after any move
                     var von, bis, dist;
+                    console.log("map loaded", this);
+
+                    if (this.zoom) map.setZoom(this.zoom);
+                    if (this.cbox) map.setCenter(this.cbox);
 
                     map.on('movestart', function() {
                         // this.start = map.getCenter();
@@ -227,6 +239,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     map.on('mousemove', function(e) {
                         that.lnglat = e.lngLat;
                     });
+
 
                     //if zoom is NOT communicated to app via map-object : 
                     //map.on('zoomend', function() { 

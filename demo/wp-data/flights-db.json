@@ -1,5 +1,9 @@
 {
     "airline": {
+        "BAA": {
+            "name": "British Airways",
+            "color": "blue"
+        },
         "BA": {
             "name": "British Airways",
             "color": "blue"
@@ -26,16 +30,44 @@
             "icon": "airfield-15",
             "seats": 180
         },
+        "A380": {
+            "icon": "airfield-15",
+            "seats": 500
+        },
         "B737": {
-            "icon": "rocket-15",
+            "icon": "airfield-15",
             "seats": 140
         },
         "B747": {
-            "icon": "heliport-15",
+            "icon": "airport-15",
             "seats": 300
+        },
+        "B777": {
+            "icon": "airport-15",
+            "seats": 200
         }
     },
     "airport": {
+        "DFW": {
+            "coords": [-97, 32.75],
+            "name": "Dallas/Fort Worth",
+            "size": "53"
+        },
+        "JFK": {
+            "coords": [-77.032, 38.913],
+            "name": "New York",
+            "size": "53"
+        },
+        "SFO": {
+            "coords": [-122.414, 37.776],
+            "name": "San Francisco",
+            "size": "47"
+        },
+        "LAX": {
+            "coords": [-118.25, 34.08],
+            "name": "Los Angeles",
+            "size": "70"
+        },
         "SXF": {
             "coords": [13.5, 52.37],
             "name": "Schönefeld",

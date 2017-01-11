@@ -100,7 +100,7 @@ To 'close'
             auto
             url="[[basedataurl]]"
             handle-as="json"
-            on-response="getrawmasterdata">
+            on-response="getrawdbdata">
         </iron-ajax>
 
         <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
@@ -138,7 +138,7 @@ To 'close'
             is: 'routing-handheld',
 
             properties: {
-                rawmasterdata: {
+                rawdbdata: {
                     type: Object,
                     value: []
                 }
@@ -149,26 +149,28 @@ To 'close'
             ],
 
             observers: [
-                'importVomue(rawdata, rawmasterdata)'
+                'importVomue(rawdata, rawdbdata)'
             ],
 
             attached: function() {
                 // console.log("target attached");
             },
 
-            getrawmasterdata: function(ajaxresponse) {
+            getrawdbdata: function(ajaxresponse) {
                 var rawdata = ajaxresponse.detail.response;
                 if (!rawdata) return {};
-                console.log("rawmasterdata", rawdata);
-                this.rawmasterdata = rawdata; // triggers 'setupTracking'
+                console.log("rawdbdata", rawdata);
+                this.rawdbdata = rawdata; // triggers 'setupTracking'
             },
 
             // SPECIFIC import of gps-device data delivered in csv- or tabbed formats 
             // into datastructure of routing-API
-            importVomue: function(rawdata, rawmasterdata) {
+            importVomue: function(rawdata, rawdbdata) {
+                if (!rawdata || !rawdbdata) return;
+
                 console.log("Handheld raw data", {
                     "location": rawdata,
-                    "master": rawmasterdata
+                    "master": rawdbdata
                 });
 
                 var icontemplate = "circle-stroked-15"; // "pitch-15"; // this.icon;
@@ -211,17 +213,17 @@ To 'close'
                         tstandard = traw;
                     }
                     // console.log("handheldTime", traw, t, a, tlocal)
-
                     return tstandard;
                 }
 
                 var routes = {},
                     masterdata = {};
-                if (rawmasterdata) {
+
+                if (rawdbdata) {
                     // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
                     var route, master, id;
                     // A. Restructure master-table into collection    
-                    rawmasterdata.forEach(function(st, j) {
+                    rawdbdata.forEach(function(st, j) {
                         //  
                         id = st.id;
                         id = id.replace("<br>", "/")
@@ -243,6 +245,11 @@ To 'close'
                     route0 = [],
                     routes = [];
 
+                //     
+                var isData1 = (rawdata[0]["Header"] == "Trackpoint"),
+                    isData2 = rawdata[0]["Pnt"]; // 
+
+                console.log("isData1=" + isData1, "isData2=" + isData2);
                 // B. GROUP all trackpoint-records by id 
                 //    into objects for every source
                 rawdata.forEach(function(tp, j) {
@@ -250,26 +257,39 @@ To 'close'
                     var tpx = {},
                         lng, lat;
 
-                    //     
-                    var testflag = (tp["Header"] == "Trackpoint") || tp["Pnt"]; // 
+                    Object.keys(tp).every(function(k) {
 
-                    if (testflag) {
-
-                        Object.keys(tp).forEach(function(k) {
-
-                            if ((k == "Position") || (k == "coords")) {
+                        if (isData1) {
+                            if (k == "Position") {
                                 coords = handheldCoords(tp[k]);
                                 tpx["coords"] = coords;
-                            } else if ((k == "Time") || (k == "Date")) {
+
+                            } else if (k == "Time") {
                                 time = handheldTime(tp[k]);
                                 tpx["ab"] = time;
                                 tpx["an"] = time; // 
                             } else {
                                 tpx[k] = tp[k];
                             }
-                        })
 
-                        // Distribute trackpoints on its routes  
+                        } else if (isData2) {
+                            if (k == "coords") {
+                                coords = handheldCoords(tp[k]);
+                                tpx["coords"] = coords;
+                            } else if (k == "Date") {
+                                time = handheldTime(tp[k]);
+                                tpx["ab"] = time;
+                                tpx["an"] = time; // 
+                            } else {
+                                tpx[k] = tp[k];
+                            }
+                        } else { // ??? data not of prepared types
+                            console.log("record with unknown data format", tp);
+                            return false;
+                        }
+
+
+                        // Distribute the trackpoints into "separable" tracks (if long breaks)  
                         if (tp.id) {
                             id = tp.id;
                             route = routes[id];
@@ -284,11 +304,12 @@ To 'close'
                                 routes["track"] = route;
                             }
                         }
+                        console.log(tpx);
                         route.push(tpx);
-                    }
+                    })
 
                 }.bind(this));
-                // console.log("rawroutes", routes);
+                console.log("rawroutes", routes);
 
                 // C. Join temporary masters- and routes-objects 
                 //    into array of api-conform routes with wps sorted by time 
@@ -394,7 +415,7 @@ To 'close'
                     // 
                     pp = this.masterdata[data.properties.id];
                     if (pp) {
-                        // console.log("rawmasterdata:", pp);
+                        // console.log("rawdbdata:", pp);
                         // DIV0
                         var imgurl = pp.img,
                             skipper = pp.skipper,

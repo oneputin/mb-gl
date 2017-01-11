@@ -40,19 +40,18 @@ along waypoint file loaded from url
              */
             constructor(coordinates, id, routeid, props) {
                 // if (!id) id = "wp";
-                if (!props) props = {};
-                props.id = id;
-                props.routeid = routeid;
-                props.title = id;
-                if (!props.icon) props.icon = "dot-10";
-
+                this.id = id;
                 this.type = "Feature";
                 this.geometry = {
                     "type": "Point",
                     "coordinates": coordinates
                 }
-                this.id = id;
 
+                if (!props) props = {};
+                props.id = id;
+                props.routeid = routeid;
+                // props.title = id;
+                if (!props.icon) props.icon = "dot-10";
                 this.properties = props;
             };
         };
@@ -66,7 +65,6 @@ along waypoint file loaded from url
              *
              * @param      {array}  coordinates  The coordinates of the legs start/stop
              */
-
             constructor(coordinates) {
                 this.type = "Feature";
                 this.geometry = {
@@ -178,6 +176,7 @@ along waypoint file loaded from url
                 this.properties = props;
             }
         };
+
 
         Polymer({
             is: 'mb-routes',
@@ -439,7 +438,7 @@ along waypoint file loaded from url
                                 // OPTIONAL: bglayer(s) of the same source
                                 var bgl = layerObject['bglayer'];
                                 if (bgl) {
-                                    console.log("adding bg-layer", bgl);
+                                    // console.log("adding bg-layer of "+layername, bgl);
                                     // sls.forEach(function(sl) { // console.log("sl",sl);
                                     map.addLayer(bgl);
                                     // }
@@ -810,7 +809,7 @@ along waypoint file loaded from url
                                 }
 
                                 // in track-align map-orientation 
-                                // the map is conituously centered at trackObj 
+                                // the map is continuously centered at trackObj 
                                 // and the trackObj-symbol is aligned to bearing  
                                 if (mba.trackmode) {
                                     let map = mba.map;
@@ -1042,13 +1041,13 @@ along waypoint file loaded from url
                             meta = wp.meta;
 
                         if (wp.id) key = wp.id;
-                        else if (meta.id) key = meta.id;
+                        else if (meta && meta.id) key = meta.id;
                         else key = p;
 
                         allnodes.features.forEach(function(nod) {
                             // do NOT add nodes multiple times (fi airports of different flights)
-                            if (nod.id == key) {
-                                console.log("doubling routenode", key, route.id);
+                            if ((key != p) && (nod.id == key)) {
+                                // console.log("doubling routenode", key, route.id);
                                 newNode = nod;
                             }
                         });
@@ -1129,7 +1128,7 @@ along waypoint file loaded from url
 
                     }
                 };
-                console.log("", nodeLayer);
+                //console.log("nodeLayer", nodeLayer);
                 return nodeLayer;
             },
 
@@ -1184,14 +1183,21 @@ along waypoint file loaded from url
 
                     var aTrack = new TrackSource(startort, route.id, props);
 
-
-
-
-
                     allTracks.features.push(aTrack);
 
                 });
-                console.log("allTracks", allTracks);
+
+                // Prepare ddr-styling (circle-size of symbol-bg)
+                var rotation = 0;
+                if (1) {
+                    rotation = {
+                        property: 'bearing',
+                        stops: [
+                            [0, 0],
+                            [360, 360]
+                        ]
+                    }
+                }
 
                 trackLayerObj['data'] = allTracks;
 
@@ -1206,7 +1212,7 @@ along waypoint file loaded from url
 
                     "layout": {
                         "icon-image": "{icon}",
-                        "icon-rotate": 0,
+                        "icon-rotate": rotation,
                         // a: "icon-rotate": {bearing},
                         // b. "icon-rotate": "{bearing}",
                         "text-field": "{title}",
@@ -1253,6 +1259,8 @@ along waypoint file loaded from url
                         }
                     }];
 
+                // console.log("trackLayerObj", trackLayerObj);
+
                 return trackLayerObj;
             },
 
@@ -1290,7 +1298,7 @@ along waypoint file loaded from url
 
                     traceLayerData.features.push(aTrace);
                 });
-                console.log("traceLayerData", traceLayerData);
+                // console.log("traceLayerData", traceLayerData);
 
                 traceLayerObj['data'] = traceLayerData;
 
@@ -1399,7 +1407,7 @@ along waypoint file loaded from url
                         "line-color": linecolor
                     }
                 };
-                console.log(routeLayer);
+                // console.log(routeLayer);
                 return routeLayer;
             },
 
@@ -1668,7 +1676,7 @@ along waypoint file loaded from url
                     })
 
                     var msgTime = mba.logTime(mapTime * 3600 * 1000, "_");
-                    mba.trackMapInfo("<b>" + flag + "</b>" + "<br> at " + msgTime + "<br>" + routeids.length + " tracks active");
+                    mba.trackMapInfo("<b>" + flag + "</b>" + "<br> at " + msgTime + "<br>" + routeids.length + " track(s) active");
 
                     return routeids;
                 };
@@ -1687,14 +1695,14 @@ along waypoint file loaded from url
                         });
                     }
                     // syncFilter = syncFilter.concat(routeids);
-                    console.log("Refreshed SYNC-Filter", syncFilter);
+                    // console.log("Refreshed SYNC-Filter", syncFilter);
 
                     if (mba.map.getLayer("routes")) {
                         mba.map.setFilter('routes', syncFilter);
                         var routes = this.map.querySourceFeatures("routes", {
                             filter: syncFilter
                         });
-                        console.log("SYNCED Route-Layer", routes, mba.map.getLayer("routes"), mba.map.getSource("routes"));
+                        // console.log("SYNCED Route-Layer", routes, mba.map.getLayer("routes"), mba.map.getSource("routes"));
                     }
 
                     if (mba.map.getLayer("nodes")) {
@@ -1706,9 +1714,10 @@ along waypoint file loaded from url
                         //mba.map.setFilter('traces', syncFilter);
                         mba.map.setFilter('traces', null);
                         var traces = this.map.querySourceFeatures("traces", {
-                            // filter: syncFilter
+                            filter: null
+                                // filter: syncFilter
                         });
-                        console.log("SYNCED Trace-Layer", traces, mba.map.getLayer("traces"), mba.map.getSource("traces"));
+                        // console.log("SYNCED Trace-Layer", traces, mba.map.getLayer("traces"), mba.map.getSource("traces"));
                     }
                 };
 

@@ -101,7 +101,7 @@ To 'close'
             auto
             url="[[basedataurl]]"
             handle-as="json"
-            on-response="getrawmasterdata">
+            on-response="getdbdata">
         </iron-ajax>
 
         <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
@@ -150,23 +150,24 @@ To 'close'
             ],
 
             observers: [
-                'importVendee(rawdata, rawmasterdata)'
+                'importVendee(rawdata, rawdbdata)'
             ],
 
             attached: function() {
                 // console.log("target attached");
             },
 
-            getrawmasterdata: function(ajaxresponse) {
+            getdbdata: function(ajaxresponse) {
                 var rawdata = ajaxresponse.detail.response;
                 if (!rawdata) return;
-                // console.log("rawmasterdata", rawdata);
-                this.rawmasterdata = rawdata; // triggers 'setupTracking'
+                // console.log("dbdata", rawdata);
+                this.rawdbdata = rawdata; // triggers 'setupTracking'
             },
 
             // SPECIFIC import of specific vendee-data 
             // into datastructure of routing-API
-            importVendee: function(rawdata, rawmasterdata) {
+            importVendee: function(rawdata, rawdbdata) {
+                if (!rawdata || !rawdbdata) return;
 
                 var icontemplate = "circle-stroked-11"; // this.icon;
                 // var icontemplate = "boat-blue"; // this.icon;
@@ -191,7 +192,7 @@ To 'close'
                     route, master, id;
 
                 // A. Restructure master-table into collection    
-                rawmasterdata.forEach(function(st, j) {
+                rawdbdata.forEach(function(st, j) {
                     //  
                     id = st.id;
                     id = id.replace("<br>", "/")
@@ -338,7 +339,7 @@ To 'close'
                     // 
                     pp = this.masterdata[data.properties.id];
                     if (pp) {
-                        // console.log("rawmasterdata:", pp);
+                        // console.log("dbdata:", pp);
                         // DIV0
                         var imgurl = pp.img,
                             skipper = pp.skipper,

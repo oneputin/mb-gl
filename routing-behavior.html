@@ -125,13 +125,12 @@
          *
          * @param   {<type>} ajaxresponse : basic routedata as wp-dataset (packaged in default ajax-response)
          */
-        getrawdata: function(ajaxresponse, dataname) {
-            if (!dataname) dataname = "rawdata";
+        getrawdata: function(ajaxresponse) {
             if (!ajaxresponse || !ajaxresponse.detail) return;
             // console.log("GET " + dataname, ajaxresponse.detail.response);
             // var rawdata = ajaxresponse.detail.response;
             // if (!rawdata) return;
-            this[dataname] = ajaxresponse.detail.response; // triggers 'setupTracking'
+            this.rawdata = ajaxresponse.detail.response; // triggers 'setupTracking'
         },
 
 

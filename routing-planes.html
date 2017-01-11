@@ -164,17 +164,32 @@ Close with click anywhere on the card
             importRawRoutes: function(rawdata, dbdata) {
                 if (!rawdata || !dbdata) return;
                 var routedata = [],
-                    airline, waypoint; // = rawdata; 
+                    airlineKey, airline, plane, waypoint;
+
+                var airlineNN = {
+                        "name": "AirlineX",
+                        "color": "black"
+                    },
+                    planeNN = {
+                        "icon": "airport-15",
+                        "seats": 150
+                    }; // = rawdata; 
+
                 rawdata.forEach(function(route) {
                     route.unitsystem = "metric";
                     route.id = route.flight;
-                    // route.key = route.plane;
-                    airline = route.id.split("-")[0];
 
                     // insert db-data
-                    route.meta = dbdata.airline[airline];
-                    route.item = dbdata.plane[route.plane];
+                    airlineKey = route.id.split("-")[0];
+                    airline = dbdata.airline[airlineKey];
+                    if (!airline) airline = airlineNN;
+
+                    plane = dbdata.plane[route.plane];
+                    if (!plane) plane = planeNN;
+                    route.item = plane;
                     route.item.id = route.plane;
+
+                    route.meta = airline;
 
                     route.nodes = [];
                     route.waypoints.forEach(function(wp) {

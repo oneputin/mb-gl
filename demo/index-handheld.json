@@ -16,11 +16,11 @@
     {
         "title": "SilvesterTag",
         "type": "gpx-export",
-        "url": "gpx-data/silv2016.json"
+        "url": "wp-data/handheld-silv2016.json"
     },
     {
         "title": "SilvesterBerg",
         "type": "gpx-export",
-        "url": "gpx-data/silv2016_berg.json"
+        "url": "wp-data/handheld-silvberg.json"
     }
 ]
