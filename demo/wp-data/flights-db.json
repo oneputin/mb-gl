@@ -1,0 +1,79 @@
+{
+    "airline":{
+        "BA":{
+            "icon":"airport-15",
+            "color": "blue"
+        },
+        "AB":{
+            "icon":"airfield-15",
+            "color": "red"
+        },
+        "AF":{
+            "icon":"rocket-15",
+            "color": "black"
+        },
+        "LH":{
+            "icon":"heliport-15",
+            "color": "yellow"
+        }
+    },
+    "plane":{
+        "A320":{
+            "icon":"airport-15",
+            "color": "blue"
+        },
+        "A330":{
+            "icon":"airfield-15",
+            "color": "red"
+        },
+        "B737":{
+            "icon":"rocket-15",
+            "color": "black"
+        },
+        "B747":{
+            "icon": "heliport-15",
+            "color": "yellow"
+        }
+    },
+    "airport":{
+        "SXF":{
+            "coords": [13.5, 52.37],
+            "name": "Schönefeld",
+            "color": "blue"
+        },
+        "GTW":{
+            "coords": [-0.73, 51.2],            
+            "name": "Gatwick",
+            "color": "red"
+        },
+        "SVO":{
+            "name": "Sheremetjevo",
+            "coords": [37.5, 55.95],
+            "color": "black"
+        },
+        "LED":{
+            "name": "Pulkovo",
+            "coords": [30.25, 60],
+            "color": "yellow"
+        },
+        "KRN":{
+            "name": "Kiruna",
+            "coords": [20.45, 67.85],
+            "color": "black"
+        },
+        "OSL":{
+            "name": "Oslo",
+            "coords": [10.75, 60.00],            
+            "color": "yellow"
+        },
+        "ROM":{
+            "coords": [12.48, 41.86],
+            "name": "Rome",
+            "color": "yellow"
+        },
+        "FRA":{
+            "coords": [8.5, 50.05],
+            "name": "Frankfurt/M"
+        }
+    }
+}

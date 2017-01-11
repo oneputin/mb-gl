@@ -29,7 +29,7 @@ along waypoint file loaded from url
         /**
          * A waypoint along a tracked route
          */
-        class RouteNode {
+        class NodeSource {
             /**
              * Constructs the object.
              *
@@ -60,7 +60,7 @@ along waypoint file loaded from url
         /**
          * A route-segment between two waypoints
          */
-        class Leg {
+        class LegSource {
             /**
              * Constructs the object.
              *
@@ -82,7 +82,7 @@ along waypoint file loaded from url
         /**
          * A mb-multi-object joining the animation points between multiple waypoints into a mb-geometry   
          */
-        class Route {
+        class RouteSource {
             /**
              * Constructs the object.
              *
@@ -121,7 +121,7 @@ along waypoint file loaded from url
         /**
          * A mapbox-point-feature ilustrationg the track on the map  
          */
-        class Track {
+        class TrackSource {
             /**
              * Constructs the object.
              * @param      {array}  coordinates   The coordinates
@@ -154,7 +154,7 @@ along waypoint file loaded from url
         /**
          * A route-trace 'behind' the animation-tracker
          */
-        class Trace {
+        class TraceSource {
             /**
              * Constructs a line from points the tracker has passed 
              * alternatively "all" or "some only" (sich auflösender kondensstreifen)  
@@ -847,12 +847,12 @@ along waypoint file loaded from url
                     legTarget = legInfo.to;
 
                 // calc the bearing between "actual" and 'last' Position of trackObj 
-                var bearing = turf.bearing(new Track(lastPos), trackObj);
+                var bearing = turf.bearing(new TrackSource(lastPos), trackObj);
                 if (bearing < 0) bearing = bearing + 360;
                 if (bearing > 360) bearing = bearing - 360;
 
                 // temporary Leg to calculate DTA
-                var legToArrival = new Leg([cc, legTarget.coords]),
+                var legToArrival = new LegSource([cc, legTarget.coords]),
                     dta = turf.lineDistance(legToArrival, "kilometers");
 
                 var v = legInfo.speed,
@@ -1036,7 +1036,7 @@ along waypoint file loaded from url
                         });
                         // console.log("wp-" + p, key, wp, props);
 
-                        allnodes.features.push(new RouteNode(wp.coords, key, route.id, props)); // icon));
+                        allnodes.features.push(new NodeSource(wp.coords, key, route.id, props)); // icon));
                     });
                 });
                 // console.log("all waypoints collected", allwaypoints.features);
@@ -1052,7 +1052,6 @@ along waypoint file loaded from url
                     "source": "nodes",
                     "layout": {
                         "icon-image": "{icon}",
-                        //"icon-image": "star-15",
                         "text-field": "{title}",
                         "text-anchor": "bottom",
                         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
@@ -1109,7 +1108,7 @@ along waypoint file loaded from url
                     // Create Tracker and locate at start 
                     startort = route.nodes[0].coords;
 
-                    var aTrack = new Track(startort, route.id, props);
+                    var aTrack = new TrackSource(startort, route.id, props);
                     allTracks.features.push(aTrack);
 
                 });
@@ -1210,7 +1209,7 @@ along waypoint file loaded from url
                         "color": color
                     };
                     // Create a Trace(-data object) with startpoint only
-                    var aTrace = new Trace([startort], route.id, props);
+                    var aTrace = new TraceSource([startort], route.id, props);
 
                     traceLayerData.features.push(aTrace);
                 });
@@ -1224,14 +1223,14 @@ along waypoint file loaded from url
                     "id": "traces",
                     "source": "traces", // json-data object created separately
                     "type": "line",
-                    "layout": {
+                    /*"layout": {
                         "line-join": "round",
                         "line-cap": "round"
-                    },
+                    },*/
                     "paint": {
                         //"line-color": "{color}", // ???
                         "line-color": "black",
-                        "line-width": 1
+                        "line-width": 3
                     }
                 };
 
@@ -1251,7 +1250,6 @@ along waypoint file loaded from url
                 };
                 return traceLayerObj;
             },
-
 
             /**
              * Setup routes optimized for animation with "requestAnimationFrame (60 fps)"
@@ -1280,8 +1278,14 @@ along waypoint file loaded from url
                 }.bind(this));
                 // return;
 
-                var routeLayer = {};
+                var lut_airlines = {
+                    property: 'color',
+                    type: 'categorical',
+                    stops: []
+                }
 
+
+                var routeLayer = {};
                 routeLayer['data'] = this.routes;
 
                 routeLayer['layer'] = {
@@ -1292,7 +1296,8 @@ along waypoint file loaded from url
                         "line-width": 1,
                         "line-opacity": 0.5,
                         "line-dasharray": [4, 4],
-                        "line-color": "#007cbf"
+                        //"line-color": "#007cbf"
+                        "line-color": lut_airlines
                     }
                 };
                 return routeLayer;
@@ -1333,7 +1338,7 @@ along waypoint file loaded from url
 
                                 // B. Check DIST between routeNodes
                                 //    ABANDON wp, if smaller then deltaX
-                                var leg = new Leg([wp.coords, nextNode.coords]),
+                                var leg = new LegSource([wp.coords, nextNode.coords]),
                                     legDistance = turf.lineDistance(leg, 'kilometers'),
                                     legDistMeters = Math.round(legDistance * 1000);
 
@@ -1409,7 +1414,7 @@ along waypoint file loaded from url
                     if (nextNode) {
                         // console.log("waypoints:" + p, wp, nextNode);
                         // Calculate the distance in kilometers between waypoints
-                        var leg = new Leg([wp.coords, nextNode.coords]),
+                        var leg = new LegSource([wp.coords, nextNode.coords]),
                             legDistance = turf.lineDistance(leg, 'kilometers');
 
                         // legDistance = Math.round(legDistance);
@@ -1495,7 +1500,7 @@ along waypoint file loaded from url
                 });
 
                 // Create route-object consisting of 1-n legs
-                var r = new Route(routeid, props, legsCoords, legsData, routeNodes);
+                var r = new RouteSource(routeid, props, legsCoords, legsData, routeNodes);
                 // console.log("New route: " + routeid, r);
                 return r;
             },
@@ -1595,9 +1600,10 @@ along waypoint file loaded from url
                     if (mba.map.getLayer("nodes")) mba.map.setFilter('nodes', syncFilter);
 
                     if (mba.map.getLayer("traces")) {
-                        mba.map.setFilter('traces', syncFilter);
+                        //mba.map.setFilter('traces', syncFilter);
+                        mba.map.setFilter('traces', null);
                         var traces = this.map.querySourceFeatures("traces", {
-                            filter: syncFilter
+                            // filter: syncFilter
                         });
                         console.log("SYNCED Trace-Layer", traces, mba.map.getLayer("traces"), mba.map.getSource("traces"));
                     }
