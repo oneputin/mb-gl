@@ -58,7 +58,7 @@ along waypoint file loaded from url
         };
 
         /**
-         * A route-segment between two waypoints
+         * A route-segment between two nodes (way- or track-points)
          */
         class LegSource {
             /**
@@ -405,7 +405,7 @@ along waypoint file loaded from url
                     if (layerObjects.path == 'animationSourceData') layerObjects = layerObjects.value;
                     if (!layerObjects || !Object.keys(layerObjects).length) return;
 
-                    console.log("Set Routes To Map: layerObjects=", layerObjects);
+                    console.log("SETTING RouteLayers inTo Map: ", layerObjects);
                     var layerObject, layerData, layerSource, layer;
 
                     // 1. Create/Refresh json-based layers (sources and layers)
@@ -435,7 +435,18 @@ along waypoint file loaded from url
                             // 1.B. Create layers 
                             if (!map.getLayer(layername)) {
                                 // console.log("Adding layer", layername, layerObject['layer'], map.getSource(layername));
+
+                                // OPTIONAL: bglayer(s) of the same source
+                                var bgl = layerObject['bglayer'];
+                                if (bgl) {
+                                    console.log("adding bg-layer", bgl);
+                                    // sls.forEach(function(sl) { // console.log("sl",sl);
+                                    map.addLayer(bgl);
+                                    // }
+                                }
+
                                 map.addLayer(layerObject['layer']);
+
 
                                 // OPTIONAL: selectlayer of the same source
                                 var sls = layerObject['selectlayer'];
@@ -1014,35 +1025,82 @@ along waypoint file loaded from url
              * @return     {<type>}  { description_of_the_return_value }
              */
             setupAnimationNodes: function(routedata) {
-                console.log("routedata used by setupAnimationNodes", routedata);
+                // console.log("setupAnimationNodes. srcdata:", routedata);
                 this.nodes.features = [];
                 var allnodes = this.nodes,
+                    nodemetas = {},
                     id;
 
                 routedata.forEach(function(route, j) {
                     // locate trackObj at 'origin'
                     // console.log("route-" + j, route.nodes);
-
                     route.nodes.forEach(function(wp, p) {
                         var key,
-                            props = {};
+                            coords,
+                            newNode,
+                            props = {},
+                            meta = wp.meta;
 
-                        if (wp.key) key = wp.key;
-                        else if (wp.id) key = wp.id;
+                        if (wp.id) key = wp.id;
+                        else if (meta.id) key = meta.id;
                         else key = p;
 
-                        Object.keys(wp).forEach(function(k) {
-                            if (k != "coords") props[k] = wp[k];
+                        allnodes.features.forEach(function(nod) {
+                            // do NOT add nodes multiple times (fi airports of different flights)
+                            if (nod.id == key) {
+                                console.log("doubling routenode", key, route.id);
+                                newNode = nod;
+                            }
                         });
-                        // console.log("wp-" + p, key, wp, props);
 
-                        allnodes.features.push(new NodeSource(wp.coords, key, route.id, props)); // icon));
+                        if (!newNode) {
+                            if (wp.coords) coords = wp.coords;
+                            else if (meta.coords) coords = meta.coords;
+                            else key = p;
+
+                            Object.keys(wp).forEach(function(k) {
+                                if (k != "coords") props[k] = wp[k];
+                            });
+
+                            // console.log("wp-" + p, key, wp, props);
+                            newNode = new NodeSource(coords, key, route.id, props);
+                            if (wp.meta) {
+                                newNode.properties = Object.assign({}, newNode.properties, wp.meta);
+                                nodemetas[key] = wp.meta;
+                            }
+
+                            allnodes.features.push(newNode);
+                        }
                     });
+
                 });
                 // console.log("all waypoints collected", allwaypoints.features);
 
+                // Prepare ddr-styling (circle-size of symbol-bg)
+                var nodesize = 2,
+                    size, smin, smax;
+                Object.keys(nodemetas).forEach(function(id) {
+                    size = nodemetas[id].size;
+                    if (size) {
+                        if (!smin || (size < smin)) smin = size;
+                        if (!smax || (size > smax)) smax = size;
+                    }
+                })
+
+                if (smin && smax && (smin < smax)) {
+                    nodesize = {
+                        property: 'size',
+                        stops: [
+                            [smin, 4],
+                            [smax, 12]
+                        ]
+                    }
+                }
+
                 // 
                 var nodeLayer = {};
+
+                nodeLayer['meta'] = nodemetas;
 
                 nodeLayer['data'] = allnodes;
 
@@ -1051,14 +1109,27 @@ along waypoint file loaded from url
                     "type": "symbol",
                     "source": "nodes",
                     "layout": {
-                        "icon-image": "{icon}",
+                        // "icon-image": "{icon}",
                         "text-field": "{title}",
                         "text-anchor": "bottom",
                         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-                        "text-size": 8,
-                        "text-offset": [0, -0.6]
+                        "text-size": 10,
+                        "text-offset": [0, 0.3]
+                    },
+                };
+                // 
+                nodeLayer['bglayer'] = {
+                    "id": "bgnodes",
+                    "type": "circle",
+                    "source": "nodes",
+                    "paint": {
+                        "circle-radius": nodesize,
+                        "circle-opacity": 0.5,
+                        "circle-color": "red",
+
                     }
                 };
+                console.log("", nodeLayer);
                 return nodeLayer;
             },
 
@@ -1080,35 +1151,43 @@ along waypoint file loaded from url
                 this.tracks.features = [];
                 this.traces.features = [];
                 var allTracks = this.tracks,
-                    startort, props = {};
+                    startort, trackmeta, props = {};
 
                 routedata.forEach(function(route, j) {
 
                     // Basic properties 
+                    trackmeta = route.item;
+                    if (!trackmeta) trackmeta = route.master;
+                    if (!trackmeta) trackmeta = {
+                        "id": route.id
+                    };
+
                     props = {
                         "routeid": route.id,
-                        "title": route.key,
+                        "id": trackmeta.id,
+                        "title": trackmeta.id,
+                        "unitsystem": route.unitsystem,
                         "bearing": 0,
                         "start": timer[route.id]["start"],
                         "stop": timer[route.id]["stop"]
                     };
+                    // Optional: masterdata-properties
+                    props["master"] = trackmeta;
 
                     // Required : icon; 
-                    if (route.icon) props.icon = route.icon;
-
+                    if (trackmeta.icon) props.icon = trackmeta.icon;
                     // Optional: 
-                    if (route.iconsize) props.iconsize = route.iconsize;
-
-                    // Optional: masterdata-properties
-                    if (route.master) props["master"] = route.master;
-
-                    // Required: unitsystem
-                    if (route.unitsystem) props["unitsystem"] = route.unitsystem;
+                    if (trackmeta.iconsize) props.iconsize = trackmeta.iconsize;
 
                     // Create Tracker and locate at start 
                     startort = route.nodes[0].coords;
 
                     var aTrack = new TrackSource(startort, route.id, props);
+
+
+
+
+
                     allTracks.features.push(aTrack);
 
                 });
@@ -1127,11 +1206,9 @@ along waypoint file loaded from url
 
                     "layout": {
                         "icon-image": "{icon}",
+                        "icon-rotate": 0,
                         // a: "icon-rotate": {bearing},
                         // b. "icon-rotate": "{bearing}",
-                        // c: "icon-rotate": 90,
-                        "icon-rotate": 0,
-                        // "icon-size": 2,
                         "text-field": "{title}",
                         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
                         "text-size": 12,
@@ -1259,13 +1336,14 @@ along waypoint file loaded from url
              * @return     {<type>}  { description_of_the_return_value }
              */
             setupAnimationRoutes: function(routeconfigdata, timer) {
-                console.log("setupAnimationRoutes, configdata:", routeconfigdata);
+                // console.log("setupAnimationRoutes, configdata:", routeconfigdata);
 
                 this.routes.features = [];
-
-                // Interpolate the Routes between waypoints(trackpoints) 
-                // based on info about speed and/or arrival-/departure-times at waypoints
+                var routemetas = {};
+                // A. Interpolate the Routes between waypoints(trackpoints) 
+                //    based on info about speed and/or arrival-/departure-times at waypoints
                 routeconfigdata.forEach(function(routedata, j) {
+                    // console.log("setupAnimationRoute:" + j, routedata);
                     // track-based routes should be preprocessed to minimie gps-noise 
                     if (routedata.trackmode) {
                         routedata = this.trackedDataCheck(routedata, timer);
@@ -1273,19 +1351,41 @@ along waypoint file loaded from url
                     // **************************
                     r = this.animationRouteCreate(routedata, timer);
                     // **************************
-                    if (r) this.routes.features.push(r);
+
+                    if (r) {
+                        // console.log("route: " + r.id, r);
+                        if (routedata.meta) {
+                            r.properties = Object.assign({}, r.properties, routedata.meta);
+                            routemetas[r.id] = routedata.meta;
+                        }
+                        this.routes.features.push(r);
+                    }
 
                 }.bind(this));
                 // return;
 
-                var lut_airlines = {
-                    property: 'color',
-                    type: 'categorical',
-                    stops: []
+                // B. Option: Prepare ddr-styling (line-color) 
+                var linecolor = "#007cbf";
+                if (Object.keys(routemetas).length) {
+                    var lut = {
+                        property: 'id',
+                        type: 'categorical',
+                        stops: []
+                    };
+                    Object.keys(routemetas).forEach(function(id) {
+                        // 
+                        var col = routemetas[id].color;
+                        if (!col) col = linecolor;
+                        lut.stops.push([id, col]);
+                    })
+                    linecolor = lut;
                 }
 
-
+                // C. FINALE: 
                 var routeLayer = {};
+
+                routeLayer['meta'] = routemetas;
+
                 routeLayer['data'] = this.routes;
 
                 routeLayer['layer'] = {
@@ -1296,10 +1396,10 @@ along waypoint file loaded from url
                         "line-width": 1,
                         "line-opacity": 0.5,
                         "line-dasharray": [4, 4],
-                        //"line-color": "#007cbf"
-                        "line-color": lut_airlines
+                        "line-color": linecolor
                     }
                 };
+                console.log(routeLayer);
                 return routeLayer;
             },
 
@@ -1597,7 +1697,10 @@ along waypoint file loaded from url
                         console.log("SYNCED Route-Layer", routes, mba.map.getLayer("routes"), mba.map.getSource("routes"));
                     }
 
-                    if (mba.map.getLayer("nodes")) mba.map.setFilter('nodes', syncFilter);
+                    if (mba.map.getLayer("nodes")) {
+                        mba.map.setFilter('nodes', syncFilter);
+                        mba.map.setFilter('bgnodes', syncFilter);
+                    }
 
                     if (mba.map.getLayer("traces")) {
                         //mba.map.setFilter('traces', syncFilter);

@@ -1,79 +1,80 @@
 {
-    "airline":{
-        "BA":{
-            "icon":"airport-15",
+    "airline": {
+        "BA": {
+            "name": "British Airways",
             "color": "blue"
         },
-        "AB":{
-            "icon":"airfield-15",
+        "AB": {
+            "name": "Air Berlin",
             "color": "red"
         },
-        "AF":{
-            "icon":"rocket-15",
+        "AF": {
+            "name": "Aeroflot",
             "color": "black"
         },
-        "LH":{
-            "icon":"heliport-15",
-            "color": "yellow"
+        "LH": {
+            "name": "Lufthansa",
+            "color": "green"
         }
     },
-    "plane":{
-        "A320":{
-            "icon":"airport-15",
-            "color": "blue"
+    "plane": {
+        "A320": {
+            "icon": "airport-15",
+            "seats": 150
         },
-        "A330":{
-            "icon":"airfield-15",
-            "color": "red"
+        "A330": {
+            "icon": "airfield-15",
+            "seats": 180
         },
-        "B737":{
-            "icon":"rocket-15",
-            "color": "black"
+        "B737": {
+            "icon": "rocket-15",
+            "seats": 140
         },
-        "B747":{
+        "B747": {
             "icon": "heliport-15",
-            "color": "yellow"
+            "seats": 300
         }
     },
-    "airport":{
-        "SXF":{
+    "airport": {
+        "SXF": {
             "coords": [13.5, 52.37],
             "name": "Schönefeld",
-            "color": "blue"
+            "size": "20"
         },
-        "GTW":{
-            "coords": [-0.73, 51.2],            
+        "GTW": {
+            "coords": [-0.73, 51.2],
             "name": "Gatwick",
-            "color": "red"
+            "size": "40"
         },
-        "SVO":{
+        "SVO": {
             "name": "Sheremetjevo",
             "coords": [37.5, 55.95],
-            "color": "black"
+            "size": "30"
         },
-        "LED":{
+        "LED": {
             "name": "Pulkovo",
             "coords": [30.25, 60],
-            "color": "yellow"
+            "size": "10"
         },
-        "KRN":{
+        "KRN": {
             "name": "Kiruna",
             "coords": [20.45, 67.85],
-            "color": "black"
+            "size": "2"
         },
-        "OSL":{
+        "OSL": {
             "name": "Oslo",
-            "coords": [10.75, 60.00],            
-            "color": "yellow"
+            "coords": [10.75, 60.00],
+            "size": "22"
         },
-        "ROM":{
+        "ROM": {
             "coords": [12.48, 41.86],
             "name": "Rome",
-            "color": "yellow"
+            "size": "37"
         },
-        "FRA":{
+        "FRA": {
             "coords": [8.5, 50.05],
-            "name": "Frankfurt/M"
+            "name": "Frankfurt/M",
+            "size": "60"
         }
     }
 }

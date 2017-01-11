@@ -2,15 +2,15 @@
         "flight": "AB-123",
         "plane": "A320",
         "waypoints": [{
-            "airport": "SXF",
+            "id": "SXF",
             "ab": "2016.12.11,14.00"
         }, {
-            "airport": "ROM",
+            "id": "ROM",
             "an": "2016.12.11,16.00",
             "ab": "2016.12.11,17.30",
             "speed": 600
         }, {
-            "airport": "GTW",
+            "id": "GTW",
             "an": "2016.12.11,19.30",
             "speed": 700
         }],

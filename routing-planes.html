@@ -81,7 +81,14 @@ Close with click anywhere on the card
             auto
             url="[[url]]"
             handle-as="json"
-            on-response="getrawdata">
+            on-response="getflightdata">
+        </iron-ajax>
+
+        <iron-ajax
+            auto
+            url="[[dburl]]"
+            handle-as="json"
+            on-response="getdbdata">
         </iron-ajax>
 
         <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
@@ -107,7 +114,6 @@ Close with click anywhere on the card
             <!--<paper-button class="info-link" on-click="_onBackClick">X</paper-button>-->
             <!--<paper-icon-button icon="close" on-click="_onBackClick"></paper-icon-button>-->
 
-
         <content>
         </content>    
 
@@ -117,30 +123,74 @@ Close with click anywhere on the card
         Polymer({
             is: 'routing-planes',
 
-            properties: {},
+            properties: {
+                flightdata: {
+                    type: Object
+                },
+                dburl: {
+                    type: String
+                },
+                dbdata: {
+                    type: Object
+                }
+            },
 
             behaviors: [
                 Polymer.BehaviorRouting,
             ],
 
             observers: [
-                'importRawRoutes(rawdata)',
+                'importRawRoutes(flightdata, dbdata)',
             ],
 
             attached: function() {
+                this.dburl = "wp-data/flights-db.json";
                 // console.log("target attached");
             },
 
+            getflightdata: function(ajaxresponse) {
+                if (!ajaxresponse || !ajaxresponse.detail) return;
+                this.flightdata = ajaxresponse.detail.response;
+                //if (this.flightdata) console.log("OK: flightdata", this.flightdata);
+            },
+
+            getdbdata: function(ajaxresponse) {
+                if (!ajaxresponse || !ajaxresponse.detail) return;
+                this.dbdata = ajaxresponse.detail.response;
+                //if (this.dbdata) console.log("OK: dbdata", this.dbdata);
+            },
+
             // import and transform before supply 
-            importRawRoutes: function(rawdata) {
-                var routedata = []; // = rawdata; 
+            importRawRoutes: function(rawdata, dbdata) {
+                if (!rawdata || !dbdata) return;
+                var routedata = [],
+                    airline, waypoint; // = rawdata; 
                 rawdata.forEach(function(route) {
-                    route.units = "metric"; // 1. 
-                    route.nodes = route.waypoints; // 2. only if-ac
+                    route.unitsystem = "metric";
+                    route.id = route.flight;
+                    // route.key = route.plane;
+                    airline = route.id.split("-")[0];
+
+                    // insert db-data
+                    route.meta = dbdata.airline[airline];
+                    route.item = dbdata.plane[route.plane];
+                    route.item.id = route.plane;
+
+                    route.nodes = [];
+                    route.waypoints.forEach(function(wp) {
+                        // console.log(wp, dbdata.airport[wp.id])
+                        wp.meta = dbdata.airport[wp.id];
+                        wp.meta.id = wp.id;
+                        wp.coords = wp.meta.coords;
+                        route.nodes.push(wp);
+                    })
+                    delete route.waypoints;
+                    delete route.flight;
+                    delete route.plane;
                     routedata.push(route);
                 });
+                // console.log("imported routeDATA:", routedata);
                 this.routedata = routedata;
-                console.log("importplanes: routeDATA", routedata);
             },
 
             // B. 
