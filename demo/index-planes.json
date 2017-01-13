@@ -3,6 +3,10 @@
         "url": "wp-data/wps-template.json"
     },
     {
+        "title": "Single",
+        "url": "wp-data/flights-single.json"
+    },
+    {
         "title": "Europe",
         "url": "wp-data/flights-europe.json"
     },

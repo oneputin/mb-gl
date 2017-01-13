@@ -1,7 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <script>
-    Polymer.BehaviorRoutesImpl = {
+    Polymer.ToolsBehaviorImpl = {
 
         properties: {},
 
@@ -60,11 +60,56 @@
 
             logtime = D + "." + M + sep + h + ":" + m;
             return logtime;
+        },
+
+        featureBounds: function(features, map) {
+
+            if (features.features) features = features.features; //console.log(data); // return
+            if (!features.length) return; //console.log(features); 
+            // console.log("1-bounddata(features)", features);
+
+            // Transform into list of coordinate-lists
+            var coordinates = [], segments, coords, pnt, latitude, longitude, bb = {};
+            
+            for (var i = 0; i < features.length; i++) {
+                t = features[i].geometry.type;
+                segments = features[i].geometry.coordinates;
+                if (t=="LineString") {
+                    coordinates = coordinates.concat(segments);
+                } else if (t=="MultiLineString") {
+                    for (var j = 0; j < segments.length; j++) {
+                        coordinates = coordinates.concat(segments[j]);
+                    }    
+                }
+            }
+            //console.log("2-coordinates",coordinates);
+
+            // Pass the first coordinates to `lngLatBounds` 
+            // & wrap each coordinate pair in `extend` to include them in the bounds result. 
+            var bounds = coordinates.reduce(function(bounds, coord) {
+                return bounds.extend(coord);
+            }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+            //console.log("3-totalbounds", bounds);
+
+            if (!map) return bounds;
+
+            map.fitBounds(bounds, {
+                padding: 20
+            });
+        },
+
+        getRandomColor: function() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++ ) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
         }
     };
 
     /** @polymerBehavior */
-    Polymer.BehaviorRoutes = [
-        Polymer.BehaviorRoutesImpl
+    Polymer.ToolsBehavior = [
+        Polymer.ToolsBehaviorImpl
     ];
 </script>

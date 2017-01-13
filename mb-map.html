@@ -175,13 +175,13 @@ the map-ctrls can be placed as map-overlay or anywhere else
             },
 
             zoomthemap: function(zoom) {
-                console.log("zoomthemap", zoom, this.map);
+                // console.log("zoomthemap", zoom, this.map);
                 if (this.map) this.map.setZoom(zoom);
                 else this.mapctrl.zoom = zoom;
             },
 
             centerthemap: function(cbox) {
-                console.log("centerthemap", cbox, this.map);
+                // console.log("centerthemap", cbox, this.map);
                 cbox = cbox.split(",");
                 if (this.map) {
                     cbox = new mapboxgl.LngLat(cbox[0], cbox[1]);

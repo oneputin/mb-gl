@@ -322,8 +322,11 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 if (!this.map || (typeof rawslidedata != "object") || !Object.keys(rawslidedata).length) return;
 
                 var slidedata;
-                if (rawslidedata.value) slidedata = rawslidedata.value; // 
-                else slidedata = rawslidedata;
+                if (rawslidedata.value) {
+                    slidedata = rawslidedata.value; // 
+                } else {
+                    slidedata = rawslidedata;
+                }
 
                 if (!slidedata.features || !slidedata.features.length) return;
 
@@ -499,6 +502,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     console.log("NO-SERVER-RESPONSE");
                     this.$.loadspinner.active = false;
                     this.map.setLayoutProperty(this.slidectrl.id, 'visibility', 'visible');
+               
                 } else {
                     // A. deactivate service-trigger
                     this.serviceflag = false;
@@ -512,6 +516,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             // utilities
             // u1: bounding box
             getBoundingBox: function(data) {
+                
                 if (data.features) data = data.features; //console.log(data); // return
                 if (!data.length) return; //console.log(data); 
 
@@ -522,8 +527,11 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     } else {
                         segments = [data[i].geometry];
                     }
+
                     for (var k = 0; k < segments.length; k++) {
+                        
                         coords = segments[k].coordinates[0];
+
                         if (!bb.xMin) {
                             pnt = coords[0];
                             bb = {
@@ -533,6 +541,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                                 "yMax": pnt[1]
                             };
                         }
+
                         for (var j = 0; j < coords.length; j++) {
                             longitude = coords[j][0];
                             latitude = coords[j][1];
@@ -543,12 +552,14 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                         }
                     }
                 }
+
                 var bb = [
                     [bb.xMin, bb.yMin],
                     [bb.xMax, bb.yMax]
                 ]; //console.log(bb);
                 return bb;
             },
+
             // u2: (geo)id-list of slide-features
             getSlideKeys: function(data) {
                 if (data.features) data = data.features; //console.log(data); // return
