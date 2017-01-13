@@ -69,6 +69,10 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
             <div>Active: [[scalestring]]</div>
             <paper-slider id="fpsctrl" value="{{fpsslidervalue}}" immediate-value="{{fpsslidervalue}}" on-immediate-value-change="fpsChangeHandler" on-value-change="fpsChangeHandler" min="1" max='[[fpsslidermax]]' step='1'></paper-slider>
 
+            <div>TraceLength: [[tracescale]]</div>
+            <paper-slider id="tracectrl" value="{{traceslidervalue}}" immediate-value="{{traceslidervalue}}" on-immediate-value-change="traceChangeHandler" on-value-change="traceChangeHandler" min="1" max='[[traceslidermax]]' step='1'></paper-slider>
+
+
 	    </div>
 
     </template>
@@ -121,9 +125,9 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                 /**
                  * max fps-slider-value, decides about slider-granularity 
                  */
-                fpsslidermax :{
+                fpsslidermax: {
                     type: Number,
-                    value:12
+                    value: 12
                 }
 
             },
@@ -165,7 +169,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                 this.maxscalestring = this._formatscale(timescale);
 
                 this.debounce('apply', function() {
-                    
+
                     this.maxscalestring = this._formatscale(timescale);
                     this.scalestring = this._formatscale(timescale * fps / this._fpsmax);
 
@@ -185,11 +189,18 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
             /**
              * Event-handler of throttle-slider 
              */
+            traceChangeHandler: function() {
+                if (!this.traceslidervalue) return;
+            },
+
+            /**
+             * Event-handler of throttle-slider 
+             */
             fpsChangeHandler: function() {
                 if (!this.fpsslidervalue) return;
                 // console.log("set fps for sliderval", this.fpsslidervalue);
                 var fps = Math.round(this._fpsmax * this.fpsslidervalue / this.fpsslidermax); // console.log("fps", fps)
-                
+
                 this.scalestring = this._formatscale(this._timescale * fps / this._fpsmax);
 
                 this._fps = fps;

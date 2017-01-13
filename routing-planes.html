@@ -164,7 +164,10 @@ Close with click anywhere on the card
             importRawRoutes: function(rawdata, dbdata) {
                 if (!rawdata || !dbdata) return;
                 var routedata = [],
-                    airlineKey, airline, plane, waypoint;
+                    airlineKey,
+                    airline,
+                    plane,
+                    waypoint;
 
                 var airlineNN = {
                         "name": "AirlineX",
@@ -176,14 +179,17 @@ Close with click anywhere on the card
                     }; // = rawdata; 
 
                 rawdata.forEach(function(route) {
+                    // 
                     route.unitsystem = "metric";
                     route.id = route.flight;
 
-                    // insert db-data
+                    // Activate db-data
+                    // - of airline
                     airlineKey = route.id.split("-")[0];
                     airline = dbdata.airline[airlineKey];
                     if (!airline) airline = airlineNN;
 
+                    // - of plane
                     plane = dbdata.plane[route.plane];
                     if (!plane) plane = planeNN;
                     route.item = plane;
@@ -199,12 +205,13 @@ Close with click anywhere on the card
                         wp.coords = wp.meta.coords;
                         route.nodes.push(wp);
                     })
-                    delete route.waypoints;
-                    delete route.flight;
-                    delete route.plane;
+
+                    //delete route.waypoints;
+                    //delete route.flight;
+                    //delete route.plane;
                     routedata.push(route);
                 });
-                // console.log("imported routeDATA:", routedata);
+                console.log("imported flight routes:", routedata);
                 this.routedata = routedata;
             },
 

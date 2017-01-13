@@ -15,7 +15,7 @@
     <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
     <link rel="import" href="../mb-map.html">
 
-    <link rel="import" href="../import-routes.html">
+    <link rel="import" href="../mb-tools-behavior.html">
 
     <link rel="import" href="../mb-info-lnglat.html">
     <link rel="import" href="../mb-info-drag.html">
@@ -84,10 +84,12 @@
 <body>
 
     <template is="dom-bind" id="app">
+        
         <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
         </iron-ajax>
-        <import-routes url="[[importurl]]" routedata="{{routedata}}">
-        </import-routes>
+
+        <!--<import-routes url="[[importurl]]" routedata="{{routedata}}">
+        </import-routes>-->
 
         <div class="container">
             <mb-map 

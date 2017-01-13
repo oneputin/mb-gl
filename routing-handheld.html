@@ -8,6 +8,7 @@
 <link rel="import" href="../paper-card/paper-card.html">
 
 <link rel="import" href="mb-tools-behavior.html">
+
 <link rel="import" href="routing-behavior.html">
 
 
@@ -95,7 +96,7 @@ To 'close'
             auto
             url="[[url]]"
             handle-as="json"
-            on-response="getrawdata">
+            on-response="gettrackdata">
         </iron-ajax>
 
         <iron-ajax
@@ -143,7 +144,17 @@ To 'close'
                 rawdbdata: {
                     type: Object,
                     value: []
-                }
+                },
+                trackdata: {
+                    type: Object,
+                    value: []
+                },
+
+                routedata: {
+                    type: Object,
+                    notify: true
+                },
+
             },
 
             behaviors: [
@@ -151,11 +162,17 @@ To 'close'
             ],
 
             observers: [
-                'importGps(rawdata, rawdbdata)'
+                'importGpsTracks(trackdata, rawdbdata)'
             ],
 
             attached: function() {
                 // console.log("target attached");
+            },
+
+            gettrackdata: function(ajaxresponse) {
+                if (!ajaxresponse || !ajaxresponse.detail) return;
+                this.trackdata = ajaxresponse.detail.response;
+                //if (this.trackdata) console.log("OK: trackdata", this.trackdata);
             },
 
             getrawdbdata: function(ajaxresponse) {
@@ -167,8 +184,9 @@ To 'close'
 
             // SPECIFIC import of gps-device data delivered in csv- or tabbed formats 
             // into datastructure of routing-API
-            importGps: function(rawdata, rawdbdata) {
-                if (!rawdata || !rawdbdata) return;
+            importGpsTracks: function(rawdata, rawdbdata) {
+                // console.log(rawdata, rawdbdata);
+                if (!rawdata || !rawdata.length) return;
 
                 console.log("Handheld raw data", {
                     "location": rawdata,
@@ -204,13 +222,16 @@ To 'close'
 
                 function stabw(array) {
                     var len = 0;
-                    var sum = array.reduce(function(pv, cv) { ++len; return pv + cv; }, 0);
+                    var sum = array.reduce(function(pv, cv) {
+                        ++len;
+                        return pv + cv;
+                    }, 0);
                     var mean = sum / len;
                     var result = 0;
                     for (var i = 0; i < len; i++)
                         result += Math.pow(array[i] - mean, 2);
-                    len = (len == 1) ? len : len - 1;			
-                    return Math.sqrt(result / len);	
+                    len = (len == 1) ? len : len - 1;
+                    return Math.sqrt(result / len);
                 }
 
 
@@ -228,7 +249,7 @@ To 'close'
                     } else {
                         tdate = traw;
                         tstandard = traw
-                    }   // console.log("handheldTime", traw, t, a, tunix)
+                    } // console.log("handheldTime", traw, t, a, tunix)
                     if (asdate) return tdate;
                     return tstandard;
                 }
@@ -236,25 +257,10 @@ To 'close'
                 var routes = {},
                     masterdata = {};
 
+                // Optional: Append track-masterData     
                 if (rawdbdata) {
                     // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
                     var route, master, id;
-                    // A. Restructure master-table into collection    
-                    rawdbdata.forEach(function(st, j) {
-                        //  
-                        id = st.id;
-                        id = id.replace("<br>", "/")
-
-                        master = masterdata[id];
-                        if (!master) {
-                            masterdata[id] = st;
-                        }
-                    }.bind(this));
-
-                    if (!this.connect) {
-                        this.masterdata = masterdata;
-                    }
-                    // console.log("masters", masterdata);
                 }
 
                 var coords, time, id, lat, route,
@@ -265,25 +271,28 @@ To 'close'
                 //     
                 var isVomue1 = (rawdata[0]["Header"] == "Trackpoint"),
                     isVomue2 = rawdata[0]["Pnt"]; // 
-                console.log("isVomue1=" + isVomue1, "isVomue2=" + isVomue2);
-                
+                // console.log("isVomue1=" + isVomue1, "isVomue2=" + isVomue2);
+
                 // A. Disassemble "multitrack" rawdata into "related" tracks 
                 //    assigning a unique track-ID
                 // Step1
-                var trackid = 1, t, dt, lastT=0, dts=[], dxs=[];
-                rawdata.forEach(function(tp, j) {  
+                var trackid = 1,
+                    t, dt, lastT = 0,
+                    dts = [],
+                    dxs = [];
+                rawdata.forEach(function(tp, j) {
 
                     if (isVomue1) {
                         dt = tp["Leg Time"].split(":");
                         dx = tp["Leg Length"].split(" ");
-                    } 
+                    }
                     if (isVomue2) {
                         dt = tp["dt"].split(":");
                         dx = tp["dx"].split(" ");
-                    } 
+                    }
 
-                    dt = 3600*parseInt(dt[0])+60*parseInt(dt[1])+parseInt(dt[2]);
-                    dx = (dx[1] == "km") ? parseInt(dx[0]) * 1000 : parseInt(dx) ;
+                    dt = 3600 * parseInt(dt[0]) + 60 * parseInt(dt[1]) + parseInt(dt[2]);
+                    dx = (dx[1] == "km") ? parseInt(dx[0]) * 1000 : parseInt(dx);
 
                     dts.push(dt);
                     dxs.push(dx)
@@ -291,23 +300,23 @@ To 'close'
 
                 var dt_std = Math.round(stabw(dts));
                 var dx_std = Math.round(stabw(dxs));
-                console.log("dt-standardabw [sec]:", dt_std);  
-                console.log("dx-standardabw [m]:", dx_std);  
-                
+                console.log("dt-standardabw [sec]:", dt_std);
+                console.log("dx-standardabw [m]:", dx_std);
+
                 // Step2
                 var trackid = 1;
-                rawdata.forEach(function(tp, j) {                        
+                rawdata.forEach(function(tp, j) {
                     if (isVomue1) {
                         dt = tp["Leg Time"].split(":");
                         dx = tp["Leg Length"].split(" ");
-                    } 
+                    }
                     if (isVomue2) {
                         dt = tp["dt"].split(":");
                         dx = tp["dx"].split(" ");
-                    } 
-                    dt = 3600*parseInt(dt[0])+60*parseInt(dt[1])+parseInt(dt[2]);
-                    dx = (dx[1] == "km") ? dx[0] * 1000 : dx ;
-           
+                    }
+                    dt = 3600 * parseInt(dt[0]) + 60 * parseInt(dt[1]) + parseInt(dt[2]);
+                    dx = (dx[1] == "km") ? dx[0] * 1000 : dx;
+
                     if ((dt > dt_std) || (dx > dx_std)) trackid = trackid + 1;
 
                     tp.id = trackid;
@@ -332,7 +341,7 @@ To 'close'
                             } else {
                                 tpx[k] = tp[k];
                             }
-                        } 
+                        }
 
                         if (isVomue2) {
                             if (k == "coords") {
@@ -345,10 +354,10 @@ To 'close'
                             } else {
                                 tpx[k] = tp[k];
                             }
-                        } 
+                        }
                     })
-                        
-                    if (!tpx.coords) { 
+
+                    if (!tpx.coords) {
                         console.log("record with unknown data format", tp);
                     } else {
                         // Distribute the trackpoints into "separable" tracks (if long breaks)  
@@ -370,7 +379,7 @@ To 'close'
                         route.push(tpx);
                     }
                 }.bind(this));
-                
+
                 console.log("rawroutes", routes);
 
                 // C. Join temporary masters- and routes-objects 
@@ -403,7 +412,7 @@ To 'close'
                         // *** Required ***  
                         route.trackmode = true;
                         routedata.push(route);
-                    } 
+                    }
 
                 }.bind(this));
 

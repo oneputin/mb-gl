@@ -17,8 +17,6 @@
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-routes.html">
 
-    <link rel="import" href="../import-routes.html">
-
     <link rel="import" href="../routing-planes.html">
 
     <link rel="import" href="../mb-info-lnglat.html">
@@ -95,9 +93,6 @@
         
         <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
         </iron-ajax>
-
-        <import-routes url="[[importurl]]" routedata="{{routedata}}">
-        </import-routes>
 
         <div class="container">
             <mb-map 
