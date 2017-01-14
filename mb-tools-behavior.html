@@ -34,6 +34,7 @@
         },
 
         // Create readable time period h:min
+        // from unixTime as [h]
         deltaT: function(t, fallback) {
             var h = Math.floor(t),
                 m = Math.round((t - h) * 60);
@@ -43,8 +44,11 @@
             return h || m ? h + m + "min" : fallback;
         },
 
+        /**
+         * 
+         */
         logTime: function(ms1970, sep) {
-            if (!sep) sep = ", ";
+            // if (!sep) sep = ", ";
             var logtime = new Date(ms1970);
             //  logtime = logtime.getDate() + "." + (logtime.getMonth() + 1) + ", " + logtime.getHours() + ":" + logtime.getMinutes();
             //  console.log(ms1970, logtime);
@@ -56,9 +60,12 @@
                 h = logtime.getHours(),
                 h = h < 10 ? "0" + h : h,
                 m = logtime.getMinutes(),
-                m = m < 10 ? "0" + m : m;
-
-            logtime = D + "." + M + sep + h + ":" + m;
+                m = m < 10 ? "0" + m : m,
+                logdate = D + "." + M,
+                logtime = h + ":" + m;
+            if (sep) {
+                logtime = logtime + sep + logdate;
+            }     
             return logtime;
         },
 

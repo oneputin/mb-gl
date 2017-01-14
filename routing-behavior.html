@@ -135,6 +135,71 @@
             this.rawdata = ajaxresponse.detail.response; // triggers 'setupTracking'
         },
 
+        // Zoom to bbox of all nodes in raw routedata (waypoints, trackpoints) 
+        trackNodesZoomToX: function(routedata, routeid) {
+            if (!routedata) routedata = this.routedata;
+
+            // Collect routenode-coordinates
+            var coordinates = [],
+                coords_datum = [],
+                neast = 0,
+                nwest = 0,
+                lmin, lmax, dl, bounds, center,
+                startmode = false;
+
+            // "NOT-Heuristic" zum Problem Datumsgrenze
+            // a.  
+            routedata.forEach(function(route, j) {
+                if (route.nodes) {
+                    route.nodes.forEach(function(wp, i) {
+                        var lng = wp.coords[0];
+                        nwest = lng < 0 ? nwest + 1 : nwest;
+                        neast = lng > 0 ? neast + 1 : neast;
+                        if (!lmin) {
+                            lmin = lng;
+                            lmax = lng;
+                        }
+                        lmin = lng < lmin ? lng : lmin;
+                        lmax = lng > lmax ? lng : lmax;
+                    })
+                }
+            });
+            if (!lmax && !lmin) return;
+
+            // b. 
+            dl = lmax - lmin;
+            // console.log("delta-lng=" + dl, "nwest=" + nwest, "neast=" + neast);
+            routedata.forEach(function(route, j) {
+                route.nodes.forEach(function(wp, i) {
+                    var lng = wp.coords[0];
+                    if (dl < 180) coordinates.push(wp.coords);
+                    else if ((lng < 0) && (nwest > neast)) coordinates.push(wp.coords);
+                    else if ((lng > 0) && (neast > nwest)) coordinates.push(wp.coords);
+                })
+            });
+
+            // Specialcase !!
+            if (startmode) { // workaround for coords around dateline
+                center = coordinates[0];
+            } else { // create bounds around all wp-coordinates
+                // startvalue 
+                bounds = new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]);
+                // collect all 
+                bounds = coordinates.reduce(function(bounds, coord) {
+                    return bounds.extend(coord);
+                }, bounds);
+
+                center = bounds.getCenter();
+            }
+            // console.log("center, wp-coordinates", center, coordinates);
+
+            if (bounds) {
+                map.fitBounds(bounds, {
+                    padding: 20
+                });
+            }
+        },
+
 
         // B. DISPLAY-INTERFACE 
 

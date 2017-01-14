@@ -206,9 +206,9 @@ Close with click anywhere on the card
                         route.nodes.push(wp);
                     })
 
-                    //delete route.waypoints;
-                    //delete route.flight;
-                    //delete route.plane;
+                    delete route.waypoints;
+                    delete route.flight;
+                    delete route.plane;
                     routedata.push(route);
                 });
                 console.log("imported flight routes:", routedata);
