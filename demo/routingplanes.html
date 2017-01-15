@@ -72,10 +72,16 @@
             position: absolute;
             background-color: var(--paper-light-green-500);
             opacity: 0.8;
-            top: 40px;
-            left: 30px;
         }
-        
+        paper-dropdown-menu.routesets {
+            left: 30px;
+            top: 40px;
+        }
+        paper-dropdown-menu.routes {
+            left: 300px;
+            top: 40px;
+        }
+
         mb-routes-ctrl-time {
             border-style: solid;
             border-width: 1px;
@@ -119,6 +125,7 @@
                     map="[[map]]" 
                     timer="{{timer}}" 
                     routedata=[[routedata]]  
+                    routeid=[[routeid]]  
                     trackctrl="{{trackctrl}}" 
                     trackmode="{{trackmode}}" 
                     trackdata="{{trackdata}}"
@@ -135,15 +142,29 @@
                     trackinfo="{{trackinfo}}">
                 </routing-planes>
 
-                <paper-dropdown-menu label="Flight sets">
+            <template is="dom-if" if="{{map}}">
+                <paper-dropdown-menu class="routesets"label="Flight sets">
                     <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
                         <template is="dom-repeat" items="{{wpdocs}}">
                             <paper-item url="{{item.url}}">
                                 {{item.title}}
                             </paper-item>
                         </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+            </template>
+
+            <template is="dom-if" if="{{routedata}}">
+                <paper-dropdown-menu class="routes" label="Flights">
+                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
+                        <template is="dom-repeat" items="{{routedata}}">
+                            <paper-item id="{{item.id}}">
+                                {{item.id}}
+                            </paper-item>
+                        </template>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+            </template>
 
     </mb-map>
     </div>
@@ -173,6 +194,12 @@
         scope.selectedurl = function(e) {
             this.importurl = e.detail.item.url;
         }
+
+        scope.selectrouteid = function(e) {
+            console.log("routeid=",e.detail.item.id)
+            scope.routeid = e.detail.item.id;
+        }
+
         scope.setupme = function(ajaxresponse) {
             this.wpdocs = ajaxresponse.detail.response;
             // console.log(this.wpdocs, ajaxresponse);
