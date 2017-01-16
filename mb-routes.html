@@ -1011,10 +1011,10 @@ along waypoint file loaded from url
 
                     if (legTarget.ab && (legTarget.ab != legTarget.an)) {
                         
-                        let stoptime = this.deltaT(legTarget.dep - legTarget.arv, "");
-                        let cntdwn = this.deltaT(legTarget.dep - mapTime, ":");
-                        
+                        let stoptime = this.deltaT(legTarget.dep - legTarget.arv, "");                        
                         trackObj.properties.arrived = "Stopover: " + stoptime;
+                        
+                        let cntdwn = this.deltaT(legTarget.dep - mapTime, ":");
                         trackObj.properties.ttt = cntdwn; 
 
                     } else {
