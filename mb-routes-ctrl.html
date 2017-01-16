@@ -1,6 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-slider/paper-slider.html">
+
 <link rel="import" href="../paper-material/paper-material.html">
 
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
@@ -14,7 +15,7 @@
 ctrl elements controling animation behavior of track-objects on the map  
 some ctrls (back,forward...) and "slider" are "redundant and should be used exclusively 
 
-@demo demo/routemap.html 
+@demo demo/x-key-aware.html 
 -->
 
 <dom-module id="mb-routes-ctrl">
@@ -58,13 +59,15 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             }
 
     	</style>
-	
-		<div class="ctrlbox"> 
+
+		<div id="target" class="ctrlbox"> 
             
             <!--<paper-icon-button id="replay" icon="{{_icon1}}" title="restart" class="blue"></paper-icon-button>-->
             <!-- group of ctrls -->
             <paper-icon-button id="slowdown" icon="{{_icon_remove}}" title="slowdown" class="trans"></paper-icon-button>
+            
             <paper-icon-button id="toggle" icon="{{_icon2}}" title="startstop" class="blue"></paper-icon-button>
+            
             <paper-icon-button id="speedup" icon="{{_icon_add}}" title="speedup" class="trans"></paper-icon-button>
             
             <paper-slider id="trace" value="{{sliderval}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler"></paper-slider>
@@ -131,6 +134,16 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     value: "ctrl:remove-circle-outline"
                 },
 
+                target: {
+                    type: Object,
+                    value: function() {
+                        // var target = this.$.parent; // document.body;
+                        var target = document.body;
+                        return target;
+                    },
+                    observer: '_checktarget'
+                }
+
             },
 
             behaviors: [
@@ -142,6 +155,10 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 //'change': 'changeHandler'
             },
 
+            _checktarget: function(t) {
+                console.log("observed target", t);
+            },
+
             observers: [
                 'controlupdate(trackctrl)',
                 'sliderinit(timer.stop)', // , timer.stop)',
@@ -150,7 +167,21 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             ready: function() {
                 this.setupAnimationCtrls();
+                // console.log("ready-target:", this.target);
+                // this.target = Polymer.dom(parent); // this.$.parent;
+                // this.target = this.$.toggle; // target;
+                // this.target = this.$$("div.ctrlbox");
             },
+
+            toggleCtrl: function() {
+                if (this.trackctrl) {
+                    this.trackctrl = false;
+                } else {
+                    this.trackctrl = true;
+                }
+                console.log("this.trackctrl", this.trackctrl)
+            },
+
 
             /**
              * Sync button-icons 
@@ -232,6 +263,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 this.trackctrl = slidertime; // Export-property 
             },
 
+
             /**
              * Setup the Ctrl-actions (start/stop, restart, time-slider) 
              *
@@ -258,12 +290,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 if (ctrl2) {
                     // Start/Stop-Button-event
                     ctrl2.addEventListener('click', function() {
-                        // console.log("clicked at:" + this.trackctrl, ctrl2.childNodes);
-                        if (this.trackctrl) {
-                            this.trackctrl = false;
-                        } else {
-                            this.trackctrl = true;
-                        }
+                        this.toggleCtrl();
                     }.bind(this));
                 }
 
@@ -279,6 +306,29 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                         this.set("timer.ctrl", "none");
                     }.bind(this));
                 }
+
+                document.body.addEventListener('keydown', function(e) {
+                    if (e.which === 32) { // left
+                        console.log("space")
+                    }
+                    if (e.which === 37) { // left
+                        console.log("left")
+                    }
+                    if (e.which === 39) { // right
+                        console.log("right")
+                    }
+                    if (e.which === 38) { // faster
+                        console.log("faster")
+                        e.preventDefault();
+                    }
+                    if (e.which === 40) { // slower
+                        console.log("slower")
+                        e.preventDefault();
+                    }
+                }, true);
+
+
+
             }
 
         });

@@ -45,6 +45,80 @@
         },
 
         /**
+         * formats lonlat into [180W - 180E] if requested from "extended" mapview 
+         */
+        formatlonlat: function(lnglat, format, zoom) {
+            if (!lnglat) return "";
+            if (!zoom) zoom = 5;
+            // console.log("apply formatlonlat on:", lnglat, zoom);
+
+            var prec = zoom > 10 ? 1 : 0;
+            var lon, lat;
+            var trafo = format == "dms" ? this.ddtodms : this.ddtodm; // ddtodms;
+
+            if (typeof(lnglat) == "string") {
+                lon = lnglat.split(",")[0];
+                lat = lnglat.split(",")[1]
+            } else {
+                lon = lnglat.lng;
+                lat = lnglat.lat;
+            }
+
+            var lonunit = ((lon < 0) && (lon > -180)) || (lon > 180) ? "W" : "E",
+                latunit = lat < 0 ? "S" : "N";
+
+            var lonx = trafo(lon, "lon"),
+                latx = trafo(lat, "lat");
+            // console.log("lon,lat",lon,lat,"lonx,latx",lonx,latx)
+
+            return lonx + lonunit + "  " + latx + latunit;
+        },
+
+        /**
+         *  transform digitaldegree to dms
+         */
+        ddtodms: function(dd, prec) {
+            if (!prec) prec = 0;
+            dd = parseFloat(dd);
+            if (dd < 0) dd = 0 - dd;
+            let d = Math.floor(dd), // console.log("dd,d=", dd, d)
+                mm = (dd - d) * 60, // [minutes]
+                m = Math.floor(mm), // [minutes]
+                ss = ((mm - m) * 60).toFixed(prec);
+            if (ss == "60") {
+                m = m + 1;
+                ss = "00";
+            }
+            return d + "°" + m + "'" + ss + '"';
+
+        },
+
+        /**
+         *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
+         *  "maritime formatting"  
+         */
+        ddtodm: function(dd, lonflag, prec) {
+            if (!prec) prec = 3;
+            dd = parseFloat(dd);
+
+            // lon only
+            if (dd > 180) dd = 360 - dd;
+            if (dd < -180) dd = 360 + dd;
+            // lon and lat
+            if (dd < 0) dd = 0 - dd;
+
+            let d = Math.floor(dd), // console.log("dd,d=", dd, d)
+                mm = (dd - d) * 60; // [minutes]
+            m = mm.toFixed(3);
+
+            if (d < 10) d = "0" + d;
+            if (d < 100 && lonflag) d = "0" + d
+            if (mm < 10) m = "0" + m;
+
+            return d + "°" + m;
+        },
+
+        /**
          * 
          */
         logTime: function(ms1970, sep) {
@@ -57,20 +131,21 @@
 
                 M = logtime.getMonth() + 1,
                 M = M < 10 ? "0" + M : M,
-                
+
                 h = logtime.getHours(),
                 h = h < 10 ? "0" + h : h,
-                
+
                 m = logtime.getMinutes(),
-                m = m < 10 ? "0" + m : m; 
+                m = m < 10 ? "0" + m : m;
 
             var logdate = D + "." + M;
             logtime = h + ":" + m;
             if (sep) {
                 logtime = logtime + sep + logdate;
-            }     
+            }
             return logtime;
         },
+
 
         featureBounds: function(features, map) {
 
@@ -79,27 +154,34 @@
             // console.log("1-bounddata(features)", features);
 
             // Transform into list of coordinate-lists
-            var coordinates = [], segments, coords, pnt, latitude, longitude, bb = {};
-            
+            var coordinates = [],
+                segments, coords, pnt, latitude, longitude, bb = {};
+
             for (var i = 0; i < features.length; i++) {
                 t = features[i].geometry.type;
                 segments = features[i].geometry.coordinates;
-                if (t=="LineString") {
+                if (t == "LineString") {
                     coordinates = coordinates.concat(segments);
-                } else if (t=="MultiLineString") {
+                } else if (t == "MultiLineString") {
                     for (var j = 0; j < segments.length; j++) {
                         coordinates = coordinates.concat(segments[j]);
-                    }    
+                    }
                 }
-            }
-            //console.log("2-coordinates",coordinates);
+            };
+
+            // Correctur datumsgrenze
+            coordinates.forEach(function(coord) {
+                if (coord[0] > 180) coord[0] = coord[0] - 360;
+                if (coord[0] < -180) coord[0] = coord[0] + 360;
+            });
+            // console.log("2-coordinates", coordinates);
 
             // Pass the first coordinates to `lngLatBounds` 
             // & wrap each coordinate pair in `extend` to include them in the bounds result. 
             var bounds = coordinates.reduce(function(bounds, coord) {
                 return bounds.extend(coord);
             }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
-            //console.log("3-totalbounds", bounds);
+            //console.log("4-totalbounds", bounds);
 
             if (!map) return bounds;
 
@@ -108,10 +190,11 @@
             });
         },
 
+
         getRandomColor: function() {
             var letters = '0123456789ABCDEF';
             var color = '#';
-            for (var i = 0; i < 6; i++ ) {
+            for (var i = 0; i < 6; i++) {
                 color += letters[Math.floor(Math.random() * 16)];
             }
             return color;

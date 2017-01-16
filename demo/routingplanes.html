@@ -73,16 +73,30 @@
             background-color: var(--paper-light-green-500);
             opacity: 0.8;
         }
+        
         paper-dropdown-menu.routesets {
             left: 30px;
             top: 40px;
         }
+        
         paper-dropdown-menu.routes {
             left: 300px;
             top: 40px;
         }
-
+        
+        routing-planes {
+            border-style: solid;
+            border-width: 1px;
+            padding: 10px;
+            position: absolute;
+            background-color: var(--paper-light-green-500);
+            opacity: 0.8;
+            left: 300px;
+            top: 40px;
+        }
+        
         mb-routes-ctrl-time {
+            display: none;
             border-style: solid;
             border-width: 1px;
             padding: 10px;
@@ -129,42 +143,44 @@
                     trackctrl="{{trackctrl}}" 
                     trackmode="{{trackmode}}" 
                     trackdata="{{trackdata}}"
-                    trackinfo="[[trackinfo]]">
+                    trackinfo="[[trackinfo]]"
+                    on-routedata-changed="logdata">
                 </mb-routes>
                 
                 <mb-routes-ctrl-time timer="{{timer}}">
                 </mb-routes-ctrl-time>
 
                 <routing-planes 
+                    map="[[map]]" 
                     url="[[importurl]]" 
                     routedata="{{routedata}}"
                     trackdata="{{trackdata}}"
                     trackinfo="{{trackinfo}}">
                 </routing-planes>
 
-            <template is="dom-if" if="{{map}}">
-                <paper-dropdown-menu class="routesets"label="Flight sets">
-                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-                        <template is="dom-repeat" items="{{wpdocs}}">
-                            <paper-item url="{{item.url}}">
-                                {{item.title}}
-                            </paper-item>
-                        </template>
-                    </paper-listbox>
-                </paper-dropdown-menu>
-            </template>
+                <template is="dom-if" if="{{routesets}}">
+                    <paper-dropdown-menu class="routesets" label="Flight sets">
+                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+                            <template is="dom-repeat" items="{{routesets}}">
+                                <paper-item url="{{item.url}}">
+                                    {{item.title}}
+                                </paper-item>
+                            </template>
+    </paper-listbox>
+    </paper-dropdown-menu>
+    </template>
 
-            <template is="dom-if" if="{{routedata}}">
-                <paper-dropdown-menu class="routes" label="Flights">
-                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
-                        <template is="dom-repeat" items="{{routedata}}">
-                            <paper-item id="{{item.id}}">
-                                {{item.id}}
-                            </paper-item>
-                        </template>
-                    </paper-listbox>
-                </paper-dropdown-menu>
-            </template>
+    <template is="dom-if" if="{{selectflag}}">
+                    <paper-dropdown-menu class="routes" label="Flights">
+                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
+                            <template is="dom-repeat" items="{{routedata}}">
+                                <paper-item id="{{item.id}}">
+                                    {{item.id}}
+                                </paper-item>
+                            </template>
+    </paper-listbox>
+    </paper-dropdown-menu>
+    </template>
 
     </mb-map>
     </div>
@@ -172,9 +188,11 @@
 
     <script>
         var scope = document.querySelector('#app');
+
         scope.setupurl = "index-planes.json";
         scope.importurl = "";
 
+        // setup mapbox-map
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
         scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm';
 
@@ -182,28 +200,54 @@
         scope.lnglat = "13.7,52.4";
         scope.zoom = 1;
 
+        // setup animation
+        // scope.timer = {}; // default 
         scope.timer = {
             "timescalemax": 1440,
             "timescalestart": 1440,
             "fpsstart": 30
         };
-
         scope.mapctrl = {};
-        // scope.timer = {}; // default 
+
+        // setup GUI 
+        scope.setupme = function(ajaxresponse) {
+            var routesets = ajaxresponse.detail.response,
+                importurl = routesets[0].url;
+            // console.log("routesets", routesets, importurl);
+            if (routesets.length > 1) {
+                this.routesets = routesets;
+                routesets.every(function(rs) {
+                    if (rs.start) {
+                        importurl = rs.url;
+                        return false;
+                    }
+                })
+            }
+            this.importurl = importurl;
+        }
 
         scope.selectedurl = function(e) {
             this.importurl = e.detail.item.url;
         }
 
         scope.selectrouteid = function(e) {
-            console.log("routeid=",e.detail.item.id)
+            console.log("routeid=", e.detail.item.id)
             scope.routeid = e.detail.item.id;
         }
 
-        scope.setupme = function(ajaxresponse) {
-            this.wpdocs = ajaxresponse.detail.response;
-            // console.log(this.wpdocs, ajaxresponse);
-        }
+        scope.addEventListener('dom-change', function() {
+            // auto-binding template is ready.
+            var el = document.querySelector('routing-planes');
+            el.addEventListener('imported', function(e) {
+                // console.log("imported", e.detail);
+                var routedata = e.detail.routedata;
+                if (routedata.length > 1) {
+                    scope.selectflag = true;
+                } else {
+                    scope.selectflag = false;
+                }
+            });
+        });
     </script>
 </body>
 

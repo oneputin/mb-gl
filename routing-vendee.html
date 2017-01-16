@@ -170,8 +170,8 @@ To 'close'
                 if (!rawdata || !rawdbdata) return;
 
                 var icontemplate;
-                 // icontemplate = "circle-stroked-11"; // this.icon;
-                 // icontemplate = "boat-blue"; // this.icon;
+                // icontemplate = "circle-stroked-11"; // this.icon;
+                // icontemplate = "boat-blue"; // this.icon;
 
                 /**
                  *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
@@ -210,7 +210,7 @@ To 'close'
                 // console.log("masters", masterdata);
 
                 // B. GROUP all position-records by id 
-                //    into objects for every boat
+                //    into objects for every resolved track
                 rawdata.forEach(function(wp, j) {
                     //  
                     var wpx = {},
@@ -219,8 +219,10 @@ To 'close'
                     wpx.ab = pass;
                     wpx.an = pass;
 
+                    // Apply specific 
                     lat = dmtodd(wp.lat);
                     lng = dmtodd(wp.lng);
+
                     wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
                     wpx.icon = this.wpicon;
 

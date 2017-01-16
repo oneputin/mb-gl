@@ -91,6 +91,7 @@ Close with click anywhere on the card
             on-response="getdbdata">
         </iron-ajax>
 
+
         <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
 
             <div class="info-content">
@@ -211,7 +212,13 @@ Close with click anywhere on the card
                     delete route.plane;
                     routedata.push(route);
                 });
-                console.log("imported flight routes:", routedata);
+                // console.log("flight routes preprocessed:", routedata);
+
+                this.fire("imported", {
+                    "routedata": routedata,
+                    "ok": "ok"
+                });
+
                 this.routedata = routedata;
             },
 

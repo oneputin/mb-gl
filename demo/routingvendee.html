@@ -82,6 +82,7 @@ Demo to view ship-data animation
         }
         
         mb-routes-ctrl-time {
+            display: none;
             border-style: solid;
             border-width: 1px;
             padding: 10px;
@@ -148,6 +149,7 @@ Demo to view ship-data animation
                     map="[[map]]" 
                     timer="{{tracktimer}}"
                     routedata="[[routedata]]" 
+                    routeid="[[routeid]]" 
                     tracksymbol="[[tracksymbol]]" 
                     trackctrl="{{trackctrl}}" 
                     trackmode="{{trackmode}}" 
@@ -162,7 +164,7 @@ Demo to view ship-data animation
                 </mb-routes-ctrl-time>
 
                 <!-- Right -->
-                <paper-dropdown-menu label="Position sets">
+                <paper-dropdown-menu class="routesets" label="Position sets">
                     <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
                         <template is="dom-repeat" items="{{routedocs}}">
                             <paper-item url="{{item.url}}">
@@ -171,6 +173,19 @@ Demo to view ship-data animation
                         </template>
     </paper-listbox>
     </paper-dropdown-menu>
+
+    <template is="dom-if" if="{{routedata}}">
+        <paper-dropdown-menu class="routes" label="Tracks">
+            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
+                <template is="dom-repeat" items="{{routedata}}">
+                                <paper-item id="{{item.id}}">
+                                    {{item.id}}
+                                </paper-item>
+                            </template>
+    </paper-listbox>
+    </paper-dropdown-menu>
+    </template>
+
     </div>
 
     </div>
@@ -208,12 +223,20 @@ Demo to view ship-data animation
          * Put selected url from menu-selection into import-element
          */
         scope.selectedurl = function(e) {
+            console.log(e.detail.item.url);
             this.routedataurl = e.detail.item.url;
+        }
+
+        scope.selectrouteid = function(e) {
+            console.log("e-routeid=", e.detail)
+            var routeid = e.detail.item.id;
+            if (routeid) scope.routeid = routeid;
         }
 
         // eval the response of content-list 
         scope.setupme = function(ajaxresponse) {
             this.routedocs = ajaxresponse.detail.response;
+            console.log(this.routedocs);
         }
     </script>
 </body>

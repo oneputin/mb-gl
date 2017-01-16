@@ -82,6 +82,7 @@ Demo to view ship-data animation
         }
         
         mb-routes-ctrl-time {
+            display: none;
             border-style: solid;
             border-width: 1px;
             padding: 10px;
@@ -145,6 +146,7 @@ Demo to view ship-data animation
                     map="[[map]]" 
                     timer="{{timer}}"
                     routedata=[[routedata]] 
+                    routeid=[[routeid]] 
                     trackctrl="{{trackctrl}}" 
                     trackmode="{{trackmode}}" 
                     trackdata="{{trackdata}}"
@@ -158,16 +160,27 @@ Demo to view ship-data animation
                     timer="{{timer}}">
                 </mb-routes-ctrl-time>
 
-                <!-- Right -->
-                <paper-dropdown-menu label="Tracksets">
-                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-                        <template is="dom-repeat" items="{{wpdocs}}">
-                            <paper-item url="{{item.url}}">
-                                {{item.title}}
-                            </paper-item>
-                        </template>
+    <paper-dropdown-menu label="Tracksets">
+        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+            <template is="dom-repeat" items="{{wpdocs}}">
+                <paper-item url="{{item.url}}">
+                    {{item.title}}
+                </paper-item>
+            </template>
     </paper-listbox>
     </paper-dropdown-menu>
+
+    <paper-dropdown-menu class="routes" label="Tracks">
+        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
+            <template is="dom-repeat" items="{{routedata}}">
+                            <paper-item id="{{item.id}}">
+                                {{item.id}}
+                            </paper-item>
+                        </template>
+        </paper-listbox>
+    </paper-dropdown-menu>
+
+
     </div>
 
     </div>
@@ -197,6 +210,12 @@ Demo to view ship-data animation
 
         scope.mapctrl = {};
         scope.cardctrl = {};
+
+
+        scope.selectrouteid = function(e) {
+            console.log("routeid=", e.detail.item.id)
+            scope.routeid = e.detail.item.id;
+        }
 
         /**
          * Put selected url from menu-selection into import-element

@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="mb-tools-behavior.html">
 
 <!--
 `mb-info-lnglat`
@@ -65,83 +66,14 @@ Info-area for short msges
 
             },
 
+            behaviors: [
+                Polymer.ToolsBehavior,
+            ],
+
+
             attached: function() {
                 // console.log("target attached");
-            },
-
-            /**
-             * formats lonlat into [180W - 180E] if requested from "extended" mapview 
-             */
-            formatlonlat: function(lnglat, zoom) {
-                if (!lnglat) return "";
-                if (!zoom) zoom = 5;
-                // console.log("apply formatlonlat on:", lnglat, zoom);
-
-                var prec = zoom > 10 ? 1 : 0;
-                var lon, lat;
-                var trafo = this.ddtodm; // ddtodms;
-
-                if (typeof(lnglat) == "string") {
-                    lon = lnglat.split(",")[0];
-                    lat = lnglat.split(",")[1]
-                } else {
-                    lon = lnglat.lng;
-                    lat = lnglat.lat;
-                }
-
-                var lonunit = ((lon < 0) && (lon > -180)) || (lon > 180) ? "W" : "E",
-                    latunit = lat < 0 ? "S" : "N";
-
-                var lonx = trafo(lon, "lon"),
-                    latx  = trafo(lat, "lat");
-                // console.log("lon,lat",lon,lat,"lonx,latx",lonx,latx)
-                
-                return lonx + lonunit + "  " + latx + latunit;
-            },
-
-            /**
-             *  transform digitaldegree to dms
-             */
-            ddtodms: function(dd, prec) {
-                if (!prec) prec = 0;
-                dd = parseFloat(dd);
-                if (dd < 0) dd = 0 - dd;
-                let d = Math.floor(dd), // console.log("dd,d=", dd, d)
-                    mm = (dd - d) * 60, // [minutes]
-                    m = Math.floor(mm), // [minutes]
-                    ss = ((mm - m) * 60).toFixed(prec);
-                if (ss == "60") {
-                    m = m + 1;
-                    ss = "00";
-                }
-                return d + "°" + m + "'" + ss + '"';
-
-            },
-
-            /**
-             *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
-             *  "maritime formatting"  
-             */
-            ddtodm: function(dd, lonflag, prec) {
-                if (!prec) prec = 3;
-                dd = parseFloat(dd);
-
-                // lon only
-                if (dd > 180) dd = 360 - dd;
-                if (dd < -180) dd = 360 + dd;
-                // lon and lat
-                if (dd < 0) dd = 0 - dd;
-
-                let d = Math.floor(dd), // console.log("dd,d=", dd, d)
-                    mm = (dd - d) * 60; // [minutes]
-                m = mm.toFixed(3);
-
-                if (d < 10) d = "0" + d;
-                if (d < 100 && lonflag) d = "0" + d
-                if (mm < 10) m = "0" + m;
-
-                return d + "°" + m;
-            },
+            }
 
 
         });

@@ -196,25 +196,30 @@ To 'close'
                 var icontemplate = "circle-stroked-15"; // "pitch-15"; // this.icon;
 
                 /**
-                 *  transform from raw handheld-data (exported as tabbed text or csv)
+                 *  transform from handheld-data (exported as tabbed text or csv)
                  */
-                function handheldCoords(cc, format, prec) {
-                    if (!format) format = "dd";
+                function handheldCoords(cc, targetformat, prec) {
+                    if (!targetformat) targetformat = "dd";
                     if (!prec) prec = 6;
+                    // Split into 4 parts : 
+                    // latDeg, latMin, lngDeg, lngMin
                     var coords = cc.split(" ");
 
                     lat = coords[0];
                     lat = lat[0] == "N" ? "+" + lat.slice(1) : "-" + lat.slice(1);
+
                     lng = coords[2];
                     lng = lng[0] == "E" ? "+" + lng.slice(1) : "-" + lng.slice(1);
 
-                    if (format == "dd") {
-                        lat = parseInt(lat) + parseFloat(coords[1]) / 60;
-                        lng = parseInt(lng) + parseFloat(coords[3]) / 60;
-                    } else if (format == "dm") {
-                        lng = parseInt(lng) * 60 + parseFloat(coords[3]);
-                        lat = parseInt(lat) * 60 + parseFloat(coords[1]);
+                    if (targetformat == "dd") {
+                        lat = parseInt(lat) + (parseFloat(coords[1]) / 60);
+                        lng = parseInt(lng) + (parseFloat(coords[3]) / 60);
+
+                    } else if (targetformat == "dm") {
+                        lat = (parseInt(lat) * 60) + parseFloat(coords[1]);
+                        lng = (parseInt(lng) * 60) + parseFloat(coords[3]);
                     }
+
                     coords = [lng, lat]; // console.log("dd-array", dd);
                     return coords;
                 }
@@ -332,12 +337,16 @@ To 'close'
                     Object.keys(tp).forEach(function(k) {
                         if (isVomue1) {
                             if (k == "Position") {
+
                                 coords = handheldCoords(tp[k]);
                                 tpx["coords"] = coords;
+
                             } else if (k == "Time") {
+
                                 time = handheldTime(tp[k]);
                                 tpx["ab"] = time;
                                 tpx["an"] = time; // 
+
                             } else {
                                 tpx[k] = tp[k];
                             }
