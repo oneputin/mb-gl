@@ -158,7 +158,7 @@ Close with click anywhere on the card
             getdbdata: function(ajaxresponse) {
                 if (!ajaxresponse || !ajaxresponse.detail) return;
                 this.dbdata = ajaxresponse.detail.response;
-                //if (this.dbdata) console.log("OK: dbdata", this.dbdata);
+                if (this.dbdata) console.log("OK: dbdata", this.dbdata);
             },
 
             // import and transform before supply 
@@ -204,8 +204,11 @@ Close with click anywhere on the card
                         wp.meta = dbdata.airport[wp.id];
                         wp.meta.id = wp.id;
                         wp.coords = wp.meta.coords;
+                        wp.title = wp.meta.name;
                         route.nodes.push(wp);
                     })
+
+                    route.title = route.id+":"+route.nodes[route.nodes.length-1].title
 
                     delete route.waypoints;
                     delete route.flight;

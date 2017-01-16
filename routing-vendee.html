@@ -248,10 +248,10 @@ To 'close'
                     });
 
                     /*************************
-                     * Resolve original id 
-                     * into better readable id and short-key
+                     * Resolve original id into better readable one 
+                     * and a "good title"
                      */
-                    var key = id.split(">")[1];
+                    var title = id.split(">")[1];
 
                     id = id.replace("<br>", "/");
                     // *************************
@@ -260,8 +260,8 @@ To 'close'
 
                     var route = {
                         "id": id,
-                        "key": key,
-                        "icon": icon,
+                        "title": title,
+                        // "icon": icon,
                         "unitsystem": "nautic",
                         "nodes": trackpoints
                     };

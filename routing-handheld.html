@@ -182,7 +182,8 @@ To 'close'
                 this.rawdbdata = rawdata; // triggers 'setupTracking'
             },
 
-            // SPECIFIC import of gps-device data delivered in csv- or tabbed formats 
+            // SPECIFIC import of gps-device data 
+            // delivered in csv- or tabbed formats 
             // into datastructure of routing-API
             importGpsTracks: function(rawdata, rawdbdata) {
                 // console.log(rawdata, rawdbdata);
@@ -335,6 +336,7 @@ To 'close'
                     var tpx = {};
 
                     Object.keys(tp).forEach(function(k) {
+
                         if (isVomue1) {
                             if (k == "Position") {
 
@@ -404,12 +406,11 @@ To 'close'
                     });
 
                     if (Object.keys(trackpoints).length > 5) {
-                        var key = id,
-                            icon = icontemplate;
+                        var title = trackpoints[0].ab;
                         var route = {
                             "id": id,
-                            "key": key,
-                            "icon": icon,
+                            "title": title,
+                            // "icon": icon,
                             "unitsystem": "metric",
                             "nodes": trackpoints
                         };
@@ -420,6 +421,7 @@ To 'close'
                         }
                         // *** Required ***  
                         route.trackmode = true;
+
                         routedata.push(route);
                     }
 
