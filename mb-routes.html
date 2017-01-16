@@ -367,8 +367,12 @@ along waypoint file loaded from url
             },
 
             zoomToRoute : function(routeid){
-                console.log("zooming to route", routeid);
-                this.trackRoutesZoomTo(null, routeid, "ZoomTo")
+                console.log("zooming to route", routeid, this.timer);
+
+                this.trackRoutesZoomTo(null, routeid, "ZoomTo");
+
+                var mapTime = this.timer.routes[routeid].start;
+                this.trackStepAction(null, mapTime);
             },
 
             // DEBUG-utilities
@@ -556,6 +560,7 @@ along waypoint file loaded from url
                 var ctrlflag = "STOP";
 
                 if (trackctrl) {
+
                     console.log("trackCtrlActn:", typeof trackctrl, trackctrl);
 
                     if (trackctrl == "reset") {
@@ -975,7 +980,7 @@ along waypoint file loaded from url
                     trackObj.properties.tta = tta;
                     trackObj.properties.bearing = Math.round(bearing); // °
                     trackObj.properties.arrived = null;
-                    trackObj.properties.cntdwn = null;
+                    trackObj.properties.ttt = null;
 
                     if (routeunitsystem == "nautic") {
 
@@ -1010,7 +1015,7 @@ along waypoint file loaded from url
                         let cntdwn = this.deltaT(legTarget.dep - mapTime, ":");
                         
                         trackObj.properties.arrived = "Stopover: " + stoptime;
-                        trackObj.properties.cntdwn = cntdwn; 
+                        trackObj.properties.ttt = cntdwn; 
 
                     } else {
 
