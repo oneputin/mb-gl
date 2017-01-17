@@ -395,13 +395,15 @@ along waypoint file loaded from url
 
             },
 
+            // 
             zoomToRoute: function(routeid) {
-                console.log("zooming to route", routeid, this.timer);
+                var mapTime = this.timer.routes[routeid].start;                
+                console.log("zooming to route", routeid, "at " + this.logTime(mapTime,"h",":"));
 
+                // SPATIAL Zoom
                 this.trackRoutesZoomTo(null, routeid, "ZoomTo");
-
-                var mapTime = this.timer.routes[routeid].start;
-                // this.trackStepAction(null, mapTime);
+                // TEMPORAL Location
+                this.trackStepAction(null, mapTime);
             },
 
             // DEBUG-utilities
@@ -740,13 +742,13 @@ along waypoint file loaded from url
 
                 if (!located) {
 
-                    var t_msg = mba.logTime(mapTime * 3600 * 1000),
+                    var t_msg = mba.logTime(mapTime, "h"),
                         s = mba.getNextStart(mapTime);
 
                     if (s) {
                         ds = s - mapTime,
                             ds_msg = mba.deltaT(ds, "");
-                        msg = "NextStart at: " + mba.logTime(s * 3600 * 1000) + "<hr>CntDwn: " + ds_msg;
+                        msg = "NextStart at: " + mba.logTime(s, "h") + "<hr>CntDwn: " + ds_msg;
                     } else {
                         msg = "IDLE: " + t_msg;
                     }
@@ -973,7 +975,7 @@ along waypoint file loaded from url
                 var routeunitsystem = trackObj.properties.unitsystem;
                 // console.log("trackStepStatus with " + routeunitsystem + " unitsystem from ", legInfo, trackObj);
 
-                trackObj.properties.time = this.logTime(mapTime * 3600 * 1000);
+                trackObj.properties.time = this.logTime(mapTime, "h");
 
                 var cc = trackObj.geometry.coordinates,
                     lastPos = trackObj.properties.lastPos,
@@ -1126,7 +1128,7 @@ along waypoint file loaded from url
                         "id": id,
                         "start": routestart,
                         "stop": routestop,
-                        "date": this.logTime(routestart * 3600 * 1000, "/")
+                        "date": this.logTime(routestart, "h",  "/")
                     };
 
                     if (!start || (routestart < start)) start = routestart;
@@ -1794,7 +1796,7 @@ along waypoint file loaded from url
 
                     if (!trackObjs.length) {
 
-                        var msgTime = mba.logTime(mapTime * 3600 * 1000),
+                        var msgTime = mba.logTime(mapTime, "h"),
                             nextTime = mba.getNextStart(mapTime);
 
                         if (!nextTime) { // CHECK for STOP
@@ -1815,7 +1817,7 @@ along waypoint file loaded from url
 
                         } else {
                             // B.2 
-                            let msg = msgTime + ". WAITING for next track at: " + mba.logTime(nextTime * 3600 * 1000);
+                            let msg = msgTime + ". WAITING for next track at: " + mba.logTime(nextTime, "h");
                             // console.log(msg);
                         }
 
@@ -1842,7 +1844,7 @@ along waypoint file loaded from url
                     })
 
                     // CTRL-Msg
-                    var msgTime = mba.logTime(mapTime * 3600 * 1000, "_"),
+                    var msgTime = mba.logTime(mapTime, "h", "_"),
                         info = flag.substring(0, 15) + "...",
                         msg = "<b>" + info + "</b>" +
                         "<br> at " + msgTime +
@@ -1859,7 +1861,7 @@ along waypoint file loaded from url
                 // 1. Optional BREAK! 
                 // Sync trackObjects(and it's routes) only as long as they are tracked 
                 if (!mba.map.getLayer("tracks")) {
-                    var syncTime = this.logTime(mapTime * 3600 * 1000),
+                    var syncTime = this.logTime(mapTime, "h"),
                         msg = "<b>No trackers on map to track</b>" + " at " + syncTime;
                     mba.onMapPopup(msg);
                     return;

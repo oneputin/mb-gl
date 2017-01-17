@@ -121,8 +121,9 @@
         /**
          * 
          */
-        logTime: function(ms1970, sep) {
+        logTime: function(ms1970, unit ,sep) {
             // if (!sep) sep = ", ";
+            if (unit=="") ms1970 = ms1970 * 3600 * 1000;
             var logtime = new Date(ms1970);
             //  logtime = logtime.getDate() + "." + (logtime.getMonth() + 1) + ", " + logtime.getHours() + ":" + logtime.getMinutes();
 
