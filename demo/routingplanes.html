@@ -231,7 +231,7 @@
         }
 
         scope.selectrouteid = function(e) {
-            console.log("routeid=", e.detail.item.id)
+            // console.log("routeid=", e.detail.item.id)
             scope.routeid = e.detail.item.id;
         }
 
@@ -241,7 +241,12 @@
             el.addEventListener('imported', function(e) {
                 // console.log("imported", e.detail);
                 var routedata = e.detail.routedata;
-                if (routedata.length > 1) {
+                if (routedata.length > 1) { // append the "all"-entry and trigger the GUI to contain the dropdown.menu 
+                    routedata.push({
+                        "title": "all",
+                        "id": "all"
+                    });
+                    scope.routedata = routedata;
                     scope.selectflag = true;
                 } else {
                     scope.selectflag = false;

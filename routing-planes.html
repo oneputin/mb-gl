@@ -208,8 +208,18 @@ Close with click anywhere on the card
                         route.nodes.push(wp);
                     })
 
-                    route.title = route.id+":"+route.nodes[route.nodes.length-1].title
-
+                    route.title = route.id + ": ";
+                    if (1) { // DescriptionMode
+                        for (i = 0; i < route.nodes.length; i++) {
+                            if (i > 0) route.title += "/";
+                            route.title += route.nodes[i].id;
+                        }
+                    } else { // DestinationMode
+                        for (i = 1; i < route.nodes.length; i++) {
+                            if (i > 1) route.title += "/";
+                            route.title += route.nodes[i].title;
+                        }
+                    }
                     delete route.waypoints;
                     delete route.flight;
                     delete route.plane;
