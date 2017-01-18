@@ -135,6 +135,8 @@ Demo to view ship-data animation
                 <routing-vendee 
                     url="[[routedataurl]]" 
                     routedata="{{routedata}}"
+                    menudata="{{menudata}}"
+                    tmpdata="[[tmpdata]]"
                     basedataurl="[[basedataurl]]" 
                     trackinfo="[[trackinfo]]" 
                     trackdata="{{trackdata}}">
@@ -174,12 +176,12 @@ Demo to view ship-data animation
     </paper-listbox>
     </paper-dropdown-menu>
 
-    <template is="dom-if" if="{{routedata}}">
+    <template is="dom-if" if="{{menudata}}">
         <paper-dropdown-menu class="routes" label="Tracks">
             <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
-                <template is="dom-repeat" items="{{routedata}}">
+                <template is="dom-repeat" items="{{menudata}}">
                                 <paper-item id="{{item.id}}">
-                                    {{item.id}}
+                                    {{item.title}}
                                 </paper-item>
                             </template>
     </paper-listbox>
@@ -228,9 +230,24 @@ Demo to view ship-data animation
         }
 
         scope.selectrouteid = function(e) {
-            console.log("e-routeid=", e.detail)
+            // console.log("next routeid=", e.detail)
             var routeid = e.detail.item.id;
-            if (routeid) scope.routeid = routeid;
+            var tmpdata = [];
+            scope.routedata.forEach(function(item) {
+                if (item.id == routeid) {
+                    if (item.flag) {
+                        item.flag = false;
+                        item.title = item.title.substring(1);
+                    } else {
+                        item.flag = true;
+                        item.title = "x" + item.title;
+                    }
+                    // console.log("marked item", item);
+                }
+                tmpdata.push(item);
+            });
+            scope.tmpdata = tmpdata;
+            // if (routeid) scope.routeid = routeid;
         }
 
         // eval the response of content-list 

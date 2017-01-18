@@ -142,6 +142,21 @@ To 'close'
                 icon: {
                     type: String,
                     value: "boat-blue"
+                },
+
+                tmpdata: {
+                    type: Array,
+                    observer: 'transformMenu'
+                },
+
+                menudata: {
+                    type: Array,
+                    notify: true
+                },
+
+                routedata: {
+                    type: Array,
+                    notify: true
                 }
             },
 
@@ -150,7 +165,8 @@ To 'close'
             ],
 
             observers: [
-                'importVendee(rawdata, rawdbdata)'
+                'importVendee(rawdata, rawdbdata)',
+                'transformMenu(tmpdata)'
             ],
 
             attached: function() {
@@ -238,7 +254,8 @@ To 'close'
 
                 // C. Join temporary masters- and routes-objects 
                 //    into array of api-conform routes with wps sorted by time 
-                var routedata = [];
+                var routedata = [],
+                    menudata = [];
 
                 Object.keys(routes).forEach(function(id) {
 
@@ -257,7 +274,10 @@ To 'close'
                     // *************************
 
                     var icon = icontemplate; // + "-" + id; // ???? 
-
+                    var item = {
+                        "id": id,
+                        "title": title,
+                    };
                     var route = {
                         "id": id,
                         "title": title,
@@ -272,11 +292,22 @@ To 'close'
                     }
 
                     routedata.push(route);
+                    menudata.push(item)
 
                 }.bind(this));
                 // console.log("importVendee finaldata", routedata); // , rawdata);
 
                 this.routedata = routedata;
+                this.menudata = menudata;
+            },
+
+            transformMenu: function(tmpdata) {
+                console.log("new tmpdata", tmpdata);
+                var menudata = [];
+                tmpdata.forEach(function(r) {
+                    menudata.push(r);
+                })
+                this.menudata = menudata;
             },
 
             // B. COMPILE Feature-data 
