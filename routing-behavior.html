@@ -1,8 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <script>
-
-
     Polymer.BehaviorRoutingImpl = {
 
         properties: {
@@ -211,19 +209,20 @@
         processTrackdata: function(trackdata) {
             if (!trackdata || !trackdata.value) return;
             trackdata = trackdata.value;
+            // console.log("processing trackdata", trackdata);
 
             var trackobj = trackdata.trackobj,
                 lnglat = trackdata.lnglat,
                 openflag = trackdata.open;
-            if (!trackobj) return;
-            // console.log("processing trackdata", trackdata);
+
+            // if (!trackobj) return;
 
             if (this.calcExtendedInfo) {
                 // A. 
                 this.carddata = this.calcExtendedInfo(trackobj, openflag);
 
-            } else {
-                // B. 
+            } else if (this.calcBasicInfo) {
+                // B. Calc a mapPopup with 
                 this.trackinfo = {
                     "html": this.calcBasicInfo(trackobj),
                     "lnglat": lnglat,
