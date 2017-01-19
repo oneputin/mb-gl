@@ -284,7 +284,7 @@ along waypoint file loaded from url
                  */
                 tracksymbol: {
                     type: String,
-                    value: "airport-15"
+                    value: ""
                 },
 
                 /**
@@ -454,13 +454,28 @@ along waypoint file loaded from url
                 if (!this.timer) this.timer = {};
                 this.timer.routes = {};
                 this.timer.traces = {};
-                // var timer = this.timer ? this.timer : {};
 
-                // A. Setup basic animation-parameters                
+                // A. Setup basic animation-parameters          
+
                 var fpsmax = this.timer.fpsmax ? this.timer.fpsmax : 60; // Animationszeit 1s=6*60s=6min, 10s=1h Echtzeit 
                 if (!timescale) timescale = 360; // Animationszeit 1s=360s=6min, 10s=1h Echtzeit 
 
-                // B. Assemble all waypoint-times for every route 
+                this.timer["timescale"] = timescale;
+
+                this.timer.frametime = timescale / fpsmax; // Bsp: frametime: 6 s fuer scale = 360 und fps=60 !!
+
+                // B. Convert tarcelength from time to number of animation steps
+                if (this.timer.tracelength) {
+                    if (typeof this.timer.tracelength == "string") {
+                        var tl = this.utcTime(this.timer.tracelength, null, "s"),
+                            nn = Math.round(tl / this.timer.frametime);
+                        // console.log("trackTimerStart", this.timer, tl, nn);
+                        this.timer.tracelength = nn;
+                    }
+                }
+
+
+                // C.1 Assemble all waypoint-times for every route 
                 var wptimer = {};
 
                 routedata.forEach(function(route, j) {
@@ -484,7 +499,7 @@ along waypoint file loaded from url
                 }.bind(this));
                 // console.log("trackTimerSetup. timer=", wptimer, routedata); // return;
 
-                // C. Get start&stop times for every route and overall animation period  
+                // C.2 Get start&stop times for every route and overall animation period  
                 // var start, stop;
 
                 Object.keys(wptimer).forEach(function(id) {
@@ -514,9 +529,6 @@ along waypoint file loaded from url
                 }.bind(this));
                 // console.log("timer for waypoints:", wptimer, timer);
 
-                this.timer["timescale"] = timescale;
-
-                this.timer.frametime = timescale / fpsmax; // Bsp: frametime: 6 s fuer scale = 360 und fps=60 !!
 
                 // D. OPTION: Get a sorted sequence of start-times  
                 var startTimes = [],
@@ -924,11 +936,8 @@ along waypoint file loaded from url
                     map = mba.map,
                     located = 0,
                     mapMsg = "",
-                    tracetemplates = {},
-                    routeFilter;
-                // Optional trace-templates 
-                if (timer.traces) tracetemplates = timer.traces;
-                if (timer.filter) routeFilter = timer.filter;
+                    routeFilter = timer.filter;
+                // tracelength = timer.tracelength;
 
                 // A.0 Sync alternative timing sources 
                 // 
@@ -960,7 +969,7 @@ along waypoint file loaded from url
                     mba.trackctrl = false // RESET trackObject 
                 }
 
-                // B. RECALCULATE the srces of those trackObjects/trackTraces 
+                // B. REFRESH the srcdata of those trackObjects/trackTraces 
                 //    whose start and stop imbed actual mapTime  
                 mba.tracks.features.forEach(function(trackObj, j) {
 
@@ -968,22 +977,18 @@ along waypoint file loaded from url
                     //     "in-sync" referenced through the same index j  
                     var route = mba.routes.features[j],
                         trackTrace = mba.traces.features[j];
-                    //  ************************************
 
                     var routeProps = route.properties,
                         routeid = routeProps.id,
                         legdata = routeProps.legs,
                         routeStartCounter = routeProps.startCounter;
 
-                    var tracetemplate = tracetemplates[routeid];
-
                     if (mapTime > routeProps.stop) { // A. BREAK "" after end of this route 
 
                         if (routeStartCounter != null) { // must be valid for 0 too
                             routeProps.startCounter = null;
 
-                            // NOPE : kill visible route-trace 
-                            // trackTrace.geometry.coordinates = [];
+                            mba.trackStepTracer("STOP");
                             mapMsg += ",STOP:" + routeid;
                         }
 
@@ -1011,7 +1016,7 @@ along waypoint file loaded from url
                         // Iterate along the route-legs until the track-counter is located within one. 
                         // Get legInfo and cc of the leg selected.
 
-                        var legInfo, cc;
+                        var legInfo, cc, traceCoords;
 
                         legCoordSet.every(function(legPositions, i) {
                             // return true if xxx, false if xxx
@@ -1034,21 +1039,14 @@ along waypoint file loaded from url
                             // console.log("route:"+routeid, legStartAt, counter,  mapTime, cc);
                             located += 1;
 
-                            // A.1 MOVE the trackObject 
-                            trackObj.geometry.coordinates = cc;
-
-                            // A.2 EXTEND/MOVE the trackTrace 
-                            if (tracetemplate) {
-                                var startTime = timer.routes[routeid].start,
-                                    traceCounter = Math.round((mapTime - startTime) / (timer.frametime / 3600)),
-                                    first = traceCounter < 100 ? 0 : traceCounter - 100,
-                                    last = traceCounter;
-                                // console.log(routeid, counter, traceCounter, first, last);
-
-                                var traceCoords = tracetemplate.slice(first, last);
-
+                            // Option: EXTEND/MOVE the trackTrace 
+                            if (trackTrace && timer.traces && timer.traces[routeid]) {
+                                traceCoords = mba.trackStepTracer(mapTime, routeid, timer);
                                 trackTrace.geometry.coordinates = traceCoords;
                             }
+
+                            // A. MOVE the trackObject 
+                            trackObj.geometry.coordinates = cc;
 
                             // B. Eval STATUS between 2 animation-points 
 
@@ -1199,6 +1197,23 @@ along waypoint file loaded from url
                         trackObj.properties.arrived = "Arrived !";
                     }
                 }
+            },
+
+            // Get the trace of a route at a mapTime
+            trackStepTracer: function(mapTime, routeid, timer) {
+                if (mapTime == "STOP") return [];
+
+                var tracelength = timer.traces[routeid].length;
+                if (typeof timer.tracelength == "number") tracelength = timer.tracelength;
+
+                var tracetemplate = timer.traces[routeid],
+                    startTime = timer.routes[routeid].start,
+                    traceCounter = Math.round((mapTime - startTime) / (timer.frametime / 3600)),
+                    first = traceCounter < tracelength ? 0 : traceCounter - tracelength,
+                    last = traceCounter;
+                // console.log(traceCounter, first, last, tracelength);
+                // return traceCoords;
+                return tracetemplate.slice(first, last);
             },
 
 
@@ -1536,18 +1551,21 @@ along waypoint file loaded from url
                         if (rr) {
                             // console.log("setupAnimationRoute:" + j, rr);
                             r = rr.routeSrc;
-                            t = rr.traceSrc;
                             if (!routedata.meta) routedata.meta = {};
                             if (!routedata.meta.color) routedata.meta.color = this.getRandomColor();
 
                             m = Object.assign({}, r.properties, routedata.meta);
                             r.properties = m;
-                            t.properties = m;
                             routemetas[r.id] = routedata.meta;
                             // console.log("meta,r,t", routedata.meta, r, t);
-
                             this.routes.features.push(r);
-                            this.traces.features.push(t);
+
+                            // IF prepared, add trace-features 
+                            t = rr.traceSrc;
+                            if (t) {
+                                t.properties = m;
+                                this.traces.features.push(t);
+                            }
                         }
                     }
 
@@ -1712,6 +1730,10 @@ along waypoint file loaded from url
                 };
                 // console.log("Initialize route from", data, timer, props);
 
+                var srces = {};
+
+                // A. Create route-object consisting of 1-n legs
+
                 // Create route-legs between 2 waypoints at any one time 
                 var routeNodes = data.nodes; // wps as given
 
@@ -1807,26 +1829,25 @@ along waypoint file loaded from url
                     }
                 });
 
-                // A. Create route-object consisting of 1-n legs
-                var rSrc = new RouteSource(routeid, props, legsCoords, legsData, routeNodes);
+                srces["routeSrc"] = new RouteSource(routeid, props, legsCoords, legsData, routeNodes);
 
                 // B. Save the complete trace of a route as template for dynamic traces 
-                var coordinates = [];
-                legsCoords.forEach(function(legcoords) {
-                    coordinates = coordinates.concat(legcoords);
-                });
-                timer.traces[routeid] = coordinates;
+                // 
+                if (timer.tracelength) {
+                    var coordinates = [];
+                    legsCoords.forEach(function(legcoords) {
+                        coordinates = coordinates.concat(legcoords);
+                    });
+                    timer.traces[routeid] = coordinates;
 
-                // Create "complete" trace-object with startpoint only
-                // var tSrc = new TraceSource(coordinates, routeid);
-                // Create "initial" trace-object with startpoint only
-                var tSrc = new TraceSource(coordinates.slice(0, 1), routeid);
+                    // Create "complete" trace-object with startpoint only
+                    // var tSrc = new TraceSource(coordinates, routeid);
+                    // Create "initial" trace-object with startpoint only
+                    srces["traceSrc"] = new TraceSource(coordinates.slice(0, 1), routeid);
+                }
 
                 // console.log("New routeSrces: " + routeid, rSrc, tSrc);
-                return {
-                    "routeSrc": rSrc,
-                    "traceSrc": tSrc
-                };
+                return srces;
             },
 
             // E. Additional Functions

@@ -27,6 +27,7 @@ Demo to view ship-data animation
     <link rel="import" href="../mb-routes-ctrl-time.html">
 
     <link rel="import" href="../routing-handheld.html">
+    <link rel="import" href="../mb-tools-behavior.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
@@ -37,14 +38,9 @@ Demo to view ship-data animation
         }
         
         mb-map {
-            width: 55%;
+            /*width: 55%;*/
+            width: 800px;
             height: 600px;
-        }
-        
-        mb-info-lnglat {
-            left: 50%;
-            margin-right: -50%;
-            transform: translate(-50%, 0)
         }
         
         .ctrls-in {
@@ -56,19 +52,25 @@ Demo to view ship-data animation
             width: 100%;
         }
         
+        .ctrls-out {
+            /* itself flex layouted div */
+            width: 40%;
+            margin-left: 10px;
+            @apply(--layout-vertical);
+            /*@apply(--layout-start);*/
+        }
+        
+        mb-info-lnglat {
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, 0)
+        }
+        
         mb-routes-ctrl {
             @apply(--layout-flex);
         }
         
         mb-map-orientation-ctrl {}
-        
-        .ctrls-out {
-            /* itself flex layouted div */
-            @apply(--layout-horizontal);
-            @apply(--layout-start);
-            width: 40%;
-            margin-left: 10px;
-        }
         
         paper-dropdown-menu {
             border-style: solid;
@@ -96,7 +98,7 @@ Demo to view ship-data animation
 <body>
     <template is="dom-bind" id="app">
         
-        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
+        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="loadroutesets">
         </iron-ajax>
 
         <div class="container">
@@ -148,7 +150,8 @@ Demo to view ship-data animation
                     routedata=[[routedata]] 
                     routeid=[[routeid]] 
                     trackctrl="{{trackctrl}}" 
-                    trackmode="{{trackmode}}" 
+                    trackmapmode="{{trackmapmode}}" 
+                    tracksymbol="{{tracksymbol}}" 
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]">
                 </mb-routes>
@@ -162,7 +165,7 @@ Demo to view ship-data animation
 
     <paper-dropdown-menu label="Tracksets">
         <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-            <template is="dom-repeat" items="{{wpdocs}}">
+            <template is="dom-repeat" items="{{routesets}}">
                 <paper-item url="{{item.url}}">
                     {{item.title}}
                 </paper-item>
@@ -188,45 +191,48 @@ Demo to view ship-data animation
 
     <script>
         var scope = document.querySelector('#app');
+        scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+        scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
+
+        // Data-INIT
         scope.setupurl = "index-handheld.json"; // list of available datasets
         scope.basedataurl = ""; // list of available datasets
-
         scope.routedataurl = ""; // url to selected dataset
 
-        scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-        scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm';
-
-        // Map-initialization
+        // Map-INIT
         scope.cbox = "13,52";
         scope.lnglat = "13,52";
         scope.zoom = 8;
 
-        // Timescale to view tracks of boats over several days
+        // Animation- INIT
+        scope.tracksymbol = 'toilet-11';
+        // console.log("scope.tracelength", scope.tracelength, scope.utcTime(scope.tracelength));
+        scope.trackmapmode; // 
         scope.timer = {
             "timescalemax": 600, // 1min ~ 10h
             "timescalestart": 300,
             "fpsstart": 30
+                // "tracelength": true //  '0.0.0.0.5'
         };
 
+        // SHELL-actions
         scope.mapctrl = {};
-        scope.cardctrl = {};
 
-
+        // 
         scope.selectrouteid = function(e) {
-            console.log("routeid=", e.detail.item.id)
-            scope.routeid = e.detail.item.id;
-        }
-
-        /**
-         * Put selected url from menu-selection into import-element
-         */
+                console.log("routeid=", e.detail.item.id)
+                scope.routeid = e.detail.item.id;
+            }
+            /**
+             * Put selected url from menu-selection into import-element
+             */
         scope.selectedurl = function(e) {
             this.routedataurl = e.detail.item.url;
         }
 
         // eval the response of content-list 
-        scope.setupme = function(ajaxresponse) {
-            this.wpdocs = ajaxresponse.detail.response;
+        scope.loadroutesets = function(ajaxresponse) {
+            this.routesets = ajaxresponse.detail.response;
         }
     </script>
 </body>

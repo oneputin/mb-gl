@@ -14,7 +14,26 @@
                 var t = t.replace(",", "."),
                     t = t.replace(":", "."),
                     a = t.split(".");
-                if (a.length > 5) {
+
+                // Time intervals 
+                if (a[0] == "0") {
+                    a[0] = "1970";
+                    if (a[1] == "0") {
+                        a[1] = "1";
+                        if (a[2] == "0") {
+                            a[2] = "1";
+                            if (a[3] == "0") {
+                                a[3] = "1";
+                                if (a[4] == "0") {
+                                    a[4] = "1";
+                                }
+                            }
+                        }
+                    }
+                    console.log("utcTime", t, a);
+                }
+
+                if (a.length > 5) { // 
                     tlocal = new Date(parseInt(a[0]), parseInt(a[1]) - 1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4]), parseInt(a[5]));
                 } else {
                     tlocal = new Date(parseInt(a[0]), parseInt(a[1]) - 1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4]));

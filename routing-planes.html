@@ -227,6 +227,7 @@ Close with click anywhere on the card
                 });
                 // console.log("flight routes preprocessed:", routedata);
 
+                // send a "custom event" to inform the raw-data are loaded 
                 this.fire("imported", {
                     "routedata": routedata,
                     "ok": "ok"

@@ -182,7 +182,6 @@
     </paper-dropdown-menu>
     </template>
 
-    </mb-map>
     </div>
     </template>
 
@@ -195,27 +194,33 @@
         // setup mapbox-map
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
         scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm';
+        // scope.mbstyle = 'mapbox://styles/mapbox/streets-v9',
 
         scope.cbox = "13.7,52.4";
         scope.lnglat = "13.7,52.4";
         scope.zoom = 1;
 
         // setup animation
+        scope.tracksymbol = 'airport-15';
         // scope.timer = {}; // default 
         scope.timer = {
             "timescalemax": 1440,
             "timescalestart": 1440,
-            "fpsstart": 30
+            "fpsstart": 30,
+            "tracelength": '0.0.0.0.5'
+                // "tracelength": true
         };
         scope.mapctrl = {};
 
-        // setup GUI 
+        // select a routeset from setup-entries 
         scope.setupme = function(ajaxresponse) {
             var routesets = ajaxresponse.detail.response,
                 importurl = routesets[0].url;
             // console.log("routesets", routesets, importurl);
+            var importurl;
             if (routesets.length > 1) {
                 this.routesets = routesets;
+                importurl = routesets[0];
                 routesets.every(function(rs) {
                     if (rs.start) {
                         importurl = rs.url;
@@ -236,10 +241,11 @@
         }
 
         scope.addEventListener('dom-change', function() {
-            // auto-binding template is ready.
+
+            // bind event-listener to (custom) web-element
             var el = document.querySelector('routing-planes');
             el.addEventListener('imported', function(e) {
-                // console.log("imported", e.detail);
+                // eval the 
                 var routedata = e.detail.routedata;
                 if (routedata.length > 1) { // append the "all"-entry and trigger the GUI to contain the dropdown.menu 
                     routedata.push({

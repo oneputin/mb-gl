@@ -204,6 +204,7 @@ Demo to view ship-data animation
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
         scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm';
 
+        scope.tracksymbol = 'boat-blue';
         scope.cbox = "-50,-40";
         scope.lnglat = "-50,-40";
         scope.zoom = 2;
@@ -217,7 +218,6 @@ Demo to view ship-data animation
             "timescalestart": 5000,
             "fpsstart": 30
         };
-        scope.tracksymbol = 'boat-blue';
 
         // ROUTES - Env
         scope.routedataurl = ""; // url to selected dataset
@@ -232,7 +232,8 @@ Demo to view ship-data animation
         scope.selectrouteid = function(e) {
             // console.log("next routeid=", e.detail)
             var routeid = e.detail.item.id;
-            var tmpdata = [];
+            if (routeid) scope.routeid = routeid;
+            /*var tmpdata = [];
             scope.routedata.forEach(function(item) {
                 if (item.id == routeid) {
                     if (item.flag) {
@@ -247,7 +248,7 @@ Demo to view ship-data animation
                 tmpdata.push(item);
             });
             scope.tmpdata = tmpdata;
-            // if (routeid) scope.routeid = routeid;
+            */
         }
 
         // eval the response of content-list 
