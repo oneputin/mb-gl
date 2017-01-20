@@ -189,16 +189,13 @@ To 'close'
                 // console.log(rawdata, rawdbdata);
                 if (!rawdata || !rawdata.length) return;
 
-                console.log("Handheld raw data", {
+                console.log("LOG: Handheld raw data", {
                     "location": rawdata,
                     "master": rawdbdata
                 });
 
-                var icontemplate = "circle-stroked-15"; // "pitch-15"; // this.icon;
+                // var icontemplate = "circle-stroked-15"; // "pitch-15"; // this.icon;
 
-                /**
-                 *  transform from handheld-data (exported as tabbed text or csv)
-                 */
                 function handheldCoords(cc, targetformat, prec) {
                     if (!targetformat) targetformat = "dd";
                     if (!prec) prec = 6;
@@ -225,22 +222,6 @@ To 'close'
                     return coords;
                 }
 
-
-                function stabw(array) {
-                    var len = 0;
-                    var sum = array.reduce(function(pv, cv) {
-                        ++len;
-                        return pv + cv;
-                    }, 0);
-                    var mean = sum / len;
-                    var result = 0;
-                    for (var i = 0; i < len; i++)
-                        result += Math.pow(array[i] - mean, 2);
-                    len = (len == 1) ? len : len - 1;
-                    return Math.sqrt(result / len);
-                }
-
-
                 function handheldTime(traw, asdate) {
                     // !! for (later) use of date-parser 
                     // the MONTH must be numbered 0 .. 11 !!
@@ -260,13 +241,33 @@ To 'close'
                     return tstandard;
                 }
 
-                var routes = {},
+                // tool STABW 
+                function stabw(array) {
+                    var len = 0;
+                    var sum = array.reduce(function(pv, cv) {
+                        ++len;
+                        return pv + cv;
+                    }, 0);
+                    var mean = sum / len;
+                    var result = 0;
+                    for (var i = 0; i < len; i++)
+                        result += Math.pow(array[i] - mean, 2);
+                    len = (len == 1) ? len : len - 1;
+                    return Math.sqrt(result / len);
+                }
+
+
+                /**
+                 *  transform from handheld-data (exported as tabbed text or csv)
+                 */
+
+                var route, master, id,
+                    routes = {},
                     masterdata = {};
 
                 // Optional: Append track-masterData     
                 if (rawdbdata) {
                     // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
-                    var route, master, id;
                 }
 
                 var coords, time, id, lat, route,
@@ -274,52 +275,76 @@ To 'close'
                     route0 = [],
                     routes = [];
 
-                //     
-                var isVomue1 = (rawdata[0]["Header"] == "Trackpoint"),
-                    isVomue2 = rawdata[0]["Pnt"]; // 
-                // console.log("isVomue1=" + isVomue1, "isVomue2=" + isVomue2);
+                //  A.1 MODE Detector    
+                var rawmode = "gpx";
+                rawmode = (rawdata[0]["Header"] == "Trackpoint") ? 'vomue1' : rawmode;
+                rawmode = rawdata[0]["Pnt"] ? 'vomue2' : rawmode;
+                // console.log("rawmode=",rawmode );
 
-                // A. Disassemble "multitrack" rawdata into "related" tracks 
-                //    assigning a unique track-ID
-                // Step1
-                var trackid = 1,
-                    t, dt, lastT = 0,
-                    dts = [],
-                    dxs = [];
-                rawdata.forEach(function(tp, j) {
+                // A.2 Dis-assemble rawdata-recordings that contain "separable tracks"  
+                //     with mode-specific algorithms - assigning a unique track-ID
 
-                    if (isVomue1) {
-                        dt = tp["Leg Time"].split(":");
-                        dx = tp["Leg Length"].split(" ");
-                    }
-                    if (isVomue2) {
-                        dt = tp["dt"].split(":");
-                        dx = tp["dx"].split(" ");
-                    }
+                var t, dt, dx, dt_std, dx_std, v, dv_std,
+                    vprev = 0;
 
-                    dt = 3600 * parseInt(dt[0]) + 60 * parseInt(dt[1]) + parseInt(dt[2]);
-                    dx = (dx[1] == "km") ? parseInt(dx[0]) * 1000 : parseInt(dx);
+                // Step1: Analyse STDDEV of DT, DX-data (if available)   
 
-                    dts.push(dt);
-                    dxs.push(dx)
-                });
+                var dts = [],
+                    dxs = [],
+                    dvs = [];
 
-                var dt_std = Math.round(stabw(dts));
-                var dx_std = Math.round(stabw(dxs));
-                console.log("dt-standardabw [sec]:", dt_std);
-                console.log("dx-standardabw [m]:", dx_std);
+                if (rawmode == "gpx") {
 
-                // Step2
+                } else {
+                    rawdata.forEach(function(tp, j) {
+
+                        if (rawmode == "vomue1") {
+                            dt = tp["Leg Time"].split(":");
+                            dx = tp["Leg Length"].split(" ");
+                            v = tp["Leg Speed"].split(" ");
+                        }
+                        if (rawmode == "vomue2") {
+                            dt = tp["dt"].split(":");
+                            dx = tp["dx"].split(" ");
+                            v = tp["v"].split(" ");
+                        }
+
+                        // unit 
+                        dt = 3600 * parseInt(dt[0]) + 60 * parseInt(dt[1]) + parseInt(dt[2]); // always [s]
+                        dx = (dx[1] == "km") ? parseInt(dx[0]) * 1000 : parseInt(dx); // always in [m] 
+                        dv = parseFloat(v[0]) - vprev; // dv = is always km/h
+                        vprev = parseFloat(v[0]);
+                        console.log("dv=" + dv, v);
+                        dts.push(dt);
+                        dxs.push(dx);
+                        dvs.push(dv);
+                    });
+                }
+                if (dts.length) {
+                    dt_std = Math.round(stabw(dts));
+                    dx_std = Math.round(stabw(dxs));
+                    dv_std = Math.round(stabw(dvs));
+                    console.log("dt-std [sec]:", dt_std);
+                    console.log("dx-std [m]:", dx_std);
+                    console.log("dv-std [km/h]:", dv_std);
+                }
+
+                // Step2 : 
                 var trackid = 1;
+
                 rawdata.forEach(function(tp, j) {
-                    if (isVomue1) {
+
+                    if (rawmode == "vomue1") {
                         dt = tp["Leg Time"].split(":");
                         dx = tp["Leg Length"].split(" ");
+                        v = tp["Leg Speed"].split(" ");
                     }
-                    if (isVomue2) {
+                    if (rawmode == "vomue2") {
                         dt = tp["dt"].split(":");
                         dx = tp["dx"].split(" ");
+                        v = tp["v"].split(" ");
                     }
+
                     dt = 3600 * parseInt(dt[0]) + 60 * parseInt(dt[1]) + parseInt(dt[2]);
                     dx = (dx[1] == "km") ? dx[0] * 1000 : dx;
 
@@ -337,7 +362,7 @@ To 'close'
 
                     Object.keys(tp).forEach(function(k) {
 
-                        if (isVomue1) {
+                        if (rawmode == "vomue1") {
                             if (k == "Position") {
 
                                 coords = handheldCoords(tp[k]);
@@ -354,7 +379,7 @@ To 'close'
                             }
                         }
 
-                        if (isVomue2) {
+                        if (rawmode == "vomue2") {
                             if (k == "coords") {
                                 coords = handheldCoords(tp[k]);
                                 tpx["coords"] = coords;
@@ -427,8 +452,7 @@ To 'close'
 
                 }.bind(this));
 
-                console.log("Handheld prepared data", routedata); // , rawdata);
-
+                // console.log("Handheld prepared data", routedata); // , rawdata);
                 this.routedata = routedata;
                 //**************************
             },

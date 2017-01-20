@@ -342,7 +342,7 @@ along waypoint file loaded from url
             ],
 
             observers: [
-                '_animationDataSetup(routedata, timer.timescale, map)',
+                '_animationRoutesetSetup(routedata, timer.timescale, map)',
                 '_animationLayersRefresh(map, animationSourceData.*)',
                 '_animationTimerRefresh(timer.*)',
                 'trackCtrlAction(trackctrl)',
@@ -569,9 +569,9 @@ along waypoint file loaded from url
             // prepare all map- and animationdata required to view tracks on the map 
             //  - for altered routedata
             //  - if basic(=max) timescale of animation changed
-            _animationDataSetup: function(routedata, timescale, map) {
+            _animationRoutesetSetup: function(routedata, timescale, map) {
                 if (!routedata || !routedata[0] || !routedata[0].nodes) return;
-                console.log("ORIGINAL routedata:", routedata);
+                console.log("ROUTESET rawdata:", routedata);
 
                 this.ctrlflag = false;
 
@@ -580,7 +580,7 @@ along waypoint file loaded from url
                 this.trackFeaturesReset();
 
                 this.trackTimerSetup(routedata, timescale);
-                // console.log("ORIGINAL timer=", this.timer);
+                console.log("ROUTESET timer=", this.timer);
 
                 // Order(REIHENFOLGE) important, as wp-reduction in routedata possible during route-setup  
 
@@ -595,7 +595,7 @@ along waypoint file loaded from url
 
                 sourceData['tracks'] = this.setupAnimationTracker(routedata, this.timer);
 
-                // console.log("AnimationSourceData Ready", sourceData, routedata);
+                console.log("ROUTESET AnimationData", sourceData);
                 // ??? Doubled assignment of sourceData to trigger multi-parameter observer  ???
                 this.animationSourceData = {};
                 this.animationSourceData = sourceData; // triggers "refresh-action
@@ -628,10 +628,10 @@ along waypoint file loaded from url
 
                         layerObject = layerObjects[layername];
 
-                        if (layerObject && layerObject['data']) {
+                        if (layerObject && layerObject['srcdata']) {
                             // console.log("addToMap:" + layername, layerObject);
 
-                            layerData = layerObject['data'];
+                            layerData = layerObject['srcdata'];
 
                             // 1.A. (Re)Set datasources
                             layerSource = map.getSource(layername);
@@ -1323,7 +1323,7 @@ along waypoint file loaded from url
 
                 nodeLayer['meta'] = nodemetas;
 
-                nodeLayer['data'] = allnodes;
+                nodeLayer['srcdata'] = allnodes;
 
                 nodeLayer['layer'] = {
                     "id": "nodes",
@@ -1415,7 +1415,7 @@ along waypoint file loaded from url
                     }
                 });
 
-                trackLayerObj['data'] = allTracks;
+                trackLayerObj['srcdata'] = allTracks;
 
                 // A. Setup DanamicPoints-ONE Layer for multiple features,
                 // = trackers should use "ddr styling" 
@@ -1596,7 +1596,7 @@ along waypoint file loaded from url
                 // C.1 ROUTE
                 var routeLayer = {};
                 routeLayer['meta'] = routemetas;
-                routeLayer['data'] = this.routes;
+                routeLayer['srcdata'] = this.routes;
                 routeLayer['layer'] = {
                     "id": "routes",
                     "source": "routes",
@@ -1612,7 +1612,7 @@ along waypoint file loaded from url
                 // C.2 TRACE
                 var traceLayer = {};
                 traceLayer['meta'] = routemetas;
-                traceLayer['data'] = this.traces;
+                traceLayer['srcdata'] = this.traces;
                 traceLayer['layer'] = {
                     "id": "traces",
                     "source": "traces",
@@ -1709,7 +1709,6 @@ along waypoint file loaded from url
             animationRouteCreate: function(data, timer) {
                 // console.log("Initialize route from", data, timer);
 
-                var demoSpeed = 900;
                 var frametime = timer.frametime;
 
                 var nextNode, legDistance, legStepCount;
@@ -1717,17 +1716,17 @@ along waypoint file loaded from url
                 var routeid = data.id,
                     legsData = [], // mean props of every leg    
                     legsCoords = [], // coords of every leg
-                    legTimeSec, legStopSec,
-                    legSpeed, routeSpeed = data.speed;
-
-                if (!routeSpeed) routeSpeed = demoSpeed;
+                    legTimeSec, legStopSec, legSpeed, routespeed;
 
                 var props = {
                     "id": routeid,
-                    "speed": routeSpeed,
                     "start": timer.routes[routeid]["start"],
                     "stop": timer.routes[routeid]["stop"]
                 };
+                if (data.speed) {
+                    props.speed = data.speed;
+                }
+
                 // console.log("Initialize route from", data, timer, props);
 
                 var srces = {};
@@ -1751,7 +1750,6 @@ along waypoint file loaded from url
                         // legDistance = Math.round(legDistance);
 
                         // Calculate a mean leg-speed between wp's with ab/an times
-                        legSpeed = routeSpeed;
                         if (nextNode.an && wp.ab) {
                             let dep = mba.utcTime(wp.ab, wp.coords, "h"),
                                 arv = mba.utcTime(nextNode.an, nextNode.coords, "h");
@@ -2122,7 +2120,7 @@ along waypoint file loaded from url
 
             trackRouteGetRawFeatures: function(routeid) {
                 // console.log("trackRouteGetRawFeatures of routeid=" + routeid, this.animationSourceData);
-                var rrall = this.animationSourceData.routes.data.features;
+                var rrall = this.animationSourceData.routes.srcdata.features;
                 if (!routeid) return rrall;
                 var rr = [];
                 rrall.forEach(function(r) {
@@ -2134,7 +2132,7 @@ along waypoint file loaded from url
                 return rr;
             },
 
-            // Check if more starts 
+            // Check if more starts before end of animated routeSet (timer.stop)
             getNextStart: function(mapTime) {
                 var starts = mba.timer.starts,
                     nextStart;
@@ -2145,8 +2143,9 @@ along waypoint file loaded from url
                         return true;
                     }
                 });
-                if (nextStart) // console.log("t=", mapTime, "nextStart=" + nextStart, starts);
+                if (nextStart && (nextStart < mba.timer.stop)) { // console.log("t=", mapTime, "nextStart=" + nextStart, starts);
                     return nextStart;
+                }
             },
 
             // updates "onMapPopup" if a trackinfo-property changes
