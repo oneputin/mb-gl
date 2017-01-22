@@ -6,7 +6,10 @@
     {
         "title": "kamerundata",
         "type": "gpx",
-        "url": "http://iimaps.de/data/gps/kamerun/gpx/Current.gpx"
+        "url": "http://iimaps.de/data/gps/kamerun/gpx/Current.gpx",
+        "query":{
+            "geometry": "Track"
+        }
     },
     {
         "title": "praharecords",

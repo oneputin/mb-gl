@@ -7,6 +7,8 @@
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="../paper-card/paper-card.html">
 
+<link rel="import" href="../kml-json/kml-json.html">
+
 <link rel="import" href="mb-tools-behavior.html">
 
 <link rel="import" href="routing-behavior.html">
@@ -94,10 +96,16 @@ To 'close'
 
         <iron-ajax
             auto
-            url="[[url]]"
+            url="[[jsonurl]]"
             handle-as="json"
-            on-response="gettrackdata">
+            on-response="getrawdata">
         </iron-ajax>
+
+        <kml-json 
+            url="[[kmlurl]]" 
+            query="[[kmlquery]]" 
+            geojson="{{rawdata}}">
+        </kml-json>
 
         <iron-ajax
             auto
@@ -141,19 +149,34 @@ To 'close'
             is: 'routing-handheld',
 
             properties: {
+
+                url:{
+                    type:String,
+                    observer:'urldispatcher'
+                },
+                kmlurl:{
+                    type:String
+                },
+                jsonurl:{
+                    type:String,
+                    observer:'urldispatcher'
+                },
+
                 rawdbdata: {
                     type: Object,
                     value: []
                 },
-                trackdata: {
+
+                rawdata: {
                     type: Object,
-                    value: []
+                    value: [],
+                    observer:'checktrackdata'
                 },
 
                 routedata: {
                     type: Object,
                     notify: true
-                },
+                }
 
             },
 
@@ -162,17 +185,40 @@ To 'close'
             ],
 
             observers: [
-                'importGpsTracks(trackdata, rawdbdata)'
+                'importGpsTracks(rawdata, rawdbdata)'
             ],
 
             attached: function() {
                 // console.log("target attached");
             },
 
-            gettrackdata: function(ajaxresponse) {
+            checktrackdata: function(data){
+                // console.log("TD", data);
+            },
+
+            urldispatcher : function(srcurl){
+                if (!srcurl) return;
+                var ext = srcurl.split(".").slice(-1);
+                if (!ext.length) return;
+                ext = ext[0];
+                // console.log("srcurl",typeof srcurl, srcurl,ext); // return;
+                
+                if (ext=="json") {
+                    this.jsonurl = srcurl;
+                } else if ((ext == "kml")||(ext == "gpx")) {
+                    this.kmlurl = srcurl;
+                    this.kmlquery = {
+                        "tags": "Track"
+                    }
+                    // console.log("kmlLOG:", this.kmlurl, this.kmlquery);
+                }
+            },
+
+            getrawdata: function(ajaxresponse) {
+                //console.log("getrawdata, response", ajaxresponse);
                 if (!ajaxresponse || !ajaxresponse.detail) return;
-                this.trackdata = ajaxresponse.detail.response;
-                //if (this.trackdata) console.log("OK: trackdata", this.trackdata);
+                this.rawdata = ajaxresponse.detail.response;
+                //if (this.rawdata) console.log("OK: trackdata", this.rawdata);
             },
 
             getrawdbdata: function(ajaxresponse) {
@@ -186,15 +232,11 @@ To 'close'
             // delivered in csv- or tabbed formats 
             // into datastructure of routing-API
             importGpsTracks: function(rawdata, rawdbdata) {
-                // console.log(rawdata, rawdbdata);
                 if (!rawdata || !rawdata.length) return;
-
                 console.log("LOG: Handheld raw data", {
                     "location": rawdata,
                     "master": rawdbdata
-                });
-
-                // var icontemplate = "circle-stroked-15"; // "pitch-15"; // this.icon;
+                }); // return;
 
                 function handheldCoords(cc, targetformat, prec) {
                     if (!targetformat) targetformat = "dd";
@@ -217,11 +259,11 @@ To 'close'
                         lat = (parseInt(lat) * 60) + parseFloat(coords[1]);
                         lng = (parseInt(lng) * 60) + parseFloat(coords[3]);
                     }
-
                     coords = [lng, lat]; // console.log("dd-array", dd);
                     return coords;
                 }
 
+                // 
                 function handheldTime(traw, asdate) {
                     // !! for (later) use of date-parser 
                     // the MONTH must be numbered 0 .. 11 !!
@@ -276,10 +318,11 @@ To 'close'
                     routes = [];
 
                 //  A.1 MODE Detector    
-                var rawmode = "gpx";
+                var rawmode = (rawdata[0]["geometry"]) ? "json" : "nn";
                 rawmode = (rawdata[0]["Header"] == "Trackpoint") ? 'vomue1' : rawmode;
                 rawmode = rawdata[0]["Pnt"] ? 'vomue2' : rawmode;
-                // console.log("rawmode=",rawmode );
+
+                console.log("rawmode=",rawmode );
 
                 // A.2 Dis-assemble rawdata-recordings that contain "separable tracks"  
                 //     with mode-specific algorithms - assigning a unique track-ID
@@ -293,8 +336,8 @@ To 'close'
                     dxs = [],
                     dvs = [];
 
-                if (rawmode == "gpx") {
-
+                if (rawmode == "json") {
+                    console.log("JSON-1", rawdata[0]); return;
                 } else {
                     rawdata.forEach(function(tp, j) {
 
@@ -314,7 +357,7 @@ To 'close'
                         dx = (dx[1] == "km") ? parseInt(dx[0]) * 1000 : parseInt(dx); // always in [m] 
                         dv = parseFloat(v[0]) - vprev; // dv = is always km/h
                         vprev = parseFloat(v[0]);
-                        console.log("dv=" + dv, v);
+                        // console.log("dv=" + dv, v);
                         dts.push(dt);
                         dxs.push(dx);
                         dvs.push(dv);
@@ -452,7 +495,7 @@ To 'close'
 
                 }.bind(this));
 
-                // console.log("Handheld prepared data", routedata); // , rawdata);
+                console.log("JSON-Handheld out", routedata); // , rawdata);
                 this.routedata = routedata;
                 //**************************
             },

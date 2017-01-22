@@ -131,18 +131,26 @@ Demo to view ship-data animation
                 <!--<mb-info-drag carddata="[[trackdata]]">
                 </mb-info-drag>-->
 
+            </mb-map>
+
+            <!-- Right Block: several external app-controls -->
+            <div class="ctrls_out">
+                <!-- INTERFACE -->
                 <routing-handheld 
                     url="[[routedataurl]]" 
                     routedata="{{routedata}}"
+                    rawdata="{{rawdata}}"
                     basedataurl="[[basedataurl]]" 
                     trackinfo="[[trackinfo]]" 
                     trackdata="{{trackdata}}">
                 </routing-handheld>
 
-            </mb-map>
+                <!-- PREVIEW of rawdata from interface -->
+                <mb-preview 
+                    map="[[map]]" 
+                    rawdata=[[rawdata]]>
+                </mb-preview>
 
-            <!-- Right Block: several external app-controls -->
-            <div class="ctrls_out">
                 <!-- element with n visible features -->
                 <mb-routes 
                     map="[[map]]" 
