@@ -51,6 +51,10 @@ along waypoint file loaded from url
                     notify: true
                 },
 
+                mapcontent: {
+                    type: Object,
+                    notify: true
+                },
 
                 /**
                  * Basic mapbox-Info-popup 
@@ -184,60 +188,6 @@ along waypoint file loaded from url
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)'
             ],
-
-
-            /**
-             * Create/Refresh 
-             */
-            mbLayersSetup: function(map, layerSources) {
-
-                Object.keys(layerSources).forEach(function(layername, j) {
-                    if (layerSources[layername].srcdata) {
-
-                        var layerObject = layerSources[layername],
-                            layerData = layerObject['srcdata'],
-                            layerSource = map.getSource(layername),
-                            mapLayer = map.getLayer(layername);
-
-                        // 1.A. (Re)Set datasources
-                        if (!layerSource) {
-                            map.addSource(layername, {
-                                "type": "geojson",
-                                "data": layerData
-                            });
-                            layerSource = map.getSource(layername);
-                            // console.log("SRC", layername, layerData, layerSource);
-                        } else {
-                            layerSource.setData(layerData);
-                        }
-
-                        // 1.B. Create layers 
-                        if (!mapLayer) {
-                            // console.log("Adding layer", layername, layerObject['layer'], map.getSource(layername));
-
-                            // OPTIONAL: bglayer(s) of the same source
-                            if (layerObject['bglayer']) {
-                                // console.log("adding bg-layer of "+layername, bgl);
-                                // sls.forEach(function(sl) { // console.log("sl",sl);
-                                map.addLayer(layerObject['bglayer']);
-                                // }
-                            }
-
-                            // BASIC layer
-                            map.addLayer(layerObject['layer']);
-
-                            // OPTIONAL: selectlayer of the same source
-                            var sls = layerObject['selectlayer'];
-                            if (sls && sls.length) {
-                                sls.forEach(function(sl) { // console.log("sl",sl);
-                                    map.addLayer(sl);
-                                    map.setFilter(sl.id, ["==", "id", ""]);
-                                })
-                            }
-                        }
-                    }
-                })
-            },
 
 
             // mapContent-Object for basic Layers related to animation-datasrces 
@@ -521,6 +471,7 @@ along waypoint file loaded from url
 
                 this._counter = 0;
 
+                // Remove old mapThemes, that are named like the new ones 
                 this.trackFeaturesReset();
 
                 this.trackTimerSetup(routedata, timescale);
@@ -564,6 +515,7 @@ along waypoint file loaded from url
 
                     // 1. Create/Refresh (json)data-based animation-layers
 
+                    this.mapcontent = layerSources; // trigger action on mb-map
                     // mba.mbLayersSetup(map, layerSources);
 
                     // 2. Setup Events to query track-features on "mouseover" and show info-popup 
@@ -1012,6 +964,8 @@ along waypoint file loaded from url
             // Calc status-parameters at mapTime and save as trackObj-properties
             trackStepStatus: function(trackObj, legInfo, mapTime) {
 
+                var speedFlag = true;
+
                 var routeunitsystem = trackObj.properties.unitsystem;
                 // console.log("trackStepStatus with " + routeunitsystem + " unitsystem from ", legInfo, trackObj);
 
@@ -1031,7 +985,9 @@ along waypoint file loaded from url
                     dta = turf.lineDistance(legToArrival, "kilometers");
 
                 var v = legInfo.speed,
-                    dist = legInfo.dist;
+                    dist = legInfo.dist,
+                    speedUnit = "kmh",
+                    distUnit = "km";
 
                 if (v && Math.round(dta / 10)) { // TrackObj is "Moving" 
                     // trackObj.properties.stop = 0;
@@ -1044,12 +1000,16 @@ along waypoint file loaded from url
                     trackObj.properties.ttt = null;
 
                     if (routeunitsystem == "nautic") {
+                        speedUnit = "nds";
+                        distUnit = "nm";
 
                         trackObj.properties.speed = Math.round(v / 1.856); // nds
                         trackObj.properties.dist = Math.round(dist / 1.856); // nm
                         trackObj.properties.dta = Math.round(dta / 1.856); // nm
 
                     } else if (routeunitsystem == "angloamerican") {
+                        speedUnit = "mph";
+                        distUnit = "mil";
 
                         trackObj.properties.speed = Math.round(v / 1.609); // mph
                         trackObj.properties.dist = Math.round(dist / 1.609); // miles
@@ -1060,6 +1020,11 @@ along waypoint file loaded from url
                         trackObj.properties.speed = Math.round(v); // km/h
                         trackObj.properties.dist = Math.round(dist); // km
                         trackObj.properties.dta = Math.round(dta / 10) * 10; // km
+                    }
+
+                    if (speedFlag) {
+                        trackObj.properties.title = trackObj.properties.speed + speedUnit;
+                        console.log("title", trackObj.properties.title);
                     }
 
                 } else { // Resting(pausing) objects 
@@ -1928,25 +1893,28 @@ along waypoint file loaded from url
             // 
             trackRoutesZoomTo: function(routeFeatures, routeid, filter, msg) {
                 if (!msg) msg = "Route-Feature-Zoom.";
-                var bboxFilter = null; // ""; 
+                var bboxFilter = null,
+                    timer,
+                    timemsg;
 
                 if (!routeFeatures) {
 
                     if (filter && !routeid) {
                         bboxFilter = filter;
-                        routeid = filter.slice(2, 3)
-                        console.log("trackRoutesZoomTo: filter=", filter, "routeid=" + routeid);
+                        routeid = filter.slice(2, 3); // ???? 
                     }
 
+                    // A. Zoom to Rawfeatures
                     // SPECIAL
                     routeFeatures = this.trackRouteGetRawFeatures(routeid);
 
                     if (routeid) {
                         bboxFilter = ["in", "routeid", routeid];
-                    } else {
-                        // console.log("queryAll");
+                        timer = mba.timer.routes[routeid];
+                        console.log("trackRoutesZoomTo: routeid=" + routeid, "VON " + this.logTime(timer.start, "h"), "BIS " + this.logTime(timer.stop, "h")); // , timer);
                     }
 
+                    // B. Zoom to mapbox-features
                     if (!routeFeatures) {
                         console.log("trackRoutesZoomTo, applyFilter:", routeid, bboxFilter);
                         routeFeatures = this.map.querySourceFeatures("routes", {
