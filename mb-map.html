@@ -97,6 +97,11 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     }
                 },
 
+
+                mapcontent: {
+                    type: Object
+                },
+
                 /**
                  *  center of visible mapview as csv(Lon,Lat)
                  */
@@ -121,16 +126,12 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 lnglat: {
                     type: Object,
                     notify: true
-                },
-
-                carddata: {
-                    type: Object
                 }
 
             },
 
             observers: [
-                // 'centerthemap(cbox, zoom)'
+                'updateMapContent(mapcontent.*)'
             ],
 
             attached: function() {
@@ -173,6 +174,75 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
                 this.installmap();
             },
+
+            /**
+             * Create/Refresh layers delivered as "iimaps" 
+             * with mapcontent container
+             */
+            updateMapContent: function(mapcontent) {
+                var map = this.map;
+                if (!map) return;
+
+                var layerSources = mapcontent;
+                if (mapcontent.path == 'mapcontent') layerSources = mapcontent.value;
+                if (!layerSources || !Object.keys(layerSources).length) return;
+                // console.log("SET/REFRESH mapContent(layers): ", layerSources);
+
+                var layerNames = Object.keys(layerSources);
+                console.log("Refreshing map-layers", layerNames);
+                layerNames.forEach(function(layername, j) {
+
+                    if (layerSources[layername].srcdata) {
+
+                        var layerObject = layerSources[layername],
+                            layerData = layerObject['srcdata'],
+                            layerSource = map.getSource(layername),
+                            mapLayer = map.getLayer(layername);
+
+                        // 1.A. (Re)Set datasources
+                        if (!layerSource) {
+                            map.addSource(layername, {
+                                "type": "geojson",
+                                "data": layerData
+                            });
+                            layerSource = map.getSource(layername);
+                            // console.log("SRC", layername, layerData, layerSource);
+                        } else {
+                            layerSource.setData(layerData);
+                        }
+
+                        // 1.B. Create layers 
+                        if (!mapLayer) {
+                            console.log("Adding layer", layername, layerObject['layer'], map.getSource(layername));
+
+                            // OPTIONAL: bglayer(s) of the same source
+                            if (layerObject['bglayer']) {
+                                // console.log("adding bg-layer of "+layername, bgl);
+                                // sls.forEach(function(sl) { // console.log("sl",sl);
+                                map.addLayer(layerObject['bglayer']);
+                                // }
+                            }
+
+                            // BASIC layer
+                            map.addLayer(layerObject['layer']);
+
+                            // OPTIONAL: selectlayer of the same source
+                            var sls = layerObject['selectlayer'];
+                            if (sls && sls.length) {
+                                sls.forEach(function(sl) { // console.log("sl",sl);
+                                    map.addLayer(sl);
+                                    map.setFilter(sl.id, ["==", "id", ""]);
+                                })
+                            }
+                        }
+
+                    }
+
+                })
+
+
+            },
+
 
             zoomthemap: function(zoom) {
                 // console.log("zoomthemap", zoom, this.map);

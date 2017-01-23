@@ -4,15 +4,15 @@
         "url": "http://iimaps.de/data/gps/world/gpx/Current.gpx"
     },
     {
-        "title": "kamerundata",
+        "title": "eastafrica-2011",
         "type": "gpx",
         "url": "http://iimaps.de/data/gps/kamerun/gpx/Current.gpx",
-        "query":{
+        "query": {
             "geometry": "Track"
         }
     },
     {
-        "title": "praharecords",
+        "title": "praha-2012",
         "type": "gpx",
         "url": "http://iimaps.de/data/gps/prag/gpx/2012-05-01 10.16.20 Day.gpx"
     },

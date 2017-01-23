@@ -111,6 +111,7 @@ Demo to view ship-data animation
                 cbox="{{cbox}}" 
                 zoom="{{zoom}}" 
                 lnglat="{{lnglat}}" 
+                mapcontent="[[mapcontent]]"
                 mapctrl="[[mapctrl]]">
                 
                 <!-- Elements to show in map-overlay  -->
@@ -139,6 +140,7 @@ Demo to view ship-data animation
                 <routing-handheld 
                     url="[[routedataurl]]" 
                     routedata="{{routedata}}"
+                    mapdata="{{mapcontent}}"
                     rawdata="{{rawdata}}"
                     basedataurl="[[basedataurl]]" 
                     trackinfo="[[trackinfo]]" 
@@ -158,6 +160,7 @@ Demo to view ship-data animation
                     routedata=[[routedata]] 
                     routeid=[[routeid]] 
                     trackctrl="{{trackctrl}}" 
+                    mapcontent="{{mapcontent}}"                  
                     trackmapmode="{{trackmapmode}}" 
                     tracksymbol="{{tracksymbol}}" 
                     trackdata="{{trackdata}}"
@@ -228,12 +231,12 @@ Demo to view ship-data animation
 
         // 
         scope.selectrouteid = function(e) {
-                console.log("routeid=", e.detail.item.id)
-                scope.routeid = e.detail.item.id;
-            }
-            /**
-             * Put selected url from menu-selection into import-element
-             */
+            console.log("selected route:", e.detail.item.id)
+            scope.routeid = e.detail.item.id;
+        };
+        /**
+         * Put selected url from menu-selection into import-element
+         */
         scope.selectedurl = function(e) {
             this.routedataurl = e.detail.item.url;
         }
