@@ -131,7 +131,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
             },
 
             observers: [
-                'updateMapContent(mapcontent.*)'
+                'iiLayersUpdate(mapcontent.*)'
             ],
 
             attached: function() {
@@ -176,70 +176,208 @@ the map-ctrls can be placed as map-overlay or anywhere else
             },
 
             /**
-             * Create/Refresh layers delivered as "iimaps" 
-             * with mapcontent container
+             * Create/Refresh ii(maps)Layers 
+             * delivered with mapcontent container
              */
-            updateMapContent: function(mapcontent) {
+            iiLayersUpdate: function(mapcontent) {
                 var map = this.map;
                 if (!map) return;
+                if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
+                if (!mapcontent || !Object.keys(mapcontent).length) return;
 
-                var layerSources = mapcontent;
-                if (mapcontent.path == 'mapcontent') layerSources = mapcontent.value;
-                if (!layerSources || !Object.keys(layerSources).length) return;
+                // Generic HILITE-function based on "id-Filter"	
+                function hilitefeature(e, layerid, featurekey) {
 
-                var layerNames = Object.keys(layerSources);
-                console.log("Refreshing map-layers", layerNames);
+                    if (!map.getLayer(layerid)) return;
+                    if (!map.getLayer(layerid + "-hover")) return;
+
+                    var info, key, hilayerid, hifilter, idnames = ["id", "name", "key"];
+
+                    var features = map.queryRenderedFeatures(e.point, {
+                        layers: [layerid]
+                    });
+
+                    if (features && features.length) {
+                        info = features[0].properties;
+                        idnames.forEach(function(nom) {
+                            if (info[nom]) key = nom;
+                        })
+                        if (!key) {
+                            console.log("hi " + layerid + ":", info);
+                        } else {
+                            hilayerid = layerid + "-hover";
+                            hifilter = ["==", key, info[key]];
+                            console.log("hi " + hilayerid + ":", hifilter);
+                            map.setFilter(hilayerid, hifilter);
+                        }
+                    } else {
+                        map.setFilter(layerid + "-hover", ["==", "name", ""]);
+                    }
+                }
+
+                // Layer that occurs on-mose-hover only 
+                function createHoverLayer(layertemplate) {
+                    var lhover = {}; // layertemplate,
+                    var basetype = layertemplate.type;
+                    Object.keys(layertemplate).forEach(function(k) {
+                        lhover[k] = layertemplate[k];
+                    })
+
+                    lhover.id = layertemplate.id + "-hover";
+
+                    lhover.filter = ["==", "id", ""];
+
+                    if (basetype == "fill") {
+                        lhover.paint = {
+                            "fill-color": "#627BC1",
+                            "fill-opacity": 1
+                        }
+                    } else if (basetype == "line") {
+                        lhover.paint = {
+                            "line-color": "#FF0000",
+                            "line-opacity": 1
+                        }
+
+                    } else if (basetype == "symbol") {
+                        lhover.layout = {
+                            "opacity": 1
+                        }
+                    }
+                    console.log("HOVER", basetype, lhover);
+
+                    return lhover;
+                }
+
+                var layerNames = Object.keys(mapcontent); // console.log("Refreshing iimap-layers", layerNames);
 
                 layerNames.forEach(function(layername, j) {
 
-                    if (layerSources[layername].srcdata) {
+                    function hiliter(e) {
+                        hilitefeature(e, layername);
+                    }
 
-                        var layerObject = layerSources[layername],
-                            layerData = layerObject['srcdata'],
-                            layerSource = map.getSource(layername),
+                    var layerObject = mapcontent[layername],
+                        layerData = layerObject.srcdata,
+                        layerTemplate = layerObject['layer'],
+                        layerTemplates = getLayerTemplates(layerObject);
+
+                    function getLayerTemplates(layerObject) {
+
+                        var layerTemplates = [];
+
+                        if (layerObject['layer']) layerTemplates.push(layerObject['layer']);
+
+                        if (layerObject['bglayer']) layerTemplates.splice(0, 0, layerObject['bglayer']); // !!! 
+
+                        if (layerObject['selectlayer']) {
+                            layerObject['selectlayer'].forEach(function(l) {
+                                layerTemplates.push(l);
+                            })
+                        } else {
+                            let hoverTemplate = createHoverLayer(layerTemplate);
+                            if (hoverTemplate) layerTemplates.push(hoverTemplate);
+                        }
+
+                        return layerTemplates;
+                    }
+
+                    // DELETE on demand 
+                    if (layerObject.delete) {
+
+                        if (map.getSource(layername)) map.removeSource(layername);
+
+                        layerTemplates.forEach(function(l) {
+                            if (map.getLayer(l.id)) map.removeLayer(l.id);
+                        });
+
+                        map.off("mousemove", hiliter)
+
+                        return;
+                    }
+
+                    // CREATE / REFRESH 
+
+                    if (layerData) {
+
+                        console.log("IIMAP-refresh of '" + layername + "':", layerObject);
+
+                        // var layerId = layerTemplate.id;
+
+                        var layerSource = map.getSource(layername),
                             mapLayer = map.getLayer(layername);
 
                         // 1.A. (Re)Set datasources
                         if (!layerSource) {
+
                             map.addSource(layername, {
                                 "type": "geojson",
                                 "data": layerData
                             });
+
                             layerSource = map.getSource(layername);
                             // console.log("SRC", layername, layerData, layerSource);
                         } else {
-                            layerSource.setData(layerData);
+                            // 1.B  CHECK 
+                            if (true) {
+                                layerSource.setData(layerData);
+                            }
                         }
 
-                        // 1.B. Create layers 
+                        // 1.B Check type-FIT of layerName ??? 
+
+                        // 1.C. (Re)Create layers 
                         if (!mapLayer) {
-                            console.log("Adding layer", layername, layerObject['layer'], map.getSource(layername));
+                            console.log("layerTemplates", layerTemplates);
+                            layerTemplates.forEach(function(l) {
+                                if (!map.getLayer(l.id)) {
+                                    map.addLayer(l);
+                                }
+                            });
 
-                            // OPTIONAL: bglayer(s) of the same source
-                            if (layerObject['bglayer']) {
-                                // console.log("adding bg-layer of "+layername, bgl);
-                                // sls.forEach(function(sl) { // console.log("sl",sl);
-                                map.addLayer(layerObject['bglayer']);
-                                // }
-                            }
+                            /*    
+                                // OPTIONAL: bglayer(s) of the same source
+                                if (layerObject['bglayer']) {
+                                    // console.log("adding bg-layer(s) of "+layername, bgl);
+                                    // sls.forEach(function(sl) { // console.log("sl",sl);
+                                    map.addLayer(layerObject['bglayer']);
+                                    // }
+                                }
 
-                            // BASIC layer
-                            map.addLayer(layerObject['layer']);
+                                // BASIC layer
+                                map.addLayer(layerDef);
 
-                            // OPTIONAL: selectlayer of the same source
-                            var sls = layerObject['selectlayer'];
-                            if (sls && sls.length) {
+                                // OPTIONAL: selectlayer of the same source
+                                var sls = layerObject['selectlayer'];
+
+                                if (!sls || !sls.length) {
+                                    sls = [];
+                                    sls.push(hoverlayer);
+
+                                    sls.push(sld);
+                                }
+
                                 sls.forEach(function(sl) { // console.log("sl",sl);
                                     map.addLayer(sl);
                                     map.setFilter(sl.id, ["==", "id", ""]);
                                 })
-                            }
+                            */
+
+                            // 
+                            map.on("mousemove", hiliter)
+                        }
+
+                        // Check in 
+                        if (map.getLayer(layername)) {
+                            var features = map.querySourceFeatures(layername, {
+                                sourceLayer: 'original',
+                                filter: null
+                            });
+                            // console.log("features of " + layername, features, layerSource);
                         }
 
                     }
 
                 })
-
 
             },
 

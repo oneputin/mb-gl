@@ -190,10 +190,10 @@ along waypoint file loaded from url
             ],
 
 
-            // mapContent-Object for basic Layers related to animation-datasrces 
+            // Create a mapContent-Object for basic Layers related to animation-datasrces 
             // id : "routes", "traces", "nodes", "tracks"
             // 
-            mapContentSetup: function(id, type, srcdata, metas, paintprops, layoutprops) {
+            _animationContentSetup: function(id, type, srcdata, metas, paintprops, layoutprops) {
 
                 var layerObj = {},
                     paints = {},
@@ -245,6 +245,73 @@ along waypoint file loaded from url
                 return layerObj;
             },
 
+
+            /**
+             * Create/Refresh mapLayers for changed content (routed Data)
+             *
+             * @param      {object}  mapcontent  The iimapslayers for animation-apps 
+             * @param      {object}  map         The map to show routetracker
+             */
+            _animationMapSetup: function(map, mapcontent) {
+                var debounceTime = 200;
+
+                this.debounce('tomap', function() {
+
+                    if (mapcontent.path == 'animationsources') mapcontent = mapcontent.value;
+                    if (!mapcontent || !Object.keys(mapcontent).length) return;
+
+                    console.log("SET/REFRESH content of animationMap: ", mapcontent);
+
+                    // 1. Create/Refresh (json)data-based animation-layers
+
+                    // OLD : private addLayer-actions
+                    // mba.mbLayersSetup(map, mapcontent);
+                    // NEW : trigger standard-addlayer-action off iimap-content in mb-map
+                    this.mapcontent = mapcontent;
+
+                    // 2. Setup Map-Events to query track-features on "mouseover" and show info-popup 
+
+                    if (!map.listens('mousemove')) {
+
+                        map.on('mousemove', function(e) {
+                            // during animation only !!
+                            if (mba.trackctrl) mba.trackObjSelect(e);
+                        });
+
+                        map.on('click', function(e) {
+                            // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
+                            mba.trackObjSelect(e, true);
+                            mba.routeNodeSelect(e);
+                        });
+
+                        // only in DEFAULT mapmode (NORTH) 
+                        map.on('movestart', function(e) {
+                            if (!mba.trackmapmode) { // console.log("movestart");
+                                this._mapismoved = true;
+                            }
+                        });
+                        map.on('moveend', function(e) {
+                            if (!mba.trackmapmode) { // console.log("moveend");
+                                mba._mapismoved = false;
+                            }
+                        });
+                    } else {
+
+                    }
+
+                    // 3. (Re)Start-action(s) 
+
+                    mba._counter = 1;
+
+                    // Primary Zoom after Setup
+                    mba.trackRoutesZoomTo(mapcontent["routes"].srcdata.features);
+
+                    // Set visible routing/tracking content for first "start-time" of animation-routes   
+                    mba.animationMapRefresh(mba.timer["start"], null, "FIRST START");
+
+                }, debounceTime);
+            },
+
             /**
              * set 'quasiglobal' this-context for recursive calls during animation 
              * and setup track-features
@@ -263,6 +330,7 @@ along waypoint file loaded from url
                 }
             },
 
+            // 
             _animationTrigger: function(mapismoved, old) {
                 // console.log("mapismoved", mapismoved, old);
                 if (mapismoved) {
@@ -497,68 +565,6 @@ along waypoint file loaded from url
 
             },
 
-
-            /**
-             * Refresh map-features for changed content (routed Data)
-             *
-             * @param      {object}  layerSources  The layerSources to 
-             * @param      {object}  map           The map to show routetracker
-             */
-            _animationMapSetup: function(map, layerSources) {
-                var debounceTime = 200;
-
-                this.debounce('tomap', function() {
-
-                    if (layerSources.path == 'animationsources') layerSources = layerSources.value;
-                    if (!layerSources || !Object.keys(layerSources).length) return;
-                    console.log("SET/REFRESH animationLayers into Map: ", layerSources);
-
-                    // 1. Create/Refresh (json)data-based animation-layers
-
-                    this.mapcontent = layerSources; // trigger action on mb-map
-                    // mba.mbLayersSetup(map, layerSources);
-
-                    // 2. Setup Events to query track-features on "mouseover" and show info-popup 
-
-                    if (!map.listens('mousemove')) {
-
-                        map.on('mousemove', function(e) {
-                            // during animation only !!
-                            if (mba.trackctrl) mba.trackObjSelect(e);
-                        });
-
-                        map.on('click', function(e) {
-                            // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
-                            mba.trackObjSelect(e, true);
-                            mba.routeNodeSelect(e);
-                        });
-
-                        // only in DEFAULT mapmode (NORTH) 
-                        map.on('movestart', function(e) {
-                            if (!mba.trackmapmode) { // console.log("movestart");
-                                this._mapismoved = true;
-                            }
-                        });
-                        map.on('moveend', function(e) {
-                            if (!mba.trackmapmode) { // console.log("moveend");
-                                mba._mapismoved = false;
-                            }
-                        });
-                    }
-
-                    // 3. (Re)Start-action(s) 
-
-                    mba._counter = 1;
-
-                    // Primary Zoom after Setup
-                    mba.trackRoutesZoomTo(layerSources["routes"].srcdata.features);
-
-                    // Set visible routing/tracking content for first "start-time" of animation-routes   
-                    mba.animationMapRefresh(mba.timer["start"], null, "FIRST START");
-
-                }, debounceTime);
-            },
-
             // B. TrackCtrls
 
             /**
@@ -669,6 +675,7 @@ along waypoint file loaded from url
                 this.trackStepAnimation(ctrlflag);
                 // *******************************
             },
+
 
             // C. TrackStep-Animation 
 
@@ -1068,6 +1075,7 @@ along waypoint file loaded from url
             },
 
 
+
             // D. SETUP elements ctrling and/or illustrating the tracking 
 
             // Initialisierung der animation-feature(collections)
@@ -1075,11 +1083,13 @@ along waypoint file loaded from url
                 var lnames = ["routes", "traces", "tracks", "nodes"];
                 // console.log("trackFeaturesReset for objects:", lnames);
                 lnames.forEach(function(lname) {
+                    console.log("RES:", lname);
                     if (mba.map.getLayer(lname)) mba.map.removeLayer(lname);
                     if (mba.map.getLayer(lname + "-select")) mba.map.removeLayer(lname + "-select");
                     if (mba.map.getLayer(lname + "-glow")) mba.map.removeLayer(lname + "-glow");
                     if (mba.map.getLayer(lname + "-glow-strong")) mba.map.removeLayer(lname + "-glow-strong");
                     if (mba.map.getLayer(lname + "-bg")) mba.map.removeLayer(lname + "-bg");
+
                     if (mba.map.getSource(lname)) mba.map.removeSource(lname);
 
                     this[lname] = {
@@ -1169,7 +1179,7 @@ along waypoint file loaded from url
                     }
                 }
 
-                var mapObjNodes = this.mapContentSetup("nodes", "symbol", allnodes, nodemetas);
+                var mapObjNodes = this._animationContentSetup("nodes", "symbol", allnodes, nodemetas);
 
                 // additional layer to the same src
                 mapObjNodes['bglayer'] = {
@@ -1310,7 +1320,7 @@ along waypoint file loaded from url
                     }
                 }
 
-                var trackLayerObj = this.mapContentSetup("tracks", type, allTracks, routemetas, paints, layouts);
+                var trackLayerObj = this._animationContentSetup("tracks", type, allTracks, routemetas, paints, layouts);
 
                 // C. ADDITIONAL mb-Layerset to style the trackInfoObj (app-specific)
 
@@ -1580,9 +1590,9 @@ along waypoint file loaded from url
 
                 // C. FINAL mb-Objects
 
-                var mapObjRoutes = this.mapContentSetup("routes", "line", this.routes, routemetas, routePaintProps);
+                var mapObjRoutes = this._animationContentSetup("routes", "line", this.routes, routemetas, routePaintProps);
 
-                var mapObjTraces = this.mapContentSetup("traces", "line", this.traces, routemetas, routePaintProps);
+                var mapObjTraces = this._animationContentSetup("traces", "line", this.traces, routemetas, routePaintProps);
 
                 // RETURN: 
                 // console.log("ThemeObjs:", mapObjRoutes, mapObjTraces);

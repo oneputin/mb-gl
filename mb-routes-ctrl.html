@@ -160,9 +160,9 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             },
 
             observers: [
-                'controlupdate(trackctrl)',
                 'sliderinit(timer.stop)', // , timer.stop)',
-                'sliderupdate(timer.time)'
+                'syncCtrls(trackctrl)',
+                'syncSlider(timer.time)'
             ],
 
             ready: function() {
@@ -184,12 +184,31 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
 
             /**
-             * Sync button-icons 
+             * Initialize the progress-slider for imported data
+             *
+             * @param      {number}  stoptime  The stoptime
+             */
+            sliderinit: function(stoptime) { // , stoptime) {
+                if (!stoptime) return;
+                var starttime = this.timer.start;
+                // console.log("Setup timeslider from start-/stop-times ", starttime, stoptime);
+
+                var deltat = stoptime - starttime;
+                if (this.sliderunit == "min") deltat = deltat * 60;
+                else if (this.sliderunit == "sec") deltat = deltat * 3600;
+
+                deltat = Math.round(deltat)
+                this.start = 0;
+                this.stop = deltat + 1;
+            },
+
+            /**
+             * Sync ctrl-button-icons when "trackctrl" changed outside  
              *
              * @param      {string}  trackctrl  The trackctrl
              * @param      {<type>}  trackmode  The trackmode
              */
-            controlupdate: function(trackctrl, trackmode) {
+            syncCtrls: function(trackctrl, trackmode) {
                 // ctrls must reflect the handling options during actual status 
                 if (trackctrl) {
                     if (trackctrl == "reset") {
@@ -204,28 +223,11 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             },
 
             /**
-             * Initialize the progress-slider for imported data
-             *
-             * @param      {number}  stoptime  The stoptime
-             */
-            sliderinit: function(stoptime) { // , stoptime) {
-                if (!stoptime) return;
-                var starttime = this.timer.start;
-                // console.log("Setup timeslider from start-/stop-times ", starttime, stoptime);
-
-                var deltat = Math.round(stoptime - starttime);
-                if (this.sliderunit == "min") deltat = deltat * 60;
-                if (this.sliderunit == "sec") deltat = deltat * 3600;
-                this.start = 0;
-                this.stop = deltat + 1;
-            },
-
-            /**
              * Sync animation-status with contrils 
              *
              * @param      {number}  tracktime  The tracktime
              */
-            sliderupdate: function(tracktime) {
+            syncSlider: function(tracktime) {
                 if (!tracktime) return;
                 // console.log("timer=", this.timer);
 
@@ -266,7 +268,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             /**
              * Setup the Ctrl-actions (start/stop, restart, time-slider) 
-             *
+             * changing status-properties 
              */
             setupAnimationCtrls: function() {
 
@@ -274,6 +276,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
                 var ctrl1 = this.$.replay,
                     ctrl2 = this.$.toggle,
+
                     ctrl3a = this.$.slowdown,
                     ctrl3b = this.$.speedup;
 
@@ -298,12 +301,12 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     // Slowdown/speedup animation
                     ctrl3a.addEventListener('click', function() {
                         this.set("timer.ctrl", "down"); // console.log("slowdown");
-                        this.set("timer.ctrl", "none");
+                        //this.set("timer.ctrl", "none");
                     }.bind(this));
 
                     ctrl3b.addEventListener('click', function() {
                         this.set("timer.ctrl", "up"); //console.log("speedup");
-                        this.set("timer.ctrl", "none");
+                        //this.set("timer.ctrl", "none");
                     }.bind(this));
                 }
 
