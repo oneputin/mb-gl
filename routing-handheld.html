@@ -102,8 +102,8 @@ To 'close'
         </iron-ajax>
 
         <kml-json 
-            url="[[kmlurl]]" 
-            query="[[kmlquery]]" 
+            url="[[xmlurl]]" 
+            query="[[xmlquery]]" 
             geojson="{{rawdata}}">
         </kml-json>
 
@@ -150,11 +150,11 @@ To 'close'
 
             properties: {
 
-                url: {
-                    type: String,
-                    observer: 'urldispatcher'
+                routesrc: {
+                    type: Object
                 },
-                kmlurl: {
+
+                xmlurl: {
                     type: String
                 },
                 jsonurl: {
@@ -190,29 +190,38 @@ To 'close'
             ],
 
             observers: [
-                'importTracks(rawdata, rawdbdata)'
+                'importTracks(rawdata, rawdbdata)',
+                'srcdispatcher(routesrc.*)'
             ],
 
             attached: function() {
                 // console.log("target attached");
             },
 
-            urldispatcher: function(srcurl) {
-                if (!srcurl) return;
-                var ext = srcurl.split(".").slice(-1);
+            // 
+            srcdispatcher: function(routesrc) {
+                // console.log("routesrc", routesrc);
+                if (routesrc.path == 'routesrc') routesrc = routesrc.value;
+                if (!routesrc.url) return;
+
+                var srcurl = routesrc.url,
+                    srctype = routesrc.type,
+                    ext = srcurl.split(".").slice(-1);
                 if (!ext.length) return;
+
                 ext = ext[0];
                 // console.log("srcurl",typeof srcurl, srcurl,ext); // return;
 
-                if (ext == "json") {
-                    this.jsonurl = srcurl;
-                } else if ((ext == "kml") || (ext == "gpx")) {
-                    this.kmlurl = srcurl;
-                    this.kmlquery = {
-                            "tags": "Track",
-                            "structure": "doc"
-                        }
-                        // console.log("kmlLOG:", this.kmlurl, this.kmlquery);
+                if (srctype == "usertable") {
+                    if (ext == "json") this.jsonurl = srcurl;
+
+                } else if ((srctype == "kml") || (srctype == "gpx")) {
+                    this.xmlurl = srcurl;
+                    this.xmlquery = {
+                        "tags": "Track",
+                        "structure": "doc"
+                    };
+                    // console.log("kmlLOG:", this.xmlurl, this.xmlquery);
                 }
             },
 
@@ -239,7 +248,8 @@ To 'close'
 
                 function jsonTrackPreprocess(rawdata) {
 
-                    var segfeatures = [];
+                    var segfeatures = [],
+                        starttime;
 
                     rawdata.features.forEach(function(f, i) {
 
@@ -255,6 +265,8 @@ To 'close'
 
                                 var cc = JSON.parse(JSON.stringify(coords)); // .slice(0);
                                 var tt = JSON.parse(JSON.stringify(tracktimes[j])); // .slice(0);
+
+                                if (!starttime) starttime = tt[0];
 
                                 var seg = {
                                     "type": "Feature",
@@ -274,32 +286,36 @@ To 'close'
                             })
 
                         } else {
+
+                            if (!starttime) starttime = tracktimes[0];
                             f.properties.color = scope.getRandomColor();
                             segfeatures.push(f);
                         }
                     })
 
                     var segdata = {
-                        "time": rawdata.time,
+                        "time": starttime, // rawdata.time (probably time of gpxToJson-conversion)
                         "type": rawdata.type,
                         "features": segfeatures
                     };
 
                     return segdata;
-
                 }
 
                 // Possibly geojson
                 if (data && data.features) {
-
+                    //console.log("checkrawdata, geojson-1", data)
                     var mapdata, ddrLinecolors = [];
 
-                    // console.log("checkrawdata, geojson-1", data)
                     data = jsonTrackPreprocess(data);
                     // console.log("checkrawdata, geojson-2", data)
 
                     // Quickview of raw data 
-                    var mapid = "rawtracks" + data.time;
+                    var title = scope.routesrc.key;
+                    if (!title) title = scope.routesrc.title;
+                    if (!title) title = data.time;
+                    var mapid = "tracks-" + title;
+
                     mapdata = {};
                     mapdata[mapid] = {
                         "layer": {
@@ -310,7 +326,6 @@ To 'close'
                         "srcdata": data,
                         "raw": 1
                     };
-
                 }
 
                 // SUPPLY mapdata
@@ -673,17 +688,6 @@ To 'close'
                         "location": rawdata,
                         "master": rawdbdata
                     }); // return;
-
-                    /**
-                     *  transform from handheld-data (exported as tabbed text or csv)
-                     */
-                    /* var route, master, id,
-                        routes = {},
-                        masterdata = {};
-                    var coords, time, id, lat, route,
-                        timeunit = "s",
-                        route0 = [],
-                        routes = []; */
 
 
                     // Optional: Append track-masterData     

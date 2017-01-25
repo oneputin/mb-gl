@@ -351,7 +351,6 @@ along waypoint file loaded from url
                         }
                     }, 100);
                 }
-
             },
 
             /*routeFilterSetup: function(routeids) {
@@ -361,6 +360,7 @@ along waypoint file loaded from url
             routeFilterApply: function(routeid) {
                 var routeFilter, srcFeatures,
                     timer = this.timer;
+                if (!timer || !timer.routes) return;
 
                 var timerEntry = timer.routes[routeid];
 
@@ -388,6 +388,7 @@ along waypoint file loaded from url
                 // 
                 srcFeatures = this.animationMapRefresh(null, routeFilter);
                 // console.log("srcFeatures filtered for:" + routeid, srcFeatures, this.timer);
+
                 if (srcFeatures.routes) {
                     // C. TEMPORAL Location at START of selected routes
                     console.log("running FIRST animation-step");
@@ -1941,13 +1942,7 @@ along waypoint file loaded from url
                 // console.log(msg, routeFeatures); // .getCoordinates());
 
                 var bb = mba.featureBounds(routeFeatures);
-
                 if (bb) {
-                    // console.log("Zoom to bbox:", bb);
-                    //console.log("SW", this.formatlonlat(bb.getSouthWest()));
-                    //console.log("NE", this.formatlonlat(bb.getNorthEast()));
-                    //console.log(routeFeatures);
-
                     mba.map.fitBounds(bb, {
                         padding: 20
                     });

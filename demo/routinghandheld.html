@@ -112,6 +112,8 @@ Demo to view ship-data animation
                 zoom="{{zoom}}" 
                 lnglat="{{lnglat}}" 
                 mapcontent="[[mapcontent]]"
+                featurelist="{{routedata}}"
+                featureselected="{{featureselected}}"
                 mapctrl="[[mapctrl]]">
                 
                 <!-- Elements to show in map-overlay  -->
@@ -138,7 +140,7 @@ Demo to view ship-data animation
             <div class="ctrls_out">
                 <!-- INTERFACE -->
                 <routing-handheld 
-                    url="[[routedataurl]]" 
+                    routesrc="[[routesrc]]" 
                     routedata="{{routedata}}"
                     mapdata="{{mapcontent}}"
                     rawdata="{{rawdata}}"
@@ -175,9 +177,12 @@ Demo to view ship-data animation
                 </mb-routes-ctrl-time>
 
     <paper-dropdown-menu label="Tracksets">
-        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
+        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedsrc" attr-for-selected="src">
             <template is="dom-repeat" items="{{routesets}}">
-                <paper-item url="{{item.url}}">
+                <!--<paper-item url="{{item.url}}">
+                    {{item.title}}
+                </paper-item>-->
+                <paper-item src="{{item}}" url="{{item.url}}">
                     {{item.title}}
                 </paper-item>
             </template>
@@ -185,9 +190,9 @@ Demo to view ship-data animation
     </paper-dropdown-menu>
 
     <paper-dropdown-menu class="routes" label="Tracks">
-        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
+        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selecteditem" attr-for-selected="{{selectattr}}">
             <template is="dom-repeat" items="{{routedata}}">
-                            <paper-item id="{{item.id}}">
+                            <paper-item feature="{{item}}" id="{{item.id}}">
                                 {{item.title}}
                             </paper-item>
                         </template>
@@ -208,7 +213,7 @@ Demo to view ship-data animation
         // Data-INIT
         scope.setupurl = "index-handheld.json"; // list of available datasets
         scope.basedataurl = ""; // list of available datasets
-        scope.routedataurl = ""; // url to selected dataset
+        scope.routesrc = {}; // url to selected dataset
 
         // Map-INIT
         scope.cbox = "13,52";
@@ -229,16 +234,20 @@ Demo to view ship-data animation
         // SHELL-actions
         scope.mapctrl = {};
 
-        // 
-        scope.selectrouteid = function(e) {
-            console.log("selected route:", e.detail.item.id)
-            scope.routeid = e.detail.item.id;
+        // Feature-selection
+        scope.featureselected = "{}";
+        scope.selectattr = "feature"; // "feature"; // "id" 
+        scope.selecteditem = function(e) {
+            var selectvalue = e.detail.item[scope.selectattr];
+            // console.log("selected item:", selectvalue);
+            if (scope.selectattr == "id") scope.routeid = selectvalue;
+            else scope.featureselected = selectvalue;
         };
         /**
-         * Put selected url from menu-selection into import-element
+         * Put selected src from menu-selection into import-element
          */
-        scope.selectedurl = function(e) {
-            this.routedataurl = e.detail.item.url;
+        scope.selectedsrc = function(e) {
+            this.routesrc = e.detail.item.src;
         }
 
         // eval the response of content-list 

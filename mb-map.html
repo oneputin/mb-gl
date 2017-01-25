@@ -2,6 +2,8 @@
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 
 <link rel="import" href="mb-api.html">
+<link rel="import" href="mb-tools-behavior.html">
+
 
 <!--
 `mb-map`
@@ -97,9 +99,27 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     }
                 },
 
-
+                // 
                 mapcontent: {
                     type: Object
+                },
+
+                // features of (all) json-layers loaded
+                // grouped by layer
+                mapfeatures: {
+                    type: Object,
+                    value: {},
+                },
+
+                featurelist: {
+                    type: Array,
+                    value: [],
+                    notify: true
+                },
+
+                featureselected: {
+                    type: Object,
+                    observer: 'zoomToFeature'
                 },
 
                 /**
@@ -130,8 +150,13 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
             },
 
+            behaviors: [
+                Polymer.ToolsBehavior
+            ],
+
             observers: [
-                'mapContentPrepare(mapcontent.*)'
+                'mapContentPrepare(mapcontent.*)',
+                'mapContentList(mapfeatures.*)'
             ],
 
             attached: function() {
@@ -175,6 +200,35 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 this.installmap();
             },
 
+            zoomToFeature: function(f) {
+                if (!f.feature) return;
+                // console.log("zoomToFeature: " + f.id, f.feature);
+                var bb = this.featureBounds([f.feature]);
+                if (bb) {
+                    this.map.fitBounds(bb, {
+                        padding: 20
+                    });
+                }
+            },
+
+            /**
+             * Create/Refresh ii(maps)Layers 
+             * delivered with mapcontent container
+             */
+            mapContentList: function(mapfeatures) {
+                // console.log("mapfeatures observed", mapfeatures);
+                if (mapfeatures.path == 'mapfeatures') mapfeatures = mapfeatures.value;
+                // if (!mapfeatures || !Object.keys(mapfeatures).length) return;
+                console.log("mapfeatures after change:", mapfeatures);
+                var featurelist = [];
+                Object.keys(mapfeatures).forEach(function(f) {
+                    mapfeatures[f].forEach(function(item) {
+                        featurelist.push(item);
+                    })
+                });
+                this.featurelist = featurelist;
+            },
+
             /**
              * Create/Refresh ii(maps)Layers 
              * delivered with mapcontent container
@@ -204,9 +258,9 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         if (!key) {
                             console.log("hi " + layerid + ":", info);
                         } else {
-                            hilayerid = layerid + "-hover";
                             hifilter = ["==", key, info[key]];
-                            console.log("hi " + hilayerid + ":", hifilter);
+                            console.log("hi " + layerid + ":", hifilter);
+                            hilayerid = layerid + "-hover";
                             map.setFilter(hilayerid, hifilter);
                         }
                     } else {
@@ -291,123 +345,123 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     return layerTemplates;
                 }
                 // --------------------------------------------------
+                var scope = this,
+                    map = scope.map,
+                    contentfeatures = [];
 
-                var map = this.map;
+                Object.keys(this.mapfeatures).forEach(function(k) {
+                    contentfeatures[k] = scope.mapfeatures[k];
+                });
 
                 var layerNames = Object.keys(mapcontent); // console.log("Refreshing iimap-layers", layerNames);
 
                 layerNames.forEach(function(layername, j) {
 
-                    function hiliter(e) {
-                        hilitefeature(e, layername);
-                    }
+                        function hiliter(e) {
+                            hilitefeature(e, layername);
+                        }
 
-                    var layerObject = mapcontent[layername],
-                        layerData = layerObject.srcdata,
-                        layerTemplate = layerObject['layer'];
+                        var layerObject = mapcontent[layername],
+                            layerData = layerObject.srcdata,
+                            layerTemplate = layerObject['layer'];
 
-                    if (layerObject.raw) layerTemplate = rawBeautify(layerObject);
+                        if (layerObject.raw) layerTemplate = rawBeautify(layerObject);
 
-                    var layerTemplates = getLayerTemplates(layerObject);
+                        var layerTemplates = getLayerTemplates(layerObject);
 
-                    // DELETE on demand 
-                    if (layerObject.delete) {
+                        // DELETE on demand 
+                        if (layerObject.delete) {
 
-                        if (map.getSource(layername)) map.removeSource(layername);
+                            if (map.getSource(layername)) map.removeSource(layername);
 
-                        layerTemplates.forEach(function(l) {
-                            if (map.getLayer(l.id)) map.removeLayer(l.id);
-                        });
-
-                        map.off("mousemove", hiliter)
-
-                        return;
-                    }
-
-                    // CREATE / REFRESH 
-
-                    if (layerData) {
-
-                        console.log("IIMAP-refresh of '" + layername + "':", layerObject);
-
-                        // var layerId = layerTemplate.id;
-
-                        var layerSource = map.getSource(layername),
-                            mapLayer = map.getLayer(layername);
-
-                        // 1.A. (Re)Set datasources
-                        if (!layerSource) {
-
-                            map.addSource(layername, {
-                                "type": "geojson",
-                                "data": layerData
+                            layerTemplates.forEach(function(l) {
+                                if (map.getLayer(l.id)) map.removeLayer(l.id);
                             });
 
-                            layerSource = map.getSource(layername);
-                            // console.log("SRC", layername, layerData, layerSource);
-                        } else {
-                            // 1.B  CHECK 
-                            if (true) {
-                                layerSource.setData(layerData);
+                            map.off("mousemove", hiliter)
+
+                            return;
+                        }
+
+                        // CREATE / REFRESH 
+
+                        if (layerData) {
+                            //console.log("IIMAP-refresh of '" + layername + "':", layerObject);
+
+                            // var layerId = layerTemplate.id;
+
+                            var layerSource = map.getSource(layername),
+                                mapLayer = map.getLayer(layername);
+
+                            // 1.A. (Re)Set datasources
+                            if (!layerSource) {
+
+                                map.addSource(layername, {
+                                    "type": "geojson",
+                                    "data": layerData
+                                });
+
+                                layerSource = map.getSource(layername);
+
+                                if (!contentfeatures[layername]) {
+                                    var flist = [],
+                                        fitem = {},
+                                        id, title;
+                                    layerData.features.forEach(function(f) {
+                                        id = f.id;
+                                        if (!id) id = f.properties.name;
+                                        if (!id) id = f.properties.time;
+                                        id = id.replace("ACTIVE LOG:", "");
+                                        title = (layername + "_" + id).replace(/-/g, "_");
+                                        title = title.replace(/ /g, "");
+
+                                        fitem = {
+                                            "layer": layername,
+                                            "id": id,
+                                            "title": title,
+                                            "feature": f
+                                        };
+                                        flist.push(fitem);
+                                    })
+                                    contentfeatures[layername] = flist;
+                                }
+
+                                // console.log("SRC", layername, layerData, layerSource);
+                            } else {
+                                // 1.B  CHECK 
+                                if (true) {
+                                    layerSource.setData(layerData);
+                                }
+                            }
+
+                            // 1.B Check type-FIT of layerName ??? 
+
+                            // 1.C. (Re)Create layers 
+                            if (!mapLayer) {
+                                console.log("layerTemplates for " + layername, layerTemplates);
+                                layerTemplates.forEach(function(l) {
+                                    if (!map.getLayer(l.id)) {
+                                        map.addLayer(l);
+                                    }
+                                });
+
+                                mapLayer = map.getLayer(layername);
+                                // 
+                                map.on("mousemove", hiliter)
+                            }
+
+                            // Check in ??? 
+                            if (mapLayer) {
+                                var features = map.querySourceFeatures(layername, {
+                                    sourceLayer: 'original',
+                                    filter: null
+                                });
+                                if (features.length) console.log("features of " + layername, features, layerSource);
                             }
                         }
-
-                        // 1.B Check type-FIT of layerName ??? 
-
-                        // 1.C. (Re)Create layers 
-                        if (!mapLayer) {
-                            console.log("layerTemplates", layerTemplates);
-                            layerTemplates.forEach(function(l) {
-                                if (!map.getLayer(l.id)) {
-                                    map.addLayer(l);
-                                }
-                            });
-
-                            /*    
-                                // OPTIONAL: bglayer(s) of the same source
-                                if (layerObject['bglayer']) {
-                                    // console.log("adding bg-layer(s) of "+layername, bgl);
-                                    // sls.forEach(function(sl) { // console.log("sl",sl);
-                                    map.addLayer(layerObject['bglayer']);
-                                    // }
-                                }
-
-                                // BASIC layer
-                                map.addLayer(layerDef);
-
-                                // OPTIONAL: selectlayer of the same source
-                                var sls = layerObject['selectlayer'];
-
-                                if (!sls || !sls.length) {
-                                    sls = [];
-                                    sls.push(hoverlayer);
-
-                                    sls.push(sld);
-                                }
-
-                                sls.forEach(function(sl) { // console.log("sl",sl);
-                                    map.addLayer(sl);
-                                    map.setFilter(sl.id, ["==", "id", ""]);
-                                })
-                            */
-
-                            // 
-                            map.on("mousemove", hiliter)
-                        }
-
-                        // Check in 
-                        if (map.getLayer(layername)) {
-                            var features = map.querySourceFeatures(layername, {
-                                sourceLayer: 'original',
-                                filter: null
-                            });
-                            // console.log("features of " + layername, features, layerSource);
-                        }
-
-                    }
-
-                })
-
+                    })
+                    // console.log("contentfeatures", contentfeatures);
+                this.mapfeatures = contentfeatures;
             },
 
 

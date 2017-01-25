@@ -173,6 +173,14 @@
             if (!features.length) return; //console.log(features); 
             // console.log("1-bounddata(features)", features);
 
+            function concatcoords(coordinates, segment) {
+                segment.forEach(function(cc) {
+                    cc = [cc[0], cc[1]];
+                    coordinates.push(cc);
+                })
+                return coordinates;
+            }
+
             // Transform into list of coordinate-lists
             var coordinates = [],
                 segments, coords, pnt, latitude, longitude, bb = {};
@@ -181,10 +189,12 @@
                 t = features[i].geometry.type;
                 segments = features[i].geometry.coordinates;
                 if (t == "LineString") {
-                    coordinates = coordinates.concat(segments);
+                    // coordinates = coordinates.concat(segments);
+                    coordinates = concatcoords(coordinates, segments);
                 } else if (t == "MultiLineString") {
                     for (var j = 0; j < segments.length; j++) {
-                        coordinates = coordinates.concat(segments[j]);
+                        // coordinates = coordinates.concat(segments[j]);
+                        coordinates = concatcoords(coordinates, segments[j]);
                     }
                 }
             };
