@@ -131,7 +131,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
             },
 
             observers: [
-                'iiLayersUpdate(mapcontent.*)'
+                'mapContentPrepare(mapcontent.*)'
             ],
 
             attached: function() {
@@ -179,9 +179,8 @@ the map-ctrls can be placed as map-overlay or anywhere else
              * Create/Refresh ii(maps)Layers 
              * delivered with mapcontent container
              */
-            iiLayersUpdate: function(mapcontent) {
-                var map = this.map;
-                if (!map) return;
+            mapContentPrepare: function(mapcontent) {
+                if (!this.map) return;
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
                 if (!mapcontent || !Object.keys(mapcontent).length) return;
 
@@ -191,7 +190,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     if (!map.getLayer(layerid)) return;
                     if (!map.getLayer(layerid + "-hover")) return;
 
-                    var info, key, hilayerid, hifilter, idnames = ["id", "name", "key"];
+                    var info, key, hilayerid, hifilter, idnames = ["id", "name", "key", "time"];
 
                     var features = map.queryRenderedFeatures(e.point, {
                         layers: [layerid]
@@ -214,7 +213,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         map.setFilter(layerid + "-hover", ["==", "name", ""]);
                     }
                 }
-
                 // Layer that occurs on-mose-hover only 
                 function createHoverLayer(layertemplate) {
                     var lhover = {}; // layertemplate,
@@ -243,10 +241,58 @@ the map-ctrls can be placed as map-overlay or anywhere else
                             "opacity": 1
                         }
                     }
-                    console.log("HOVER", basetype, lhover);
+                    //console.log("Created HOVER", basetype, lhover);
 
                     return lhover;
                 }
+                // add temporary properties to better identify features
+                function rawBeautify(layerObject) {
+                    //console.log("rawBeautify", layerObject);
+                    //return;
+
+                    var lookuplist = [],
+                        data = layerObject.srcdata;
+
+                    data.features.forEach(function(f) {
+                        var col = f.properties.color;
+                        lookuplist.push([col, col]);
+                    });
+
+                    layerObject.layer.paint = {
+                        "line-color": {
+                            property: 'color',
+                            type: 'categorical',
+                            stops: lookuplist
+                        }
+                    };
+
+                    return layerObject.layer;
+                }
+                // 
+                function getLayerTemplates(layerObject) {
+
+                    var layerTemplates = []
+                    layerTemplate = layerObject['layer'];
+
+                    if (layerTemplate) layerTemplates.push(layerTemplate);
+
+                    // Insert BELOW main layer 
+                    if (layerObject['bglayer']) layerTemplates.splice(0, 0, layerObject['bglayer']); // !!! 
+
+                    if (layerObject['selectlayer']) {
+                        layerObject['selectlayer'].forEach(function(l) {
+                            layerTemplates.push(l);
+                        })
+                    } else {
+                        let hoverTemplate = createHoverLayer(layerTemplate);
+                        if (hoverTemplate) layerTemplates.push(hoverTemplate);
+                    }
+
+                    return layerTemplates;
+                }
+                // --------------------------------------------------
+
+                var map = this.map;
 
                 var layerNames = Object.keys(mapcontent); // console.log("Refreshing iimap-layers", layerNames);
 
@@ -258,28 +304,11 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
                     var layerObject = mapcontent[layername],
                         layerData = layerObject.srcdata,
-                        layerTemplate = layerObject['layer'],
-                        layerTemplates = getLayerTemplates(layerObject);
+                        layerTemplate = layerObject['layer'];
 
-                    function getLayerTemplates(layerObject) {
+                    if (layerObject.raw) layerTemplate = rawBeautify(layerObject);
 
-                        var layerTemplates = [];
-
-                        if (layerObject['layer']) layerTemplates.push(layerObject['layer']);
-
-                        if (layerObject['bglayer']) layerTemplates.splice(0, 0, layerObject['bglayer']); // !!! 
-
-                        if (layerObject['selectlayer']) {
-                            layerObject['selectlayer'].forEach(function(l) {
-                                layerTemplates.push(l);
-                            })
-                        } else {
-                            let hoverTemplate = createHoverLayer(layerTemplate);
-                            if (hoverTemplate) layerTemplates.push(hoverTemplate);
-                        }
-
-                        return layerTemplates;
-                    }
+                    var layerTemplates = getLayerTemplates(layerObject);
 
                     // DELETE on demand 
                     if (layerObject.delete) {
@@ -402,6 +431,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
              * setup a mb-gl-map 
              */
             installmap: function() {
+
                 /*<input id='' type='radio' name='rtoggle' value='Basic' checked='checked'>
                   <label for='Basic'>Basic</label>
                   <input id='ciuz8mtxy01dx2jl8mszelrkm' type='radio' name='rtoggle' value='Light'>

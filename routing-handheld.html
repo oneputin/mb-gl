@@ -230,29 +230,94 @@ To 'close'
                 this.rawdbdata = rawdata; // triggers 'setupTracking'
             },
 
+            // 
             checkrawdata: function(data) {
-                if (data && data.features) {
-                    // Quickview of raw data 
-                    this.mapdata = {
-                        "raw": {
-                            "layer": {
-                                "type": "line",
-                                "id": "raw",
-                                "source": "raw"
-                            },
-                            "srcdata": data,
-                            "events": {
-                                "mousemove": function(e) {
-                                    console.log("RAW data", e)
-                                }
-                            }
+
+                // Split multiLineTracks into tracksegments 
+                // addressable by time every 
+                var scope = this;
+
+                function jsonTrackPreprocess(rawdata) {
+
+                    var segfeatures = [];
+
+                    rawdata.features.forEach(function(f, i) {
+
+                        coordinates = f.geometry.coordinates;
+
+                        tracktimes = f.properties.coordTimes;
+
+                        type = f.geometry.type;
+
+                        if (type == "MultiLineString") {
+
+                            coordinates.forEach(function(coords, j) {
+
+                                var cc = JSON.parse(JSON.stringify(coords)); // .slice(0);
+                                var tt = JSON.parse(JSON.stringify(tracktimes[j])); // .slice(0);
+
+                                var seg = {
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "LineString",
+                                        "coordinates": cc
+                                    },
+                                    "properties": {
+                                        "coordTimes": tt,
+                                        "name": tt[0],
+                                        "time": tt[0],
+                                        "color": scope.getRandomColor()
+                                    }
+                                };
+
+                                segfeatures.push(seg);
+                            })
+
+                        } else {
+                            f.properties.color = scope.getRandomColor();
+                            segfeatures.push(f);
                         }
+                    })
+
+                    var segdata = {
+                        "time": rawdata.time,
+                        "type": rawdata.type,
+                        "features": segfeatures
                     };
-                    // console.log("RAWDATA-iimap", this.mapdata); // , data.features);
-                    // Convert into list of tracks
-                    // this.rawdata = data.features;
+
+                    return segdata;
+
                 }
 
+                // Possibly geojson
+                if (data && data.features) {
+
+                    var mapdata, ddrLinecolors = [];
+
+                    // console.log("checkrawdata, geojson-1", data)
+                    data = jsonTrackPreprocess(data);
+                    // console.log("checkrawdata, geojson-2", data)
+
+                    // Quickview of raw data 
+                    var mapid = "rawtracks" + data.time;
+                    mapdata = {};
+                    mapdata[mapid] = {
+                        "layer": {
+                            "type": "line",
+                            "id": mapid,
+                            "source": mapid
+                        },
+                        "srcdata": data,
+                        "raw": 1
+                    };
+
+                }
+
+                // SUPPLY mapdata
+                if (mapdata) this.mapdata = mapdata;
+
+                // SUPPLY list of tracks
+                // this.rawdata = data.features;
             },
 
             // 
@@ -294,6 +359,7 @@ To 'close'
                 rawdata.forEach(function(r, i) {
 
                     coordinates = r.geometry.coordinates;
+
                     tracktimes = r.properties.coordTimes;
 
                     type = r.geometry.type;
@@ -317,6 +383,7 @@ To 'close'
                                     "trackmode": true,
                                     "nodes": trackpoints
                                 };
+
                                 routedata.push(route);
                             }
                         })
