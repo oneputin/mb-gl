@@ -3,6 +3,7 @@
 
 <link rel="import" href="mb-api.html">
 <link rel="import" href="mb-tools-behavior.html">
+<!--<link rel="import" href="mb-distance.html"> -->
 
 
 <!--
@@ -37,6 +38,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
         <div class="container">
             <div id='map'>
             </div>
+            <!--<mb-distance map="{{map}}" distance="{{distance}}" ></mb-distance>-->
             <content>
             </content>
         </div>
@@ -203,23 +205,17 @@ the map-ctrls can be placed as map-overlay or anywhere else
             zoomToFeature: function(f) {
                 if (!f.feature) return;
                 // console.log("zoomToFeature: " + f.id, f.feature);
-                var bb = this.featureBounds([f.feature]);
-                if (bb) {
-                    this.map.fitBounds(bb, {
-                        padding: 20
-                    });
-                }
+                this.setFeatureBounds([f.feature], this.map);
             },
 
             /**
-             * Create/Refresh ii(maps)Layers 
-             * delivered with mapcontent container
+             * Create a list of all features  contained in 'mapfeatures' 
+             * and supply as notified property
              */
             mapContentFeatureList: function(mapfeatures) {
-                // console.log("mapfeatures after change:", mapfeatures);
                 if (mapfeatures.path == 'mapfeatures') mapfeatures = mapfeatures.value;
                 if (!mapfeatures || !Object.keys(mapfeatures).length) return;
-                console.log("mapfeatures after change:", mapfeatures);
+                // console.log("mapfeatures after change:", mapfeatures);
 
                 var featurelist = [];
                 Object.keys(mapfeatures).forEach(function(f) {
@@ -238,29 +234,67 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 if (!this.map) return;
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
                 if (!mapcontent || !Object.keys(mapcontent).length) return;
+                var scope = this,
+                    map = scope.map,
+                    mapfeatures = {};
+
+                function getTrackInfo(aLine){
+                    var info = aLine.properties,
+                        trackTimes = JSON.parse(info.coordTimes),
+                        n = trackTimes.length,
+                        von = scope.utcTime(scope.trackTime(trackTimes[0]), null, "h"),
+                        bis = scope.utcTime(scope.trackTime(trackTimes[n-1]), null,"h"),
+                        dt = bis - von;
+
+                    info.duration = scope.deltaT(dt); 
+                    info.length = scope.deltaL(aLine);
+                    info.count = n;
+                    
+                    info.html = info.time
+                                +"<br>Length: " + info.length
+                                +"<br>Duration: " + info.duration
+                                +"<br>TP's: " + info.count;
+
+                    // console.log(trackTimes);
+                    // console.log(info);
+                    return info; 
+                }
 
                 // Generic HILITE-function based on "id-Filter"	
                 function hilitefeature(e, layerid, featurekey) {
 
                     if (!map.getLayer(layerid)) return;
                     if (!map.getLayer(layerid + "-hover")) return;
+                    
+                    // 
+                    var idNames = ["id", "name", "key", "time"];
 
-                    var info, key, hilayerid, hifilter, idnames = ["id", "name", "key", "time"];
+                    var key, hilayerid, hifilter, fInfo; 
 
                     var features = map.queryRenderedFeatures(e.point, {
                         layers: [layerid]
                     });
 
+                    map.getCanvas().style.cursor = (features.length) ? 'pointer' : 'crosshair';
+
                     if (features && features.length) {
-                        info = features[0].properties;
-                        idnames.forEach(function(nom) {
-                            if (info[nom]) key = nom;
+
+                        aLine = features[0]; 
+
+                        fInfo = getTrackInfo(aLine);
+
+                        scope.popupOnMap(fInfo.html); 
+
+                        idNames.forEach(function(nom) {
+                            if (fInfo[nom]) key = nom;
                         })
+                    
                         if (!key) {
-                            console.log("hi " + layerid + ":", info);
+                            console.log("hi " + layerid + ":", fInfo);
                         } else {
-                            hifilter = ["==", key, info[key]];
-                            console.log("hi " + layerid + ":", hifilter);
+                            hifilter = ["==", key, fInfo[key]];
+                            // console.log("hi " + layerid + ":", fInfo.length+" km");
+                           
                             hilayerid = layerid + "-hover";
                             map.setFilter(hilayerid, hifilter);
                         }
@@ -302,7 +336,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 }
                 // add temporary properties to better identify features
                 function rawBeautify(layerObject) {
-                    //console.log("rawBeautify", layerObject);
                     //return;
 
                     var lookuplist = [],
@@ -314,13 +347,15 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     });
 
                     layerObject.layer.paint = {
+                        "line-width": 3, 
                         "line-color": {
                             property: 'color',
                             type: 'categorical',
                             stops: lookuplist
                         }
                     };
-
+                    console.log("rawBeautify", layerObject);
+                    
                     return layerObject.layer;
                 }
                 // 
@@ -352,6 +387,8 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     var flist = [],
                         fitem = {},
                         id, title;
+                    if (!layerData || !layerData.features) return flist;
+
                     layerData.features.forEach(function(f) {
                         id = f.id;
                         if (!id) id = f.properties.name;
@@ -368,19 +405,14 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         };
                         flist.push(fitem);
                     })
+
                     return flist;
                 }
 
                 //console.log("IIMAP-refresh of '" + layername + "':", layerObject);
 
-
-
                 // --------------------------------------------------
-                var scope = this,
-                    map = scope.map,
-                    mapfeatures = {};
-
-                // Take from existing    
+                // Take a copy of existing mapfeatures   
                 Object.keys(this.mapfeatures).forEach(function(layer) {
                     var flist = scope.mapfeatures[layer];
                     mapfeatures[layer] = [];
@@ -392,8 +424,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 var layerNames = Object.keys(mapcontent); // console.log("Refreshing iimap-layers", layerNames);
 
                 layerNames.forEach(function(layername, j) {
-
-                    var contentfeatures = [];
 
                     function hiliter(e) {
                         hilitefeature(e, layername);
@@ -407,7 +437,8 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
                     var layerTemplates = getLayerTemplates(layerObject);
 
-                    // DELETE on demand 
+
+                    // REMOVE layers (on demand) 
                     if (layerObject.delete) {
 
                         if (map.getSource(layername)) map.removeSource(layername);
@@ -421,17 +452,9 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         return;
                     }
 
-                    // CREATE / REFRESH 
+                    // CREATE / REFRESH mapContent
 
                     if (layerData) {
-
-                        contentfeatures = getFeatures(layername, layerData);
-                        // Collect existing 
-                        /*if (!contentfeatures[layername]) {
-                            contentfeatures[layername] = getFeatures(layername, layerData);
-                        }*/
-
-                        // var layerId = layerTemplate.id;
 
                         var layerSource = map.getSource(layername),
                             mapLayer = map.getLayer(layername);
@@ -479,6 +502,9 @@ the map-ctrls can be placed as map-overlay or anywhere else
                             if (features.length) console.log(features.length + " features of " + layername); // , features, layerSource);
                         }
                     }
+
+                    // GET all source-features of layer 
+                    var contentfeatures = getFeatures(layername, layerData);
 
                     if (contentfeatures.length) {
                         // console.log("contentfeatures of " + layername, contentfeatures);

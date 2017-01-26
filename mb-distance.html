@@ -1,0 +1,228 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="mb-api.html">
+<link rel="import" href="mb-tools-behavior.html">
+
+<script src='https://api.mapbox.com/mapbox.js/plugins/turf/v2.0.2/turf.min.js'></script>
+
+<!--
+`mb-distance`
+wraps a distance utility 
+
+@demo demo/routinghandheld.html 
+-->
+
+<dom-module id="mb-distance">
+    <template>
+        <style>
+            :host {
+                display: block;
+                top: 5px;
+            }
+            .distance-container {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                z-index: 1;
+            }
+
+            .distance-container > * {
+                background-color: rgba(0, 0, 0, 0.5);
+                color: #fff;
+                font-size: 11px;
+                line-height: 18px;
+                display: block;
+                margin: 0;
+                padding: 5px 10px;
+                border-radius: 3px;
+            }
+
+        </style>
+
+        <div id='distance' class='distance-container'></div>
+
+    </template>
+
+    <script>
+        var distscope; 
+
+        Polymer({
+
+            is: 'mb-distance',
+
+            properties: {
+                /**
+                 *  map-object of related mb-gl-map
+                 */
+                map: {
+                    type: Object,
+                    observer: 'setupTool'
+                },
+
+                // GeoJSON object to hold our measurement features
+                geojson : {
+                    type: Object,
+                    value : {
+                        "type": "FeatureCollection",
+                        "features": []
+                    }
+                },
+
+                // Used to draw a line between points
+                linestring : {
+                    type: Object,
+                    value :  {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": []
+                        }
+                    }
+                }, 
+
+                distance : {
+                    type: Number,
+                    notify: true
+                },
+
+                checked: {
+                    type: Boolean,
+                    value: true,
+                    observer: "toggleMeasure"
+                }
+            },
+
+            attached: function(){
+                distscope = this;
+                console.log(distscope);
+            },
+            
+            // 
+            toggleMeasure : function(checked) {
+                if (!this.map) return;
+                // console.log("toggleMeasure-1", this.map);
+                var msg = "measure toggled OFF"; 
+                if (checked) {
+                    msg = "measure toogled ON";
+                    this.map.on('click', this.clickFunction);
+                } else {
+                    this.map.off('click', this.clickFunction);
+                }
+
+                // clearAll
+                this.geojson.features = [];
+                this.linestring.geometry.coordinates = [];
+                this.map.getSource("geojson").setData(this.geojson);
+                // console.log("toggleMeasure-2", msg);
+            },
+
+            clickFunction : function(e) {
+                console.log("CLICK-ENTER", e, distscope);
+                var map = distscope.map,
+                    geojson = distscope.geojson,
+                    linestring = distscope.linestring,
+                    distanceContainer = distscope.$.distance;
+                
+                var features = map.queryRenderedFeatures(e.point, { layers: ['measure-points'] });
+
+                // Remove the linestring from the group
+                // So we can redraw it based on the points collection
+                if (geojson.features.length > 1) geojson.features.pop();
+
+                // Clear the Distance container to populate it with a new value
+                distanceContainer.innerHTML = '';
+
+                // If a feature was clicked, remove it from the map
+                if (features.length) {
+                    var id = features[0].properties.id;
+                    geojson.features = geojson.features.filter(function(point) {
+                        return point.properties.id !== id;
+                    });
+                } else {
+                    var point = {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [
+                                e.lngLat.lng,
+                                e.lngLat.lat
+                            ]
+                        },
+                        "properties": {
+                            "id": String(new Date().getTime())
+                        }
+                    };
+
+                    geojson.features.push(point);
+                }
+
+                if (geojson.features.length > 1) {
+                    linestring.geometry.coordinates = geojson.features.map(function(point) {
+                        return point.geometry.coordinates;
+                    });
+
+                    geojson.features.push(linestring);
+
+                    this.distance = turf.lineDistance(linestring);
+
+                    // Populate the distanceContainer with total distance
+                    //if (this.showflag) {
+                        var value = document.createElement('pre');
+                        value.textContent = 'Total distance: ' + this.distance.toLocaleString() + 'km';
+                        distanceContainer.appendChild(value);
+                    //} 
+                }
+
+                map.getSource('geojson').setData(geojson);
+            },
+
+            setupTool: function(map) {
+                if (!map) return;
+                // console.log("this=", this);
+                map.addSource('geojson', {
+                    "type": "geojson",
+                    "data": this.geojson
+                });
+
+                // Add styles to the map
+                map.addLayer({
+                    id: 'measure-points',
+                    type: 'circle',
+                    source: 'geojson',
+                    paint: {
+                        'circle-radius': 5,
+                        'circle-color': '#000'
+                    },
+                    filter: ['in', '$type', 'Point']
+                });
+
+                map.addLayer({
+                    id: 'measure-lines',
+                    type: 'line',
+                    source: 'geojson',
+                    layout: {
+                        'line-cap': 'round',
+                        'line-join': 'round'
+                    },
+                    paint: {
+                        'line-color': '#000',
+                        'line-width': 2.5
+                    },
+                    filter: ['in', '$type', 'LineString']
+                });
+
+                if (this.checked)  map.on('click', this.clickFunction); 
+
+                //map.on('mousemove', function (e) {
+                //    var features = map.queryRenderedFeatures(e.point, { layers: ['measure-points'] });
+                //    if (features.length) console.log("distfeatures",features);
+                    // UI indicator for clicking/hovering a point on the map
+                    // map.getCanvas().style.cursor = (features.length) ? 'pointer' : 'crosshair';
+                //});
+            },
+
+            observers: [
+            ]
+
+        });
+    </script>
+</dom-module>

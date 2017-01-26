@@ -16,10 +16,12 @@ Demo to view ship-data animation
     <link rel="import" href="../../paper-item/paper-item.html">
     <link rel="import" href="../../paper-listbox/paper-listbox.html">
     <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+    <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-info-lnglat.html">
     <link rel="import" href="../mb-info-drag.html">
+    <link rel="import" href="../mb-distance.html">
 
     <link rel="import" href="../mb-routes.html">
     <link rel="import" href="../mb-routes-ctrl.html">
@@ -92,6 +94,10 @@ Demo to view ship-data animation
               top: 40px;
               right: 20px; */
         }
+
+        #radios {
+            padding: 10px;
+        }
     </style>
 </head>
 
@@ -127,6 +133,11 @@ Demo to view ship-data animation
                     
                     <!--<mb-map-orientation-ctrl trackmode="{{trackmode}}">
                     </mb-map-orientation-ctrl>-->
+
+                    <mb-distance map="{{map}}" distance="{{distance}}" checked="[[usemeasure]]">
+                    
+                    </mb-distance>
+
                 </div>
 
                 <mb-info-lnglat lnglat="[[lnglat]]">
@@ -149,12 +160,6 @@ Demo to view ship-data animation
                     trackdata="{{trackdata}}">
                 </routing-handheld>
 
-                <!-- PREVIEW of rawdata from interface -->
-                <mb-preview 
-                    map="[[map]]" 
-                    rawdata=[[rawdata]]>
-                </mb-preview>
-
                 <!-- element with n visible features -->
                 <mb-routes 
                     map="[[map]]" 
@@ -175,6 +180,11 @@ Demo to view ship-data animation
                     timescalemax="[[timer.timescalemax]]" 
                     timer="{{timer}}">
                 </mb-routes-ctrl-time>
+
+    <div id="radios">
+        <paper-radio-button>Routing</paper-radio-button>
+        <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
+    </div>
 
     <paper-dropdown-menu label="Tracksets">
         <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedsrc" attr-for-selected="src">

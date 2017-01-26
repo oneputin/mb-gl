@@ -5,6 +5,46 @@
 
         properties: {},
 
+        // Refresh content && location 
+        // of an app-specific mapbox-popup 
+        // default: html at map-center  
+        popupOnMap: function(popupcontent) {
+            if (!this.map) return;
+            // console.log("popupcontent",popupcontent);
+            var html, lnglat, openflag,
+                map = this.map; // popup = this.popup;
+
+            // Prepare a "" Info-Popup
+            // to be closed on x-mark
+            if (!this.popup) {
+                this.popup = new mapboxgl.Popup({
+                    closeButton: true,
+                    closeOnClick: false
+                });
+            }
+
+            if (typeof popupcontent == "object") {
+                html = popupcontent.html;
+                lnglat = popupcontent.lnglat;
+                openflag = popupcontent.open;
+            } else if (popupcontent) {  // String
+                html = popupcontent;
+            }
+            if (!popupcontent || !html || (openflag == false) || this.trackmapmode) {
+                this.popup.remove();
+                return;
+            }
+
+            // Refresh popup contet and location
+            if (!lnglat) lnglat = map.getCenter();
+
+            if (!this.popup.isOpen()) this.popup.addTo(map);
+
+            this.popup
+                .setLngLat(lnglat)
+                .setHTML(html);
+        },
+
         // derive comparable/calculable times
         // from dates of type "2016.12.11,16.00" or "2016.12.16,16:00"
         utcTime: function(t, lonlat, unit) {
@@ -47,10 +87,27 @@
 
             if (unit == "h") tunit = tg / (1000 * 3600);
             else if (unit == "s") tunit = tg / 1000;
-            else tunit = tg;
+            else tunit = tg; // [ms]
 
             return tunit;
         },
+
+        trackTime : function (traw, asarray) {
+            var t = traw.replace("Z", "");
+            t = t.split(":").join(".");
+            t = t.split("-").join(".");
+            t = t.split("T").join(".");
+            // console.log(t);
+            if (asarray)  return t.split(".");
+            return t;
+        },
+
+        deltaL : function(aLine) {
+          var dl = turf.lineDistance(aLine, 'kilometers');
+          dl = this.toFixed(dl, 3) + "km";
+          return dl;
+        },
+
 
         // Create readable time period h:min
         // from unixTime as [h]
@@ -166,13 +223,14 @@
             return logtime;
         },
 
-
-        featureBounds: function(features, map) {
+        // 
+        setFeatureBounds: function(features, map) {
 
             if (features.features) features = features.features; //console.log(data); // return
             if (!features.length) return; //console.log(features); 
             // console.log("1-bounddata(features)", features);
 
+            // concat coordsets (x,y) and (x,y,z) into (x,y)
             function concatcoords(coordinates, segment) {
                 segment.forEach(function(cc) {
                     cc = [cc[0], cc[1]];
@@ -220,7 +278,7 @@
             });
         },
 
-
+        // get color in hex-format
         getRandomColor: function() {
             var letters = '0123456789ABCDEF';
             var color = '#';
@@ -228,6 +286,14 @@
                 color += letters[Math.floor(Math.random() * 16)];
             }
             return color;
+        },
+
+        // extended version optionally negative precision
+        toFixed : function(number, precision) {
+            var factor = Math.pow(10, precision);
+            var tempNumber = number * factor;
+            var roundedTempNumber = Math.round(tempNumber);
+            return roundedTempNumber / factor;
         }
     };
 

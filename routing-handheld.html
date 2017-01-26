@@ -338,33 +338,26 @@ To 'close'
             // 
             importGPX: function(rawdata, masterdata, minTrackLength) {
 
-                var routedata = [],
+                var scope = this,
+                    routedata = [],
                     trackpoints, tracktimes,
                     route, tt, coordinates,
                     type, id, title;
-
-                function gpxTime(traw) {
-
-                    var t = traw.replace("Z", "");
-                    t = t.split(":").join(".");
-                    t = t.split("-").join(".");
-                    t = t.split("T").join(".");
-                    //aa = t.split(".");
-                    //t = aa.join(".");
-                    return t;
-                }
 
                 function extractPnts(coords, tt) {
                     // tracktimes = r.properties.coordTimes;
                     var tp, trackpoints = [];
                     if (!coords || !coords.length) return trackpoints;
-
+                    var dott, utc; 
                     coords.forEach(function(cc, j) {
+                        dott = scope.trackTime(tt[j]);
+                        utc = scope.utcTime(dott);
                         tp = {};
                         tp.coords = [cc[0], cc[1]]; // !!! mapbox
                         tp.z = cc[2];
-                        tp.ab = gpxTime(tt[j]);
+                        tp.ab = dott;
                         tp.an = tp.ab;
+                        tp.utc = utc;
                         trackpoints.push(tp);
                     });
 

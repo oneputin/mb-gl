@@ -2,8 +2,8 @@
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <link rel="import" href="mb-api.html">
-
 <link rel="import" href="mb-tools-behavior.html">
+
 <!--<link rel="import" href="mb-behavior-info-vendee.html">-->
 
 <!--
@@ -320,14 +320,6 @@ along waypoint file loaded from url
                 // 1. setup global namespace 
                 mba = this;
 
-                // 2. Prepare a "" Info-Popup
-                //    to be closed on x-mark
-                if (!this.popup) {
-                    this.popup = new mapboxgl.Popup({
-                        closeButton: true,
-                        closeOnClick: false
-                    });
-                }
             },
 
             // 
@@ -578,7 +570,7 @@ along waypoint file loaded from url
                 // No maporientation if no trackObj selected
                 if (maporientation && !trackobj) {
                     var msg = "<b>trackObject</b> must be activated<br> to align map along its track!"
-                    this.onMapPopup(msg);
+                    this.popupOnMap(msg);
                     this.maporientation = false; // set to base 
                     return;
                 }
@@ -687,7 +679,7 @@ along waypoint file loaded from url
                 if (!mba) return;
                 // var timer = mba.timer;
                 if (!mba.timer) {
-                    mba.onMapPopup("OOPS. AnimationTimer n.a.");
+                    mba.popupOnMap("OOPS. AnimationTimer n.a.");
                     mba.trackctrl = false;
                     return;
                 }
@@ -723,7 +715,7 @@ along waypoint file loaded from url
 
                 var tracks = mba.tracks;
                 if (!tracks || !tracks.features) {
-                    mba.onMapPopup("OOPS. TrackData n.a.");
+                    mba.popupOnMap("OOPS. TrackData n.a.");
                     mba.trackctrl = false;
                     return;
                 }
@@ -752,7 +744,7 @@ along waypoint file loaded from url
                         msg = "IDLE: " + t_msg;
                     }
 
-                    mba.onMapPopup(msg);
+                    mba.popupOnMap(msg);
 
                 } else {
                     // mba.map.getSource('tracks').setData(mba.tracks);
@@ -1745,7 +1737,7 @@ along waypoint file loaded from url
                             let msg = "STOPPED. No more data after: " + msgTime;
 
                             // console.log(msg);
-                            mba.onMapPopup(msg);
+                            mba.popupOnMap(msg);
 
                             // Triggers view of all routes after Animation-STOP
                             trackObjs = this.map.querySourceFeatures("tracks", {
@@ -1787,7 +1779,7 @@ along waypoint file loaded from url
 
                     if (mapTime) msg += "<br> at " + mba.logTime(mapTime, "h", "_");
 
-                    mba.onMapPopup(msg);
+                    mba.popupOnMap(msg);
 
                     return routeids;
                 };
@@ -1797,7 +1789,7 @@ along waypoint file loaded from url
                 if (!mba.map.getLayer("tracks") && mapTime) {
                     var syncTime = this.logTime(mapTime, "h"),
                         msg = "<b>No trackers on map to track</b>" + " at " + syncTime;
-                    mba.onMapPopup(msg);
+                    mba.popupOnMap(msg);
                     return;
                 }
 
@@ -1941,12 +1933,7 @@ along waypoint file loaded from url
 
                 // console.log(msg, routeFeatures); // .getCoordinates());
 
-                var bb = mba.featureBounds(routeFeatures);
-                if (bb) {
-                    mba.map.fitBounds(bb, {
-                        padding: 20
-                    });
-                }
+                mba.setFeatureBounds(routeFeatures, mba.map);
             },
 
             /**
@@ -1985,43 +1972,15 @@ along waypoint file loaded from url
                 }
             },
 
-            // updates "onMapPopup" if a trackinfo-property changes
+            // updates "popupOnMap" if a trackinfo-property changes
             trackInfoPopup: function(trackinfo) {
                 // console.log("LOG", trackinfo.value, trackinfo);
                 if (!trackinfo.value) return;
 
                 // trackinfo = trackinfo.value;
-                this.onMapPopup(trackinfo.value);
+                this.popupOnMap(trackinfo.value);
             },
 
-            // Refresh content && location 
-            // of an app-specific mapbox-popup 
-            // default: html at map-center  
-            onMapPopup: function(popupcontent) {
-                var html, lnglat, openflag;
-                if (!mba || !mba.map) return;
-
-                if (typeof popupcontent == "object") {
-                    html = popupcontent.html;
-                    lnglat = popupcontent.lnglat;
-                    openflag = popupcontent.open;
-                } else if (popupcontent) {
-                    html = popupcontent;
-                }
-                if (!popupcontent || !html || (openflag == false) || mba.trackmapmode) {
-                    mba.popup.remove();
-                    return;
-                }
-
-                // Refresh popup contet and location
-                if (!lnglat) lnglat = mba.map.getCenter();
-
-                if (!mba.popup.isOpen()) mba.popup.addTo(mba.map);
-
-                mba.popup
-                    .setLngLat(lnglat)
-                    .setHTML(html);
-            },
 
             /**
              * Activate a trackObject,  on mouse-over ;selected by gui-event e (mode-over, click, ...) 
@@ -2053,7 +2012,7 @@ along waypoint file loaded from url
                     if (this.wpid != wp.properties.id) {
                         this.wpid = wp.properties.id;
                         var msg = "WP/TP " + wp.properties.ab;
-                        this.onMapPopup(msg); // console.log(msg, wp);
+                        this.popupOnMap(msg); // console.log(msg, wp);
                     }
                     return;
                 }
@@ -2116,7 +2075,7 @@ along waypoint file loaded from url
                 if (this.wpid != wp.properties.id) {
                     this.wpid = wp.properties.id;
                     var msg = "WP/TP " + wp.properties.ab;
-                    this.onMapPopup(msg); // console.log(msg, wp);
+                    this.popupOnMap(msg); // console.log(msg, wp);
                 }
                 return;
             },
