@@ -222,21 +222,14 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     map.on('moveend', function() {
 
                         let cb = map.getCenter(),
-                            bb = map.getBounds();
+                            bb = map.getBounds(),
+                            z = map.getZoom();
 
                         that.cbox = cb.lng + "," + cb.lat;
                         that.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
-
-                        let z = map.getZoom();
                         that.zoom = z;
                         // console.log(cb,bb,that.cbox,that.bbox);
                     });
-
-                    // inform about mouse-coordinates after mouse-move
-                    /*map.on('mousemove', function(e) {
-                        that.lnglat = e.lngLat;
-                    });*/
-
 
                     //if zoom is NOT communicated to app via map-object : 
                     //map.on('zoomend', function() { 

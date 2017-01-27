@@ -92,6 +92,24 @@ Demo to view ship-data animation
         
         #radios {
             padding: 10px;
+            display: inline-block;
+            @apply(--layout-vertical);
+            @apply(--layout-start);
+        }
+        
+        paper-radio-button {
+            /*align-self: center;*/
+            border: 1px solid var(--paper-green-200);
+            padding: 8px 16px;
+            margin: 8px 16px;
+        }
+        
+        paper-radio-button.red {
+            --paper-radio-button-checked-color: var(--paper-red-500);
+            --paper-radio-button-checked-ink-color: var(--paper-red-500);
+            --paper-radio-button-unchecked-color: var(--paper-red-900);
+            --paper-radio-button-unchecked-ink-color: var(--paper-red-900);
+            --paper-radio-button-label-color: var(--paper-red-500);
         }
     </style>
 </head>
@@ -121,96 +139,85 @@ Demo to view ship-data animation
 
                 <div class="ctrls-in">
                     <!-- ctrl of animation (and maporientation) -->
+                <template is="dom-if" if="{{!useiimaps}}">
                     <mb-routes-ctrl 
                         checked="[[userouting]]"
                         timer="{{timer}}"
                         trackctrl="{{trackctrl}}">
                     </mb-routes-ctrl>
-                    <!--<mb-map-orientation-ctrl trackmode="{{trackmode}}">
+                </template>
+    <!--<mb-map-orientation-ctrl trackmode="{{trackmode}}">
                     </mb-map-orientation-ctrl>-->
-                </div>
-
-                <mb-show-where map="{{map}}" lnglat="{{lnglat}}" checked="[[usemousewhere]]">
-                </mb-show-where>
-                <!--<mb-info-drag carddata="[[trackdata]]">
-                </mb-info-drag>-->
-
-            </mb-map>
-
-            <!-- Right Block: several external app-controls -->
-            <div class="ctrls_out">
-                <!-- INTERFACE -->
-                <routing-handheld 
-                    routesrc="[[routesrc]]" 
-                    routedata="{{routedata}}"
-                    mapdata="{{mapcontent}}"
-                    rawdata="{{rawdata}}"
-                    basedataurl="[[basedataurl]]" 
-                    trackinfo="[[trackinfo]]" 
-                    trackdata="{{trackdata}}">
-                </routing-handheld>
-
-                <!-- element checking gpx-data -->
-                <mb-iimaps 
-                    map="[[map]]"
-                    mapcontent="[[mapcontent]]"
-                    featurelist="{{routedata}}"
-                    featureselected="{{featureselected}}">
-                </mb-iimaps>
-
-                <!-- element with n visible features -->
-                <mb-routes 
-                    map="[[map]]" 
-                    checked="[[userouting]]"
-                    timer="{{timer}}"
-                    routedata=[[routedata]] 
-                    routeid=[[routeid]] 
-                    trackctrl="{{trackctrl}}" 
-                    mapcontent="{{mapcontent}}"                  
-                    trackmapmode="{{trackmapmode}}" 
-                    tracksymbol="{{tracksymbol}}" 
-                    trackdata="{{trackdata}}"
-                    trackinfo="[[trackinfo]]">
-                </mb-routes>
-                
-                <!-- Left -->
-                <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
-                <mb-routes-ctrl-time  
-                    checked="[[userouting]]"
-                    timescalemax="[[timer.timescalemax]]" 
-                    timer="{{timer}}">
-                </mb-routes-ctrl-time>
-
-    <div id="radios">
-        <!--<paper-radio-button>Routing</paper-radio-button>-->
-        <paper-radio-button checked="{{usemousewhere}}">MouseWhere</paper-radio-button>
-        <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
-        <paper-radio-button checked="{{userouting}}">Routing</paper-radio-button>
     </div>
 
-    <paper-dropdown-menu label="Tracksets">
-        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedsrc" attr-for-selected="src">
-            <template is="dom-repeat" items="{{routesets}}">
-                <!--<paper-item url="{{item.url}}">
-                    {{item.title}}
-                </paper-item>-->
+    <mb-show-where map="{{map}}" lnglat="{{lnglat}}" checked="[[usemousewhere]]">
+    </mb-show-where>
+    <!--<mb-info-drag carddata="[[trackdata]]">
+                </mb-info-drag>-->
+
+    </mb-map>
+
+    <!-- Right Block: several external app-controls -->
+    <div class="ctrls_out">
+        <!-- INTERFACE -->
+        <routing-handheld routesrc="[[routesrc]]" routedata="{{routedata}}" mapdata="{{mapcontent}}" rawdata="{{rawdata}}" basedataurl="[[basedataurl]]" trackinfo="[[trackinfo]]" trackdata="{{trackdata}}">
+        </routing-handheld>
+
+        <!-- element checking gpx-data -->
+        <mb-iimaps map="[[map]]" checked="[[useiimaps]]" mapcontent="[[mapcontent]]" featurelist="{{routedata}}" featureselected="{{featureselected}}">
+        </mb-iimaps>
+
+        <!-- element with n visible features -->
+        <template is="dom-if" if="{{!useiimaps}}">
+
+            <mb-routes 
+                map="[[map]]" 
+                checked="[[userouting]]"
+                timer="{{timer}}"
+                routedata=[[routedata]] 
+                routeid=[[routeid]] 
+                trackctrl="{{trackctrl}}" 
+                mapcontent="{{mapcontent}}"                  
+                trackmapmode="{{trackmapmode}}" 
+                tracksymbol="{{tracksymbol}}" 
+                trackdata="{{trackdata}}"
+                trackinfo="[[trackinfo]]">
+            </mb-routes>
+            
+        <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
+            <mb-routes-ctrl-time  
+                checked="[[userouting]]"
+                timescalemax="[[timer.timescalemax]]" 
+                timer="{{timer}}">
+            </mb-routes-ctrl-time>
+
+        </template>
+
+        <div id="radios">
+            <paper-radio-button checked="{{usemousewhere}}">MouseWhere</paper-radio-button>
+            <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
+            <paper-radio-button class="red" checked="{{useiimaps}}">CheckSources</paper-radio-button>
+        </div>
+
+        <paper-dropdown-menu label="Tracksets">
+            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedsrc" attr-for-selected="src">
+                <template is="dom-repeat" items="{{routesets}}">
                 <paper-item src="{{item}}" url="{{item.url}}">
                     {{item.title}}
                 </paper-item>
             </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
+            </paper-listbox>
+        </paper-dropdown-menu>
 
-    <paper-dropdown-menu class="routes" label="Tracks">
-        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selecteditem" attr-for-selected="{{selectattr}}">
-            <template is="dom-repeat" items="{{routedata}}">
+        <paper-dropdown-menu class="routes" label="Tracks">
+            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selecteditem" attr-for-selected="{{selectattr}}">
+                <template is="dom-repeat" items="{{routedata}}">
                             <paper-item feature="{{item}}" id="{{item.id}}">
                                 {{item.title}}
                             </paper-item>
                         </template>
-        </paper-listbox>
-    </paper-dropdown-menu>
-
+            </paper-listbox>
+        </paper-dropdown-menu>
 
     </div>
 
@@ -232,6 +239,10 @@ Demo to view ship-data animation
         scope.zoom = 8;
         // scope.lnglat = "13,52";
 
+        // STATE init
+        scope.usemousewhere = true;
+        scope.useiimaps = true;
+
         // Animation- INIT
         scope.tracksymbol = 'toilet-11';
         // console.log("scope.tracelength", scope.tracelength, scope.utcTime(scope.tracelength));
@@ -249,12 +260,14 @@ Demo to view ship-data animation
         // Feature-selection
         scope.featureselected = "{}";
         scope.selectattr = "feature"; // "feature"; // "id" 
+
         scope.selecteditem = function(e) {
             var selectvalue = e.detail.item[scope.selectattr];
             // console.log("selected item:", selectvalue);
             if (scope.selectattr == "id") scope.routeid = selectvalue;
             else scope.featureselected = selectvalue;
         };
+
         /**
          * Put selected src from menu-selection into import-element
          */

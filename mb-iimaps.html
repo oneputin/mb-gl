@@ -41,6 +41,10 @@ view and ctrl iimap-data
             is: 'mb-iimaps',
 
             properties: {
+
+                checked: {
+                    type: Boolean
+                },
                 /**
                  *  map-object available for query and manipulation outside 
                  */
@@ -100,7 +104,6 @@ view and ctrl iimap-data
             },
 
             attached: function() {
-
                 // this.installmap();
             },
 
@@ -111,10 +114,11 @@ view and ctrl iimap-data
             },
 
             /**
-             * Create a list of all features  contained in 'mapfeatures' 
+             * Create a list of all features  contained in 'mapfeatures'-collection 
              * and supply as notified property
              */
             mapContentFeatureList: function(mapfeatures) {
+                if (!this.checked) return;
                 if (mapfeatures.path == 'mapfeatures') mapfeatures = mapfeatures.value;
                 if (!mapfeatures || !Object.keys(mapfeatures).length) return;
                 // console.log("mapfeatures after change:", mapfeatures);
@@ -133,7 +137,7 @@ view and ctrl iimap-data
              * delivered with mapcontent container
              */
             mapContentPrepare: function(mapcontent) {
-                if (!this.map) return;
+                if (!this.map || !this.checked) return;
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
                 if (!mapcontent || !Object.keys(mapcontent).length) return;
                 var scope = this,
