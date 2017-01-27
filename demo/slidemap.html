@@ -1,267 +1,169 @@
 <!doctype html>
 <html>
-<!--
-Demo to view ship-data animation 
--->
 
 <head>
-    <title>mb-routes demo</title>
+    <title>mb-gl demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
-    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
-    <link rel="import" href="../../iron-collapse/iron-collapse.html">
-    <link rel="import" href="../../paper-item/paper-item.html">
-    <link rel="import" href="../../paper-listbox/paper-listbox.html">
-    <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
-    <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
+    <link rel="import" href="../../paper-input/paper-input.html">
 
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-show-where.html">
-    <!--<link rel="import" href="../mb-info-drag.html">-->
-    <link rel="import" href="../mb-distance.html">
-    <link rel="import" href="../mb-iimaps.html">
 
-    <link rel="import" href="../mb-routes.html">
-    <link rel="import" href="../mb-routes-ctrl.html">
-    <link rel="import" href="../mb-map-orientation-ctrl.html">
-    <link rel="import" href="../mb-routes-ctrl-time.html">
-
-    <link rel="import" href="../routing-handheld.html">
-    <link rel="import" href="../mb-tools-behavior.html">
-
-    <link rel="import" href="../../paper-styles/demo-pages.html">
+    <link rel="import" href="../mb-slide.html">
+    <link rel="import" href="../mb-target.html">
+    <link rel="import" href="../mb-zoom.html">
 
     <style is="custom-style">
-        .container {
-            @apply(--layout-horizontal);
-            /*align-items: flex-start;*/
-        }
-        
         mb-map {
-            /*width: 55%;*/
-            width: 800px;
-            height: 800px;
+            width: 50%;
+            height: 400px;
         }
         
-        .ctrls-in {
-            display: inline-block;
-            position: absolute;
+        mb-info-lnglat {
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, 0)
+        }
+        
+        .flex-horizontal {
             @apply(--layout-horizontal);
-            @apply(--layout-center);
-            bottom: 12px;
-            width: 100%;
         }
         
-        .ctrls-out {
-            /* itself flex layouted div */
-            width: 40%;
-            margin-left: 10px;
-            @apply(--layout-vertical);
-            /*@apply(--layout-start);*/
-        }
-        
-        mb-routes-ctrl {
+        .flexchild {
             @apply(--layout-flex);
         }
         
-        mb-map-orientation-ctrl {}
-        
-        paper-dropdown-menu {
-            border-style: solid;
-            border-width: 1px;
-            padding: 10px;
-            /*position: absolute;*/
-            /*background-color: var(--paper-light-green-500);
-              opacity: 0.8;*/
-            /*top: 40px;
-              left: 30px;*/
+        div.ctrlbox {
+            background-color: cyan;
+            padding: 5px;
+            margin: 0px 10px;
         }
         
-        mb-routes-ctrl-time {
-            display: none;
-            border-style: solid;
-            border-width: 1px;
-            padding: 10px;
-            /*position: absolute;
-              top: 40px;
-              right: 20px; */
+        paper-dialog.colored {
+            border: 2px solid;
+            border-color: var(--paper-green-500);
+            background-color: var(--paper-light-green-50);
+            color: var(--paper-green-500);
         }
         
-        #radios {
-            padding: 10px;
+        paper-input.slidecenter {
+            background-color: var(--paper-light-blue-50);
         }
     </style>
+
 </head>
 
 <body>
-    <template is="dom-bind" id="app">
+
+    <h1>element-demo: mb-slide</h1>
+
+    <template is="dom-bind" id="app-demo">
         
-        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="loadroutesets">
-        </iron-ajax>
-
-        <div class="container">
+        <div class="container flex-horizontal">
             
-            <!-- Left block: Map -->
-            <!-- lnglat="{{lnglat}} -->" 
+            <!-- LEFT container: Map -->
+            <!-- <div class="mapbox"> -->
+            <!--zoom="[[zoom]]"-->
             <mb-map 
-                mapapikey="[[mbkey]]" 
-                mapstyle="[[mbstyle]]" 
-                map="{{map}}" 
-                cbox="{{cbox}}" 
-                zoom="{{zoom}}" 
+                mapapikey="[[mbkey]]"
+                map="{{map}}"
+                cbox="{{cbox}}"
+                zoom="{{zoom}}"
                 mapctrl="[[mapctrl]]">
+
+                <mb-slide
+                    map="[[map]]"
+                    serviceparams="[[serviceparams]]"
+                    cbox="[[cbox]]"
+                    slidectrl="[[layerctrl]]" 
+                    slideinfo="{{slideinfo}}"
+                    serviceflag="{{flag}}">
+                </mb-slide>
                 
-                <!-- Elements to show in map-overlay  -->
+                <mb-target 
+                    serviceflag="{{flag}}">
+                </mb-target>
 
-                <mb-distance map="{{map}}" distance="{{distance}}" checked="[[usemeasure]]">
-                </mb-distance>
-
-                <div class="ctrls-in">
-                    <!-- ctrl of animation (and maporientation) -->
-                    <mb-routes-ctrl 
-                        timer="{{timer}}"
-                        trackctrl="{{trackctrl}}">
-                    </mb-routes-ctrl>
-                    <!--<mb-map-orientation-ctrl trackmode="{{trackmode}}">
-                    </mb-map-orientation-ctrl>-->
-                </div>
-
-                <mb-show-where map="{{map}}" lnglat="{{lnglat}}" checked="[[usemousewhere]]">
+                <mb-show-where map="{{map}}" lnglat="{{lnglat}}" mode="map" checked>
                 </mb-show-where>
-                <!--<mb-info-drag carddata="[[trackdata]]">
-                </mb-info-drag>-->
 
             </mb-map>
+            <!--</div>-->
 
-            <!-- Right Block: several external app-controls -->
-            <div class="ctrls_out">
-                <!-- INTERFACE -->
-                <routing-handheld 
-                    routesrc="[[routesrc]]" 
-                    routedata="{{routedata}}"
-                    mapdata="{{mapcontent}}"
-                    rawdata="{{rawdata}}"
-                    basedataurl="[[basedataurl]]" 
-                    trackinfo="[[trackinfo]]" 
-                    trackdata="{{trackdata}}">
-                </routing-handheld>
+            <!-- RIGHT container: Info -->
+            <div class="ctrlbox flexchild">
 
-                <!-- element checking gpx-data -->
-                <mb-iimaps 
-                    map="[[map]]"
-                    mapcontent="[[mapcontent]]"
-                    featurelist="{{routedata}}"
-                    featureselected="{{featureselected}}">
-                </mb-iimaps>
+                <!-- A. external map-zoom-ctrl -->
+                <mb-zoom map="{{map}}" title="External mapZoom"></mb-zoom>
+                <hr>
+                <!-- B. external input to change map-center -->
+                <paper-input 
+                    class="slidecenter"
+                    label="actual target at (lngLat) = [[cbox]]" 
+                    value="{{cboxinput}}" 
+                    always-float-label 
+                    on-focused-changed="focuschanged">
+                </paper-input>
 
-                <!-- element with n visible features -->
-                <mb-routes 
-                    map="[[map]]" 
-                    timer="{{timer}}"
-                    routedata=[[routedata]] 
-                    routeid=[[routeid]] 
-                    trackctrl="{{trackctrl}}" 
-                    mapcontent="{{mapcontent}}"                  
-                    trackmapmode="{{trackmapmode}}" 
-                    tracksymbol="{{tracksymbol}}" 
-                    trackdata="{{trackdata}}"
-                    trackinfo="[[trackinfo]]">
-                </mb-routes>
-                
-                <!-- Left -->
-                <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
-                <mb-routes-ctrl-time  
-                    timescalemax="[[timer.timescalemax]]" 
-                    timer="{{timer}}">
-                </mb-routes-ctrl-time>
+                <!-- C. Quer-data-viewer -->
+                <ul>
+                    <li>Slidesquery action can be toggled with the central  <b>target marker</b> red-selecting, black-inert.</li> 
+                    <li>The FAB forces a zoom to the actually selected slide (disabling selection-mode).</li>
+                </ul>
+                <h4>SlideLog</h4>
+                <p>[[slideinfo]]</p>
 
-    <div id="radios">
-        <!--<paper-radio-button>Routing</paper-radio-button>-->
-        <paper-radio-button checked="{{usemousewhere}}">MouseWhere</paper-radio-button>
-        <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
-    </div>
+            </div>
+            
+        </div>
 
-    <paper-dropdown-menu label="Tracksets">
-        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedsrc" attr-for-selected="src">
-            <template is="dom-repeat" items="{{routesets}}">
-                <!--<paper-item url="{{item.url}}">
-                    {{item.title}}
-                </paper-item>-->
-                <paper-item src="{{item}}" url="{{item.url}}">
-                    {{item.title}}
-                </paper-item>
-            </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
-
-    <paper-dropdown-menu class="routes" label="Tracks">
-        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selecteditem" attr-for-selected="{{selectattr}}">
-            <template is="dom-repeat" items="{{routedata}}">
-                            <paper-item feature="{{item}}" id="{{item.id}}">
-                                {{item.title}}
-                            </paper-item>
-                        </template>
-        </paper-listbox>
-    </paper-dropdown-menu>
-
-
-    </div>
-
-    </div>
     </template>
 
     <script>
-        var scope = document.querySelector('#app');
+        var scope = document.querySelector('#app-demo');
+        scope.map = null;
+        scope.serviceparams = {
+            slide: "basintree"
+        };
+        scope.cbox = "13.7,52.4";
+        scope.cboxinput = "";
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-        scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
-
-        // Data-INIT
-        scope.setupurl = "index-handheld.json"; // list of available datasets
-        scope.basedataurl = ""; // list of available datasets
-        scope.routesrc = {}; // url to selected dataset
-
-        // Map-INIT
-        scope.cbox = "13,52";
-        scope.zoom = 8;
-        // scope.lnglat = "13,52";
-
-        // Animation- INIT
-        scope.tracksymbol = 'toilet-11';
-        // console.log("scope.tracelength", scope.tracelength, scope.utcTime(scope.tracelength));
-        scope.trackmapmode; // 
-        scope.timer = {
-            "timescalemax": 600, // 1min ~ 10h
-            "timescalestart": 300,
-            "fpsstart": 30
-                // "tracelength": true //  '0.0.0.0.5'
-        };
-
-        // SHELL-actions
         scope.mapctrl = {};
+        scope.layerctrl = {};
+        scope.popuptitle = "slideinfo";
+        scope.slidekeys = "";
 
-        // Feature-selection
-        scope.featureselected = "{}";
-        scope.selectattr = "feature"; // "feature"; // "id" 
-        scope.selecteditem = function(e) {
-            var selectvalue = e.detail.item[scope.selectattr];
-            // console.log("selected item:", selectvalue);
-            if (scope.selectattr == "id") scope.routeid = selectvalue;
-            else scope.featureselected = selectvalue;
+        scope.asstring = function(slideinfo) {
+            console.log(slideinfo);
+            var txt = JSON.stringify(slideinfo, null, '\n')
+            return txt;
         };
-        /**
-         * Put selected src from menu-selection into import-element
-         */
-        scope.selectedsrc = function(e) {
-            this.routesrc = e.detail.item.src;
+
+        // 
+        scope.focuschanged = function(e) {
+            // console.log("focus changed", e);
+            if (!e.detail.value) {
+                scope.cbox = scope.cboxinput;
+                scope.cboxinput = "";
+            } else {
+                let cbox = scope.cbox.split(",");
+                scope.cboxinput = parseFloat(cbox[0]).toFixed(3) + "," + parseFloat(cbox[1]).toFixed(3);
+            }
+            //  app.cbox = v;
         }
 
-        // eval the response of content-list 
-        scope.loadroutesets = function(ajaxresponse) {
-            this.routesets = ajaxresponse.detail.response;
-        }
+        document.addEventListener('WebComponentsReady', function() {
+            // var cboxin = document.querySelector('#cboxin');
+            var cboxin = scope.$.cboxin; // console.log("cboxin:", cboxin);
+            /* cboxin.addEventListener('value-changed', function() { 
+                console.log("cboxin", this.value);
+                app.cbox = cboxin.value;
+            });*/
+        });
     </script>
 </body>
 

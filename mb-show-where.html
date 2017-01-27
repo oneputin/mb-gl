@@ -63,6 +63,10 @@ wraps a distance utility
                     notify: true
                 },
 
+                mode: {
+                    type: String,
+                    value: "mouse"
+                },
                 /**
                  * creating with formatter from mb-tools
                  */
@@ -92,24 +96,32 @@ wraps a distance utility
             toggleTool: function(checked) {
                 if (!this.map) return;
                 // console.log("toggleTool-1", this.map);
-                var msg = "mousewhere toggled OFF";
+                var msg = "move-event toggled " + checked;
+                console.log(msg);
                 if (checked) {
-                    msg = "mousewhere toogled ON";
-                    if (checked != "external") { // 
-                        this.map.on('mousemove', this.mouseFunction);
-                    }
                     this.style.display = "block";
+
+                    if (this.mode == "mouse") this.map.on('mousemove', this.onMoveEvent);
+                    else if (this.mode == "map") this.map.on('move', this.onMoveEvent);
+
                 } else {
-                    this.map.off('mousemove', this.mouseFunction);
                     this.style.display = "none";
+
+                    if (this.mode == "mouse") { // 
+                        this.map.off('mousemove', this.onMoveEvent);
+                    } else if (this.mode == "map") {
+                        this.map.off('move', this.onMoveEvent);
+                    }
                 }
+
 
             },
 
             // 
-            mouseFunction: function(e) {
-                // console.log("CLICK-ENTER", e, distscope);
-                myscope.lnglat = e.lngLat;
+            onMoveEvent: function(e) {
+                if (myscope.mode == "map") myscope.lnglat = myscope.map.getCenter();
+                else myscope.lnglat = e.lngLat;
+                // console.log("MOVE-Event", e, myscope.lnglat);
             },
 
             // 
@@ -117,7 +129,8 @@ wraps a distance utility
                 if (!map) return;
 
                 if (this.checked) {
-                    map.on('mousemove', this.mouseFunction);
+                    if (this.mode == "mouse") this.map.on('mousemove', this.onMoveEvent);
+                    else if (this.mode == "map") this.map.on('move', this.onMoveEvent);
                 }
             },
 
