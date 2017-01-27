@@ -16,8 +16,22 @@ wraps a distance utility
         <style>
             :host {
                 display: block;
-                top: 5px;
+                position: absolute;
+                z-index: 9;
+                top: 0%;
+                height: 1.5em;
+
+                /*left: 0%;*/
+                left: 50%;
+                margin-right: -50%;
+                transform: translate(-50%, 0);
+
+                font: 0.8em Courier, Lucida;
+                background-color: rgba(255,64,129,0.8); /*#ff4081*/
+                color: black;                    
+                /*opacity: 0.7;*/ /*related to all content bg,fg*/
             }
+
             .distance-container {
                 position: absolute;
                 top: 10px;
@@ -43,7 +57,7 @@ wraps a distance utility
     </template>
 
     <script>
-        var distscope; 
+        var distscope;
 
         Polymer({
 
@@ -59,27 +73,27 @@ wraps a distance utility
                 },
 
                 // GeoJSON object to hold our measurement features
-                geojson : {
+                geojson: {
                     type: Object,
-                    value : {
+                    value: {
                         "type": "FeatureCollection",
                         "features": []
                     }
                 },
 
                 // Used to draw a line between points
-                linestring : {
+                linestring: {
                     type: Object,
-                    value :  {
+                    value: {
                         "type": "Feature",
                         "geometry": {
                             "type": "LineString",
                             "coordinates": []
                         }
                     }
-                }, 
+                },
 
-                distance : {
+                distance: {
                     type: Number,
                     notify: true
                 },
@@ -91,38 +105,43 @@ wraps a distance utility
                 }
             },
 
-            attached: function(){
+            attached: function() {
                 distscope = this;
-                console.log(distscope);
+                // console.log(distscope);
             },
-            
+
             // 
-            toggleMeasure : function(checked) {
+            toggleMeasure: function(checked) {
                 if (!this.map) return;
                 // console.log("toggleMeasure-1", this.map);
-                var msg = "measure toggled OFF"; 
+                var msg = "measure toggled OFF";
                 if (checked) {
                     msg = "measure toogled ON";
                     this.map.on('click', this.clickFunction);
+                    this.style.display = "block";
                 } else {
                     this.map.off('click', this.clickFunction);
+                    this.style.display = "none";
                 }
 
                 // clearAll
+                this.$.distance.innerHTML = '';
                 this.geojson.features = [];
                 this.linestring.geometry.coordinates = [];
                 this.map.getSource("geojson").setData(this.geojson);
                 // console.log("toggleMeasure-2", msg);
             },
 
-            clickFunction : function(e) {
-                console.log("CLICK-ENTER", e, distscope);
+            clickFunction: function(e) {
+                // console.log("CLICK-ENTER", e, distscope);
                 var map = distscope.map,
                     geojson = distscope.geojson,
                     linestring = distscope.linestring,
                     distanceContainer = distscope.$.distance;
-                
-                var features = map.queryRenderedFeatures(e.point, { layers: ['measure-points'] });
+
+                var features = map.queryRenderedFeatures(e.point, {
+                    layers: ['measure-points']
+                });
 
                 // Remove the linestring from the group
                 // So we can redraw it based on the points collection
@@ -166,9 +185,9 @@ wraps a distance utility
 
                     // Populate the distanceContainer with total distance
                     //if (this.showflag) {
-                        var value = document.createElement('pre');
-                        value.textContent = 'Total distance: ' + this.distance.toLocaleString() + 'km';
-                        distanceContainer.appendChild(value);
+                    var value = document.createElement('pre');
+                    value.textContent = 'Total distance: ' + this.distance.toLocaleString() + 'km';
+                    distanceContainer.appendChild(value);
                     //} 
                 }
 
@@ -210,18 +229,17 @@ wraps a distance utility
                     filter: ['in', '$type', 'LineString']
                 });
 
-                if (this.checked)  map.on('click', this.clickFunction); 
+                if (this.checked) map.on('click', this.clickFunction);
 
                 //map.on('mousemove', function (e) {
                 //    var features = map.queryRenderedFeatures(e.point, { layers: ['measure-points'] });
                 //    if (features.length) console.log("distfeatures",features);
-                    // UI indicator for clicking/hovering a point on the map
-                    // map.getCanvas().style.cursor = (features.length) ? 'pointer' : 'crosshair';
+                // UI indicator for clicking/hovering a point on the map
+                // map.getCanvas().style.cursor = (features.length) ? 'pointer' : 'crosshair';
                 //});
             },
 
-            observers: [
-            ]
+            observers: []
 
         });
     </script>

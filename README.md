@@ -35,3 +35,10 @@ The auto-ctrl of trackInfo open/close (start-stop) is organized by property "rou
 + start if flag stop is not set
 + stop: remove flag stop 
 main 
+
+### \<mb-distance\>
+OPTIONAL-tool to measure distances on mb-map 
+
+### \<mb-show-where\>
+OPTIONAL-tool to query/view/supply mouse-map-location (lonlat)
+ 

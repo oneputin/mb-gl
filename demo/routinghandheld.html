@@ -19,9 +19,10 @@ Demo to view ship-data animation
     <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 
     <link rel="import" href="../mb-map.html">
-    <link rel="import" href="../mb-info-lnglat.html">
-    <link rel="import" href="../mb-info-drag.html">
+    <link rel="import" href="../mb-show-where.html">
+    <!--<link rel="import" href="../mb-info-drag.html">-->
     <link rel="import" href="../mb-distance.html">
+    <link rel="import" href="../mb-iimaps.html">
 
     <link rel="import" href="../mb-routes.html">
     <link rel="import" href="../mb-routes-ctrl.html">
@@ -42,7 +43,7 @@ Demo to view ship-data animation
         mb-map {
             /*width: 55%;*/
             width: 800px;
-            height: 600px;
+            height: 800px;
         }
         
         .ctrls-in {
@@ -60,12 +61,6 @@ Demo to view ship-data animation
             margin-left: 10px;
             @apply(--layout-vertical);
             /*@apply(--layout-start);*/
-        }
-        
-        mb-info-lnglat {
-            left: 50%;
-            margin-right: -50%;
-            transform: translate(-50%, 0)
         }
         
         mb-routes-ctrl {
@@ -94,7 +89,7 @@ Demo to view ship-data animation
               top: 40px;
               right: 20px; */
         }
-
+        
         #radios {
             padding: 10px;
         }
@@ -110,38 +105,33 @@ Demo to view ship-data animation
         <div class="container">
             
             <!-- Left block: Map -->
+            <!-- lnglat="{{lnglat}} -->" 
             <mb-map 
                 mapapikey="[[mbkey]]" 
                 mapstyle="[[mbstyle]]" 
                 map="{{map}}" 
                 cbox="{{cbox}}" 
                 zoom="{{zoom}}" 
-                lnglat="{{lnglat}}" 
-                mapcontent="[[mapcontent]]"
-                featurelist="{{routedata}}"
-                featureselected="{{featureselected}}"
                 mapctrl="[[mapctrl]]">
                 
                 <!-- Elements to show in map-overlay  -->
-                
+
+                <mb-distance map="{{map}}" distance="{{distance}}" checked="[[usemeasure]]">
+                </mb-distance>
+
                 <div class="ctrls-in">
-                    <!-- ctrl of animation and maporientation -->
+                    <!-- ctrl of animation (and maporientation) -->
                     <mb-routes-ctrl 
+                        checked="[[userouting]]"
                         timer="{{timer}}"
                         trackctrl="{{trackctrl}}">
                     </mb-routes-ctrl>
-                    
                     <!--<mb-map-orientation-ctrl trackmode="{{trackmode}}">
                     </mb-map-orientation-ctrl>-->
-
-                    <mb-distance map="{{map}}" distance="{{distance}}" checked="[[usemeasure]]">
-                    
-                    </mb-distance>
-
                 </div>
 
-                <mb-info-lnglat lnglat="[[lnglat]]">
-                </mb-info-lnglat>
+                <mb-show-where map="{{map}}" lnglat="{{lnglat}}" checked="[[usemousewhere]]">
+                </mb-show-where>
                 <!--<mb-info-drag carddata="[[trackdata]]">
                 </mb-info-drag>-->
 
@@ -160,9 +150,18 @@ Demo to view ship-data animation
                     trackdata="{{trackdata}}">
                 </routing-handheld>
 
+                <!-- element checking gpx-data -->
+                <mb-iimaps 
+                    map="[[map]]"
+                    mapcontent="[[mapcontent]]"
+                    featurelist="{{routedata}}"
+                    featureselected="{{featureselected}}">
+                </mb-iimaps>
+
                 <!-- element with n visible features -->
                 <mb-routes 
                     map="[[map]]" 
+                    checked="[[userouting]]"
                     timer="{{timer}}"
                     routedata=[[routedata]] 
                     routeid=[[routeid]] 
@@ -177,13 +176,16 @@ Demo to view ship-data animation
                 <!-- Left -->
                 <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
                 <mb-routes-ctrl-time  
+                    checked="[[userouting]]"
                     timescalemax="[[timer.timescalemax]]" 
                     timer="{{timer}}">
                 </mb-routes-ctrl-time>
 
     <div id="radios">
-        <paper-radio-button>Routing</paper-radio-button>
+        <!--<paper-radio-button>Routing</paper-radio-button>-->
+        <paper-radio-button checked="{{usemousewhere}}">MouseWhere</paper-radio-button>
         <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
+        <paper-radio-button checked="{{userouting}}">Routing</paper-radio-button>
     </div>
 
     <paper-dropdown-menu label="Tracksets">
@@ -227,8 +229,8 @@ Demo to view ship-data animation
 
         // Map-INIT
         scope.cbox = "13,52";
-        scope.lnglat = "13,52";
         scope.zoom = 8;
+        // scope.lnglat = "13,52";
 
         // Animation- INIT
         scope.tracksymbol = 'toilet-11';

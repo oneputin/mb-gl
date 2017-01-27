@@ -1,9 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
-
 <link rel="import" href="mb-api.html">
 <link rel="import" href="mb-tools-behavior.html">
-
 <!--<link rel="import" href="mb-behavior-info-vendee.html">-->
 
 <!--
@@ -1024,7 +1022,7 @@ along waypoint file loaded from url
 
                     if (speedFlag) {
                         trackObj.properties.title = trackObj.properties.speed + speedUnit;
-                        console.log("title", trackObj.properties.title);
+                        console.log("speed=", trackObj.properties.title);
                     }
 
                 } else { // Resting(pausing) objects 

@@ -1,0 +1,128 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="mb-api.html">
+<link rel="import" href="mb-tools-behavior.html">
+
+<!--
+`mb-show-where`
+wraps a distance utility 
+
+@demo demo/routinghandheld.html 
+-->
+
+<dom-module id="mb-show-where">
+    <template>
+        <style>
+            :host {
+                display: block;
+                position: absolute;
+                z-index: 9;
+                bottom: 0%;
+                height: 1.5em;
+               
+                /*left: 0%;*/
+                left: 50%;
+                margin-right: -50%;
+                transform: translate(-50%, 0);
+
+                font: 0.8em Courier, Lucida;
+                background-color: rgba(255,64,129,0.8); /*#ff4081*/
+                color: white;                    
+                /*opacity: 0.7;*/ /*related to all content bg,fg*/
+            }
+
+            #innerarea {
+                padding: 0.2em;
+            }
+        </style>
+
+        <div id="innerarea">[[info]]</div>
+
+    </template>
+
+    <script>
+        var myscope;
+
+        Polymer({
+
+            is: 'mb-show-where',
+
+            properties: {
+                /**
+                 *  map-object of related mb-gl-map
+                 */
+                map: {
+                    type: Object,
+                    observer: 'setupTool'
+                },
+
+                /**
+                 * LonLat in csv-format
+                 */
+                lnglat: {
+                    type: String,
+                    notify: true
+                },
+
+                /**
+                 * creating with formatter from mb-tools
+                 */
+                info: {
+                    type: String,
+                    computed: 'formatlonlat(lnglat)'
+                },
+
+                checked: {
+                    type: Boolean,
+                    value: true,
+                    observer: "toggleTool"
+                }
+            },
+
+            behaviors: [
+                Polymer.ToolsBehavior,
+            ],
+
+            attached: function() {
+                myscope = this;
+                // console.log(myscope);
+                if (!myscope.checked) myscope.toggleTool(false);
+            },
+
+            // 
+            toggleTool: function(checked) {
+                if (!this.map) return;
+                // console.log("toggleTool-1", this.map);
+                var msg = "mousewhere toggled OFF";
+                if (checked) {
+                    msg = "mousewhere toogled ON";
+                    if (checked != "external") { // 
+                        this.map.on('mousemove', this.mouseFunction);
+                    }
+                    this.style.display = "block";
+                } else {
+                    this.map.off('mousemove', this.mouseFunction);
+                    this.style.display = "none";
+                }
+
+            },
+
+            // 
+            mouseFunction: function(e) {
+                // console.log("CLICK-ENTER", e, distscope);
+                myscope.lnglat = e.lngLat;
+            },
+
+            // 
+            setupTool: function(map) {
+                if (!map) return;
+
+                if (this.checked) {
+                    map.on('mousemove', this.mouseFunction);
+                }
+            },
+
+            observers: []
+
+        });
+    </script>
+</dom-module>

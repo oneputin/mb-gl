@@ -4,8 +4,6 @@
 <link rel="import" href="mb-api.html">
 <link rel="import" href="mb-tools-behavior.html">
 <!--<link rel="import" href="mb-distance.html"> -->
-
-
 <!--
 `mb-map`
 wraps a map created with mapbox-gl-api.  
@@ -101,29 +99,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     }
                 },
 
-                // 
-                mapcontent: {
-                    type: Object
-                },
-
-                // features of (all) json-layers loaded
-                // grouped by layer
-                mapfeatures: {
-                    type: Object,
-                    value: {},
-                },
-
-                featurelist: {
-                    type: Array,
-                    value: [],
-                    notify: true
-                },
-
-                featureselected: {
-                    type: Object,
-                    observer: 'zoomToFeature'
-                },
-
                 /**
                  *  center of visible mapview as csv(Lon,Lat)
                  */
@@ -143,11 +118,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 zoom: {
                     type: Number,
                     observer: 'zoomthemap'
-                },
-
-                lnglat: {
-                    type: Object,
-                    notify: true
                 }
 
             },
@@ -156,10 +126,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 Polymer.ToolsBehavior
             ],
 
-            observers: [
-                'mapContentPrepare(mapcontent.*)',
-                'mapContentFeatureList(mapfeatures.*)'
-            ],
+            observers: [],
 
             attached: function() {
                 // console.log("mb-map setup", setup);
@@ -200,322 +167,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 this.mapctrl = mapctrl; //console.log(this.mapapikey, this.mapctrl);
 
                 this.installmap();
-            },
-
-            zoomToFeature: function(f) {
-                if (!f.feature) return;
-                // console.log("zoomToFeature: " + f.id, f.feature);
-                this.setFeatureBounds([f.feature], this.map);
-            },
-
-            /**
-             * Create a list of all features  contained in 'mapfeatures' 
-             * and supply as notified property
-             */
-            mapContentFeatureList: function(mapfeatures) {
-                if (mapfeatures.path == 'mapfeatures') mapfeatures = mapfeatures.value;
-                if (!mapfeatures || !Object.keys(mapfeatures).length) return;
-                // console.log("mapfeatures after change:", mapfeatures);
-
-                var featurelist = [];
-                Object.keys(mapfeatures).forEach(function(f) {
-                    mapfeatures[f].forEach(function(item) {
-                        featurelist.push(item);
-                    })
-                });
-                this.featurelist = featurelist; // notifies !!
-            },
-
-            /**
-             * Create/Refresh ii(maps)Layers 
-             * delivered with mapcontent container
-             */
-            mapContentPrepare: function(mapcontent) {
-                if (!this.map) return;
-                if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
-                if (!mapcontent || !Object.keys(mapcontent).length) return;
-                var scope = this,
-                    map = scope.map,
-                    mapfeatures = {};
-
-                function getTrackInfo(aLine){
-                    var info = aLine.properties,
-                        trackTimes = JSON.parse(info.coordTimes),
-                        n = trackTimes.length,
-                        von = scope.utcTime(scope.trackTime(trackTimes[0]), null, "h"),
-                        bis = scope.utcTime(scope.trackTime(trackTimes[n-1]), null,"h"),
-                        dt = bis - von;
-
-                    info.duration = scope.deltaT(dt); 
-                    info.length = scope.deltaL(aLine);
-                    info.count = n;
-                    
-                    info.html = info.time
-                                +"<br>Length: " + info.length
-                                +"<br>Duration: " + info.duration
-                                +"<br>TP's: " + info.count;
-
-                    // console.log(trackTimes);
-                    // console.log(info);
-                    return info; 
-                }
-
-                // Generic HILITE-function based on "id-Filter"	
-                function hilitefeature(e, layerid, featurekey) {
-
-                    if (!map.getLayer(layerid)) return;
-                    if (!map.getLayer(layerid + "-hover")) return;
-                    
-                    // 
-                    var idNames = ["id", "name", "key", "time"];
-
-                    var key, hilayerid, hifilter, fInfo; 
-
-                    var features = map.queryRenderedFeatures(e.point, {
-                        layers: [layerid]
-                    });
-
-                    map.getCanvas().style.cursor = (features.length) ? 'pointer' : 'crosshair';
-
-                    if (features && features.length) {
-
-                        aLine = features[0]; 
-
-                        fInfo = getTrackInfo(aLine);
-
-                        scope.popupOnMap(fInfo.html); 
-
-                        idNames.forEach(function(nom) {
-                            if (fInfo[nom]) key = nom;
-                        })
-                    
-                        if (!key) {
-                            console.log("hi " + layerid + ":", fInfo);
-                        } else {
-                            hifilter = ["==", key, fInfo[key]];
-                            // console.log("hi " + layerid + ":", fInfo.length+" km");
-                           
-                            hilayerid = layerid + "-hover";
-                            map.setFilter(hilayerid, hifilter);
-                        }
-                    } else {
-                        map.setFilter(layerid + "-hover", ["==", "name", ""]);
-                    }
-                }
-                // Layer that occurs on-mose-hover only 
-                function createHoverLayer(layertemplate) {
-                    var lhover = {}; // layertemplate,
-                    var basetype = layertemplate.type;
-                    Object.keys(layertemplate).forEach(function(k) {
-                        lhover[k] = layertemplate[k];
-                    })
-
-                    lhover.id = layertemplate.id + "-hover";
-
-                    lhover.filter = ["==", "id", ""];
-
-                    if (basetype == "fill") {
-                        lhover.paint = {
-                            "fill-color": "#627BC1",
-                            "fill-opacity": 1
-                        }
-                    } else if (basetype == "line") {
-                        lhover.paint = {
-                            "line-color": "#FF0000",
-                            "line-opacity": 1
-                        }
-
-                    } else if (basetype == "symbol") {
-                        lhover.layout = {
-                            "opacity": 1
-                        }
-                    }
-                    //console.log("Created HOVER", basetype, lhover);
-
-                    return lhover;
-                }
-                // add temporary properties to better identify features
-                function rawBeautify(layerObject) {
-                    //return;
-
-                    var lookuplist = [],
-                        data = layerObject.srcdata;
-
-                    data.features.forEach(function(f) {
-                        var col = f.properties.color;
-                        lookuplist.push([col, col]);
-                    });
-
-                    layerObject.layer.paint = {
-                        "line-width": 3, 
-                        "line-color": {
-                            property: 'color',
-                            type: 'categorical',
-                            stops: lookuplist
-                        }
-                    };
-                    console.log("rawBeautify", layerObject);
-                    
-                    return layerObject.layer;
-                }
-                // 
-                function getLayerTemplates(layerObject) {
-
-                    var layerTemplates = []
-                    layerTemplate = layerObject['layer'];
-
-                    if (layerTemplate) layerTemplates.push(layerTemplate);
-
-                    // Insert BELOW main layer 
-                    if (layerObject['bglayer']) layerTemplates.splice(0, 0, layerObject['bglayer']); // !!! 
-
-                    if (layerObject['selectlayer']) {
-                        layerObject['selectlayer'].forEach(function(l) {
-                            layerTemplates.push(l);
-                        })
-                    } else {
-                        let hoverTemplate = createHoverLayer(layerTemplate);
-                        if (hoverTemplate) layerTemplates.push(hoverTemplate);
-                    }
-
-                    return layerTemplates;
-                }
-
-                // create liner list of features (for menu-generation)
-                function getFeatures(layername, layerData) {
-
-                    var flist = [],
-                        fitem = {},
-                        id, title;
-                    if (!layerData || !layerData.features) return flist;
-
-                    layerData.features.forEach(function(f) {
-                        id = f.id;
-                        if (!id) id = f.properties.name;
-                        if (!id) id = f.properties.time;
-                        id = id.replace("ACTIVE LOG:", "");
-                        title = (layername + "_" + id).replace(/-/g, "_");
-                        title = title.replace(/ /g, "");
-
-                        fitem = {
-                            "layer": layername,
-                            "id": id,
-                            "title": title,
-                            "feature": f
-                        };
-                        flist.push(fitem);
-                    })
-
-                    return flist;
-                }
-
-                //console.log("IIMAP-refresh of '" + layername + "':", layerObject);
-
-                // --------------------------------------------------
-                // Take a copy of existing mapfeatures   
-                Object.keys(this.mapfeatures).forEach(function(layer) {
-                    var flist = scope.mapfeatures[layer];
-                    mapfeatures[layer] = [];
-                    flist.forEach(function(f) {
-                        mapfeatures[layer].push(f);
-                    })
-                });
-
-                var layerNames = Object.keys(mapcontent); // console.log("Refreshing iimap-layers", layerNames);
-
-                layerNames.forEach(function(layername, j) {
-
-                    function hiliter(e) {
-                        hilitefeature(e, layername);
-                    }
-
-                    var layerObject = mapcontent[layername],
-                        layerData = layerObject.srcdata,
-                        layerTemplate = layerObject['layer'];
-
-                    if (layerObject.raw) layerTemplate = rawBeautify(layerObject);
-
-                    var layerTemplates = getLayerTemplates(layerObject);
-
-
-                    // REMOVE layers (on demand) 
-                    if (layerObject.delete) {
-
-                        if (map.getSource(layername)) map.removeSource(layername);
-
-                        layerTemplates.forEach(function(l) {
-                            if (map.getLayer(l.id)) map.removeLayer(l.id);
-                        });
-
-                        map.off("mousemove", hiliter)
-
-                        return;
-                    }
-
-                    // CREATE / REFRESH mapContent
-
-                    if (layerData) {
-
-                        var layerSource = map.getSource(layername),
-                            mapLayer = map.getLayer(layername);
-
-                        // 1.A. (Re)Set datasources
-                        if (!layerSource) {
-
-                            map.addSource(layername, {
-                                "type": "geojson",
-                                "data": layerData
-                            });
-
-                            layerSource = map.getSource(layername);
-
-                            // console.log("SRC", layername, layerData, layerSource);
-                        } else {
-                            // 1.B  CHECK 
-                            if (true) {
-                                layerSource.setData(layerData);
-                            }
-                        }
-
-                        // 1.B Check type-FIT of layerName ??? 
-
-                        // 1.C. (Re)Create layers 
-                        if (!mapLayer) {
-                            console.log("layerTemplates for " + layername, layerTemplates);
-                            layerTemplates.forEach(function(l) {
-                                if (!map.getLayer(l.id)) {
-                                    map.addLayer(l);
-                                }
-                            });
-
-                            mapLayer = map.getLayer(layername);
-                            // 
-                            map.on("mousemove", hiliter)
-                        }
-
-                        // Check in ??? 
-                        if (mapLayer) {
-                            var features = map.querySourceFeatures(layername, {
-                                sourceLayer: 'original',
-                                filter: null
-                            });
-                            if (features.length) console.log(features.length + " features of " + layername); // , features, layerSource);
-                        }
-                    }
-
-                    // GET all source-features of layer 
-                    var contentfeatures = getFeatures(layername, layerData);
-
-                    if (contentfeatures.length) {
-                        // console.log("contentfeatures of " + layername, contentfeatures);
-                        mapfeatures[layername] = contentfeatures;
-                    }
-
-                }.bind(this));
-
-                // console.log("mapfeatures", mapfeatures);
-                this.mapfeatures = mapfeatures;
-
             },
 
 
@@ -582,9 +233,9 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     });
 
                     // inform about mouse-coordinates after mouse-move
-                    map.on('mousemove', function(e) {
+                    /*map.on('mousemove', function(e) {
                         that.lnglat = e.lngLat;
-                    });
+                    });*/
 
 
                     //if zoom is NOT communicated to app via map-object : 

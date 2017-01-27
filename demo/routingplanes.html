@@ -19,7 +19,7 @@
 
     <link rel="import" href="../routing-planes.html">
 
-    <link rel="import" href="../mb-info-lnglat.html">
+    <link rel="import" href="../mb-show-where.html">
     <link rel="import" href="../mb-routes-ctrl.html">
 
     <link rel="import" href="../mb-routes-ctrl-time.html">
@@ -39,12 +39,6 @@
         mb-map {
             width: 100%;
             height: 675px;
-        }
-        
-        mb-info-lnglat {
-            left: 50%;
-            margin-right: -50%;
-            transform: translate(-50%, 0)
         }
         
         mb-routes-ctrl-mode {
@@ -131,9 +125,9 @@
 
                 <mb-map-orientation-ctrl trackmapmode="{{trackmapmode}}">
                 </mb-map-orientation-ctrl>
-                
-                <mb-info-lnglat lnglat="[[lnglat]]">
-                </mb-info-lnglat>
+
+                <mb-show-where map="{{map}}" lnglat="{{lnglat}}" checked="[[usemousewhere]]">
+                </mb-show-where>
                 
                 <mb-routes 
                     map="[[map]]" 

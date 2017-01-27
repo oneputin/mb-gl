@@ -159,7 +159,7 @@ To 'close'
                 },
                 jsonurl: {
                     type: String,
-                    observer: 'urldispatcher'
+                    observer: 'srcdispatcher'
                 },
 
                 rawdbdata: {
@@ -348,7 +348,7 @@ To 'close'
                     // tracktimes = r.properties.coordTimes;
                     var tp, trackpoints = [];
                     if (!coords || !coords.length) return trackpoints;
-                    var dott, utc; 
+                    var dott, utc;
                     coords.forEach(function(cc, j) {
                         dott = scope.trackTime(tt[j]);
                         utc = scope.utcTime(dott);

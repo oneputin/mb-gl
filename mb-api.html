@@ -1,8 +1,6 @@
 <!--
 `mb-api`
 wraps the mapbox-gl api (js and css)
-
-@demo demo/slidemap.html 
 -->
 <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.29.0/mapbox-gl.js'></script>
 <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.29.0/mapbox-gl.css' rel='stylesheet' />
@@ -14,17 +12,17 @@ wraps the mapbox-gl api (js and css)
     // nodes,routes,traces,tracks,legs
 
     /**
-        * A waypoint along a tracked route
-        */
+     * A waypoint along a tracked route
+     */
     class NodeSource {
         /**
-            * Constructs the object.
-            *
-            * @param      {array}   coordinates  The wp's coordinates as [lng,lat]-array
-            * @param      {string}  id           The wp's identifier on maps
-            * @param      {string}  routeid      The wp's identifier
-            * @param      {string}  props        Descriptive wp-properties
-            */
+         * Constructs the object.
+         *
+         * @param      {array}   coordinates  The wp's coordinates as [lng,lat]-array
+         * @param      {string}  id           The wp's identifier on maps
+         * @param      {string}  routeid      The wp's identifier
+         * @param      {string}  props        Descriptive wp-properties
+         */
         constructor(coordinates, id, routeid, props) {
             // if (!id) id = "wp";
             this.id = id;
@@ -44,15 +42,15 @@ wraps the mapbox-gl api (js and css)
     };
 
     /**
-        * A route-segment between two nodes (way- or track-points)
-        */
+     * A route-segment between two nodes (way- or track-points)
+     */
     class LegSource {
         /**
-            * Constructs the routeLeg
-            *
-            * @param      {array}  coordinates  The coordinates of the legs
-            *                                   start/stop
-            */
+         * Constructs the routeLeg
+         *
+         * @param      {array}  coordinates  The coordinates of the legs
+         *                                   start/stop
+         */
         constructor(coordinates) {
             this.type = "Feature";
             this.geometry = {
@@ -66,19 +64,19 @@ wraps the mapbox-gl api (js and css)
     };
 
     /**
-        * A mb-multi-object joining the animation points between multiple waypoints into a mb-geometry   
-        */
+     * A mb-multi-object joining the animation points between multiple waypoints into a mb-geometry   
+     */
     class RouteSource {
 
         /**
-            * Constructs a RouteSource 
-            *
-            * @param      {<type>}  routeid     The routeid
-            * @param      {<type>}  props       The properties
-            * @param      {<type>}  legsCoords  The legs coordinates
-            * @param      {<type>}  legsData    The legs metadata
-            * @param      {<type>}  routeNodes  The route nodes
-            */
+         * Constructs a RouteSource 
+         *
+         * @param      {<type>}  routeid     The routeid
+         * @param      {<type>}  props       The properties
+         * @param      {<type>}  legsCoords  The legs coordinates
+         * @param      {<type>}  legsData    The legs metadata
+         * @param      {<type>}  routeNodes  The route nodes
+         */
         constructor(routeid, props, legsCoords, legsData, routeNodes) { // coordinates = array of coordinate-arrays (multiLine) 
             this.id = routeid;
             this.type = "Feature";
@@ -88,8 +86,8 @@ wraps the mapbox-gl api (js and css)
             };
 
             /**
-                * Metadata of route-components 
-                */
+             * Metadata of route-components 
+             */
             props.routeid = routeid;
             props.trackid = props.key;
             props.legs = legsData;
@@ -109,17 +107,17 @@ wraps the mapbox-gl api (js and css)
     };
 
     /**
-        * A mapbox-point-feature ilustrationg the track on the map
-        */
+     * A mapbox-point-feature ilustrationg the track on the map
+     */
     class TrackSource {
         /**
-            * Constructs the object.
-            *
-            * @param      {array}   coordinates  The coordinates
-            * @param      {string}  routeid      The identifier of route
-            * @param      {string}  props        Some props of tracks
-            * @return     {mb-feature}  { mapbox point feature }
-            */
+         * Constructs the object.
+         *
+         * @param      {array}   coordinates  The coordinates
+         * @param      {string}  routeid      The identifier of route
+         * @param      {string}  props        Some props of tracks
+         * @return     {mb-feature}  { mapbox point feature }
+         */
         constructor(coordinates, routeid, props) {
             this.id = routeid;
             this.type = "Feature";
@@ -143,17 +141,17 @@ wraps the mapbox-gl api (js and css)
     };
 
     /**
-        * A route-trace 'behind' the animation-tracker
-        */
+     * A route-trace 'behind' the animation-tracker
+     */
     class TraceSource {
         /**
-            * Constructs a container for all points a tracker has passed.
-            * alternatively "all" or "some only" (sich auflösender kondensstreifen)  
-            *
-            * @param      {<type>}  coordinates  The coordinates
-            * @param      {<type>}  routeid      The routeid
-            * @param      {<type>}  props        The properties
-            */
+         * Constructs a container for all points a tracker has passed.
+         * alternatively "all" or "some only" (sich auflösender kondensstreifen)  
+         *
+         * @param      {<type>}  coordinates  The coordinates
+         * @param      {<type>}  routeid      The routeid
+         * @param      {<type>}  props        The properties
+         */
         constructor(coordinates, routeid, props) {
             this.id = routeid;
             this.type = "Feature";

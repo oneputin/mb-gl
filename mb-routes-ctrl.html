@@ -14,8 +14,6 @@
 `mb-routes-ctrl`
 ctrl elements controling animation behavior of track-objects on the map  
 some ctrls (back,forward...) and "slider" are "redundant and should be used exclusively 
-
-@demo demo/x-key-aware.html 
 -->
 
 <dom-module id="mb-routes-ctrl">
@@ -83,6 +81,12 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             is: 'mb-routes-ctrl',
 
             properties: {
+
+                checked: {
+                    type: Boolean,
+                    value: true
+                },
+
                 /**
                  * Animation status
                  */
