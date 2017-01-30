@@ -1,0 +1,481 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+
+<link rel="import" href="mb-tools-behavior.html">
+
+<!--<link rel="import" href="routing-behavior.html">-->
+
+
+<!--
+`tracks-get-table`
+Interface for import/export of tracking data from handheld gps-devices
+
+Optional: create quick-preview-data 
+
+@demo demo/routinghandheld.html 
+-->
+
+<dom-module id="tracks-get-table">
+
+<template>
+
+    <style is="custom-style">
+        :host {
+            position: absolute;
+            display: none; /*inline-block;*/
+            opacity: 1; 
+            top: 50%;
+            margin-bottom: -50%;
+            transform: translate(0, -50%);
+        }
+    </style>
+
+    <iron-ajax
+        auto
+        url="[[tableurl]]"
+        handle-as="json"
+        on-response="getRawData">
+    </iron-ajax>
+
+
+</template>
+
+<script>
+    Polymer({
+        is: 'tracks-get-table',
+
+        properties: {
+
+            tableurl : {
+                type: String
+            },
+
+            rawdata: {
+                type: Object,
+                value: {}
+            },
+
+            usepreview: {
+                type: Boolean,
+                value: false
+            },
+
+            // can be processed in "quickViewer"
+            trackdata: {
+                type: Object,
+                notify: true
+            },
+
+            // can be processed in "quickViewer"
+            quickmap: {
+                type: Object,
+                notify: true
+            },
+
+            // tobe processed in "trackAnimation"
+            routedata: {
+                type: Array,
+                value: [],
+                notify: true
+            }
+
+        },
+
+        behaviors: [
+            Polymer.ToolsBehavior,
+        ],
+
+        observers: [
+            'createTrackData(rawdata, usepreview)'
+        ],
+
+        attached: function() {
+            // console.log("target attached");
+        },
+
+
+        getRawData: function(ajaxresponse) {
+            //console.log("getRawData, response", ajaxresponse);
+            if (!ajaxresponse || !ajaxresponse.detail) return;
+            this.rawdata = ajaxresponse.detail.response;
+        },
+
+        createTrackData: function(rawdata, usepreview, minTrackLength) {
+            if (!rawdata || !Object.keys(rawdata).length) return; 
+            // console.log("table-data, raw:", rawdata);
+
+            // "DETECT" the "table-mode"" 
+            var tablemode = (rawdata[0]["geometry"]) ? "json" : "nn";
+            tablemode = (rawdata[0]["Header"] == "Trackpoint") ? 'table-vomue1' : tablemode;
+            tablemode = rawdata[0]["Pnt"] ? 'table-vomue2' : tablemode;
+            if (tablemode == "nn") {
+                console.log("BREAK. Selected dataset cannot be analysed!!");
+                return;
+            }
+            // console.log("table-data, mode:", tablemode);   
+
+            var trackdata = this.trackDataCreate(rawdata, tablemode, minTrackLength);
+
+            if (usepreview) {
+                this.quickmap = this.quickmapCreate(trackdata);
+                // console.log("table-data, map-tracks:", this.quickmap);  
+                
+            } else {
+                var routedata = this.routeDataCreate(trackdata); // , rawdbdata);
+                if (routedata) {
+                    console.log("table-data, route-tracks:", routedata);  
+                    this.routedata = routedata;
+                } 
+            }
+       
+        },
+
+        // 
+        trackDataCreate: function(rawdata, tablemode, minTrackLength) {
+            if (!minTrackLength) minTrackLength = 5; 
+
+            // Dis-assemble rawdata-recordings that contain "separable tracks"  
+            // with mode-specific algorithms - assigning a unique track-ID
+            function handheldCoords(cc, targetformat, prec) {
+                if (!targetformat) targetformat = "dd";
+                if (!prec) prec = 6;
+                // Split into 4 parts : 
+                // latDeg, latMin, lngDeg, lngMin
+                var coords = cc.split(" ");
+
+                lat = coords[0];
+                lat = lat[0] == "N" ? "+" + lat.slice(1) : "-" + lat.slice(1);
+
+                lng = coords[2];
+                lng = lng[0] == "E" ? "+" + lng.slice(1) : "-" + lng.slice(1);
+
+                if (targetformat == "dd") {
+                    lat = parseInt(lat) + (parseFloat(coords[1]) / 60);
+                    lng = parseInt(lng) + (parseFloat(coords[3]) / 60);
+
+                } else if (targetformat == "dm") {
+                    lat = (parseInt(lat) * 60) + parseFloat(coords[1]);
+                    lng = (parseInt(lng) * 60) + parseFloat(coords[3]);
+                }
+                coords = [lng, lat]; // console.log("dd-array", dd);
+                return coords;
+            };
+
+            // 
+            function handheldTime(traw, asdate) {
+                // !! for (later) use of date-parser 
+                // the MONTH must be numbered 0 .. 11 !!
+                var t, a, aa, tstandard, tdate;
+                if (typeof traw == "string") {
+
+                    t = traw.split(":").join(".");
+                    t = t.split(" ").join(".");
+                    a = t.split(".");
+
+                    aa = [a[2], a[1], a[0], a[3], a[4], a[5]]; // datum umordnen
+
+                    tstandard = aa.join(".");
+
+                    tdate = new Date(parseInt(aa[0]), parseInt(aa[1]) - 1, parseInt(aa[2]), parseInt(aa[3]), parseInt(aa[4]), parseInt(aa[5]));
+
+                } else {
+                    tdate = traw;
+                    tstandard = traw
+                } // console.log("handheldTime", traw, t, a, tunix)
+
+                if (asdate) return tdate;
+                return tstandard;
+            };
+
+            // tool STABW 
+            function stabw(array) {
+                var len = 0;
+                var sum = array.reduce(function(pv, cv) {
+                    ++len;
+                    return pv + cv;
+                }, 0);
+                var mean = sum / len;
+                var result = 0;
+                for (var i = 0; i < len; i++)
+                    result += Math.pow(array[i] - mean, 2);
+                len = (len == 1) ? len : len - 1;
+                return Math.sqrt(result / len);
+            };
+
+            var routes = {},
+                routedata = [],
+                tp, trackpoints;
+            var t, dt, dx, dt_std, dx_std, v, dv_std,
+                vprev = 0;
+
+            if (tablemode.indexOf("vomue1") >= 0) tablemode = "vomue1";
+            else if (tablemode.indexOf("vomue2") >= 0) tablemode = "vomue2";
+            else {
+                console.log("BREAK. tablemode not usable: ", tablemode);
+                return;
+            }
+
+            // Step1: Analyse STDDEV of DT, DX-data (if available)   
+
+            var dts = [],
+                dxs = [],
+                dvs = [];
+
+            rawdata.forEach(function(tp, j) {
+
+                if (tablemode == "vomue1") {
+                    dt = tp["Leg Time"].split(":");
+                    dx = tp["Leg Length"].split(" ");
+                    v = tp["Leg Speed"].split(" ");
+                }
+                if (tablemode == "vomue2") {
+                    dt = tp["dt"].split(":");
+                    dx = tp["dx"].split(" ");
+                    v = tp["v"].split(" ");
+                }
+                // console.log(dt,dx,v);
+                // unit 
+                dt = 3600 * parseInt(dt[0]) + 60 * parseInt(dt[1]) + parseInt(dt[2]); // always [s]
+                dx = (dx[1] == "km") ? parseInt(dx[0]) * 1000 : parseInt(dx); // always in [m] 
+                dv = parseFloat(v[0]) - vprev; // dv = is always km/h
+                vprev = parseFloat(v[0]);
+                // console.log("dv=" + dv, v);
+                dts.push(dt);
+                dxs.push(dx);
+                dvs.push(dv);
+            });
+
+            if (dts.length) {
+                dt_std = Math.round(stabw(dts));
+                dx_std = Math.round(stabw(dxs));
+                dv_std = Math.round(stabw(dvs));
+                console.log("dt-std [sec]:", dt_std);
+                console.log("dx-std [m]:", dx_std);
+                console.log("dv-std [km/h]:", dv_std);
+            }
+
+            // Step2 : 
+            var trackid = 1;
+
+            rawdata.forEach(function(tp, j) {
+
+                if (tablemode == "vomue1") {
+                    dt = tp["Leg Time"].split(":");
+                    dx = tp["Leg Length"].split(" ");
+                    v = tp["Leg Speed"].split(" ");
+                }
+
+                if (tablemode == "vomue2") {
+                    dt = tp["dt"].split(":");
+                    dx = tp["dx"].split(" ");
+                    v = tp["v"].split(" ");
+                }
+
+                dt = 3600 * parseInt(dt[0]) + 60 * parseInt(dt[1]) + parseInt(dt[2]);
+                dx = (dx[1] == "km") ? dx[0] * 1000 : dx;
+
+                if ((dt > dt_std) || (dx > dx_std)) trackid = trackid + 1;
+
+                tp.id = trackid;
+
+            });
+
+            // B. GROUP all TP-records by id 
+            //    into track-objects 
+
+            rawdata.forEach(function(tp, j) {
+                var tpx = {};
+
+                Object.keys(tp).forEach(function(k) {
+
+                    if (tablemode == "vomue1") {
+                        if (k == "Position") {
+
+                            coords = handheldCoords(tp[k]);
+                            tpx["coords"] = coords;
+
+                        } else if (k == "Time") {
+
+                            time = handheldTime(tp[k]);
+                            tpx["ab"] = time;
+                            tpx["an"] = time; // 
+
+                        } else {
+                            tpx[k] = tp[k];
+                        }
+                    }
+
+                    if (tablemode == "vomue2") {
+                        if (k == "coords") {
+                            coords = handheldCoords(tp[k]);
+                            tpx["coords"] = coords;
+                        } else if (k == "Date") {
+                            time = handheldTime(tp[k]);
+                            tpx["ab"] = time;
+                            tpx["an"] = time; // 
+                        } else {
+                            tpx[k] = tp[k];
+                        }
+                    }
+                })
+
+                if (!tpx.coords) {
+                    console.log("TP-record without coords", tp);
+                } else {
+                    // Distribute the trackpoints into "separable" tracks
+                    // (if wpts are pre-grouped by track-id)  
+                    if (tp.id) {
+                        id = tp.id;
+                        route = routes[id];
+                        if (!route) {
+                            route = [];
+                            routes[id] = route;
+                        }
+                    } else {
+                        route = routes["raw"];
+                        if (!route) {
+                            route = [];
+                            routes["raw"] = route;
+                        }
+                    }
+                    // console.log(tpx);
+                    route.push(tpx);
+                }
+            }.bind(this));
+
+            var trackpoints, trackid, tracks = {};
+
+            Object.keys(routes).forEach(function(id) {
+                trackpoints = routes[id];
+
+                if (trackpoints.length >= minTrackLength) {
+
+                    trackpoints.sort(function(wp1, wp2) {
+                        return this.utcTime(wp1.ab) - this.utcTime(wp2.ab);
+                    }.bind(this));
+                    
+                    // console.log(id, trackpoints[0]);
+                    trackid = trackpoints[0].ab; 
+                    tracks[trackid] = trackpoints;
+                }
+
+            }.bind(this));    
+            // console.log("raw route-tracks", tracks);
+            return tracks; 
+        },
+
+        // 
+        routeDataCreate: function(routes, masterdata) {
+
+            // C. Join temporary masters- and routes-objects 
+            //    into array of api-conform routedata (wps sorted by time) 
+            var routedata = [],
+                trackpoints;
+
+            Object.keys(routes).forEach(function(id) {
+
+                trackpoints = routes[id];
+
+                var title = trackpoints[0].ab;
+
+                var route = {
+                    "id": id,
+                    "title": title,
+                    // "icon": icon,
+                    "unitsystem": "metric",
+                    "nodes": trackpoints
+                };
+
+                // Optionally: include Stammdaten
+                if (masterdata && masterdata[id] && this.connect) {
+                    route["master"] = masterdata[id];
+                }
+
+                // *** Required ***  
+                route.trackmode = true;
+
+                routedata.push(route);
+
+            }.bind(this));
+
+            return routedata;
+        },
+
+        // Create some quickmap-obj to enable preview  
+        quickmapCreate: function(trackdata, masterdata) {
+
+            var scope = this;
+            
+            function srcDataCreate(trackdata) {
+                var features = [];
+
+                Object.keys(trackdata).forEach(function(id){
+                    var coords = [],
+                        coordTimes = [],
+                        nodes = trackdata[id];
+
+                    nodes.forEach(function(node){
+                        coords.push(node.coords);
+                        if (node.ab) coordTimes.push(node.ab);
+                        else coordTimes.push(node.an);
+                    })
+
+                    var properties = {
+                            id: id,
+                            color: scope.getRandomColor(),
+                            time: id, // nodes[0].ab
+                            coordTimes: coordTimes
+                        };
+
+                    var trace = new TraceSource(coords, id, properties);
+                    properties.length = scope.deltaL(trace); // console.log(trace);
+
+                    features.push(trace);
+                })
+                
+                var srcData = {
+                    features: features,
+                    type: "FeatureCollection"
+                } ;
+
+                return srcData;
+            } 
+
+            function jsonTrackToQuickview(srcdata, title, prefix) {
+                if (!prefix) prefix = "qmap"
+
+                var mapid = prefix + "-" + title;
+                
+                var quickmap = {};
+                
+                quickmap[mapid] = {
+                    "layer": {
+                        "type": "line",
+                        "id": mapid,
+                        "source": mapid
+                    },
+                    "srcdata": srcdata,
+                    "raw": 1
+                };
+                return quickmap; 
+            }
+
+            var srcData = srcDataCreate(trackdata); 
+
+            var prefix = "tracks";
+            var title = "test"; 
+            /* scope.routesrc.key;
+            if (!title) title = scope.routesrc.title;
+            if (!title) title = srcdata.time; */
+            
+            var quickMapObj = jsonTrackToQuickview(srcData, title, prefix);
+
+            return quickMapObj; 
+        }    
+
+
+    });
+</script>
+
+</dom-module>

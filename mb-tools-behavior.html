@@ -102,9 +102,21 @@
             return t;
         },
 
-        deltaL : function(aLine) {
-          var dl = turf.lineDistance(aLine, 'kilometers');
-          if (typeof dl == "number") dl = this.toFixed(dl, 3) + "km";
+        deltaL : function(aLine, unit) {
+          // aLine must be an element of src-data (!!!) , here   
+          var unitshort ;
+          if (!unit) unit="kilometers";
+          if (unit=="kilometers") unitshort ="km";
+          if (unit=="miles") unitshort ="mi";
+          if (unit=="nautic") {
+              unit="kilometers";
+              unitshort ="nm";
+          }    
+          var dl = turf.lineDistance(aLine, unit);
+          if (typeof dl == "number") {
+              if (unitshort=="nm") dl = dl / 1.856; 
+              dl = this.toFixed(dl, 3) + unitshort;
+          }    
           return dl;
         },
 

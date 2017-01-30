@@ -22,35 +22,41 @@ the map-ctrls can be placed as map-overlay or anywhere else
             }
         </style>
         
-        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="loadRouteSetIndex">
+        <iron-ajax auto 
+            url="[[setupurl]]" 
+            handle-as="json" 
+            on-response="loadRouteSetIndex">
         </iron-ajax>
 
         <!-- menu of available routesets -->
-        <paper-dropdown-menu label="Tracksets">
-            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRouteSet" attr-for-selected="src">
-                <template is="dom-repeat" items="{{routesets}}">
-                <paper-item src="{{item}}" url="{{item.url}}">
-                    {{item.title}}
-                </paper-item>
-            </template>
-            </paper-listbox>
-        </paper-dropdown-menu>
+        <template is="dom-if" if="{{routesets}}">
+            <paper-dropdown-menu label="Tracksets">
+                <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRouteSet" attr-for-selected="src">
+                    <template is="dom-repeat" items="{{routesets}}">
+                        <paper-item src="{{item}}" url="{{item.url}}">
+                            {{item.title}}
+                        </paper-item>
+                    </template>
+                </paper-listbox>
+            </paper-dropdown-menu>
+        </template>
 
         <!-- menu of Tracks contained in activated routesets -->
-        <paper-dropdown-menu class="routes" label="Tracks">
-            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRoute" attr-for-selected="{{selectattr}}">
-                <template is="dom-repeat" items="{{routedata}}">
-                    <paper-item feature="{{item}}" id="{{item.id}}">
-                        {{item.title}}
-                    </paper-item>
-                </template>
-            </paper-listbox>
-        </paper-dropdown-menu>
-        
+        <template is="dom-if" if="{{routedata}}">
+            <paper-dropdown-menu class="routes" label="Tracks">
+                <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRoute" attr-for-selected="{{selectattr}}">
+                    <template is="dom-repeat" items="{{routedata}}">
+                        <paper-item feature="{{item}}" id="{{item.id}}">
+                            {{item.title}}
+                        </paper-item>
+                    </template>
+                </paper-listbox>
+            </paper-dropdown-menu>
+        </template>
+
     </template>
 
     <script>
-
         Polymer({
             is: 'mb-sources-select',
 
@@ -58,32 +64,40 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 setupurl: {
                     type: String
                 },
-                
+
                 routesrc: {
                     type: Object
                 },
 
+                routesets: {
+                    type: Array,
 
+                },
+                routedata: {
+                    type: Object
+
+                },
+                
 
             },
             //     
-            selectRoute : function(e) {
+            selectRoute: function(e) {
                 var selectvalue = e.detail.item[this.selectattr];
                 // console.log("selected item:", selectvalue);
-                
+
                 if (this.selectattr == "id") this.routeid = selectvalue;
                 else this.featureselected = selectvalue;
             },
 
             /**
-            * Put selected src from menu-selection into import-element
-            */
-            selectRouteSet : function(e) {
+             * Put selected src from menu-selection into import-element
+             */
+            selectRouteSet: function(e) {
                 this.routesrc = e.detail.item.src;
             },
 
             // eval the response of content-list 
-            loadRouteSetIndex : function(ajaxresponse) {
+            loadRouteSetIndex: function(ajaxresponse) {
                 this.routesets = ajaxresponse.detail.response;
             }
 

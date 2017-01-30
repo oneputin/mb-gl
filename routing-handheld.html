@@ -4,10 +4,14 @@
 
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-button/paper-button.html">
+
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="../paper-card/paper-card.html">
 
-<link rel="import" href="../kml-json/kml-json.html">
+<!--<link rel="import" href="../kml-json/kml-json.html">-->
+
+<link rel="import" href="tracks-get-gpx.html">
+<link rel="import" href="tracks-get-table.html">
 
 <link rel="import" href="mb-tools-behavior.html">
 
@@ -36,785 +40,348 @@ To 'close'
 
 <dom-module id="routing-handheld">
 
-    <template>
+<template>
 
-        <style is="custom-style">
-            :host {
-                position: absolute;
-                display: none; /*inline-block;*/
-                opacity: 1; 
-                top: 50%;
-                margin-bottom: -50%;
-                transform: translate(0, -50%);
+    <style is="custom-style">
+        :host {
+            position: absolute;
+            display: none; /*inline-block;*/
+            opacity: 1; 
+            top: 50%;
+            margin-bottom: -50%;
+            transform: translate(0, -50%);
 
-                /*  */
-                --paper-card-header-text: {
-                    padding: 8px;
-                    font-size: 12px;
-                    font-weight: 400;
-                }
-            }
-
-            paper-card.info { 
-                @apply(--layout-horizontal); 
-                align-items: flex-start;
-                --paper-card-header-color: #f00;
-            }
-
-            #div0 {
+            /*  */
+            --paper-card-header-text: {
+                padding: 8px;
                 font-size: 12px;
                 font-weight: 400;
-                border-bottom: 1px solid #e8e8e8;
-                padding: 2px 2px;
             }
-            .info-content {
-                @apply(--layout-flex);
-                float: left;
-            }
+        }
 
-            .card-image {
-                width: 100px;
-                height: 170px;
-                background-color: red;
-                background-size: cover;
-            }
+        paper-card.info { 
+            @apply(--layout-horizontal); 
+            align-items: flex-start;
+            --paper-card-header-color: #f00;
+        }
 
-            .info-html { 
-                color: var(--paper-grey-600); 
-                opacity: 1;
-            }
-            
-            .info-link { 
-                color: var(--google-blue-500); 
-            }
+        #div0 {
+            font-size: 12px;
+            font-weight: 400;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 2px 2px;
+        }
+        .info-content {
+            @apply(--layout-flex);
+            float: left;
+        }
 
-            paper-icon-button {
-                background-color: var(--paper-light-blue-500);
-            }
+        .card-image {
+            width: 100px;
+            height: 170px;
+            background-color: red;
+            background-size: cover;
+        }
 
-        </style>
+        .info-html { 
+            color: var(--paper-grey-600); 
+            opacity: 1;
+        }
+        
+        .info-link { 
+            color: var(--google-blue-500); 
+        }
 
-        <iron-ajax
-            auto
-            url="[[jsonurl]]"
-            handle-as="json"
-            on-response="getrawdata">
-        </iron-ajax>
+        paper-icon-button {
+            background-color: var(--paper-light-blue-500);
+        }
 
-        <kml-json 
-            url="[[xmlurl]]" 
-            query="[[xmlquery]]" 
-            geojson="{{rawdata}}">
-        </kml-json>
+    </style>
 
-        <iron-ajax
-            auto
-            url="[[basedataurl]]"
-            handle-as="json"
-            on-response="getrawdbdata">
-        </iron-ajax>
+    <!-- -->
+    <tracks-get-table 
+        tableurl="[[tableurl]]"
+        usepreview="[[usepreview]]"
+        trackdata="{{rawdata}}"
+        quickmap="{{quickmap}}">
+    </tracks-get-table>    
 
-        <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
+    <tracks-get-gpx 
+        xmlurl="[[xmlurl]]"
+        xmlquery="[[xmlquery]]"
+        usepreview="[[usepreview]]"
+        trackdata="{{rawdata}}"
+        quickmap="{{quickmap}}">
+    </tracks-get-gpx>    
 
-            <div class="info-content">
+    <iron-ajax
+        auto
+        url="[[basedataurl]]"
+        handle-as="json"
+        on-response="getRawDbData">
+    </iron-ajax>
 
-                <div class="card-content">
+    <paper-card 
+        heading="{{carddata.title}}" 
+        image="{{cardimgurl}}" 
+        class="info">
 
-                    <div id="div0"></div>
+        <div class="info-content">
 
-                    <div id="div1" class="info-html">
+            <div class="card-content">
 
-                    </div>
+                <div id="div0"></div>
 
-                </div>
+                <div id="div1" class="info-html">
 
-                <div class="card-actions">
-                    <paper-button class="info-link">more...</paper-button>
                 </div>
 
             </div>
 
-            <!--<paper-button class="info-link" on-click="_onBackClick">X</paper-button>-->
-            <!--<paper-icon-button icon="close" on-click="_onBackClick"></paper-icon-button>-->
+            <div class="card-actions">
+                <paper-button class="info-link">more...</paper-button>
+            </div>
 
-        </paper-card>
+        </div>
 
-        <content>
-        </content>    
+        <!--<paper-button class="info-link" on-click="_onBackClick">X</paper-button>-->
+        <!--<paper-icon-button icon="close" on-click="_onBackClick"></paper-icon-button>-->
 
-    </template>
+    </paper-card>
 
-    <script>
-        Polymer({
-            is: 'routing-handheld',
+    <content>
+    </content>    
 
-            properties: {
+</template>
 
-                routesrc: {
-                    type: Object
-                },
+<script>
+    Polymer({
+        is: 'routing-handheld',
 
-                xmlurl: {
-                    type: String
-                },
-
-                jsonurl: {
-                    type: String,
-                    observer: 'srcdispatcher'
-                },
-
-                rawdbdata: {
-                    type: Object,
-                    value: []
-                },
-
-                rawdata: {
-                    type: Object,
-                    value: [],
-                    observer: 'supplyData'
-                },
-
-                routedata: {
-                    type: Object,
-                    notify: true
-                },
-
-                mapdata: {
-                    type: Object,
-                    notify: true
-                }
-
+        properties: {
+            //
+            routesrc: {
+                type: Object
             },
 
-            behaviors: [
-                Polymer.ToolsBehavior,
-            ],
-
-            observers: [
-                'importTracks(rawdata, rawdbdata)',
-                'srcdispatcher(routesrc.*)'
-            ],
-
-            attached: function() {
-                // console.log("target attached");
+            usepreview:{
+                type: Boolean
             },
 
-            // 
-            srcdispatcher: function(routesrc) {
-                // console.log("routesrc", routesrc);
-                if (routesrc.path == 'routesrc') routesrc = routesrc.value;
-                if (!routesrc.url) return;
-
-                var srcurl = routesrc.url,
-                    srctype = routesrc.type,
-                    ext = srcurl.split(".").slice(-1);
-                if (!ext.length) return;
-                ext = ext[0]; // console.log("srcurl",typeof srcurl, srcurl,ext); // return;
-
-                if (srctype == "usertable") {
-                    
-                    if (ext == "json") this.jsonurl = srcurl;
-
-                } else if ((srctype == "kml") || (srctype == "gpx")) {
-                    
-                    this.xmlurl = srcurl;
-                    this.xmlquery = {
-                        "tags": "Track",
-                        "structure": "doc"
-                    };
-                    // console.log("kmlLOG:", this.xmlurl, this.xmlquery);
-                }
+            xmlurl: {
+                type: String
             },
 
-            getrawdata: function(ajaxresponse) {
-                //console.log("getrawdata, response", ajaxresponse);
-                if (!ajaxresponse || !ajaxresponse.detail) return;
-                this.rawdata = ajaxresponse.detail.response;
-                //if (this.rawdata) console.log("OK: trackdata", this.rawdata);
+            xmlquery: {
+                type: Object
             },
 
-            getrawdbdata: function(ajaxresponse) {
-                var rawdata = ajaxresponse.detail.response;
-                if (!rawdata) return {};
-                console.log("rawdbdata", rawdata);
-                this.rawdbdata = rawdata; // triggers 'setupTracking'
+            jsonurl: {
+                type: String
             },
 
-            // 
-            supplyData: function(rawdata) {
-
-                // Split multiLineTracks into tracksegments 
-                // addressable by time every 
-                var scope = this;
-
-                function jsonTrackPreprocess(rawdata) {
-
-                    var segfeatures = [],
-                        starttime;
-
-                    rawdata.features.forEach(function(f, i) {
-
-                        coordinates = f.geometry.coordinates;
-
-                        tracktimes = f.properties.coordTimes;
-
-                        type = f.geometry.type;
-
-                        if (type == "MultiLineString") {
-
-                            coordinates.forEach(function(coords, j) {
-
-                                var cc = JSON.parse(JSON.stringify(coords)); // .slice(0);
-                                var tt = JSON.parse(JSON.stringify(tracktimes[j])); // .slice(0);
-
-                                if (!starttime) starttime = tt[0];
-
-                                var seg = {
-                                    "type": "Feature",
-                                    "geometry": {
-                                        "type": "LineString",
-                                        "coordinates": cc
-                                    },
-                                    "properties": {
-                                        "coordTimes": tt,
-                                        "name": tt[0],
-                                        "time": tt[0],
-                                        "color": scope.getRandomColor()
-                                    }
-                                };
-
-                                segfeatures.push(seg);
-                            })
-
-                        } else {
-
-                            if (!starttime) starttime = tracktimes[0];
-                            f.properties.color = scope.getRandomColor();
-                            segfeatures.push(f);
-                        }
-                    })
-
-                    var segdata = {
-                        "time": starttime, // rawdata.time (probably time of gpxToJson-conversion)
-                        "type": rawdata.type,
-                        "features": segfeatures
-                    };
-
-                    return segdata;
-                }
-
-                // Possibly geojson
-                if (rawdata && rawdata.features) {
-                    //console.log("supplyData, geojson-1", data)
-                    var mapdata, ddrLinecolors = [];
-
-                    var srcdata = jsonTrackPreprocess(rawdata);
-                    // console.log("supplyData, geojson-2", data)
-
-                    // Quickview of raw data 
-                    var title = scope.routesrc.key;
-                    if (!title) title = scope.routesrc.title;
-                    if (!title) title = data.time;
-                    var mapid = "tracks-" + title;
-
-                    var mapdata = {};
-                    mapdata[mapid] = {
-                        "layer": {
-                            "type": "line",
-                            "id": mapid,
-                            "source": mapid
-                        },
-                        "srcdata": data,
-                        "raw": 1
-                    };
-                }
-
-                // SUPPLY mapdata
-                if (mapdata) this.mapdata = mapdata;
-
-                // SUPPLY list of tracks
-                // this.rawdata = srcdata.features;
+            rawdata: {
+                type: Array,
+                value: []
             },
 
-            // 
-            importGPX: function(rawdata, masterdata, minTrackLength) {
-
-                var scope = this,
-                    routedata = [],
-                    trackpoints, tracktimes,
-                    route, tt, coordinates,
-                    type, id, title;
-
-                function extractPnts(coords, tt) {
-                    // tracktimes = r.properties.coordTimes;
-                    var tp, trackpoints = [];
-                    if (!coords || !coords.length) return trackpoints;
-                    var dott, utc;
-                    coords.forEach(function(cc, j) {
-                        dott = scope.trackTime(tt[j]);
-                        utc = scope.utcTime(dott);
-                        tp = {};
-                        tp.coords = [cc[0], cc[1]]; // !!! mapbox
-                        tp.z = cc[2];
-                        tp.ab = dott;
-                        tp.an = tp.ab;
-                        tp.utc = utc;
-                        trackpoints.push(tp);
-                    });
-
-                    return trackpoints;
-                }
-
-                rawdata.forEach(function(r, i) {
-
-                    coordinates = r.geometry.coordinates;
-
-                    tracktimes = r.properties.coordTimes;
-
-                    type = r.geometry.type;
-
-                    if (type == "MultiLineString") {
-
-                        coordinates.forEach(function(coords, j) {
-
-                            if (coords.length > minTrackLength) {
-
-                                tt = tracktimes[j];
-                                id = tt[0];
-
-                                trackpoints = extractPnts(coords, tt);
-                                // console.log(id, coords, trackpoints);
-
-                                route = {
-                                    "id": id,
-                                    "title": id,
-                                    "unitsystem": "metric",
-                                    "trackmode": true,
-                                    "nodes": trackpoints
-                                };
-
-                                routedata.push(route);
-                            }
-                        })
-
-                    } else {
-
-                        id = r.properties.time;
-                        title = r.properties.name;
-                        if (!title) title = id;
-                        title = title.replace("ACTIVE LOG:", "");
-
-                        if (coordinates.length > minTrackLength) {
-
-                            trackpoints = extractPnts(coordinates, tracktimes);
-
-                            route = {
-                                "id": id,
-                                "title": title,
-                                "unitsystem": "metric",
-                                "trackmode": true,
-                                "nodes": trackpoints
-                            };
-
-                            routedata.push(route);
-                        }
-                    }
-
-                })
-
-                return routedata;
+            rawdbdata: {
+                type: Array,
+                value: []
             },
 
-            // 
-            importVomue: function(rawdata, rawmode, masterdata) {
-                // Dis-assemble rawdata-recordings that contain "separable tracks"  
-                // with mode-specific algorithms - assigning a unique track-ID
-
-                function handheldCoords(cc, targetformat, prec) {
-                    if (!targetformat) targetformat = "dd";
-                    if (!prec) prec = 6;
-                    // Split into 4 parts : 
-                    // latDeg, latMin, lngDeg, lngMin
-                    var coords = cc.split(" ");
-
-                    lat = coords[0];
-                    lat = lat[0] == "N" ? "+" + lat.slice(1) : "-" + lat.slice(1);
-
-                    lng = coords[2];
-                    lng = lng[0] == "E" ? "+" + lng.slice(1) : "-" + lng.slice(1);
-
-                    if (targetformat == "dd") {
-                        lat = parseInt(lat) + (parseFloat(coords[1]) / 60);
-                        lng = parseInt(lng) + (parseFloat(coords[3]) / 60);
-
-                    } else if (targetformat == "dm") {
-                        lat = (parseInt(lat) * 60) + parseFloat(coords[1]);
-                        lng = (parseInt(lng) * 60) + parseFloat(coords[3]);
-                    }
-                    coords = [lng, lat]; // console.log("dd-array", dd);
-                    return coords;
-                };
-
-                // 
-                function handheldTime(traw, asdate) {
-                    // !! for (later) use of date-parser 
-                    // the MONTH must be numbered 0 .. 11 !!
-                    var t, a, aa, tstandard, tdate;
-                    if (typeof traw == "string") {
-
-                        t = traw.split(":").join(".");
-                        t = t.split(" ").join(".");
-                        a = t.split(".");
-
-                        aa = [a[2], a[1], a[0], a[3], a[4], a[5]]; // datum umordnen
-
-                        tstandard = aa.join(".");
-
-                        tdate = new Date(parseInt(aa[0]), parseInt(aa[1]) - 1, parseInt(aa[2]), parseInt(aa[3]), parseInt(aa[4]), parseInt(aa[5]));
-
-                    } else {
-                        tdate = traw;
-                        tstandard = traw
-                    } // console.log("handheldTime", traw, t, a, tunix)
-
-                    if (asdate) return tdate;
-                    return tstandard;
-                };
-
-                // tool STABW 
-                function stabw(array) {
-                    var len = 0;
-                    var sum = array.reduce(function(pv, cv) {
-                        ++len;
-                        return pv + cv;
-                    }, 0);
-                    var mean = sum / len;
-                    var result = 0;
-                    for (var i = 0; i < len; i++)
-                        result += Math.pow(array[i] - mean, 2);
-                    len = (len == 1) ? len : len - 1;
-                    return Math.sqrt(result / len);
-                };
-
-                var routes = {},
-                    routedata = [],
-                    tp, trackpoints;
-                var t, dt, dx, dt_std, dx_std, v, dv_std,
-                    vprev = 0;
-
-                // Step1: Analyse STDDEV of DT, DX-data (if available)   
-
-                var dts = [],
-                    dxs = [],
-                    dvs = [];
-
-                rawdata.forEach(function(tp, j) {
-
-                    if (rawmode == "vomue1") {
-                        dt = tp["Leg Time"].split(":");
-                        dx = tp["Leg Length"].split(" ");
-                        v = tp["Leg Speed"].split(" ");
-                    }
-                    if (rawmode == "vomue2") {
-                        dt = tp["dt"].split(":");
-                        dx = tp["dx"].split(" ");
-                        v = tp["v"].split(" ");
-                    }
-
-                    // unit 
-                    dt = 3600 * parseInt(dt[0]) + 60 * parseInt(dt[1]) + parseInt(dt[2]); // always [s]
-                    dx = (dx[1] == "km") ? parseInt(dx[0]) * 1000 : parseInt(dx); // always in [m] 
-                    dv = parseFloat(v[0]) - vprev; // dv = is always km/h
-                    vprev = parseFloat(v[0]);
-                    // console.log("dv=" + dv, v);
-                    dts.push(dt);
-                    dxs.push(dx);
-                    dvs.push(dv);
-                });
-
-                if (dts.length) {
-                    dt_std = Math.round(stabw(dts));
-                    dx_std = Math.round(stabw(dxs));
-                    dv_std = Math.round(stabw(dvs));
-                    console.log("dt-std [sec]:", dt_std);
-                    console.log("dx-std [m]:", dx_std);
-                    console.log("dv-std [km/h]:", dv_std);
-                }
-
-                // Step2 : 
-                var trackid = 1;
-
-                rawdata.forEach(function(tp, j) {
-
-                    if (rawmode == "vomue1") {
-                        dt = tp["Leg Time"].split(":");
-                        dx = tp["Leg Length"].split(" ");
-                        v = tp["Leg Speed"].split(" ");
-                    }
-                    if (rawmode == "vomue2") {
-                        dt = tp["dt"].split(":");
-                        dx = tp["dx"].split(" ");
-                        v = tp["v"].split(" ");
-                    }
-
-                    dt = 3600 * parseInt(dt[0]) + 60 * parseInt(dt[1]) + parseInt(dt[2]);
-                    dx = (dx[1] == "km") ? dx[0] * 1000 : dx;
-
-                    if ((dt > dt_std) || (dx > dx_std)) trackid = trackid + 1;
-
-                    tp.id = trackid;
-
-                });
-
-                // B. GROUP all TP-records by id 
-                //    into track-objects 
-
-                rawdata.forEach(function(tp, j) {
-                    var tpx = {};
-
-                    Object.keys(tp).forEach(function(k) {
-
-                        if (rawmode == "vomue1") {
-                            if (k == "Position") {
-
-                                coords = handheldCoords(tp[k]);
-                                tpx["coords"] = coords;
-
-                            } else if (k == "Time") {
-
-                                time = handheldTime(tp[k]);
-                                tpx["ab"] = time;
-                                tpx["an"] = time; // 
-
-                            } else {
-                                tpx[k] = tp[k];
-                            }
-                        }
-
-                        if (rawmode == "vomue2") {
-                            if (k == "coords") {
-                                coords = handheldCoords(tp[k]);
-                                tpx["coords"] = coords;
-                            } else if (k == "Date") {
-                                time = handheldTime(tp[k]);
-                                tpx["ab"] = time;
-                                tpx["an"] = time; // 
-                            } else {
-                                tpx[k] = tp[k];
-                            }
-                        }
-                    })
-
-                    if (!tpx.coords) {
-                        console.log("TP-record without coords", tp);
-                    } else {
-                        // Distribute the trackpoints into "separable" tracks
-                        // (if wpts are pre-grouped by track-id)  
-                        if (tp.id) {
-                            id = tp.id;
-                            route = routes[id];
-                            if (!route) {
-                                route = [];
-                                routes[id] = route;
-                            }
-                        } else {
-                            route = routes["raw"];
-                            if (!route) {
-                                route = [];
-                                routes["raw"] = route;
-                            }
-                        }
-                        // console.log(tpx);
-                        route.push(tpx);
-                    }
-
-                }.bind(this));
-
-                // console.log("raw routes", routes);
-
-                // C. Join temporary masters- and routes-objects 
-                //    into array of api-conform routedata (wps sorted by time) 
-
-                Object.keys(routes).forEach(function(id) {
-
-                    trackpoints = routes[id];
-
-                    trackpoints.sort(function(wp1, wp2) {
-                        return mba.utcTime(wp1.ab) - mba.utcTime(wp2.ab);
-                    });
-
-                    if (Object.keys(trackpoints).length > 5) {
-                        var title = trackpoints[0].ab;
-                        var route = {
-                            "id": id,
-                            "title": title,
-                            // "icon": icon,
-                            "unitsystem": "metric",
-                            "nodes": trackpoints
-                        };
-
-                        // Optionally: include Stammdaten
-                        if (masterdata && masterdata[id] && this.connect) {
-                            route["master"] = masterdata[id];
-                        }
-                        // *** Required ***  
-                        route.trackmode = true;
-
-                        routedata.push(route);
-                    }
-                }.bind(this));
-
-                return routedata;
+            trackdata: {
+                type: Object,
+                value: [],
             },
 
-            // SPECIFIC import of gps-device data 
-            // delivered in csv- or table-based formats 
-            // into datastructure of routing-API
-            importTracks: function(rawdata, rawdbdata) {
-                if (!rawdata || !rawdata.length) return;
-
-                var debounceTime = 200;
-                var minTrackLength = 5;
-
-                this.debounce('import', function() {
-
-                    console.log("LOG: Handheld raw data", {
-                        "location": rawdata,
-                        "master": rawdbdata
-                    }); // return;
-
-
-                    // Optional: Append track-masterData     
-                    if (rawdbdata) {
-                        // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
-                    }
-
-                    //  A.1 MODE Detector    
-                    var rawmode = (rawdata[0]["geometry"]) ? "json" : "nn";
-                    rawmode = (rawdata[0]["Header"] == "Trackpoint") ? 'vomue1' : rawmode;
-                    rawmode = rawdata[0]["Pnt"] ? 'vomue2' : rawmode;
-                    if (rawmode == "nn") {
-                        console.log("BREAK. Selected dataset cannot be analysed!!");
-                        return;
-                    }
-
-                    console.log("Handheld-datamode detected: ", rawmode);
-
-                    var routedata = [];
-                    //     
-                    if (rawmode == "json") {
-
-                        routedata = this.importGPX(rawdata, rawdbdata, minTrackLength);
-
-                    } else if (rawmode.indexOf("vomue") >= 0) {
-
-                        routedata = this.importVomue(rawdata, rawmode, rawdbdata, minTrackLength);
-                    }
-
-                    if (routedata && routedata.length) {
-                        // console.log("JSON-Handheld routedata:", routedata); // , rawdata);
-                        this.routedata = routedata;
-                    }
-
-                }.bind(this), debounceTime);
-
+            routedata: {
+                type: Object,
+                notify: true
             },
 
-            // B. COMPILE Feature-data 
-            /**
-             * Create some formatted html-text(dom?) 
-             * to identify basic properties of an animated object (animation status)
-             *
-             * @param      {<type>}  trackObj  The animated trackObj (as mb-feature)
-             * @return     {string}  A formatted information about trackObj-status.
-             */
-            calcBasicInfo: function(trackObj) {
-                if (!trackObj || !trackObj.properties) return;
-
-                var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
-                if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
-
-                if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
-                if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
-
-                return trackInfo;
-            },
-
-            /**
-             * Build (app-specific) trackData extending the basic infoSet 
-             * to enable enhanced presentation of trackObj
-             *
-             * @param      {<type>}  trackObj  The track object
-             * @param      {<type>}  openFlag  The open flag
-             * @return     {<type>}  The more track data.
-             */
-            calcExtendedInfo: function(trackObj, openFlag) {
-                if (!trackObj || !trackObj.properties) return;
-
-                var basicInfo = this.calcBasicInfo(trackObj);
-
-                var extendedData = {
-                    "title": trackObj.properties.title,
-                    "html": basicInfo,
-                    "properties": trackObj.properties
-                };
-
-                if (openFlag) {
-                    extendedData.open = 1;
-                }
-
-                if (trackObj.properties.master) {
-                    extendedData.headline = trackObj.properties.master.skipper;
-                }
-                // console.log("calcTrackData", trackObj, trackData)
-                return extendedData;
-            },
-
-
-            // C.  FORMAT INFO-Card 
-
-            refreshCardContent: function(data) {
-                var nbsp = "&nbsp;"; //"~"; 
-                if (!data) return;
-
-                // if (data.properties && data.properties.master) {
-                // var pp = JSON.parse(data.properties.master);
-                if (this.masterdata && data.properties.id) {
-                    // 
-                    pp = this.masterdata[data.properties.id];
-                    if (pp) {
-                        // console.log("masterdata:", pp);
-                        // DIV0
-                        var imgurl = pp.img,
-                            skipper = pp.skipper,
-                            boat = pp.ship,
-                            header = "";
-
-                        if (imgurl) this.cardimgurl = "wp-data/" + imgurl;
-                        // console.log("some data ", imgurl, this.cardimgurl, skipper, boat);
-
-                        if (skipper && boat) {
-
-                            // to show items with no line-breaks (fi. in flex-formatted cards)
-                            // replace many spaces 
-                            skipper = skipper.split(' ').join(nbsp);
-                            boat = boat.split(' ').join(nbsp);
-                            // statt: 
-                            // skipper = skipper.replace(" ", nbsp);
-                            // boat = boat.replace(" ", nbsp);
-
-                            header = "<b>" + boat + "</b>" + "<br>" + skipper;
-
-                            this.$.div0.innerHTML = header;
-                        }
-                    }
-                }
-
-                // DIV1
-                if (data.html) this.$.div1.innerHTML = data.html;
+            quickmap: {
+                type: Object,
+                notify: true
             }
 
-        });
-    </script>
+        },
+
+        behaviors: [
+            Polymer.ToolsBehavior,
+        ],
+
+        observers: [
+            'srcDispatcher(routesrc.*)'
+            // 'importTracks(rawdata, rawdbdata)'
+        ],
+
+        attached: function() {
+            // console.log("target attached");
+        },
+
+        // Evaluate RoutingSource-Object to trigger import of rawdata
+        // from different data-types 
+        srcDispatcher: function(routesrc) {
+            // console.log("routesrc", routesrc);
+            if (routesrc.path == 'routesrc') routesrc = routesrc.value;
+            if (!routesrc.url) return;
+
+            var srcurl = routesrc.url,
+                srctype = routesrc.type,
+                ext = srcurl.split(".").slice(-1);
+            if (!ext.length) return;
+            ext = ext[0]; // console.log("srcurl",typeof srcurl, srcurl,ext); // return;
+
+            if (srctype == "usertable") {
+                // Trigger simple ajax
+                this.tableurl = srcurl;
+
+            } else if ((srctype == "kml") || (srctype == "gpx")) {
+                // trigger track-import-element
+                this.xmlurl = srcurl;
+                this.xmlquery = {
+                    "tags": "Track",
+                    "structure": "doc"
+                };
+                // console.log("kmlLOG:", this.xmlurl, this.xmlquery);
+            }
+        },
+
+        getRawDbData: function(ajaxresponse) {
+            var rawdata = ajaxresponse.detail.response;
+            if (!rawdata) return {};
+            console.log("rawdbdata", rawdata);
+            this.rawdbdata = rawdata; // triggers 'setupTracking'
+        },
+
+        // SPECIFIC SPLICE with additional property data  
+        /*importTracks: function(rawdata, rawdbdata) {
+            if (!rawdata || !rawdata.length) return;
+
+            var debounceTime = 200;
+            var minTrackLength = 5;
+
+            this.debounce('import', function() {
+
+                console.log("LOG: Handheld raw data", {
+                    "location": rawdata,
+                    "master": rawdbdata,
+                    "routesrc" : this.routesrc 
+                }); // return;
+
+
+                // Optional: Append track-masterData     
+                if (rawdbdata) {
+                    // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
+                }
+
+                var routedata = rawdata;
+                
+                if (routedata && routedata.length) {
+                    // console.log("JSON-Handheld routedata:", routedata); // , rawdata);
+                    this.routedata = routedata;
+                }
+
+            }.bind(this), debounceTime);
+
+        },*/
+
+        // B. COMPILE Feature-data 
+        /**
+            * Create some formatted html-text(dom?) 
+            * to identify basic properties of an animated object (animation status)
+            *
+            * @param      {<type>}  trackObj  The animated trackObj (as mb-feature)
+            * @return     {string}  A formatted information about trackObj-status.
+            */
+        calcBasicInfo: function(trackObj) {
+            if (!trackObj || !trackObj.properties) return;
+
+            var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
+            if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
+
+            if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
+            if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
+
+            return trackInfo;
+        },
+
+        /**
+            * Build (app-specific) trackData extending the basic infoSet 
+            * to enable enhanced presentation of trackObj
+            *
+            * @param      {<type>}  trackObj  The track object
+            * @param      {<type>}  openFlag  The open flag
+            * @return     {<type>}  The more track data.
+            */
+        calcExtendedInfo: function(trackObj, openFlag) {
+            if (!trackObj || !trackObj.properties) return;
+
+            var basicInfo = this.calcBasicInfo(trackObj);
+
+            var extendedData = {
+                "title": trackObj.properties.title,
+                "html": basicInfo,
+                "properties": trackObj.properties
+            };
+
+            if (openFlag) {
+                extendedData.open = 1;
+            }
+
+            if (trackObj.properties.master) {
+                extendedData.headline = trackObj.properties.master.skipper;
+            }
+            // console.log("calcTrackData", trackObj, trackData)
+            return extendedData;
+        },
+
+
+        // C.  FORMAT INFO-Card 
+
+        refreshCardContent: function(data) {
+            var nbsp = "&nbsp;"; //"~"; 
+            if (!data) return;
+
+            // if (data.properties && data.properties.master) {
+            // var pp = JSON.parse(data.properties.master);
+            if (this.masterdata && data.properties.id) {
+                // 
+                pp = this.masterdata[data.properties.id];
+                if (pp) {
+                    // console.log("masterdata:", pp);
+                    // DIV0
+                    var imgurl = pp.img,
+                        skipper = pp.skipper,
+                        boat = pp.ship,
+                        header = "";
+
+                    if (imgurl) this.cardimgurl = "wp-data/" + imgurl;
+                    // console.log("some data ", imgurl, this.cardimgurl, skipper, boat);
+
+                    if (skipper && boat) {
+
+                        // to show items with no line-breaks (fi. in flex-formatted cards)
+                        // replace many spaces 
+                        skipper = skipper.split(' ').join(nbsp);
+                        boat = boat.split(' ').join(nbsp);
+                        // statt: 
+                        // skipper = skipper.replace(" ", nbsp);
+                        // boat = boat.replace(" ", nbsp);
+
+                        header = "<b>" + boat + "</b>" + "<br>" + skipper;
+
+                        this.$.div0.innerHTML = header;
+                    }
+                }
+            }
+
+            // DIV1
+            if (data.html) this.$.div1.innerHTML = data.html;
+        }
+
+    });
+</script>
 
 </dom-module>

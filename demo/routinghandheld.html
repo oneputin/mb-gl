@@ -22,7 +22,7 @@ Demo to view ship-data animation
     <link rel="import" href="../mb-location-log.html">
     <!--<link rel="import" href="../mb-info-drag.html">-->
     <link rel="import" href="../mb-distance.html">
-    <link rel="import" href="../mb-preview.html">
+    <link rel="import" href="../mb-quickview.html">
 
     <link rel="import" href="../mb-routes.html">
     <link rel="import" href="../mb-routes-ctrl.html">
@@ -68,7 +68,7 @@ Demo to view ship-data animation
         }
         
         mb-map-orientation-ctrl {
-            @apply(--layout-flex);            
+            @apply(--layout-flex);
         }
         
         paper-dropdown-menu {
@@ -122,198 +122,200 @@ Demo to view ship-data animation
         }
     </style>
 </head>
-
 <body>
 
-    <template is="dom-bind" id="app">
+<template is="dom-bind" id="app">
         
-        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="loadRouteSetIndex">
-        </iron-ajax>
+    <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="loadRouteSetIndex">
+    </iron-ajax>
 
-        <div class="container">
+    <div class="container">
+        <!-- Left block: Map -->
+
+        <!-- lnglat="{{lnglat}} -->" 
+        <mb-map 
+            mapapikey="[[mbkey]]" 
+            mapstyle="[[mbstyle]]" 
+            map="{{map}}" 
+            cbox="{{cbox}}" 
+            zoom="{{zoom}}" 
+            mapctrl="[[mapctrl]]">
             
-            <!-- Left block: Map -->
-            <!-- lnglat="{{lnglat}} -->" 
-            <mb-map 
-                mapapikey="[[mbkey]]" 
-                mapstyle="[[mbstyle]]" 
+            <!-- TOOL to measure user-generated lines -->
+            <mb-distance 
                 map="{{map}}" 
-                cbox="{{cbox}}" 
-                zoom="{{zoom}}" 
-                mapctrl="[[mapctrl]]">
-                
-                <!-- TOOL to measure user-generated lines -->
-                <mb-distance 
-                    map="{{map}}" 
-                    distance="{{distance}}" 
-                    checked="[[usemeasure]]">
-                </mb-distance>
+                distance="{{distance}}" 
+                checked="[[usemeasure]]">
+            </mb-distance>
 
-                <div class="ctrls-in">
-                    <template is="dom-if" if="{{!useiimaps}}">
-                        <!-- ctrl of animation (and maporientation) -->
-                        <mb-routes-ctrl 
-                            checked="[[userouting]]"
-                            timer="{{timer}}"
-                            trackctrl="{{trackctrl}}">
-                        </mb-routes-ctrl>
-                    </template>
-                    <!-- ctrl of maporientation -->
-                    <!-- <mb-map-orientation-ctrl 
-                        trackmode="{{trackmode}}">
-                        </mb-map-orientation-ctrl>-->
-                </div>
-
-                <mb-location-log 
-                    map="{{map}}" 
-                    lnglat="{{lnglat}}" 
-                    checked="[[uselocationlog]]">
-                </mb-location-log>
-
-                <!--<mb-info-drag carddata="[[trackdata]]">
-                </mb-info-drag>-->
-
-            </mb-map>
-
-            <!-- Right Block: several external app-controls -->
-            <div class="ctrls_out">
-                <!-- INTERFACE -->
-                <routing-handheld 
-                    routesrc="[[routesrc]]" 
-                    routedata="{{routedata}}" 
-                    mapdata="{{mapcontent}}" 
-                    rawdata="{{rawdata}}" 
-                    basedataurl="[[basedataurl]]" 
-                    trackinfo="[[trackinfo]]" 
-                    trackdata="{{trackdata}}">
-                </routing-handheld>
-
-                <!-- element checking gpx-data -->
-                <mb-preview 
-                    map="[[map]]" 
-                    checked="[[useiimaps]]" 
-                    mapcontent="[[mapcontent]]" 
-                    featurelist="{{routedata}}" 
-                    featureselected="{{featureselected}}">
-                </mb-preview>
-
-                <!-- element with n visible features -->
-                <template is="dom-if" if="{{!useiimaps}}">
-
-                    <mb-routes 
-                        map="[[map]]" 
+            <div class="ctrls-in">
+                <template is="dom-if" if="{{!usepreview}}">
+                    <!-- ctrl of animation (and maporientation) -->
+                    <mb-routes-ctrl 
                         checked="[[userouting]]"
                         timer="{{timer}}"
-                        routedata=[[routedata]] 
-                        routeid=[[routeid]] 
-                        trackctrl="{{trackctrl}}" 
-                        mapcontent="{{mapcontent}}"                  
-                        trackmapmode="{{trackmapmode}}" 
-                        tracksymbol="{{tracksymbol}}" 
-                        trackdata="{{trackdata}}"
-                        trackinfo="[[trackinfo]]">
-                    </mb-routes>
-                    
-                    <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
-                    <mb-routes-ctrl-time  
-                        checked="[[userouting]]"
-                        timescalemax="[[timer.timescalemax]]" 
-                        timer="{{timer}}">
-                    </mb-routes-ctrl-time>
-
+                        trackctrl="{{trackctrl}}">
+                    </mb-routes-ctrl>
                 </template>
+                <!-- ctrl of maporientation -->
+                <!-- <mb-map-orientation-ctrl 
+                    trackmode="{{trackmode}}">
+                    </mb-map-orientation-ctrl>-->
+            </div>
 
-                <div id="radios">
-                    <paper-radio-button checked="{{uselocationlog}}">Location Log</paper-radio-button>
-                    <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
-                    <paper-radio-button class="red" checked="{{useiimaps}}">CheckSources</paper-radio-button>
-                </div>
 
-                <div id="menues">
-                    <!-- menu of available routesets -->
-                    <paper-dropdown-menu label="Tracksets">
-                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRouteSet" attr-for-selected="src">
-                            <template is="dom-repeat" items="{{routesets}}">
-                            <paper-item src="{{item}}" url="{{item.url}}">
-                                {{item.title}}
-                            </paper-item>
-                        </template>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
+            <mb-location-log map="{{map}}" lnglat="{{lnglat}}" checked="[[uselocationlog]]">
+            </mb-location-log>
 
-                    <!-- menu of Tracks contained in activated routesets -->
-                    <paper-dropdown-menu class="routes" label="Tracks">
-                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRoute" attr-for-selected="{{selectattr}}">
-                            <template is="dom-repeat" items="{{routedata}}">
-                                <paper-item feature="{{item}}" id="{{item.id}}">
+            <!--<mb-info-drag carddata="[[trackdata]]">
+                        </mb-info-drag>-->
+        </mb-map>
+
+        <!-- Right Block: several external app-controls -->
+        
+        <div class="ctrls_out">
+            <!-- INTERFACE -->
+            <routing-handheld 
+                routesrc="[[routesrc]]" 
+                usepreview="[[usepreview]]"
+                routedata="{{routedata}}" 
+                quickmap="{{mapcontent}}" 
+                rawdata="{{rawdata}}" 
+                basedataurl="[[basedataurl]]" 
+                trackinfo="[[trackinfo]]" 
+                trackdata="{{trackdata}}">
+            </routing-handheld>
+
+            <!--<mb -->
+
+            <!-- elements for viewing structurally standardized quickMapObjects -->
+            <mb-quickview 
+                map="[[map]]" 
+                checked="[[usepreview]]" 
+                mapcontent="[[mapcontent]]" 
+                featurelist="{{routedata}}" 
+                featureselected="{{featureselected}}">
+            </mb-quickview>
+
+            <!-- element with n visible features -->
+            <template is="dom-if" if="{{!usepreview}}">
+
+                <mb-routes 
+                    map="[[map]]" 
+                    checked="[[userouting]]"
+                    timer="{{timer}}"
+                    routedata=[[routedata]] 
+                    routeid=[[routeid]] 
+                    trackctrl="{{trackctrl}}" 
+                    mapcontent="{{mapcontent}}"                  
+                    trackmapmode="{{trackmapmode}}" 
+                    tracksymbol="{{tracksymbol}}" 
+                    trackdata="{{trackdata}}"
+                    trackinfo="[[trackinfo]]">
+                </mb-routes>
+                
+                <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
+                <mb-routes-ctrl-time  
+                    checked="[[userouting]]"
+                    timescalemax="[[timer.timescalemax]]" 
+                    timer="{{timer}}">
+                </mb-routes-ctrl-time>
+
+            </template>
+
+            <div id="radios">
+                <paper-radio-button checked="{{uselocationlog}}">Location Log</paper-radio-button>
+                <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
+                <paper-radio-button class="red" checked="{{usepreview}}">CheckSources</paper-radio-button>
+            </div>
+
+            <div id="menues">
+                <!-- menu of available routesets -->
+                <paper-dropdown-menu label="Tracksets">
+                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRouteSet" attr-for-selected="src">
+                        <template is="dom-repeat" items="{{routesets}}">
+                                <paper-item src="{{item}}" url="{{item.url}}">
                                     {{item.title}}
                                 </paper-item>
                             </template>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
-                    
-                </div>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+
+                <!-- menu of Tracks contained in activated routesets -->
+                <paper-dropdown-menu class="routes" label="Tracks">
+                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRoute" attr-for-selected="{{selectattr}}">
+                        <template is="dom-repeat" items="{{routedata}}">
+                                    <paper-item feature="{{item}}" id="{{item.id}}">
+                                        {{item.title}}
+                                    </paper-item>
+                                </template>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+
             </div>
         </div>
 
-    </template>
+    </div>
 
-    <script>
-        var scope = document.querySelector('#app');
-        scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-        scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
+</template>
 
-        // Data-INIT
-        scope.setupurl = "index-handheld.json"; // list of available datasets
-        scope.basedataurl = ""; // list of available datasets
-        scope.routesrc = {}; // url to selected dataset
+<script>
+    var scope = document.querySelector('#app');
+    scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+    scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
 
-        // Map-INIT
-        scope.cbox = "13,52";
-        scope.zoom = 8;
-        // scope.lnglat = "13,52";
+    // Data-INIT
+    scope.setupurl = "index-handheld.json"; // list of available datasets
+    scope.basedataurl = ""; // list of available datasets
+    scope.routesrc = {}; // url to selected dataset
 
-        // STATE init
-        scope.uselocationlog = true;
-        scope.useiimaps = true;
+    // Map-INIT
+    scope.cbox = "13,52";
+    scope.zoom = 8;
+    // scope.lnglat = "13,52";
 
-        // Animation- INIT
-        scope.tracksymbol = 'toilet-11';
-        // console.log("scope.tracelength", scope.tracelength, scope.utcTime(scope.tracelength));
-        scope.trackmapmode; // 
-        scope.timer = {
-            "timescalemax": 600, // 1min ~ 10h
-            "timescalestart": 300,
-            "fpsstart": 30
-                // "tracelength": true //  '0.0.0.0.5'
-        };
+    // STATE init
+    scope.uselocationlog = true;
+    scope.usepreview = true;
 
-        // SHELL-actions
-        scope.mapctrl = {};
+    // Animation- INIT
+    scope.tracksymbol = 'toilet-11';
+    // console.log("scope.tracelength", scope.tracelength, scope.utcTime(scope.tracelength));
+    scope.trackmapmode; // 
+    scope.timer = {
+        "timescalemax": 600, // 1min ~ 10h
+        "timescalestart": 300,
+        "fpsstart": 30
+            // "tracelength": true //  '0.0.0.0.5'
+    };
 
-        // Feature-selection
-        scope.featureselected = "{}";
-        scope.selectattr = "feature"; // "feature"; // "id" 
+    // SHELL-actions
+    scope.mapctrl = {};
 
-        scope.selectRoute = function(e) {
-            var selectvalue = e.detail.item[scope.selectattr];
-            // console.log("selected item:", selectvalue);
-            if (scope.selectattr == "id") scope.routeid = selectvalue;
-            else scope.featureselected = selectvalue;
-        };
+    // Feature-selection
+    scope.featureselected = "{}";
+    scope.selectattr = "feature"; // "feature"; // "id" 
 
-        /**
-         * Put selected src from menu-selection into import-element
-         */
-        scope.selectRouteSet = function(e) {
-            this.routesrc = e.detail.item.src;
-        }
+    // 
+    scope.selectRoute = function(e) {
+        var selectvalue = e.detail.item[scope.selectattr];
+        // console.log("selected item:", selectvalue);
+        if (scope.selectattr == "id") scope.routeid = selectvalue;
+        else scope.featureselected = selectvalue;
+    };
 
-        // eval the response of content-list 
-        scope.loadRouteSetIndex = function(ajaxresponse) {
-            this.routesets = ajaxresponse.detail.response;
-        }
-    </script>
+    /**
+        * Put selected src from menu-selection into import-element
+        */
+    scope.selectRouteSet = function(e) {
+        this.routesrc = e.detail.item.src;
+    }
+
+    // eval the response of content-list 
+    scope.loadRouteSetIndex = function(ajaxresponse) {
+        this.routesets = ajaxresponse.detail.response;
+    }
+</script>
+
 </body>
-
 </html>

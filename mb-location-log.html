@@ -63,7 +63,7 @@ wraps a distance utility
                     notify: true
                 },
 
-                mode: {
+                srcmode: {
                     type: String,
                     value: "mouse"
                 },
@@ -101,15 +101,15 @@ wraps a distance utility
                 if (checked) {
                     this.style.display = "block";
 
-                    if (this.mode == "mouse") this.map.on('mousemove', this.onMoveEvent);
-                    else if (this.mode == "map") this.map.on('move', this.onMoveEvent);
+                    if (this.srcmode == "mouse") this.map.on('mousemove', this.onMoveEvent);
+                    else if (this.srcmode == "mapcenter") this.map.on('move', this.onMoveEvent);
 
                 } else {
                     this.style.display = "none";
 
-                    if (this.mode == "mouse") { // 
+                    if (this.srcmode == "mouse") { // 
                         this.map.off('mousemove', this.onMoveEvent);
-                    } else if (this.mode == "map") {
+                    } else if (this.srcmode == "mapcenter") {
                         this.map.off('move', this.onMoveEvent);
                     }
                 }
@@ -119,7 +119,7 @@ wraps a distance utility
 
             // 
             onMoveEvent: function(e) {
-                if (myscope.mode == "map") myscope.lnglat = myscope.map.getCenter();
+                if (myscope.srcmode == "mapcenter") myscope.lnglat = myscope.map.getCenter();
                 else myscope.lnglat = e.lngLat;
                 // console.log("MOVE-Event", e, myscope.lnglat);
             },
@@ -129,8 +129,8 @@ wraps a distance utility
                 if (!map) return;
 
                 if (this.checked) {
-                    if (this.mode == "mouse") this.map.on('mousemove', this.onMoveEvent);
-                    else if (this.mode == "map") this.map.on('move', this.onMoveEvent);
+                    if (this.srcmode == "mouse") this.map.on('mousemove', this.onMoveEvent);
+                    else if (this.srcmode == "mapcenter") this.map.on('move', this.onMoveEvent);
                 }
             },
 
