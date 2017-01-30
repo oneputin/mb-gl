@@ -19,10 +19,10 @@ Demo to view ship-data animation
     <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 
     <link rel="import" href="../mb-map.html">
-    <link rel="import" href="../mb-show-where.html">
+    <link rel="import" href="../mb-location-log.html">
     <!--<link rel="import" href="../mb-info-drag.html">-->
     <link rel="import" href="../mb-distance.html">
-    <link rel="import" href="../mb-iimaps.html">
+    <link rel="import" href="../mb-preview.html">
 
     <link rel="import" href="../mb-routes.html">
     <link rel="import" href="../mb-routes-ctrl.html">
@@ -43,7 +43,7 @@ Demo to view ship-data animation
         mb-map {
             /*width: 55%;*/
             width: 800px;
-            height: 800px;
+            height: 680px;
         }
         
         .ctrls-in {
@@ -67,7 +67,9 @@ Demo to view ship-data animation
             @apply(--layout-flex);
         }
         
-        mb-map-orientation-ctrl {}
+        mb-map-orientation-ctrl {
+            @apply(--layout-flex);            
+        }
         
         paper-dropdown-menu {
             border-style: solid;
@@ -97,11 +99,18 @@ Demo to view ship-data animation
             @apply(--layout-start);
         }
         
+        mb-sources-select {
+            padding: 10px;
+            display: inline-block;
+            @apply(--layout-vertical);
+            @apply(--layout-start);
+        }
+        
         paper-radio-button {
             /*align-self: center;*/
             border: 1px solid var(--paper-green-200);
             padding: 8px 16px;
-            margin: 8px 16px;
+            margin: 8px 0px;
         }
         
         paper-radio-button.red {
@@ -115,9 +124,10 @@ Demo to view ship-data animation
 </head>
 
 <body>
+
     <template is="dom-bind" id="app">
         
-        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="loadroutesets">
+        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="loadRouteSetIndex">
         </iron-ajax>
 
         <div class="container">
@@ -132,96 +142,120 @@ Demo to view ship-data animation
                 zoom="{{zoom}}" 
                 mapctrl="[[mapctrl]]">
                 
-                <!-- Elements to show in map-overlay  -->
-
-                <mb-distance map="{{map}}" distance="{{distance}}" checked="[[usemeasure]]">
+                <!-- TOOL to measure user-generated lines -->
+                <mb-distance 
+                    map="{{map}}" 
+                    distance="{{distance}}" 
+                    checked="[[usemeasure]]">
                 </mb-distance>
 
                 <div class="ctrls-in">
-                    <!-- ctrl of animation (and maporientation) -->
-                <template is="dom-if" if="{{!useiimaps}}">
-                    <mb-routes-ctrl 
-                        checked="[[userouting]]"
-                        timer="{{timer}}"
-                        trackctrl="{{trackctrl}}">
-                    </mb-routes-ctrl>
-                </template>
-    <!--<mb-map-orientation-ctrl trackmode="{{trackmode}}">
-                    </mb-map-orientation-ctrl>-->
-    </div>
+                    <template is="dom-if" if="{{!useiimaps}}">
+                        <!-- ctrl of animation (and maporientation) -->
+                        <mb-routes-ctrl 
+                            checked="[[userouting]]"
+                            timer="{{timer}}"
+                            trackctrl="{{trackctrl}}">
+                        </mb-routes-ctrl>
+                    </template>
+                    <!-- ctrl of maporientation -->
+                    <!-- <mb-map-orientation-ctrl 
+                        trackmode="{{trackmode}}">
+                        </mb-map-orientation-ctrl>-->
+                </div>
 
-    <mb-show-where map="{{map}}" lnglat="{{lnglat}}" checked="[[usemousewhere]]">
-    </mb-show-where>
-    <!--<mb-info-drag carddata="[[trackdata]]">
+                <mb-location-log 
+                    map="{{map}}" 
+                    lnglat="{{lnglat}}" 
+                    checked="[[uselocationlog]]">
+                </mb-location-log>
+
+                <!--<mb-info-drag carddata="[[trackdata]]">
                 </mb-info-drag>-->
 
-    </mb-map>
+            </mb-map>
 
-    <!-- Right Block: several external app-controls -->
-    <div class="ctrls_out">
-        <!-- INTERFACE -->
-        <routing-handheld routesrc="[[routesrc]]" routedata="{{routedata}}" mapdata="{{mapcontent}}" rawdata="{{rawdata}}" basedataurl="[[basedataurl]]" trackinfo="[[trackinfo]]" trackdata="{{trackdata}}">
-        </routing-handheld>
+            <!-- Right Block: several external app-controls -->
+            <div class="ctrls_out">
+                <!-- INTERFACE -->
+                <routing-handheld 
+                    routesrc="[[routesrc]]" 
+                    routedata="{{routedata}}" 
+                    mapdata="{{mapcontent}}" 
+                    rawdata="{{rawdata}}" 
+                    basedataurl="[[basedataurl]]" 
+                    trackinfo="[[trackinfo]]" 
+                    trackdata="{{trackdata}}">
+                </routing-handheld>
 
-        <!-- element checking gpx-data -->
-        <mb-iimaps map="[[map]]" checked="[[useiimaps]]" mapcontent="[[mapcontent]]" featurelist="{{routedata}}" featureselected="{{featureselected}}">
-        </mb-iimaps>
+                <!-- element checking gpx-data -->
+                <mb-preview 
+                    map="[[map]]" 
+                    checked="[[useiimaps]]" 
+                    mapcontent="[[mapcontent]]" 
+                    featurelist="{{routedata}}" 
+                    featureselected="{{featureselected}}">
+                </mb-preview>
 
-        <!-- element with n visible features -->
-        <template is="dom-if" if="{{!useiimaps}}">
+                <!-- element with n visible features -->
+                <template is="dom-if" if="{{!useiimaps}}">
 
-            <mb-routes 
-                map="[[map]]" 
-                checked="[[userouting]]"
-                timer="{{timer}}"
-                routedata=[[routedata]] 
-                routeid=[[routeid]] 
-                trackctrl="{{trackctrl}}" 
-                mapcontent="{{mapcontent}}"                  
-                trackmapmode="{{trackmapmode}}" 
-                tracksymbol="{{tracksymbol}}" 
-                trackdata="{{trackdata}}"
-                trackinfo="[[trackinfo]]">
-            </mb-routes>
-            
-        <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
-            <mb-routes-ctrl-time  
-                checked="[[userouting]]"
-                timescalemax="[[timer.timescalemax]]" 
-                timer="{{timer}}">
-            </mb-routes-ctrl-time>
+                    <mb-routes 
+                        map="[[map]]" 
+                        checked="[[userouting]]"
+                        timer="{{timer}}"
+                        routedata=[[routedata]] 
+                        routeid=[[routeid]] 
+                        trackctrl="{{trackctrl}}" 
+                        mapcontent="{{mapcontent}}"                  
+                        trackmapmode="{{trackmapmode}}" 
+                        tracksymbol="{{tracksymbol}}" 
+                        trackdata="{{trackdata}}"
+                        trackinfo="[[trackinfo]]">
+                    </mb-routes>
+                    
+                    <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
+                    <mb-routes-ctrl-time  
+                        checked="[[userouting]]"
+                        timescalemax="[[timer.timescalemax]]" 
+                        timer="{{timer}}">
+                    </mb-routes-ctrl-time>
 
-        </template>
+                </template>
 
-        <div id="radios">
-            <paper-radio-button checked="{{usemousewhere}}">MouseWhere</paper-radio-button>
-            <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
-            <paper-radio-button class="red" checked="{{useiimaps}}">CheckSources</paper-radio-button>
-        </div>
+                <div id="radios">
+                    <paper-radio-button checked="{{uselocationlog}}">Location Log</paper-radio-button>
+                    <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
+                    <paper-radio-button class="red" checked="{{useiimaps}}">CheckSources</paper-radio-button>
+                </div>
 
-        <paper-dropdown-menu label="Tracksets">
-            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedsrc" attr-for-selected="src">
-                <template is="dom-repeat" items="{{routesets}}">
-                <paper-item src="{{item}}" url="{{item.url}}">
-                    {{item.title}}
-                </paper-item>
-            </template>
-            </paper-listbox>
-        </paper-dropdown-menu>
-
-        <paper-dropdown-menu class="routes" label="Tracks">
-            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selecteditem" attr-for-selected="{{selectattr}}">
-                <template is="dom-repeat" items="{{routedata}}">
-                            <paper-item feature="{{item}}" id="{{item.id}}">
+                <div id="menues">
+                    <!-- menu of available routesets -->
+                    <paper-dropdown-menu label="Tracksets">
+                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRouteSet" attr-for-selected="src">
+                            <template is="dom-repeat" items="{{routesets}}">
+                            <paper-item src="{{item}}" url="{{item.url}}">
                                 {{item.title}}
                             </paper-item>
                         </template>
-            </paper-listbox>
-        </paper-dropdown-menu>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
 
-    </div>
+                    <!-- menu of Tracks contained in activated routesets -->
+                    <paper-dropdown-menu class="routes" label="Tracks">
+                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRoute" attr-for-selected="{{selectattr}}">
+                            <template is="dom-repeat" items="{{routedata}}">
+                                <paper-item feature="{{item}}" id="{{item.id}}">
+                                    {{item.title}}
+                                </paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                    
+                </div>
+            </div>
+        </div>
 
-    </div>
     </template>
 
     <script>
@@ -240,7 +274,7 @@ Demo to view ship-data animation
         // scope.lnglat = "13,52";
 
         // STATE init
-        scope.usemousewhere = true;
+        scope.uselocationlog = true;
         scope.useiimaps = true;
 
         // Animation- INIT
@@ -261,7 +295,7 @@ Demo to view ship-data animation
         scope.featureselected = "{}";
         scope.selectattr = "feature"; // "feature"; // "id" 
 
-        scope.selecteditem = function(e) {
+        scope.selectRoute = function(e) {
             var selectvalue = e.detail.item[scope.selectattr];
             // console.log("selected item:", selectvalue);
             if (scope.selectattr == "id") scope.routeid = selectvalue;
@@ -271,12 +305,12 @@ Demo to view ship-data animation
         /**
          * Put selected src from menu-selection into import-element
          */
-        scope.selectedsrc = function(e) {
+        scope.selectRouteSet = function(e) {
             this.routesrc = e.detail.item.src;
         }
 
         // eval the response of content-list 
-        scope.loadroutesets = function(ajaxresponse) {
+        scope.loadRouteSetIndex = function(ajaxresponse) {
             this.routesets = ajaxresponse.detail.response;
         }
     </script>

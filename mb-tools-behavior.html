@@ -104,7 +104,7 @@
 
         deltaL : function(aLine) {
           var dl = turf.lineDistance(aLine, 'kilometers');
-          dl = this.toFixed(dl, 3) + "km";
+          if (typeof dl == "number") dl = this.toFixed(dl, 3) + "km";
           return dl;
         },
 
@@ -132,7 +132,7 @@
             var lon, lat;
             var trafo = format == "dms" ? this.ddtodms : this.ddtodm; // ddtodms;
 
-            if (typeof(lnglat) == "string") {
+            if (typeof lnglat == "string") {
                 lon = lnglat.split(",")[0];
                 lat = lnglat.split(",")[1]
             } else {

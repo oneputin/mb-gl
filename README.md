@@ -39,6 +39,6 @@ main
 ### \<mb-distance\>
 OPTIONAL-tool to measure distances on mb-map 
 
-### \<mb-show-where\>
+### \<mb-location-log\>
 OPTIONAL-tool to query/view/supply mouse-map-location (lonlat)
  

@@ -19,7 +19,7 @@
 
     <link rel="import" href="../routing-planes.html">
 
-    <link rel="import" href="../mb-show-where.html">
+    <link rel="import" href="../mb-location-log.html">
     <link rel="import" href="../mb-routes-ctrl.html">
 
     <link rel="import" href="../mb-routes-ctrl-time.html">
@@ -126,8 +126,8 @@
                 <mb-map-orientation-ctrl trackmapmode="{{trackmapmode}}">
                 </mb-map-orientation-ctrl>
 
-                <mb-show-where map="{{map}}" lnglat="{{lnglat}}" checked="[[usemousewhere]]">
-                </mb-show-where>
+                <mb-location-log map="{{map}}" lnglat="{{lnglat}}" checked="[[uselocationlog]]">
+                </mb-location-log>
                 
                 <mb-routes 
                     map="[[map]]" 

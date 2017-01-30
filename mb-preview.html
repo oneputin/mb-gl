@@ -2,13 +2,13 @@
 <link rel="import" href="mb-tools-behavior.html">
 
 <!--
-`mb-iimaps`
-view and ctrl iimap-data
+`mb-preview`
+preview raw kml- or gpx datasets
 
 @demo demo/routinghandheld.html 
 -->
 
-<dom-module id="mb-iimaps">
+<dom-module id="mb-preview">
 
     <template>
 
@@ -22,23 +22,9 @@ view and ctrl iimap-data
     </template>
 
     <script>
-        var map;
-        var setup = {
-            // oneputin
-            mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
-            // My "Light" style
-            map: {
-                //style: 'mapbox://styles/mapbox/streets-v9',
-                style: 'mapbox://styles/oneputin/cimlpzor80051zpmctds91fxn',
-                // center: [13.5, 52.5], // must be synced by client with service
-                insertlayer: 'water'
-            },
-            cbox: "10,52",
-            zoom: 8
-        };
-
+        
         Polymer({
-            is: 'mb-iimaps',
+            is: 'mb-preview',
 
             properties: {
 
@@ -144,7 +130,9 @@ view and ctrl iimap-data
                     map = scope.map,
                     mapfeatures = {};
 
+                // 
                 function getTrackInfo(aLine) {
+                    
                     var info = aLine.properties,
                         trackTimes = JSON.parse(info.coordTimes),
                         n = trackTimes.length,
@@ -240,27 +228,28 @@ view and ctrl iimap-data
 
                     return lhover;
                 }
-                // add temporary properties to better identify features
+                // add temporary paint-properties 
+                // to better identify features (line-width, random colors)
                 function rawBeautify(layerObject) {
-                    //return;
 
-                    var lookuplist = [],
-                        data = layerObject.srcdata;
+                    var srcdata = layerObject.srcdata;
 
-                    data.features.forEach(function(f) {
+                    var lookuplist = [], paintObj;
+
+                    srcdata.features.forEach(function(f) {
                         var col = f.properties.color;
                         lookuplist.push([col, col]);
                     });
-
-                    layerObject.layer.paint = {
+                    paintObj = {
                         "line-width": 3,
                         "line-color": {
                             property: 'color',
                             type: 'categorical',
                             stops: lookuplist
                         }
-                    };
-                    console.log("rawBeautify", layerObject);
+                    }; // console.log("rawBeautify", paintObj);
+                    
+                    layerObject.layer.paint = paintObj;
 
                     return layerObject.layer;
                 }
@@ -335,14 +324,12 @@ view and ctrl iimap-data
                         hilitefeature(e, layername);
                     }
 
-                    var layerObject = mapcontent[layername],
-                        layerData = layerObject.srcdata,
-                        layerTemplate = layerObject['layer'];
+                    var layerObject = mapcontent[layername];
 
-                    if (layerObject.raw) layerTemplate = rawBeautify(layerObject);
+                    // 
+                    if (layerObject.raw) rawBeautify(layerObject);
 
                     var layerTemplates = getLayerTemplates(layerObject);
-
 
                     // REMOVE layers (on demand) 
                     if (layerObject.delete) {
@@ -359,7 +346,7 @@ view and ctrl iimap-data
                     }
 
                     // CREATE / REFRESH mapContent
-
+                    var layerData = layerObject.srcdata;
                     if (layerData) {
 
                         var layerSource = map.getSource(layername),

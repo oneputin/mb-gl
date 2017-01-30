@@ -157,6 +157,7 @@ To 'close'
                 xmlurl: {
                     type: String
                 },
+
                 jsonurl: {
                     type: String,
                     observer: 'srcdispatcher'
@@ -170,7 +171,7 @@ To 'close'
                 rawdata: {
                     type: Object,
                     value: [],
-                    observer: 'checkrawdata'
+                    observer: 'supplyData'
                 },
 
                 routedata: {
@@ -208,14 +209,14 @@ To 'close'
                     srctype = routesrc.type,
                     ext = srcurl.split(".").slice(-1);
                 if (!ext.length) return;
-
-                ext = ext[0];
-                // console.log("srcurl",typeof srcurl, srcurl,ext); // return;
+                ext = ext[0]; // console.log("srcurl",typeof srcurl, srcurl,ext); // return;
 
                 if (srctype == "usertable") {
+                    
                     if (ext == "json") this.jsonurl = srcurl;
 
                 } else if ((srctype == "kml") || (srctype == "gpx")) {
+                    
                     this.xmlurl = srcurl;
                     this.xmlquery = {
                         "tags": "Track",
@@ -240,7 +241,7 @@ To 'close'
             },
 
             // 
-            checkrawdata: function(data) {
+            supplyData: function(rawdata) {
 
                 // Split multiLineTracks into tracksegments 
                 // addressable by time every 
@@ -303,12 +304,12 @@ To 'close'
                 }
 
                 // Possibly geojson
-                if (data && data.features) {
-                    //console.log("checkrawdata, geojson-1", data)
+                if (rawdata && rawdata.features) {
+                    //console.log("supplyData, geojson-1", data)
                     var mapdata, ddrLinecolors = [];
 
-                    data = jsonTrackPreprocess(data);
-                    // console.log("checkrawdata, geojson-2", data)
+                    var srcdata = jsonTrackPreprocess(rawdata);
+                    // console.log("supplyData, geojson-2", data)
 
                     // Quickview of raw data 
                     var title = scope.routesrc.key;
@@ -316,7 +317,7 @@ To 'close'
                     if (!title) title = data.time;
                     var mapid = "tracks-" + title;
 
-                    mapdata = {};
+                    var mapdata = {};
                     mapdata[mapid] = {
                         "layer": {
                             "type": "line",
@@ -332,7 +333,7 @@ To 'close'
                 if (mapdata) this.mapdata = mapdata;
 
                 // SUPPLY list of tracks
-                // this.rawdata = data.features;
+                // this.rawdata = srcdata.features;
             },
 
             // 
@@ -667,7 +668,7 @@ To 'close'
             },
 
             // SPECIFIC import of gps-device data 
-            // delivered in csv- or tabbed formats 
+            // delivered in csv- or table-based formats 
             // into datastructure of routing-API
             importTracks: function(rawdata, rawdbdata) {
                 if (!rawdata || !rawdata.length) return;
