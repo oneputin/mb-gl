@@ -6,27 +6,26 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
-    <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
-    <link rel="import" href="../../iron-collapse/iron-collapse.html">
-    <link rel="import" href="../../paper-item/paper-item.html">
-    <link rel="import" href="../../paper-listbox/paper-listbox.html">
-    <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
-
-    <link rel="import" href="../mb-map.html">
-    <link rel="import" href="../mb-routes.html">
-
-    <link rel="import" href="../routing-planes.html">
-
-    <link rel="import" href="../mb-location-log.html">
-    <link rel="import" href="../mb-routes-ctrl.html">
-
-    <link rel="import" href="../mb-routes-ctrl-time.html">
-    <link rel="import" href="../mb-map-orientation-ctrl.html">
-
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
+    <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+    <link rel="import" href="../../iron-collapse/iron-collapse.html">
+
+    <link rel="import" href="../app-data-sources.html">
+
+    <link rel="import" href="../mb-map.html">
+    <link rel="import" href="../mb-location-log.html">
+    <link rel="import" href="../mb-map-orientation-ctrl.html">
+
+    <link rel="import" href="../routing-planes.html">
+    <link rel="import" href="../mb-routes.html">
+    <link rel="import" href="../mb-routes-ctrl.html">
+    <link rel="import" href="../mb-routes-ctrl-time.html">
+
+    
     <style is="custom-style">
         .container {
             position: relative;
@@ -59,25 +58,13 @@
             right: 30px;
         }
         
-        paper-dropdown-menu {
-            border-style: solid;
-            border-width: 1px;
-            padding: 10px;
+        app-data-sources {
             position: absolute;
-            background-color: var(--paper-light-green-500);
-            opacity: 0.8;
-        }
-        
-        paper-dropdown-menu.routesets {
+            padding: 10px;
             left: 30px;
             top: 40px;
         }
-        
-        paper-dropdown-menu.routes {
-            left: 300px;
-            top: 40px;
-        }
-        
+
         routing-planes {
             border-style: solid;
             border-width: 1px;
@@ -105,10 +92,8 @@
 
     <template is="dom-bind" id="app">
         
-        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
-        </iron-ajax>
-
         <div class="container">
+
             <mb-map 
                 mapapikey="[[mbkey]]" 
                 mapstyle="[[mbstyle]]"
@@ -118,19 +103,29 @@
                 lnglat="{{lnglat}}" 
                 mapctrl="[[mapctrl]]">
                 
+                <mb-quickview
+                    map="[[map]]"
+                    mapcontent="[[mapcontent]]">
+                </mb-quickview>
+
                 <mb-routes-ctrl 
                     timer="{{timer}}"
                     trackctrl="{{trackctrl}}">
                 </mb-routes-ctrl>
 
-                <mb-map-orientation-ctrl trackmapmode="{{trackmapmode}}">
+                <mb-map-orientation-ctrl 
+                    trackmapmode="{{trackmapmode}}">
                 </mb-map-orientation-ctrl>
 
-                <mb-location-log map="{{map}}" lnglat="{{lnglat}}" checked="[[uselocationlog]]">
+                <mb-location-log 
+                    map="{{map}}" 
+                    lnglat="{{lnglat}}" 
+                    checked="[[uselocationlog]]">
                 </mb-location-log>
                 
                 <mb-routes 
                     map="[[map]]" 
+                    mapcontent="{{mapcontent}}" 
                     timer="{{timer}}" 
                     routedata=[[routedata]]  
                     routeid=[[routeid]]  
@@ -141,49 +136,36 @@
                     on-routedata-changed="logdata">
                 </mb-routes>
                 
-                <mb-routes-ctrl-time timer="{{timer}}">
+                <mb-routes-ctrl-time 
+                    timer="{{timer}}">
                 </mb-routes-ctrl-time>
 
                 <routing-planes 
                     map="[[map]]" 
-                    url="[[importurl]]" 
-                    routedata="{{routedata}}"
+                    flightset="[[routeset]]"
+                    routedata="{{routedata}}" 
                     trackdata="{{trackdata}}"
                     trackinfo="{{trackinfo}}">
                 </routing-planes>
 
-                <template is="dom-if" if="{{routesets}}">
-                    <paper-dropdown-menu class="routesets" label="Flight sets">
-                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-                            <template is="dom-repeat" items="{{routesets}}">
-                                <paper-item url="{{item.url}}">
-                                    {{item.title}}
-                                </paper-item>
-                            </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
-    </template>
+                <app-data-sources
+                    dataset= "{{routeset}}"
+                    dataid= "{{routeid}}"
+                    indexurl="[[indexurl]]"
+                    datasets="[[routesets]]"
+                    datasetslabel="Flight sets"
+                    datasetlabel= "Flights">
+                </app-data-sources>    
+            
+            </mb-map>    
+        </div>
 
-    <template is="dom-if" if="{{selectflag}}">
-                    <paper-dropdown-menu class="routes" label="Flights">
-                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
-                            <template is="dom-repeat" items="{{routedata}}">
-                                <paper-item id="{{item.id}}">
-                                    {{item.title}}
-                                </paper-item>
-                            </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
-    </template>
-
-    </div>
     </template>
 
     <script>
         var scope = document.querySelector('#app');
 
-        scope.setupurl = "index-planes.json";
-        scope.importurl = "";
+        scope.indexurl = "index-planes.json";
 
         // setup mapbox-map
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
@@ -206,53 +188,27 @@
         };
         scope.mapctrl = {};
 
-        // select a routeset from setup-entries 
-        scope.setupme = function(ajaxresponse) {
-            var routesets = ajaxresponse.detail.response,
-                importurl = routesets[0].url;
-            // console.log("routesets", routesets, importurl);
-            var importurl;
-            if (routesets.length > 1) {
-                this.routesets = routesets;
-                importurl = routesets[0];
-                routesets.every(function(rs) {
-                    if (rs.start) {
-                        importurl = rs.url;
-                        return false;
-                    }
-                })
-            }
-            this.importurl = importurl;
-        }
-
-        scope.selectedurl = function(e) {
-            this.importurl = e.detail.item.url;
-        }
-
-        scope.selectrouteid = function(e) {
-            // console.log("routeid=", e.detail.item.id)
-            scope.routeid = e.detail.item.id;
-        }
-
-        scope.addEventListener('dom-change', function() {
-
+        // select a start-routeset from setup-entries 
+        scope.routeset = [];
+        
+        // SETUP LISTENERS to custom events sent by other (child-)elements 
+        // instead of data-binding 
+        /*scope.addEventListener('dom-change', function() {
             // bind event-listener to (custom) web-element
             var el = document.querySelector('routing-planes');
             el.addEventListener('imported', function(e) {
                 // eval the 
                 var routedata = e.detail.routedata;
                 if (routedata.length > 1) { // append the "all"-entry and trigger the GUI to contain the dropdown.menu 
-                    routedata.push({
-                        "title": "all",
-                        "id": "all"
-                    });
-                    scope.routedata = routedata;
                     scope.selectflag = true;
                 } else {
                     scope.selectflag = false;
                 }
+                // ??? do here ??  
+                // scope.routeset.data = routedata;
             });
-        });
+        });*/
+
     </script>
 </body>
 

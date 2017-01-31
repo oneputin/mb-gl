@@ -8,6 +8,10 @@
 
 <!--
 `routing-planes`
+*INPUT*  
+Pre- and post-processing 
+
+*OUTPUT*  
 RICH-content Info-card related to one selected feature,  
 absolutely positioned as map-overlay   
 Mode-A: Can be vertically dragged & horizontally resized.  
@@ -79,18 +83,10 @@ Close with click anywhere on the card
 
         <iron-ajax
             auto
-            url="[[url]]"
-            handle-as="json"
-            on-response="getflightdata">
-        </iron-ajax>
-
-        <iron-ajax
-            auto
             url="[[dburl]]"
             handle-as="json"
-            on-response="getdbdata">
+            on-response="loadMetaData">
         </iron-ajax>
-
 
         <paper-card heading="{{carddata.title}}" image="{{cardimgurl}}" class="info">
 
@@ -125,8 +121,14 @@ Close with click anywhere on the card
             is: 'routing-planes',
 
             properties: {
-                flightdata: {
+
+                flightset: {
                     type: Object
+                },
+
+                flightsetdata: {
+                    type: Object
+                    // notify: true
                 },
                 dburl: {
                     type: String
@@ -141,7 +143,8 @@ Close with click anywhere on the card
             ],
 
             observers: [
-                'importRawRoutes(flightdata, dbdata)',
+                //'queryRawDataSet(flightset.url)',
+                'importRawData(flightset, dbdata)'
             ],
 
             attached: function() {
@@ -149,64 +152,65 @@ Close with click anywhere on the card
                 // console.log("target attached");
             },
 
-            getflightdata: function(ajaxresponse) {
-                if (!ajaxresponse || !ajaxresponse.detail) return;
-                this.flightdata = ajaxresponse.detail.response;
-                //if (this.flightdata) console.log("OK: flightdata", this.flightdata);
-            },
-
-            getdbdata: function(ajaxresponse) {
+            loadMetaData: function(ajaxresponse) {
                 if (!ajaxresponse || !ajaxresponse.detail) return;
                 this.dbdata = ajaxresponse.detail.response;
                 if (this.dbdata) console.log("OK: dbdata", this.dbdata);
             },
 
-            // import and transform before supply 
-            importRawRoutes: function(rawdata, dbdata) {
+            // import and transform 
+            // before supply through custom event 
+            importRawData: function(rawdata, dbdata) {
                 if (!rawdata || !dbdata) return;
-                var routedata = [],
-                    airlineKey,
-                    airline,
-                    plane,
-                    waypoint;
+                // console.log("XXX importRawData", rawdata); 
 
-                var airlineNN = {
+                // A. import
+                var routedata = [];
+                // Defaults/Placeholders
+                var placeholders = {
+                    airline : {
                         "name": "AirlineX",
                         "color": "black"
                     },
-                    planeNN = {
+                    plane : {
                         "icon": "airport-15",
                         "seats": 150
-                    }; // = rawdata; 
+                    }
+                } ; // = rawdata; 
 
+                var airlineKey, airline, plane, waypoint;
+                // transform into RouteAppObject
                 rawdata.forEach(function(route) {
-                    // 
+                    // console.log("rawdata-item", route); 
                     route.unitsystem = "metric";
-                    route.id = route.flight;
+                    if (!route.id) route.id = route.flight;
 
                     // Activate db-data
                     // - of airline
                     airlineKey = route.id.split("-")[0];
                     airline = dbdata.airline[airlineKey];
-                    if (!airline) airline = airlineNN;
+                    if (!airline) airline = placeholders.airline;
 
                     // - of plane
                     plane = dbdata.plane[route.plane];
-                    if (!plane) plane = planeNN;
+                    if (!plane) plane = placeholders.plane;
+
                     route.item = plane;
                     route.item.id = route.plane;
 
                     route.meta = airline;
 
                     route.nodes = [];
-                    route.waypoints.forEach(function(wp) {
-                        // console.log(wp, dbdata.airport[wp.id])
-                        wp.meta = dbdata.airport[wp.id];
-                        wp.meta.id = wp.id;
-                        wp.coords = wp.meta.coords;
-                        wp.title = wp.meta.name;
-                        route.nodes.push(wp);
-                    })
+                    if (route.waypoints) {
+                        route.waypoints.forEach(function(wp) {
+                            // console.log(wp, dbdata.airport[wp.id])
+                            wp.meta = dbdata.airport[wp.id];
+                            wp.meta.id = wp.id;
+                            wp.coords = wp.meta.coords;
+                            wp.title = wp.meta.name;
+                            route.nodes.push(wp);
+                        })
+                    } 
 
                     route.title = route.id + ": ";
                     if (1) { // DescriptionMode
@@ -220,19 +224,29 @@ Close with click anywhere on the card
                             route.title += route.nodes[i].title;
                         }
                     }
+
                     delete route.waypoints;
                     delete route.flight;
                     delete route.plane;
+
                     routedata.push(route);
                 });
-                // console.log("flight routes preprocessed:", routedata);
 
-                // send a "custom event" to inform the raw-data are loaded 
+                // B. Add app-Ctrls 
+                if (routedata.length > 1) {
+                    routedata.push({"id":"all","title":"all"});
+                    routedata.push({"id":"clear","title":"clear"});
+                }
+
+                // C. FIRE a "custom EVENT" to the app-shell with 
+                //    that inform that raw-route-data are loaded 
+                    // console.log("flight routes preprocessed:", routedata);
                 this.fire("imported", {
                     "routedata": routedata,
                     "ok": "ok"
                 });
 
+                // 
                 this.routedata = routedata;
             },
 

@@ -1,0 +1,172 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+
+<link rel="import" href="mb-api.html">
+<link rel="import" href="mb-tools-behavior.html">
+<!--<link rel="import" href="mb-distance.html"> -->
+<!--
+`app-data-sources`
+wraps a 1-3-step NOSQL-metadata-selection tool 
+- loading an index of datasource-groups 
+- selecting source-features from selected group
+- subselection from list of source-features
+
+@demo demo/routingplanes.html 
+-->
+
+<dom-module id="app-data-sources">
+
+    <template>
+        <style>
+            :host {
+                display: block;
+                position: absolute;
+                width: 600px;
+            }
+
+            paper-dropdown-menu {
+                position: absolute;
+                border-style: solid;
+                border-width: 1px;
+                padding: 10px;
+                background-color: var(--paper-light-green-500);
+                opacity: 0.8;
+            }
+            
+            paper-dropdown-menu.datasets {
+                left: 10px;
+                top: 0px;
+            }
+            
+            paper-dropdown-menu.routes {
+                left: 300px;
+                top: 0px;
+            }
+                
+        </style>
+        
+        <iron-ajax 
+            auto 
+            url="[[indexurl]]" 
+            handle-as="json" 
+            on-response="setupme">
+        </iron-ajax>
+
+        <iron-ajax
+            auto
+            url="[[dataseturl]]"
+            handle-as="json"
+            on-response="loadDataSet">
+        </iron-ajax>
+
+        <div>
+            <template is="dom-if" if="{{datasets}}">
+                <paper-dropdown-menu class="datasets" label="{{datasetslabel}}">
+                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="queryDataSet" attr-for-selected="src">
+                        <template is="dom-repeat" items="{{datasets}}">
+                            <paper-item src="{{item}}" url="{{item.url}}">
+                                {{item.title}}
+                            </paper-item>
+                        </template>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+            </template>
+
+            <template is="dom-if" if="{{selectflag}}">
+                <paper-dropdown-menu class="routes" label="{{routeslabel}}">
+                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectDataObj" attr-for-selected="id">
+                        <template is="dom-repeat" items="{{dataset}}">
+                            <paper-item src="{{item}}" id="{{item.id}}">
+                                {{item.title}}
+                            </paper-item>
+                        </template>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+            </template>
+        </div>   
+
+    </template>
+
+    <script>
+        Polymer({
+            is: 'app-data-sources',
+
+            properties: {
+
+                indexurl: {
+                    type: String
+                },
+
+                datasets: {
+                    type: Array,
+
+                },
+
+                dataset: {
+                    type: Array,
+                    notify: true
+                },
+
+                dataid:{
+                    type: String,
+                    notify: true
+                },
+
+                selectflag : {
+                    type: Boolean,
+                    value: false
+                },
+
+            },
+
+            observers: [
+                'toggleGui(dataset)'
+            ],
+
+            toggleGui: function(data) {
+                // console.log("toggleGui", data); 
+                if (data.length > 1) this.selectflag = true;
+                else this.selectflag = false;
+            },
+
+            setupme : function(ajaxresponse) {
+                var datasets = ajaxresponse.detail.response,
+                    dataset = datasets[0];
+                // console.log("all datasets and first in dataindex", datasets, dataset);
+                if (datasets.length > 1) {
+                    this.datasets = datasets; // 
+                    datasets.some(function(rs) {
+                        if (rs.start) {
+                            dataset = rs;
+                            return true;
+                        }
+                    });
+                } // console.log("dataset marked as 'START'", dataset);
+                this.dataseturl = dataset.url; // TRIGGER 
+            },
+
+            // 
+            queryDataSet : function(e) {
+                // console.log("YYY queryDataSet", e.detail.item.src); //this.importurl = e.detail.item.url;
+                var datasetsitem = e.detail.item.src;
+                this.dataseturl = datasetsitem.url; // TRIGGER 
+            },
+            // Ajax-responses
+            loadDataSet: function(ajaxresponse) {
+                if (!ajaxresponse || !ajaxresponse.detail) return;
+                // console.log("loadRawDataSet", ajaxresponse.detail.response);
+                this.dataset = ajaxresponse.detail.response;
+            },
+
+            // 
+            selectDataObj : function(e) {
+                // console.log("selectDataObj", e.detail.item.id)
+                this.dataid = e.detail.item.id;
+            }
+
+        })
+    </script>
+</dom-module>

@@ -264,7 +264,8 @@ along waypoint file loaded from url
 
                     // OLD : private addLayer-actions
                     // mba.mbLayersSetup(map, mapcontent);
-                    // NEW : trigger standard-addlayer-action off iimap-content in mb-map
+
+                    // NEW : trigger the STANDARD addlayer-action off quickmap-content in mb-quickview
                     this.mapcontent = mapcontent;
 
                     // 2. Setup Map-Events to query track-features on "mouseover" and show info-popup 
@@ -301,10 +302,12 @@ along waypoint file loaded from url
 
                     mba._counter = 1;
 
-                    // Primary Zoom after Setup
-                    mba.trackRoutesZoomTo(mapcontent["routes"].srcdata.features);
+                    // Primary Zoom to ALL features after Setup
+                    var mapfeatures  = mapcontent["routes"].srcdata.features; // console.log("f's at start", mapfeatures); 
+                    
+                    mba.trackRoutesZoomTo(mapfeatures);
 
-                    // Set visible routing/tracking content for first "start-time" of animation-routes   
+                    // Set Route and RouteCtrl for first "start-time" of animation-routes   
                     mba.animationMapRefresh(mba.timer["start"], null, "FIRST START");
 
                 }, debounceTime);
@@ -1074,7 +1077,7 @@ along waypoint file loaded from url
                 var lnames = ["routes", "traces", "tracks", "nodes"];
                 // console.log("trackFeaturesReset for objects:", lnames);
                 lnames.forEach(function(lname) {
-                    console.log("RES:", lname);
+                    // console.log("RES:", lname);
                     if (mba.map.getLayer(lname)) mba.map.removeLayer(lname);
                     if (mba.map.getLayer(lname + "-select")) mba.map.removeLayer(lname + "-select");
                     if (mba.map.getLayer(lname + "-glow")) mba.map.removeLayer(lname + "-glow");
@@ -1711,6 +1714,7 @@ along waypoint file loaded from url
 
                     // Refresh tracks on map
                     var trackObjs = [];
+
                     if (mba.map.getLayer("tracks")) {
                         // A.1. Filter the visibility of tracks-theme-elements
                         mba.map.setFilter('tracks', trackFilter);

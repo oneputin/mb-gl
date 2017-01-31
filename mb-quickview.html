@@ -28,6 +28,7 @@ preview raw kml- or gpx datasets
 
             properties: {
 
+                // 
                 checked: {
                     type: Boolean
                 },
@@ -123,6 +124,7 @@ preview raw kml- or gpx datasets
              * delivered with mapcontent container
              */
             mapContentPrepare: function(mapcontent) {
+                console.log("mapContentPrepare", mapcontent);
                 if (!this.map || !this.checked) return;
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
                 if (!mapcontent || !Object.keys(mapcontent).length) return;
