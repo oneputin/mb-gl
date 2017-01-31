@@ -355,10 +355,17 @@ along waypoint file loaded from url
                     timer = this.timer;
                 if (!timer || !timer.routes) return;
 
-                var timerEntry = timer.routes[routeid];
-
-                // A.     	
-                this.trackTimerRefresh(timerEntry);
+                // A. Case-by-case
+                var timerEntry; 
+                if (routeid=="all") {
+                    console.log("Zooming to all features"); 
+                } else if (routeid=="clear") {
+                    console.log("NOT implemented: CLEAR all features"); 
+                    return; 
+                } else {
+                    timerEntry = timer.routes[routeid];
+                    this.trackTimerRefresh(timerEntry);
+                }
 
                 // B. SPATIAL ZOOM and Query
                 if (!timerEntry) { // 

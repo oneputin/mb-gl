@@ -59,13 +59,13 @@ wraps a 1-3-step NOSQL-metadata-selection tool
             auto
             url="[[dataseturl]]"
             handle-as="json"
-            on-response="loadDataSet">
+            on-response="_loadDataSetMeta">
         </iron-ajax>
 
         <div>
             <template is="dom-if" if="{{datasets}}">
                 <paper-dropdown-menu class="datasets" label="{{datasetslabel}}">
-                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="queryDataSet" attr-for-selected="src">
+                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="_queryDataSetMeta" attr-for-selected="src">
                         <template is="dom-repeat" items="{{datasets}}">
                             <paper-item src="{{item}}" url="{{item.url}}">
                                 {{item.title}}
@@ -75,10 +75,11 @@ wraps a 1-3-step NOSQL-metadata-selection tool
                 </paper-dropdown-menu>
             </template>
 
-            <template is="dom-if" if="{{selectflag}}">
+            <!-- subselection a reference to one of thedataset-elements -->
+            <template is="dom-if" if="{{_selectflag}}">
                 <paper-dropdown-menu class="routes" label="{{routeslabel}}">
                     <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectDataObj" attr-for-selected="id">
-                        <template is="dom-repeat" items="{{dataset}}">
+                        <template is="dom-repeat" items="{{_dataset}}">
                             <paper-item src="{{item}}" id="{{item.id}}">
                                 {{item.title}}
                             </paper-item>
@@ -96,13 +97,15 @@ wraps a 1-3-step NOSQL-metadata-selection tool
 
             properties: {
 
+                /**
+                 * { item_description }
+                 */
                 indexurl: {
                     type: String
                 },
 
                 datasets: {
                     type: Array,
-
                 },
 
                 dataset: {
@@ -110,58 +113,100 @@ wraps a 1-3-step NOSQL-metadata-selection tool
                     notify: true
                 },
 
-                dataid:{
+                dataid: {
                     type: String,
                     notify: true
                 },
 
-                selectflag : {
+
+
+                _dataset: {
+                    type: Array
+                },
+
+                _selectflag : {
                     type: Boolean,
                     value: false
                 },
-
             },
 
             observers: [
                 'toggleGui(dataset)'
             ],
 
-            toggleGui: function(data) {
+            /**
+             * Toggle a flag to Hide/Show the subselection - menu
+             * if more than one dataobjects in active dataset
+             *
+             * @param      {<type>}  dataset  The dataset
+             */
+            toggleGui: function(dataset) {
                 // console.log("toggleGui", data); 
-                if (data.length > 1) this.selectflag = true;
-                else this.selectflag = false;
+                if (dataset.length > 1) {
+                    this._selectflag = true;
+                    _dataset = this.enhanceList(dataset);
+                } else {
+                    this._selectflag = false;
+                    if (dataset.length) this.dataid = dataset[0].id;
+                }    
             },
 
+            enhanceList: function(dataset) {
+                var dset = [];
+                dataset.forEach(function(d){
+                    dset.push(d);
+                }) 
+                dset.push({id:"all",title:"Select all"});
+                dset.push({id:"clear",title:"Clear all"});
+                this._dataset = dset; 
+            }, 
+
+            /**
+             * Load datagroup-metas 
+             * Optionally preselect first group 
+             *
+             * @param      {<type>}  ajaxresponse  The ajaxresponse
+             */
             setupme : function(ajaxresponse) {
-                var datasets = ajaxresponse.detail.response,
-                    dataset = datasets[0];
+                var datasetmetas = ajaxresponse.detail.response,
+                    datasetmeta = datasetmetas[0];
                 // console.log("all datasets and first in dataindex", datasets, dataset);
-                if (datasets.length > 1) {
-                    this.datasets = datasets; // 
-                    datasets.some(function(rs) {
+                if (datasetmetas.length > 1) {
+                    this.datasets = datasetmetas; // 
+                    datasetmetas.some(function(rs) {
                         if (rs.start) {
-                            dataset = rs;
+                            datasetmeta = rs;
                             return true;
                         }
                     });
+
                 } // console.log("dataset marked as 'START'", dataset);
-                this.dataseturl = dataset.url; // TRIGGER 
+                this.dataseturl = datasetmeta.url; // TRIGGER 
             },
 
-            // 
-            queryDataSet : function(e) {
-                // console.log("YYY queryDataSet", e.detail.item.src); //this.importurl = e.detail.item.url;
+            /**
+             * Query / Load meta for a dataSet.
+             *
+             * @param      {<type>}  e       { parameter_description }
+             */
+            _queryDataSetMeta : function(e) {
+                // console.log("YYY _queryDataSetMeta", e.detail.item.src); //this.importurl = e.detail.item.url;
                 var datasetsitem = e.detail.item.src;
                 this.dataseturl = datasetsitem.url; // TRIGGER 
             },
             // Ajax-responses
-            loadDataSet: function(ajaxresponse) {
+            _loadDataSetMeta: function(ajaxresponse) {
                 if (!ajaxresponse || !ajaxresponse.detail) return;
                 // console.log("loadRawDataSet", ajaxresponse.detail.response);
                 this.dataset = ajaxresponse.detail.response;
             },
 
-            // 
+            /**
+             * Select an item of active dataset
+             * Return the id into property-IF
+             *
+             * @param      {<type>}  e       { parameter_description }
+             */
             selectDataObj : function(e) {
                 // console.log("selectDataObj", e.detail.item.id)
                 this.dataid = e.detail.item.id;

@@ -152,6 +152,7 @@ Close with click anywhere on the card
                 // console.log("target attached");
             },
 
+            
             loadMetaData: function(ajaxresponse) {
                 if (!ajaxresponse || !ajaxresponse.detail) return;
                 this.dbdata = ajaxresponse.detail.response;
@@ -231,12 +232,6 @@ Close with click anywhere on the card
 
                     routedata.push(route);
                 });
-
-                // B. Add app-Ctrls 
-                if (routedata.length > 1) {
-                    routedata.push({"id":"all","title":"all"});
-                    routedata.push({"id":"clear","title":"clear"});
-                }
 
                 // C. FIRE a "custom EVENT" to the app-shell with 
                 //    that inform that raw-route-data are loaded 
