@@ -1,0 +1,368 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+
+<link rel="import" href="mb-tools-behavior.html">
+
+<!--<link rel="import" href="routing-behavior.html">-->
+
+
+<!--
+`tracks-from-waypoints`
+Interface for import/export of tracking data from waypoint-lists of different objects
+SPEC-FUNCTION: trackDataCreate
+
+Optional: create quick-preview-data 
+
+@demo demo/routingvendee.html 
+-->
+
+<dom-module id="tracks-from-waypoints">
+
+<template>
+
+    <style is="custom-style">
+        :host {
+            position: absolute;
+            display: none; /*inline-block;*/
+            opacity: 1; 
+            top: 50%;
+            margin-bottom: -50%;
+            transform: translate(0, -50%);
+        }
+    </style>
+
+    <iron-ajax
+        auto
+        url="[[dataurl]]"
+        handle-as="json"
+        on-response="getRawData">
+    </iron-ajax>
+
+
+</template>
+
+<script>
+    Polymer({
+        is: 'tracks-from-waypoints',
+
+        properties: {
+
+            dataurl : {
+                type: String
+            },
+
+            rawdata: {
+                type: Object,
+                value: {}
+            },
+
+            usepreview: {
+                type: Boolean,
+                value: false
+            },
+
+            // can be processed in "quickViewer"
+            trackdata: {
+                type: Object,
+                notify: true
+            },
+
+            // can be processed in "quickViewer"
+            quickmap: {
+                type: Object,
+                notify: true
+            },
+
+            // tobe processed in "trackAnimation"
+            routedata: {
+                type: Array,
+                value: [],
+                notify: true
+            }
+
+        },
+
+        behaviors: [
+            Polymer.ToolsBehavior,
+        ],
+
+        observers: [
+            'createTrackData(rawdata, usepreview)'
+        ],
+
+        attached: function() {
+            // console.log("target attached");
+        },
+
+        getRawData: function(ajaxresponse) {
+            //console.log("getRawData, response", ajaxresponse);
+            if (!ajaxresponse || !ajaxresponse.detail) return;
+            this.rawdata = ajaxresponse.detail.response;
+        },
+
+        createTrackData: function(rawdata, usepreview, minTrackLength) {
+            if (!rawdata || !Object.keys(rawdata).length) return; 
+            // console.log("table-data, raw:", rawdata);
+
+            // "DETECT" the "table-mode"" 
+            var tablemode = (rawdata[0]["geometry"]) ? "json" : "nn";
+            tablemode = (rawdata[0]["Header"] == "Trackpoint") ? 'table-vomue1' : tablemode;
+            tablemode = rawdata[0]["Pnt"] ? 'table-vomue2' : tablemode;
+            if (tablemode == "nn") {
+                console.log("BREAK. Selected dataset cannot be analysed!!");
+                return;
+            }
+            // console.log("table-data, mode:", tablemode);   
+
+            var trackdata = this.trackDataCreate(rawdata, tablemode, minTrackLength);
+
+            if (usepreview) {
+                this.quickmap = this.quickmapCreate(trackdata);
+                // console.log("table-data, map-tracks:", this.quickmap);  
+                
+            } else {
+                var routedata = this.routeDataCreate(trackdata); // , rawdbdata);
+                if (routedata) {
+                    console.log("table-data, route-tracks:", routedata);  
+                    this.routedata = routedata;
+                } 
+            }
+       
+        },
+
+        // SPECIFIC import of specific vendee-data 
+        // into datastructure of routing-API
+        trackDataCreate: function(rawdata, rawdbdata) {
+            if (!rawdata || !rawdbdata) return;
+
+            var icontemplate;
+            // icontemplate = "circle-stroked-11"; // this.icon;
+            // icontemplate = "boat-blue"; // this.icon;
+
+            /**
+                *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
+                *  "maritime formatting"  
+                */
+            function dmtodd(dm, lonflag, prec) {
+                if (!prec) prec = 6;
+                dm = dm.split("°"); // console.log("dm-array", dm);
+                dd = parseInt(dm[0]) + parseFloat(dm[1]) / 60;
+                if (dm[1].slice(-1) == "W") dd = 0 - dd;
+                if (dm[1].slice(-1) == "S") dd = 0 - dd;
+                return dd;
+            }
+
+
+            // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
+            var routes = {},
+                masterdata = {},
+                route, master, id;
+
+            // A. Restructure master-table into collection    
+            rawdbdata.forEach(function(st, j) {
+                //  
+                id = st.id;
+                id = id.replace("<br>", "/")
+
+                master = masterdata[id];
+                if (!master) {
+                    masterdata[id] = st;
+                }
+            }.bind(this));
+
+            if (!this.connect) {
+                this.masterdata = masterdata;
+            }
+            // console.log("masters", masterdata);
+
+            // B. GROUP all position-records by id 
+            //    into objects for every resolved track
+            rawdata.forEach(function(wp, j) {
+                //  
+                var wpx = {},
+                    lng, lat;
+                var pass = mba.utcTime(wp.date + "." + wp.time);
+                wpx.ab = pass;
+                wpx.an = pass;
+
+                // Apply specific 
+                lat = dmtodd(wp.lat);
+                lng = dmtodd(wp.lng);
+
+                wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
+                wpx.icon = this.wpicon;
+
+                //  
+                id = wp.id;
+                route = routes[id];
+                if (!route) {
+                    route = [];
+                    routes[id] = route;
+                }
+                route.push(wpx);
+            }.bind(this));
+
+            // C. Join temporary masters- and routes-objects 
+            //    into array of api-conform routes with wps sorted by time 
+            var routedata = [],
+                menudata = [];
+
+            Object.keys(routes).forEach(function(id) {
+
+                var trackpoints = routes[id];
+                trackpoints.sort(function(wp1, wp2) {
+                    return wp1.ab - wp2.ab;
+                });
+
+                /*************************
+                    * Resolve original id into better readable one 
+                    * and a "good title"
+                    */
+                var title = id.split(">")[1];
+
+                id = id.replace("<br>", "/");
+                // *************************
+
+                var icon = icontemplate; // + "-" + id; // ???? 
+                var item = {
+                    "id": id,
+                    "title": title,
+                };
+                var route = {
+                    "id": id,
+                    "title": title,
+                    // "icon": icon,
+                    "unitsystem": "nautic",
+                    "nodes": trackpoints
+                };
+
+                // optionally include Stammdaten
+                if (masterdata[id] && this.connect) {
+                    route["master"] = masterdata[id];
+                }
+
+                routedata.push(route);
+                menudata.push(item)
+
+            }.bind(this));
+            // console.log("importVendee finaldata", routedata); // , rawdata);
+
+            this.routedata = routedata;
+            this.menudata = menudata;
+        },
+
+        // 
+        routeDataCreate: function(routes, masterdata) {
+
+            // C. Join temporary masters- and routes-objects 
+            //    into array of api-conform routedata (wps sorted by time) 
+            var routedata = [],
+                trackpoints;
+
+            Object.keys(routes).forEach(function(id) {
+
+                trackpoints = routes[id];
+
+                var title = trackpoints[0].ab;
+
+                var route = {
+                    "id": id,
+                    "title": title,
+                    // "icon": icon,
+                    "unitsystem": "metric",
+                    "nodes": trackpoints
+                };
+
+                // Optionally: include Stammdaten
+                if (masterdata && masterdata[id] && this.connect) {
+                    route["master"] = masterdata[id];
+                }
+
+                // *** Required ***  
+                route.trackmode = true;
+
+                routedata.push(route);
+
+            }.bind(this));
+
+            return routedata;
+        },
+
+        // Create some quickmap-obj to enable preview  
+        quickmapCreate: function(trackdata, masterdata) {
+
+            var scope = this;
+            
+            function srcDataCreate(trackdata) {
+                var features = [];
+
+                Object.keys(trackdata).forEach(function(id){
+                    var coords = [],
+                        coordTimes = [],
+                        nodes = trackdata[id];
+
+                    nodes.forEach(function(node){
+                        coords.push(node.coords);
+                        if (node.ab) coordTimes.push(node.ab);
+                        else coordTimes.push(node.an);
+                    })
+
+                    var properties = {
+                            id: id,
+                            color: scope.getRandomColor(),
+                            time: id, // nodes[0].ab
+                            coordTimes: coordTimes
+                        };
+
+                    var trace = new TraceSource(coords, id, properties);
+                    properties.length = scope.deltaL(trace); // console.log(trace);
+
+                    features.push(trace);
+                })
+                
+                var srcData = {
+                    features: features,
+                    type: "FeatureCollection"
+                } ;
+
+                return srcData;
+            } 
+
+            function jsonTrackToQuickview(srcdata, title, prefix) {
+                if (!prefix) prefix = "qmap"
+
+                var mapid = prefix + "-" + title;
+                
+                var quickmap = {};
+                
+                quickmap[mapid] = {
+                    "layer": {
+                        "type": "line",
+                        "id": mapid,
+                        "source": mapid
+                    },
+                    "srcdata": srcdata,
+                    "raw": 1
+                };
+                return quickmap; 
+            }
+
+            var srcData = srcDataCreate(trackdata); 
+
+            var prefix = "tracks";
+            var title = "test"; 
+            /* scope.routesrc.key;
+            if (!title) title = scope.routesrc.title;
+            if (!title) title = srcdata.time; */
+            
+            var quickMapObj = jsonTrackToQuickview(srcData, title, prefix);
+
+            return quickMapObj; 
+        }    
+
+
+    });
+</script>
+
+</dom-module>

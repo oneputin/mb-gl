@@ -10,8 +10,8 @@
 
 <!--<link rel="import" href="../kml-json/kml-json.html">-->
 
-<link rel="import" href="tracks-get-gpx.html">
-<link rel="import" href="tracks-get-table.html">
+<link rel="import" href="tracks-from-gpx.html">
+<link rel="import" href="tracks-from-table.html">
 
 <link rel="import" href="mb-tools-behavior.html">
 
@@ -99,20 +99,20 @@ To 'close'
     </style>
 
     <!-- alternative -->
-    <tracks-get-table 
+    <tracks-from-table 
         tableurl="[[tableurl]]"
         usepreview="[[usepreview]]"
         trackdata="{{rawdata}}"
         quickmap="{{quickmap}}">
-    </tracks-get-table>    
+    </tracks-from-table>    
 
-    <tracks-get-gpx 
+    <tracks-from-gpx 
         xmlurl="[[xmlurl]]"
         xmlquery="[[xmlquery]]"
         usepreview="[[usepreview]]"
         trackdata="{{rawdata}}"
         quickmap="{{quickmap}}">
-    </tracks-get-gpx>    
+    </tracks-from-gpx>    
 
     <iron-ajax
         auto

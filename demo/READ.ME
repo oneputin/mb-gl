@@ -6,12 +6,24 @@
 
 ## Routing samples
 
-### routemap
+### routingplanes
 all ctrls as overlay on map "absolutely" positioned  
-uses *data-planes.json*
+based on some flight-timetable-groups like *flightgs-europe.json*, *flights-transatlantic.json* 
+that must are combined with Stammdata of planes and airlines to create informative trackObjects.
 
-## vendeemap
-some ctrls are positioned outside map in flexbox ctrled containers  
-uses *data-vendee.json*
+## routingvendee
+- some ctrls are positioned outside map in flexbox ctrled containers  
+- uses *vendee-1.json* 
+that have one WAYPOINT-record for every boat at every time/location.
+The waypoints of every boat have to be compiled into a sorted "nodes"-list to build a route.
+--> tracks-from-waypoints
 
+
+## routinghandheld
+- some animationcontrols are outside
+- the original data are either
+    + gpx (into raw geojson) (tracks-from-gpx)
+    + tabular (formatted exports from handhelds) (tracks-from-tables)
+
+## 
 

@@ -31,6 +31,7 @@ Demo to view ship-data animation
 
     <link rel="import" href="../routing-handheld.html">
     <link rel="import" href="../mb-tools-behavior.html">
+    <link rel="import" href="../app-data-sources.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
@@ -174,6 +175,7 @@ Demo to view ship-data animation
         <!-- Right Block: several external app-controls -->
         
         <div class="ctrls_out">
+            
             <!-- INTERFACE -->
             <routing-handheld 
                 routesrc="[[routesrc]]" 
@@ -191,27 +193,26 @@ Demo to view ship-data animation
             <!-- elements for viewing structurally standardized quickMapObjects -->
             <mb-quickview 
                 map="[[map]]" 
-                checked="[[usepreview]]" 
                 mapcontent="[[mapcontent]]" 
+                checked="[[usepreview]]" 
                 featurelist="{{routedata}}" 
                 featureselected="{{featureselected}}">
             </mb-quickview>
 
-            <!-- element with n visible features -->
+            <!-- element with [n] visible features -->
             <template is="dom-if" if="{{!usepreview}}">
-
                 <mb-routes 
                     map="[[map]]" 
-                    checked="[[userouting]]"
                     timer="{{timer}}"
                     routedata=[[routedata]] 
                     routeid=[[routeid]] 
                     trackctrl="{{trackctrl}}" 
-                    mapcontent="{{mapcontent}}"                  
                     trackmapmode="{{trackmapmode}}" 
-                    tracksymbol="{{tracksymbol}}" 
                     trackdata="{{trackdata}}"
-                    trackinfo="[[trackinfo]]">
+                    trackinfo="[[trackinfo]]"
+                    mapcontent="{{mapcontent}}"                  
+                    tracksymbol="{{tracksymbol}}" 
+                    checked="[[userouting]]">
                 </mb-routes>
                 
                 <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
@@ -229,8 +230,16 @@ Demo to view ship-data animation
                 <paper-radio-button class="red" checked="{{usepreview}}">CheckSources</paper-radio-button>
             </div>
 
+            <app-data-sources
+                dataset= "{{routeset}}"
+                dataid= "{{routeid}}"
+                indexurl="[[indexurl]]"
+                datasets="[[routesets]]"
+                datasetslabel="Flight sets"
+                datasetlabel= "Flights">
+            </app-data-sources>    
+        <!--
             <div id="menues">
-                <!-- menu of available routesets -->
                 <paper-dropdown-menu label="Tracksets">
                     <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRouteSet" attr-for-selected="src">
                         <template is="dom-repeat" items="{{routesets}}">
@@ -241,7 +250,6 @@ Demo to view ship-data animation
                     </paper-listbox>
                 </paper-dropdown-menu>
 
-                <!-- menu of Tracks contained in activated routesets -->
                 <paper-dropdown-menu class="routes" label="Tracks">
                     <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRoute" attr-for-selected="{{selectattr}}">
                         <template is="dom-repeat" items="{{routedata}}">
@@ -253,6 +261,8 @@ Demo to view ship-data animation
                 </paper-dropdown-menu>
 
             </div>
+        -->
+
         </div>
 
     </div>

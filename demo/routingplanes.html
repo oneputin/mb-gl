@@ -105,7 +105,8 @@
                 
                 <mb-quickview
                     map="[[map]]"
-                    mapcontent="[[mapcontent]]">
+                    mapcontent="[[mapcontent]]"
+                    >
                 </mb-quickview>
 
                 <mb-routes-ctrl 
@@ -125,7 +126,6 @@
                 
                 <mb-routes 
                     map="[[map]]" 
-                    mapcontent="{{mapcontent}}" 
                     timer="{{timer}}" 
                     routedata=[[routedata]]  
                     routeid=[[routeid]]  
@@ -133,6 +133,7 @@
                     trackmapmode="{{trackmapmode}}" 
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]"
+                    mapcontent="{{mapcontent}}" 
                     on-routedata-changed="logdata">
                 </mb-routes>
                 
@@ -140,6 +141,7 @@
                     timer="{{timer}}">
                 </mb-routes-ctrl-time>
 
+                <!-- app-specific IF between generic IN/OUT (routedata/trackdata) and routedata -->
                 <routing-planes 
                     map="[[map]]" 
                     flightset="[[routeset]]"
@@ -149,9 +151,9 @@
                 </routing-planes>
 
                 <app-data-sources
+                    indexurl="[[indexurl]]"
                     dataset= "{{routeset}}"
                     dataid= "{{routeid}}"
-                    indexurl="[[indexurl]]"
                     datasets="[[routesets]]"
                     datasetslabel="Flight sets"
                     datasetlabel= "Flights">
@@ -167,25 +169,25 @@
 
         scope.indexurl = "index-planes.json";
 
-        // setup mapbox-map
+        // setup mapbox-MAP
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
         scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm';
         // scope.mbstyle = 'mapbox://styles/mapbox/streets-v9',
 
         scope.cbox = "13.7,52.4";
         scope.lnglat = "13.7,52.4";
-        scope.zoom = 1;
+        scope.zoom = 2;
 
-        // setup animation
-        scope.tracksymbol = 'airport-15';
+        // setup ANIMATION 
         // scope.timer = {}; // default 
         scope.timer = {
-            "timescalemax": 1440,
+            "timescalemax": 1440,           // 1min animation = 1440min(12h) reality at fps=60 
             "timescalestart": 1440,
-            "fpsstart": 30,
-            "tracelength": '0.0.0.0.5'
-                // "tracelength": true
+            "fpsstart": 30,                 // fps applied at start (< 60(=fpsmax)
+            "tracelength": '0.0.0.0.5'      // Kondensstreifen = 5min reality 
+            // "tracelength": true
         };
+        scope.tracksymbol = 'airport-15';   // symbol used to hilite selected tracker 
         scope.mapctrl = {};
 
         // select a start-routeset from setup-entries 

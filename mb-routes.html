@@ -913,7 +913,7 @@ along waypoint file loaded from url
                                         "lnglat": cc,
                                         "trackobj": trackObj
                                     }
-                                } else {
+                                } else { // trigger CLOSE of tarckInfo (fi. on map)
                                     mba.trackdata = {
                                         "open": false
                                     };
@@ -1681,6 +1681,7 @@ along waypoint file loaded from url
                 names.forEach(function(lname) {
                     if (mba.map.getLayer(lname)) mba.map.setFilter(lname, ["==", "id", filter]);
                 });
+                
                 //mba.map.setFilter("tracks-select", ["==", "id", filter]);
                 //mba.map.setFilter("tracks-glow", ["==", "id", filter]);
                 //mba.map.setFilter("tracks-glow-strong", ["==", "id", filter]);

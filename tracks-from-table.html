@@ -8,7 +8,7 @@
 
 
 <!--
-`tracks-get-table`
+`tracks-from-table`
 Interface for import/export of tracking data from handheld gps-devices
 
 Optional: create quick-preview-data 
@@ -16,7 +16,7 @@ Optional: create quick-preview-data
 @demo demo/routinghandheld.html 
 -->
 
-<dom-module id="tracks-get-table">
+<dom-module id="tracks-from-table">
 
 <template>
 
@@ -43,7 +43,7 @@ Optional: create quick-preview-data
 
 <script>
     Polymer({
-        is: 'tracks-get-table',
+        is: 'tracks-from-table',
 
         properties: {
 
@@ -101,38 +101,8 @@ Optional: create quick-preview-data
             this.rawdata = ajaxresponse.detail.response;
         },
 
-        createTrackData: function(rawdata, usepreview, minTrackLength) {
-            if (!rawdata || !Object.keys(rawdata).length) return; 
-            // console.log("table-data, raw:", rawdata);
-
-            // "DETECT" the "table-mode"" 
-            var tablemode = (rawdata[0]["geometry"]) ? "json" : "nn";
-            tablemode = (rawdata[0]["Header"] == "Trackpoint") ? 'table-vomue1' : tablemode;
-            tablemode = rawdata[0]["Pnt"] ? 'table-vomue2' : tablemode;
-            if (tablemode == "nn") {
-                console.log("BREAK. Selected dataset cannot be analysed!!");
-                return;
-            }
-            // console.log("table-data, mode:", tablemode);   
-
-            var trackdata = this.trackDataCreate(rawdata, tablemode, minTrackLength);
-
-            if (usepreview) {
-                this.quickmap = this.quickmapCreate(trackdata);
-                // console.log("table-data, map-tracks:", this.quickmap);  
-                
-            } else {
-                var routedata = this.routeDataCreate(trackdata); // , rawdbdata);
-                if (routedata) {
-                    console.log("table-data, route-tracks:", routedata);  
-                    this.routedata = routedata;
-                } 
-            }
-       
-        },
-
         // 
-        trackDataCreate: function(rawdata, tablemode, minTrackLength) {
+        getRawTracks: function(rawdata, tablemode, minTrackLength) {
             if (!minTrackLength) minTrackLength = 5; 
 
             // Dis-assemble rawdata-recordings that contain "separable tracks"  
@@ -365,6 +335,36 @@ Optional: create quick-preview-data
             return tracks; 
         },
 
+
+        createTrackData: function(rawdata, usepreview, minTrackLength) {
+            if (!rawdata || !Object.keys(rawdata).length) return; 
+            // console.log("table-data, raw:", rawdata);
+
+            // "DETECT" the "table-mode"" 
+            var tablemode = (rawdata[0]["geometry"]) ? "json" : "nn";
+            tablemode = (rawdata[0]["Header"] == "Trackpoint") ? 'table-vomue1' : tablemode;
+            tablemode = rawdata[0]["Pnt"] ? 'table-vomue2' : tablemode;
+            if (tablemode == "nn") {
+                console.log("BREAK. Selected dataset cannot be analysed!!");
+                return;
+            }
+            // console.log("table-data, mode:", tablemode);   
+
+            var trackdata = this.getRawTracks(rawdata, tablemode, minTrackLength);
+
+            if (usepreview) {
+                this.quickmap = this.quickmapCreate(trackdata);
+                // console.log("table-data, map-tracks:", this.quickmap);  
+                
+            } else {
+                var routedata = this.routeDataCreate(trackdata); // , rawdbdata);
+                if (routedata) {
+                    console.log("table-data, route-tracks:", routedata);  
+                    this.routedata = routedata;
+                } 
+            }
+        },
+
         // 
         routeDataCreate: function(routes, masterdata) {
 
@@ -473,7 +473,6 @@ Optional: create quick-preview-data
 
             return quickMapObj; 
         }    
-
 
     });
 </script>

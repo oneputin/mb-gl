@@ -18,7 +18,7 @@ Demo to view ship-data animation
     <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
 
     <link rel="import" href="../mb-map.html">
-    <link rel="import" href="../mb-info-lnglat.html">
+    <link rel="import" href="../mb-location-log.html">
     <link rel="import" href="../mb-info-drag.html">
 
     <link rel="import" href="../mb-routes.html">
@@ -41,7 +41,7 @@ Demo to view ship-data animation
             height: 600px;
         }
         
-        mb-info-lnglat {
+        mb-location-log {
             left: 50%;
             margin-right: -50%;
             transform: translate(-50%, 0)
@@ -97,9 +97,6 @@ Demo to view ship-data animation
 <body>
     <template is="dom-bind" id="app">
         
-        <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="setupme">
-        </iron-ajax>
-
         <div class="container">
             
             <!-- Left block: Map -->
@@ -120,23 +117,23 @@ Demo to view ship-data animation
                         timer="{{tracktimer}}"
                         trackctrl="{{trackctrl}}">
                     </mb-routes-ctrl>
-                    
                     <!--<mb-map-orientation-ctrl trackmode="{{trackmode}}">
-                    </mb-map-orientation-ctrl>-->
-                    
+                    </mb-map-orientation-ctrl>-->                    
                 </div>
 
-                <mb-info-lnglat lnglat="[[lnglat]]">
-                </mb-info-lnglat>
+                <mb-location-log map="{{map}}" lnglat="{{lnglat}}" checked="[[uselocationlog]]">
+                </mb-location-log>
 
                 <!--<mb-info-drag carddata="[[trackdata]]">
                 </mb-info-drag>-->
-
-                <routing-vendee 
+                
+                <!-- removed properties
                     url="[[routedataurl]]" 
-                    routedata="{{routedata}}"
                     menudata="{{menudata}}"
                     tmpdata="[[tmpdata]]"
+                -->
+                <routing-vendee 
+                    routedata="{{routedata}}"
                     basedataurl="[[basedataurl]]" 
                     trackinfo="[[trackinfo]]" 
                     trackdata="{{trackdata}}">
@@ -165,7 +162,16 @@ Demo to view ship-data animation
                     timer="{{tracktimer}}">
                 </mb-routes-ctrl-time>
 
-                <!-- Right -->
+                <app-data-sources
+                    dataset= "{{routeset}}"
+                    dataid= "{{routeid}}"
+                    indexurl="[[indexurl]]"
+                    datasets="[[routesets]]"
+                    datasetslabel="Flight sets"
+                    datasetlabel= "Flights">
+                </app-data-sources>                
+
+            <!--
                 <paper-dropdown-menu class="routesets" label="Position sets">
                     <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
                         <template is="dom-repeat" items="{{routedocs}}">
@@ -173,24 +179,25 @@ Demo to view ship-data animation
                                 {{item.title}}
                             </paper-item>
                         </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
+                    </paper-listbox>
+                </paper-dropdown-menu>
 
-    <template is="dom-if" if="{{menudata}}">
-        <paper-dropdown-menu class="routes" label="Tracks">
-            <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
-                <template is="dom-repeat" items="{{menudata}}">
+                <template is="dom-if" if="{{menudata}}">
+                    <paper-dropdown-menu class="routes" label="Tracks">
+                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
+                            <template is="dom-repeat" items="{{menudata}}">
                                 <paper-item id="{{item.id}}">
                                     {{item.title}}
                                 </paper-item>
                             </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
-    </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                </template>
+            -->
+            </div>
 
-    </div>
+        </div>
 
-    </div>
     </template>
 
     <script>
@@ -210,7 +217,7 @@ Demo to view ship-data animation
         scope.zoom = 2;
 
         // TRACK-Environment 
-        scope.setupurl = "index-vendee.json"; // list of available datasets
+        scope.indexurl = "index-vendee.json"; // list of available datasets
         scope.basedataurl = "wp-data/vendee-db.json"; // list of available datasets
         // Timescale to view tracks of boats over several days
         scope.tracktimer = {
@@ -224,16 +231,17 @@ Demo to view ship-data animation
         /**
          * Put selected url from menu-selection into import-element
          */
-        scope.selectedurl = function(e) {
+        
+        /*scope.selectedurl = function(e) {
             console.log(e.detail.item.url);
             this.routedataurl = e.detail.item.url;
-        }
+        }*/
 
-        scope.selectrouteid = function(e) {
+        /*scope.selectrouteid = function(e) {
             // console.log("next routeid=", e.detail)
             var routeid = e.detail.item.id;
             if (routeid) scope.routeid = routeid;
-            /*var tmpdata = [];
+            /*var tmpdata = []; // CLOSE !! comment !!
             scope.routedata.forEach(function(item) {
                 if (item.id == routeid) {
                     if (item.flag) {
@@ -248,14 +256,8 @@ Demo to view ship-data animation
                 tmpdata.push(item);
             });
             scope.tmpdata = tmpdata;
-            */
-        }
+        }*/
 
-        // eval the response of content-list 
-        scope.setupme = function(ajaxresponse) {
-            this.routedocs = ajaxresponse.detail.response;
-            console.log(this.routedocs);
-        }
     </script>
 </body>
 

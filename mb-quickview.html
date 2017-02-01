@@ -28,10 +28,6 @@ preview raw kml- or gpx datasets
 
             properties: {
 
-                // 
-                checked: {
-                    type: Boolean
-                },
                 /**
                  *  map-object available for query and manipulation outside 
                  */
@@ -39,7 +35,6 @@ preview raw kml- or gpx datasets
                     type: Object,
                     observer: "setupTool"
                 },
-
                 // 
                 mapcontent: {
                     type: Object
@@ -106,6 +101,7 @@ preview raw kml- or gpx datasets
              */
             mapContentFeatureList: function(mapfeatures) {
                 if (!this.checked) return;
+
                 if (mapfeatures.path == 'mapfeatures') mapfeatures = mapfeatures.value;
                 if (!mapfeatures || !Object.keys(mapfeatures).length) return;
                 // console.log("mapfeatures after change:", mapfeatures);
@@ -116,6 +112,7 @@ preview raw kml- or gpx datasets
                         featurelist.push(item);
                     })
                 });
+                
                 this.featurelist = featurelist; // notifies !!
             },
 
@@ -200,6 +197,7 @@ preview raw kml- or gpx datasets
                         map.setFilter(layerid + "-hover", ["==", "name", ""]);
                     }
                 }
+
                 // Layer that occurs on-mose-hover only 
                 function createHoverLayer(layertemplate) {
                     var lhover = {}; // layertemplate,
@@ -233,6 +231,7 @@ preview raw kml- or gpx datasets
 
                     return lhover;
                 }
+
                 // add temporary paint-properties 
                 // to better identify features (line-width, random colors)
                 function rawBeautify(layerObject) {
@@ -258,7 +257,8 @@ preview raw kml- or gpx datasets
 
                     return layerObject.layer;
                 }
-                // 
+
+                // Create (multiple) layers to create "" 
                 function getLayerTemplates(layerObject) {
 
                     var layerTemplates = []

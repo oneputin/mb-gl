@@ -9,15 +9,16 @@
 <!--
 `routing-planes`
 *INPUT*  
-Pre- and post-processing 
+Converting routeset into routedata 
 
 *OUTPUT*  
-RICH-content Info-card related to one selected feature,  
-absolutely positioned as map-overlay   
-Mode-A: Can be vertically dragged & horizontally resized.  
-Mode-B: Free drag   
-Close with click anywhere on the card
-
+Converts [trackdata] into 
+- RICH-content Info-card related to one selected feature,  
+    absolutely positioned as map-overlay   
+    Mode-A: Can be vertically dragged & horizontally resized.  
+    Mode-B: Free drag   
+    Close with click anywhere on the card
+- 
 @demo demo/routingplanes.html 
 -->
 <dom-module id="routing-planes">
@@ -108,8 +109,8 @@ Close with click anywhere on the card
             </div>
         </paper-card>
 
-            <!--<paper-button class="info-link" on-click="_onBackClick">X</paper-button>-->
-            <!--<paper-icon-button icon="close" on-click="_onBackClick"></paper-icon-button>-->
+        <!--<paper-button class="info-link" on-click="_onBackClick">X</paper-button>-->
+        <!--<paper-icon-button icon="close" on-click="_onBackClick"></paper-icon-button>-->
 
         <content>
         </content>    
@@ -126,13 +127,15 @@ Close with click anywhere on the card
                     type: Object
                 },
 
-                flightsetdata: {
-                    type: Object
-                    // notify: true
+                routedata: {
+                    type: Object,
+                    notify: true
                 },
+
                 dburl: {
                     type: String
                 },
+
                 dbdata: {
                     type: Object
                 }
@@ -152,21 +155,21 @@ Close with click anywhere on the card
                 // console.log("target attached");
             },
 
-            
+            /**
+             * 
+             */
             loadMetaData: function(ajaxresponse) {
                 if (!ajaxresponse || !ajaxresponse.detail) return;
                 this.dbdata = ajaxresponse.detail.response;
                 if (this.dbdata) console.log("OK: dbdata", this.dbdata);
             },
 
-            // import and transform 
+            // A. import and transform 
             // before supply through custom event 
             importRawData: function(rawdata, dbdata) {
                 if (!rawdata || !dbdata) return;
                 // console.log("XXX importRawData", rawdata); 
 
-                // A. import
-                var routedata = [];
                 // Defaults/Placeholders
                 var placeholders = {
                     airline : {
@@ -179,6 +182,7 @@ Close with click anywhere on the card
                     }
                 } ; // = rawdata; 
 
+                var routedata = [];
                 var airlineKey, airline, plane, waypoint;
                 // transform into RouteAppObject
                 rawdata.forEach(function(route) {
@@ -232,20 +236,22 @@ Close with click anywhere on the card
 
                     routedata.push(route);
                 });
+                // console.log("flight routes preprocessed:", routedata);
 
-                // C. FIRE a "custom EVENT" to the app-shell with 
-                //    that inform that raw-route-data are loaded 
-                    // console.log("flight routes preprocessed:", routedata);
-                this.fire("imported", {
-                    "routedata": routedata,
-                    "ok": "ok"
-                });
-
-                // 
-                this.routedata = routedata;
+                // Alternative transfer 
+                if (1) {    // C.1 Standard: BIND to another (sibling)-element within the context of this element  
+                    this.routedata = routedata;
+                } else {    // C.2 FIRE a "custom EVENT" to the app-shell with 
+                            //     that inform that raw-route-data are loaded 
+                    this.fire("imported", {
+                        "routedata": routedata,
+                        "ok": "ok"
+                    });
+                }
             },
 
-            // B. 
+
+            // B. Formatting the properties of selected trackObj as CARD  
 
             /**
              * Create some formatted html-text(dom?) 
@@ -276,10 +282,11 @@ Close with click anywhere on the card
                 return trackInfo;
             },
 
+
             refreshCardContent: function(data) {
                 var nbsp = "&nbsp;"; //"~"; 
                 if (!data) return;
-                // DIV1
+                // Insert html into DIV1 of <paper-card>
                 if (data.html) this.$.div1.innerHTML = data.html;
             }
 

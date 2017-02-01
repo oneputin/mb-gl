@@ -71,23 +71,25 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     notify: true
                 },
                 /**
+                 *  access-key to mapbox-gl api
+                 */
+                mapapikey: {
+                    type: String
+                },
+                /**
                  *  mapbox-style  
                  */
                 mapstyle: {
                     type: String
                 },
                 /**
-                 *  mapbox-style  
+                 *  layer of mapbox-style 
+                 *  below (!?!) which userdate are inserted into layerstack   
                  */
                 insertlayer: {
                     type: String
                 },
-                /**
-                 *  access-key to mapbox-gl api
-                 */
-                mapapikey: {
-                    type: String
-                },
+                
                 /**
                  *  parameterset to specify mapbox-gl basemap
                  *  composed from internal defaults an external data 

@@ -207,6 +207,22 @@
         },
 
         /**
+         * Back-transform of "formatted" dm into raw dd
+         * (fi vendee-data: "lat": "49°43.00'S", 
+         *                  "lng": "162°32.42'E"
+         */
+        dmtodd: function(dm, lonflag, prec) {
+            if (!prec) prec = 6;
+            dm = dm.split("°"); // console.log("dm-array", dm);
+            dd = parseInt(dm[0]) + parseFloat(dm[1]) / 60;
+            if (dm[1].slice(-1) == "W") dd = 0 - dd;
+            if (dm[1].slice(-1) == "S") dd = 0 - dd;
+            return dd;
+        }
+
+
+
+        /**
          * 
          */
         logTime: function(ms1970, unit, sep) {

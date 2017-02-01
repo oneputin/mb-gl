@@ -8,7 +8,7 @@
 
 
 <!--
-`tracks-get-gpx`
+`tracks-from-gpx`
 Interface for import/export of tracking data from handheld gps-devices
 
 Optional: create quick-preview-data 
@@ -16,7 +16,7 @@ Optional: create quick-preview-data
 @demo demo/routinghandheld.html 
 -->
 
-<dom-module id="tracks-get-gpx">
+<dom-module id="tracks-from-gpx">
 
 <template>
 
@@ -41,7 +41,7 @@ Optional: create quick-preview-data
 
 <script>
     Polymer({
-        is: 'tracks-get-gpx',
+        is: 'tracks-from-gpx',
 
         properties: {
 
@@ -107,7 +107,7 @@ Optional: create quick-preview-data
             if (usepreview) { 
                 // 3. CREATE/SUPPLY quickMapObject to quickViewer
 
-                var quickmap = this.createTrackPreview(flattracks);
+                var quickmap = this.quickmapCreate(flattracks);
                 if (quickmap) {
                     // console.log("GPX-data, view", quickmap);
                     this.quickmap = quickmap;
@@ -286,7 +286,7 @@ Optional: create quick-preview-data
         },
 
         // Process tracks from GPX, KML
-        createTrackPreview: function(trackdata) {
+        quickmapCreate: function(trackdata) {
 
             var quickmapObject;
 
