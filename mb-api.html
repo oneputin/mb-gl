@@ -8,9 +8,34 @@ wraps the mapbox-gl api (js and css)
 <script src='//api.tiles.mapbox.com/mapbox.js/plugins/turf/v2.0.0/turf.min.js' charset='utf-8'></script>
 
 <script>
+
+    class QuickMap {
+        /**
+         * Container for quickmap-creation 
+         *
+         * @param      {string}  id           The identifier oof quickmaps
+         * @param      {string}  type         The type of vector data (line, point, area)
+         * @param      {object}  srcdata      The srcdata 
+         * @param      {object}  paints       The MB-layers paints
+         */
+        constructor(srcdata, id, type, paints, layout, meta ) {
+            // if (!id) id = "qm";
+            // if (!type) type = "line";
+            this.id = id;
+            this.srcdata = srcdata;
+            this.layer = {
+                "type": type,
+                "id": id,
+                "source": id
+            }
+            if (paints) this.paint = paints;
+            if (layout) this.layout = layout;
+            if (meta) this.meta = meta;
+        };
+    };
+
     // Templates for mapbox-layer-data
     // nodes,routes,traces,tracks,legs
-
     /**
      * A waypoint along a tracked route
      */

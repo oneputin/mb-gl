@@ -221,7 +221,6 @@ Demo to view ship-data animation
                     timescalemax="[[timer.timescalemax]]" 
                     timer="{{timer}}">
                 </mb-routes-ctrl-time>
-
             </template>
 
             <div id="radios">
@@ -230,12 +229,14 @@ Demo to view ship-data animation
                 <paper-radio-button class="red" checked="{{usepreview}}">CheckSources</paper-radio-button>
             </div>
 
+            <!--dataset= "{{routedata}}" ??? -->
             <app-data-sources
-                dataset= "{{routeset}}"
-                dataid= "{{routeid}}"
                 indexurl="[[indexurl]]"
                 datasets="[[routesets]]"
                 datasetslabel="Flight sets"
+                dataset= "{{routeset}}"
+                selectprop="id"
+                selectvalue= "{{routeid}}"
                 datasetlabel= "Flights">
             </app-data-sources>    
         <!--
@@ -302,9 +303,11 @@ Demo to view ship-data animation
     // SHELL-actions
     scope.mapctrl = {};
 
-    // Feature-selection
+    // MB-Feature-selection
     scope.featureselected = "{}";
-    scope.selectattr = "feature"; // "feature"; // "id" 
+    // attribute of selected item to be processed further
+    scope.selectattr = "feature"; // Preview
+    // scope.selectattr = "id"; // Route 
 
     // 
     scope.selectRoute = function(e) {

@@ -3,7 +3,21 @@
 
 <!--
 `mb-quickview`
-preview raw kml- or gpx datasets
+quick preview of "mapcontent" supplied in "quickformat" fi. 
+- derived from raw kml- or gpx-datasets
+- created for routing-api
+
+`quickformat` - object:
+
+        quickmap[mapid] = {
+            "layer": {
+                "type": "line",
+                "id": mapid,
+                "source": mapid
+            },
+            "srcdata": srcdata,
+            "raw": 1
+        };
 
 @demo demo/routinghandheld.html 
 -->
@@ -27,7 +41,6 @@ preview raw kml- or gpx datasets
             is: 'mb-quickview',
 
             properties: {
-
                 /**
                  *  map-object available for query and manipulation outside 
                  */
@@ -97,7 +110,7 @@ preview raw kml- or gpx datasets
 
             /**
              * Create a list of all features  contained in 'mapfeatures'-collection 
-             * and supply as notified property
+             * and supply to container ("notified" property)
              */
             mapContentFeatureList: function(mapfeatures) {
                 if (!this.checked) return;

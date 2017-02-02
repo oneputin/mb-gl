@@ -193,18 +193,9 @@ along waypoint file loaded from url
             // 
             _animationContentSetup: function(id, type, srcdata, metas, paintprops, layoutprops) {
 
-                var layerObj = {},
-                    paints = {},
+                var paints = {},
                     layouts = {},
-                    mbLayer = {
-                        "id": id,
-                        "source": id,
-                        "type": type
-                    };
-
-                layerObj['meta'] = metas;
-                layerObj['srcdata'] = srcdata;
-                layerObj['layer'] = mbLayer;
+                    layerObj = {};
 
                 if (id == "routes") {
                     paints = {
@@ -235,10 +226,27 @@ along waypoint file loaded from url
                 }
 
                 if (paintprops) paints = Object.assign({}, paints, paintprops);
-                if (paints.length) mbLayer["paint"] = paints;
-
                 if (layoutprops) layouts = Object.assign({}, layouts, layoutprops);
-                if (layouts.length) mbLayer["layout"] = layouts;
+
+
+                if (1) { // NEW : use standard Qickmap
+
+                    layerObj = new QuickMap(id, type, srcdata, paints, layouts, metas);
+
+                } else { // OLD : explicit builder
+
+                    var mbLayer = {
+                        "id": id,
+                        "source": id,
+                        "type": type
+                    };
+
+                    layerObj['layer'] = mbLayer;
+                    layerObj['meta'] = metas;
+                    layerObj['srcdata'] = srcdata;
+                    if (paints.length) mbLayer["paint"] = paints;
+                    if (layouts.length) mbLayer["layout"] = layouts;
+                }
 
                 return layerObj;
             },
@@ -1260,6 +1268,7 @@ along waypoint file loaded from url
                     }
                 });
 
+
                 // B. Setup ONE Layer for multiple trackers (DynamicPoints)
                 // = trackers should use "ddr styling" 
 
@@ -1321,12 +1330,15 @@ along waypoint file loaded from url
                     }
                 }
 
+                // B. SET Basic-Presentation of multiple Trackers
+
                 var trackLayerObj = this._animationContentSetup("tracks", type, allTracks, routemetas, paints, layouts);
 
-                // C. ADDITIONAL mb-Layerset to style the trackInfoObj (app-specific)
-
+                // C. ADD SPECIFIC presentation of one!! "filtered" trackInfoObj (app-specific)
+                //    
                 trackLayerObj['selectlayer'] =
-                    // A meaningful Symbol built from 3 Layers 
+                    // A meaningful TrackPoint-presentation built from 3 Layers 
+                    // 
                     [{
                         "id": "tracks-glow-strong",
                         "type": "circle",
@@ -1359,7 +1371,6 @@ along waypoint file loaded from url
                             "text-anchor": "top"
                         }
                     }];
-
                 // console.log("trackLayerObj", trackLayerObj);
                 return trackLayerObj;
             },
@@ -1947,7 +1958,7 @@ along waypoint file loaded from url
             },
 
             /**
-             *  
+             *  ??? 
              *
              */
             trackRouteGetRawFeatures: function(routeid) {
