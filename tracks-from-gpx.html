@@ -45,6 +45,10 @@ Optional: create quick-preview-data
 
         properties: {
 
+            srcmeta: {
+                type: Object,
+            },
+
             xmlurl: {
                 type: String
             },
@@ -74,8 +78,8 @@ Optional: create quick-preview-data
                 notify: true
             },
 
-            // tobe processed in "trackAnimation"
-            routedata: {
+            // to be processed in "trackAnimation"
+            trackdata: {
                 type: Array,
                 value: [],
                 notify: true
@@ -88,13 +92,22 @@ Optional: create quick-preview-data
         ],
 
         observers: [
-            'getRawTracks(rawdata, usepreview)'
+            'triggerQuery(srcmeta.*)',
+            'getRawTracks(rawdata, srcmeta, usepreview)'
         ],
 
         attached: function() {
             // console.log("target attached");
         },
 
+        triggerQuery: function(srcmeta) { // trigger new dataquery !!
+            if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
+            if (srcmeta.type != "gpx") return;  
+            // set parameters for data-fetch with <kml-json>
+            this.xmlurl = srcmeta.url;
+            if (srcmeta.xmlquery) this.xmlquery = srcmeta.xmlquery;
+        },
+        
         // 
         getRawTracks: function(rawdata, usepreview) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
@@ -106,11 +119,13 @@ Optional: create quick-preview-data
 
             if (usepreview) { 
                 // 3. CREATE/SUPPLY quickMapObject to quickViewer
-
+                // console.log(flattracks);  
                 var quickmap = this.quickmapCreate(flattracks);
-                if (quickmap) {
-                    // console.log("GPX-data, view", quickmap);
+                if (quickmap) {  // console.log("GPX-data to view", quickmap);
+
                     this.quickmap = quickmap;
+                    this.trackdata = flattracks.features;
+                
                 }    
 
             } else {  
@@ -118,7 +133,7 @@ Optional: create quick-preview-data
                 var routetracks = this.createRouteTracks(flattracks.features);
                 if (routetracks.length) {
                     // console.log("GPX-data, routes",  routetracks);
-                    this.routedata = routetracks;
+                    this.trackdata = routetracks;
                 }    
             }    
         },
@@ -288,12 +303,11 @@ Optional: create quick-preview-data
         // Process tracks from GPX, KML
         quickmapCreate: function(trackdata) {
 
-            var quickmapObject;
+            var quickmapObject,
+                srcmeta = this.srcmeta; // console.log("quickmapCreate", srcmeta); 
 
-            function jsonTrackToQuickview(srcdata) {
-                
-                var title = scope.routesrc.key;
-                if (!title) title = scope.routesrc.title;
+            function jsonTrackToQuickview(srcdata, title) {
+
                 if (!title) title = srcdata.time;
                
                 var mapid = "tracks-" + title;
@@ -309,10 +323,13 @@ Optional: create quick-preview-data
                     "raw": 1
                 };
                 return quickmap; 
-            }
+            };
 
-            // Quickview of raw data 
-            quickmapObject = jsonTrackToQuickview(trackdata); 
+            // Create data for quickview of raw trackdata 
+            // with "short as possible" id-entification of features 
+            var title = srcmeta.key;
+            if (!title) title = srcmeta.title;
+            quickmapObject = jsonTrackToQuickview(trackdata, title); 
             
             // SUPPLY quickmap to viewing element 
             return quickmapObject;

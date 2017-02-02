@@ -1,18 +1,22 @@
 [{
         "title": "Single",
-        "url": "wp-data/flights-single.json"
+        "url": "wp-data/flights-single.json",
+        "type": "local"
     },
     {
         "title": "Europe",
         "url": "wp-data/flights-europe.json",
+        "type": "local",
         "start": 1
     },
     {
         "title": "Transatlantic",
-        "url": "wp-data/flights-transatlantic.json"
+        "url": "wp-data/flights-transatlantic.json",
+        "type": "local"
     },
     {
         "title": "Template",
-        "url": "wp-data/wps-template.json"
+        "url": "wp-data/wps-template.json",
+        "type": "local"
     }
 ]

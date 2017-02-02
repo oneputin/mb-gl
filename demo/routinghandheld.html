@@ -31,7 +31,7 @@ Demo to view ship-data animation
 
     <link rel="import" href="../routing-handheld.html">
     <link rel="import" href="../mb-tools-behavior.html">
-    <link rel="import" href="../app-data-sources.html">
+    <link rel="import" href="../dataset-browser.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
 
@@ -100,7 +100,7 @@ Demo to view ship-data animation
             @apply(--layout-start);
         }
         
-        app-data-sources {
+        dataset-browser {
             padding: 10px;
             display: inline-block;
             @apply(--layout-vertical);
@@ -123,15 +123,13 @@ Demo to view ship-data animation
         }
     </style>
 </head>
+
 <body>
 
 <template is="dom-bind" id="app">
-        
-    <iron-ajax auto url="[[setupurl]]" handle-as="json" on-response="loadRouteSetIndex">
-    </iron-ajax>
 
     <div class="container">
-        <!-- Left block: Map -->
+        <!-- LEFT block: Map -->
 
         <!-- lnglat="{{lnglat}} -->" 
         <mb-map 
@@ -165,63 +163,45 @@ Demo to view ship-data animation
             </div>
 
 
-            <mb-location-log map="{{map}}" lnglat="{{lnglat}}" checked="[[uselocationlog]]">
+            <mb-location-log 
+                map="{{map}}" 
+                lnglat="{{lnglat}}" 
+                checked="[[uselocationlog]]">
             </mb-location-log>
 
             <!--<mb-info-drag carddata="[[trackdata]]">
-                        </mb-info-drag>-->
+                                </mb-info-drag>-->
         </mb-map>
 
-        <!-- Right Block: several external app-controls -->
-        
+        <!-- RIGHT Block: several external app-controls -->
+
         <div class="ctrls_out">
-            
-            <!-- INTERFACE -->
-            <routing-handheld 
-                routesrc="[[routesrc]]" 
-                usepreview="[[usepreview]]"
-                routedata="{{routedata}}" 
-                quickmap="{{mapcontent}}" 
-                rawdata="{{rawdata}}" 
-                basedataurl="[[basedataurl]]" 
-                trackinfo="[[trackinfo]]" 
-                trackdata="{{trackdata}}">
-            </routing-handheld>
 
             <!--<mb -->
 
-            <!-- elements for viewing structurally standardized quickMapObjects -->
-            <mb-quickview 
-                map="[[map]]" 
-                mapcontent="[[mapcontent]]" 
-                checked="[[usepreview]]" 
-                featurelist="{{routedata}}" 
-                featureselected="{{featureselected}}">
-            </mb-quickview>
-
             <!-- element with [n] visible features -->
             <template is="dom-if" if="{{!usepreview}}">
-                <mb-routes 
-                    map="[[map]]" 
-                    timer="{{timer}}"
-                    routedata=[[routedata]] 
-                    routeid=[[routeid]] 
-                    trackctrl="{{trackctrl}}" 
-                    trackmapmode="{{trackmapmode}}" 
-                    trackdata="{{trackdata}}"
-                    trackinfo="[[trackinfo]]"
-                    mapcontent="{{mapcontent}}"                  
-                    tracksymbol="{{tracksymbol}}" 
-                    checked="[[userouting]]">
-                </mb-routes>
-                
-                <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
-                <mb-routes-ctrl-time  
-                    checked="[[userouting]]"
-                    timescalemax="[[timer.timescalemax]]" 
-                    timer="{{timer}}">
-                </mb-routes-ctrl-time>
-            </template>
+                    <mb-routes 
+                        map="[[map]]" 
+                        timer="{{timer}}"
+                        routedata=[[routedata]] 
+                        routeid=[[routeid]] 
+                        trackctrl="{{trackctrl}}" 
+                        trackmapmode="{{trackmapmode}}" 
+                        trackdata="{{trackdata}}"
+                        trackinfo="[[trackinfo]]"
+                        mapcontent="{{mapcontent}}"                  
+                        tracksymbol="{{tracksymbol}}" 
+                        checked="[[userouting]]">
+                    </mb-routes>
+                    
+                    <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
+                    <mb-routes-ctrl-time  
+                        checked="[[userouting]]"
+                        timescalemax="[[timer.timescalemax]]" 
+                        timer="{{timer}}">
+                    </mb-routes-ctrl-time>
+                </template>
 
             <div id="radios">
                 <paper-radio-button checked="{{uselocationlog}}">Location Log</paper-radio-button>
@@ -229,45 +209,42 @@ Demo to view ship-data animation
                 <paper-radio-button class="red" checked="{{usepreview}}">CheckSources</paper-radio-button>
             </div>
 
-            <!--dataset= "{{routedata}}" ??? -->
-            <app-data-sources
-                indexurl="[[indexurl]]"
-                datasets="[[routesets]]"
-                datasetslabel="Flight sets"
-                dataset= "{{routeset}}"
-                selectprop="id"
-                selectvalue= "{{routeid}}"
-                datasetlabel= "Flights">
-            </app-data-sources>    
-        <!--
-            <div id="menues">
-                <paper-dropdown-menu label="Tracksets">
-                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRouteSet" attr-for-selected="src">
-                        <template is="dom-repeat" items="{{routesets}}">
-                                <paper-item src="{{item}}" url="{{item.url}}">
-                                    {{item.title}}
-                                </paper-item>
-                            </template>
-                    </paper-listbox>
-                </paper-dropdown-menu>
+            <!-- selectprop="id"--> 
+            <!-- selectvalue="{{routeid}}"--> 
+            <dataset-browser 
+                indexurl="[[indexurl]]" 
+                datasets="{{routesets}}" 
+                datasetslabel="TrackData Index" 
+                datasetmeta="{{routedatasrc}}"
 
-                <paper-dropdown-menu class="routes" label="Tracks">
-                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectRoute" attr-for-selected="{{selectattr}}">
-                        <template is="dom-repeat" items="{{routedata}}">
-                                    <paper-item feature="{{item}}" id="{{item.id}}">
-                                        {{item.title}}
-                                    </paper-item>
-                                </template>
-                    </paper-listbox>
-                </paper-dropdown-menu>
+                dataset="[[routedata]]" 
+                datasetlabel="Tracks"
+                selectvalue="{{routedataelem}}"> 
+            </dataset-browser>
 
-            </div>
-        -->
+            <!-- elements for viewing structurally standardized quickMapObjects -->
+            <mb-quickview 
+                map="[[map]]" 
+                mapcontent="[[mapcontent]]" 
+                checked="[[usepreview]]" 
+                featurelist="{{routedata}}" 
+                featureselected="[[routedataelem]]">
+            </mb-quickview>
+
+            <!-- INTERFACE -->
+            <routing-handheld 
+                tracksrcmeta="[[routedatasrc]]" 
+                routedata="{{routedata}}" 
+                usepreview="[[usepreview]]" 
+                quickmap="{{mapcontent}}" 
+                rawdata="{{rawdata}}" 
+                basedataurl="[[basedataurl]]" 
+                trackinfo="[[trackinfo]]" 
+                trackdata="{{trackdata}}">
+            </routing-handheld>
 
         </div>
-
     </div>
-
 </template>
 
 <script>
@@ -276,9 +253,10 @@ Demo to view ship-data animation
     scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
 
     // Data-INIT
-    scope.setupurl = "index-handheld.json"; // list of available datasets
+    scope.indexurl = "index-handheld.json"; // list of available datasets
     scope.basedataurl = ""; // list of available datasets
-    scope.routesrc = {}; // url to selected dataset
+    scope.routedatasrc = {}; // metadata of selected dataset
+    scope.routedataelem = {}; // route-object
 
     // Map-INIT
     scope.cbox = "13,52";
@@ -303,32 +281,8 @@ Demo to view ship-data animation
     // SHELL-actions
     scope.mapctrl = {};
 
-    // MB-Feature-selection
-    scope.featureselected = "{}";
-    // attribute of selected item to be processed further
-    scope.selectattr = "feature"; // Preview
-    // scope.selectattr = "id"; // Route 
-
-    // 
-    scope.selectRoute = function(e) {
-        var selectvalue = e.detail.item[scope.selectattr];
-        // console.log("selected item:", selectvalue);
-        if (scope.selectattr == "id") scope.routeid = selectvalue;
-        else scope.featureselected = selectvalue;
-    };
-
-    /**
-        * Put selected src from menu-selection into import-element
-        */
-    scope.selectRouteSet = function(e) {
-        this.routesrc = e.detail.item.src;
-    }
-
-    // eval the response of content-list 
-    scope.loadRouteSetIndex = function(ajaxresponse) {
-        this.routesets = ajaxresponse.detail.response;
-    }
 </script>
 
 </body>
+
 </html>

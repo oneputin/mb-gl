@@ -40,7 +40,7 @@ To 'close'
 
 <dom-module id="routing-handheld">
 
-<template>
+    <template>
 
     <style is="custom-style">
         :host {
@@ -100,15 +100,14 @@ To 'close'
 
     <!-- alternative -->
     <tracks-from-table 
-        tableurl="[[tableurl]]"
+        srcmeta="[[srcmeta]]"
         usepreview="[[usepreview]]"
         trackdata="{{rawdata}}"
         quickmap="{{quickmap}}">
     </tracks-from-table>    
 
     <tracks-from-gpx 
-        xmlurl="[[xmlurl]]"
-        xmlquery="[[xmlquery]]"
+        srcmeta="[[srcmeta]]"
         usepreview="[[usepreview]]"
         trackdata="{{rawdata}}"
         quickmap="{{quickmap}}">
@@ -154,229 +153,230 @@ To 'close'
 
 </template>
 
-<script>
-    Polymer({
-        is: 'routing-handheld',
+    <script>
+        Polymer({
+            is: 'routing-handheld',
 
-        properties: {
-            //
-            routesrc: {
-                type: Object
-            },
+            properties: {
+                //
+                tracksrcmeta: {
+                    type: Object
+                },
 
-            usepreview:{
-                type: Boolean
-            },
+                srcmeta: {
+                    type: Object
+                },
 
-            xmlurl: {
-                type: String
-            },
+                routedata: {
+                    type: Object,
+                    notify: true
+                },
 
-            xmlquery: {
-                type: Object
-            },
-
-            jsonurl: {
-                type: String
-            },
-
-            rawdata: {
-                type: Array,
-                value: []
-            },
-
-            rawdbdata: {
-                type: Array,
-                value: []
-            },
-
-            routedata: {
-                type: Object,
-                notify: true
-            },
-
-            quickmap: {
-                type: Object,
-                notify: true
-            }
-
-        },
-
-        behaviors: [
-            Polymer.ToolsBehavior,
-        ],
-
-        observers: [
-            'srcDispatcher(routesrc.*)'
-            // 'importTracks(rawdata, rawdbdata)'
-        ],
-
-        attached: function() {
-            // console.log("target attached");
-        },
-
-        // Evaluate RoutingSource-Object to trigger import of rawdata
-        // from different data-types 
-        srcDispatcher: function(routesrc) {
-            // console.log("routesrc", routesrc);
-            if (routesrc.path == 'routesrc') routesrc = routesrc.value;
-            if (!routesrc.url) return;
-
-            var srcurl = routesrc.url,
-                srctype = routesrc.type,
-                ext = srcurl.split(".").slice(-1);
-            if (!ext.length) return;
-            ext = ext[0]; // console.log("srcurl",typeof srcurl, srcurl,ext); // return;
-
-            if (srctype == "usertable") {
-                // Trigger simple ajax
-                this.tableurl = srcurl;
-
-            } else if ((srctype == "kml") || (srctype == "gpx")) {
-                // trigger track-import-element
-                this.xmlurl = srcurl;
-                this.xmlquery = {
-                    "tags": "Track",
-                    "structure": "doc"
-                };
-                // console.log("kmlLOG:", this.xmlurl, this.xmlquery);
-            }
-        },
-
-        getRawDbData: function(ajaxresponse) {
-            var rawdata = ajaxresponse.detail.response;
-            if (!rawdata) return {};
-            console.log("rawdbdata", rawdata);
-            this.rawdbdata = rawdata; // triggers 'setupTracking'
-        },
-
-        // SPECIFIC SPLICE with additional property data  
-        /*importTracks: function(rawdata, rawdbdata) {
-            if (!rawdata || !rawdata.length) return;
-
-            var debounceTime = 200;
-            var minTrackLength = 5;
-
-            this.debounce('import', function() {
-
-                console.log("LOG: Handheld raw data", {
-                    "location": rawdata,
-                    "master": rawdbdata,
-                    "routesrc" : this.routesrc 
-                }); // return;
-
-
-                // Optional: Append track-masterData     
-                if (rawdbdata) {
-                    // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
-                }
-
-                var routedata = rawdata;
-                
-                if (routedata && routedata.length) {
-                    // console.log("JSON-Handheld routedata:", routedata); // , rawdata);
-                    this.routedata = routedata;
-                }
-
-            }.bind(this), debounceTime);
-
-        },*/
-
-        // B. COMPILE Feature-data 
-        /**
-            * Create some formatted html-text(dom?) 
-            * to identify basic properties of an animated object (animation status)
-            *
-            * @param      {<type>}  trackObj  The animated trackObj (as mb-feature)
-            * @return     {string}  A formatted information about trackObj-status.
-            */
-        calcBasicInfo: function(trackObj) {
-            if (!trackObj || !trackObj.properties) return;
-
-            var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
-            if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
-
-            if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
-            if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
-
-            return trackInfo;
-        },
-
-        /**
-            * Build (app-specific) trackData extending the basic infoSet 
-            * to enable enhanced presentation of trackObj
-            *
-            * @param      {<type>}  trackObj  The track object
-            * @param      {<type>}  openFlag  The open flag
-            * @return     {<type>}  The more track data.
-            */
-        calcExtendedInfo: function(trackObj, openFlag) {
-            if (!trackObj || !trackObj.properties) return;
-
-            var basicInfo = this.calcBasicInfo(trackObj);
-
-            var extendedData = {
-                "title": trackObj.properties.title,
-                "html": basicInfo,
-                "properties": trackObj.properties
-            };
-
-            if (openFlag) {
-                extendedData.open = 1;
-            }
-
-            if (trackObj.properties.master) {
-                extendedData.headline = trackObj.properties.master.skipper;
-            }
-            // console.log("calcTrackData", trackObj, trackData)
-            return extendedData;
-        },
-
-
-        // C.  FORMAT INFO-Card 
-
-        refreshCardContent: function(data) {
-            var nbsp = "&nbsp;"; //"~"; 
-            if (!data) return;
-
-            // if (data.properties && data.properties.master) {
-            // var pp = JSON.parse(data.properties.master);
-            if (this.masterdata && data.properties.id) {
                 // 
-                pp = this.masterdata[data.properties.id];
-                if (pp) {
-                    // console.log("masterdata:", pp);
-                    // DIV0
-                    var imgurl = pp.img,
-                        skipper = pp.skipper,
-                        boat = pp.ship,
-                        header = "";
+                usepreview: {
+                    type: Boolean
+                },
 
-                    if (imgurl) this.cardimgurl = "wp-data/" + imgurl;
-                    // console.log("some data ", imgurl, this.cardimgurl, skipper, boat);
+                xmlurl: {
+                    type: String
+                },
 
-                    if (skipper && boat) {
+                xmlquery: {
+                    type: Object
+                },
 
-                        // to show items with no line-breaks (fi. in flex-formatted cards)
-                        // replace many spaces 
-                        skipper = skipper.split(' ').join(nbsp);
-                        boat = boat.split(' ').join(nbsp);
-                        // statt: 
-                        // skipper = skipper.replace(" ", nbsp);
-                        // boat = boat.replace(" ", nbsp);
+                jsonurl: {
+                    type: String
+                },
 
-                        header = "<b>" + boat + "</b>" + "<br>" + skipper;
+                rawdata: {
+                    type: Array,
+                    value: []
+                },
 
-                        this.$.div0.innerHTML = header;
+                rawdbdata: {
+                    type: Array,
+                    value: []
+                },
+
+                quickmap: {
+                    type: Object,
+                    notify: true
+                }
+
+            },
+
+            behaviors: [
+                Polymer.ToolsBehavior,
+            ],
+
+            observers: [
+                'trackSrcDispatcher(tracksrcmeta.*)'
+                // 'importTracks(rawdata, rawdbdata)'
+            ],
+
+            attached: function() {
+                // console.log("target attached");
+            },
+
+            // Evaluate RoutingSource-Object to trigger import of rawdata
+            // from different data-types 
+            trackSrcDispatcher: function(tracksrcmeta) {
+                if (tracksrcmeta.path == 'tracksrcmeta') tracksrcmeta = tracksrcmeta.value;
+                // console.log("trackSrcDispatcher. BEFORE=", tracksrcmeta);
+
+                var srcurl = tracksrcmeta.url,
+                    srctype = tracksrcmeta.type;
+
+                // Check some url - conditions ???
+                if (!srcurl) return;
+              
+                if ((srctype == "kml") || (srctype == "gpx")) {  // trigger import from gpx/kml (kml-json)
+                    tracksrcmeta.xmlquery = {
+                        "tags": "Track",
+                        "structure": "doc"
+                    };
+                }
+                // console.log("trackSrcDispatcher. AFTER", tracksrcmeta);
+                
+                this.srcmeta = tracksrcmeta;
+
+            },
+
+            getRawDbData: function(ajaxresponse) {
+                var rawdata = ajaxresponse.detail.response;
+                if (!rawdata) return {};
+                console.log("rawdbdata", rawdata);
+                this.rawdbdata = rawdata; // triggers 'setupTracking'
+            },
+
+            // SPECIFIC SPLICE with additional property data  
+            /*importTracks: function(rawdata, rawdbdata) {
+                if (!rawdata || !rawdata.length) return;
+
+                var debounceTime = 200;
+                var minTrackLength = 5;
+
+                this.debounce('import', function() {
+
+                    console.log("LOG: Handheld raw data", {
+                        "location": rawdata,
+                        "master": rawdbdata,
+                        "tracksrcmeta" : this.tracksrcmeta 
+                    }); // return;
+
+
+                    // Optional: Append track-masterData     
+                    if (rawdbdata) {
+                        // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
+                    }
+
+                    var routedata = rawdata;
+                    
+                    if (routedata && routedata.length) {
+                        // console.log("JSON-Handheld routedata:", routedata); // , rawdata);
+                        this.routedata = routedata;
+                    }
+
+                }.bind(this), debounceTime);
+
+            },*/
+
+            // B. COMPILE Feature-data 
+            /**
+             * Create some formatted html-text(dom?) 
+             * to identify basic properties of an animated object (animation status)
+             *
+             * @param      {<type>}  trackObj  The animated trackObj (as mb-feature)
+             * @return     {string}  A formatted information about trackObj-status.
+             */
+            calcBasicInfo: function(trackObj) {
+                if (!trackObj || !trackObj.properties) return;
+
+                var trackInfo = "<b>" + trackObj.properties.id + "</b>" + "<br>";
+                if (trackObj.properties.time) trackInfo += trackObj.properties.time + "<hr>";
+
+                if (trackObj.properties.speed) trackInfo += "SOG: " + trackObj.properties.speed + " nds <br>";
+                if (trackObj.properties.bearing) trackInfo += "Head: " + trackObj.properties.bearing + "°<hr>";
+
+                return trackInfo;
+            },
+
+            /**
+             * Build (app-specific) trackData extending the basic infoSet 
+             * to enable enhanced presentation of trackObj
+             *
+             * @param      {<type>}  trackObj  The track object
+             * @param      {<type>}  openFlag  The open flag
+             * @return     {<type>}  The more track data.
+             */
+            calcExtendedInfo: function(trackObj, openFlag) {
+                if (!trackObj || !trackObj.properties) return;
+
+                var basicInfo = this.calcBasicInfo(trackObj);
+
+                var extendedData = {
+                    "title": trackObj.properties.title,
+                    "html": basicInfo,
+                    "properties": trackObj.properties
+                };
+
+                if (openFlag) {
+                    extendedData.open = 1;
+                }
+
+                if (trackObj.properties.master) {
+                    extendedData.headline = trackObj.properties.master.skipper;
+                }
+                // console.log("calcTrackData", trackObj, trackData)
+                return extendedData;
+            },
+
+
+            // C.  FORMAT INFO-Card 
+
+            refreshCardContent: function(data) {
+                var nbsp = "&nbsp;"; //"~"; 
+                if (!data) return;
+
+                // if (data.properties && data.properties.master) {
+                // var pp = JSON.parse(data.properties.master);
+                if (this.masterdata && data.properties.id) {
+                    // 
+                    pp = this.masterdata[data.properties.id];
+                    if (pp) {
+                        // console.log("masterdata:", pp);
+                        // DIV0
+                        var imgurl = pp.img,
+                            skipper = pp.skipper,
+                            boat = pp.ship,
+                            header = "";
+
+                        if (imgurl) this.cardimgurl = "wp-data/" + imgurl;
+                        // console.log("some data ", imgurl, this.cardimgurl, skipper, boat);
+
+                        if (skipper && boat) {
+
+                            // to show items with no line-breaks (fi. in flex-formatted cards)
+                            // replace many spaces 
+                            skipper = skipper.split(' ').join(nbsp);
+                            boat = boat.split(' ').join(nbsp);
+                            // statt: 
+                            // skipper = skipper.replace(" ", nbsp);
+                            // boat = boat.replace(" ", nbsp);
+
+                            header = "<b>" + boat + "</b>" + "<br>" + skipper;
+
+                            this.$.div0.innerHTML = header;
+                        }
                     }
                 }
+
+                // DIV1
+                if (data.html) this.$.div1.innerHTML = data.html;
             }
 
-            // DIV1
-            if (data.html) this.$.div1.innerHTML = data.html;
-        }
-
-    });
-</script>
+        });
+    </script>
 
 </dom-module>

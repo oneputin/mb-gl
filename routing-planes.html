@@ -7,11 +7,11 @@
 <link rel="import" href="routing-behavior.html">
 
 <!--
-`routing-planes`
-*INPUT*  
+`routing-planes`  
+INPUT  
 Converting routeset into routedata 
 
-*OUTPUT*  
+OUTPUT  
 Converts [trackdata] into 
 - RICH-content Info-card related to one selected feature,  
     absolutely positioned as map-overlay   
@@ -172,15 +172,15 @@ Converts [trackdata] into
 
                 // Defaults/Placeholders
                 var placeholders = {
-                    airline : {
+                    airline: {
                         "name": "AirlineX",
                         "color": "black"
                     },
-                    plane : {
+                    plane: {
                         "icon": "airport-15",
                         "seats": 150
                     }
-                } ; // = rawdata; 
+                }; // = rawdata; 
 
                 var routedata = [];
                 var airlineKey, airline, plane, waypoint;
@@ -215,7 +215,7 @@ Converts [trackdata] into
                             wp.title = wp.meta.name;
                             route.nodes.push(wp);
                         })
-                    } 
+                    }
 
                     route.title = route.id + ": ";
                     if (1) { // DescriptionMode
@@ -239,10 +239,10 @@ Converts [trackdata] into
                 // console.log("flight routes preprocessed:", routedata);
 
                 // Alternative transfer 
-                if (1) {    // C.1 Standard: BIND to another (sibling)-element within the context of this element  
+                if (1) { // C.1 Standard: BIND to another (sibling)-element within the context of this element  
                     this.routedata = routedata;
-                } else {    // C.2 FIRE a "custom EVENT" to the app-shell with 
-                            //     that inform that raw-route-data are loaded 
+                } else { // C.2 FIRE a "custom EVENT" to the app-shell with 
+                    //     that inform that raw-route-data are loaded 
                     this.fire("imported", {
                         "routedata": routedata,
                         "ok": "ok"

@@ -84,13 +84,16 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
             ],
 
             observers: [
-                'mapContentPrepare(mapcontent.*)',
+                'mapContentUpdate(mapcontent.*)',
                 'mapContentFeatureList(mapfeatures.*)'
             ],
 
             setupTool: function(map) {
                 if (!map) return;
-                // console.log("this=", this);
+                // console.log("setup map with content:", this.mapcontent);
+                if (this.mapcontent) {
+                    this.mapContentPrepare(this.mapcontent);
+                }    
             },
 
             toggleTool: function(checked) {
@@ -125,7 +128,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                         featurelist.push(item);
                     })
                 });
-                
+                // console.log("featurelist", featurelist); 
                 this.featurelist = featurelist; // notifies !!
             },
 
@@ -133,11 +136,16 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
              * Create/Refresh ii(maps)Layers 
              * delivered with mapcontent container
              */
-            mapContentPrepare: function(mapcontent) {
-                console.log("mapContentPrepare", mapcontent);
+            mapContentUpdate: function(mapcontent) {
                 if (!this.map || !this.checked) return;
+                this.mapContentPrepare(mapcontent); 
+            },    
+
+            mapContentPrepare: function(mapcontent) {    
+                // console.log("mapContentPrepare", mapcontent, this.map, this.checked);
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
                 if (!mapcontent || !Object.keys(mapcontent).length) return;
+
                 var scope = this,
                     map = scope.map,
                     mapfeatures = {};
@@ -322,10 +330,10 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                     return flist;
                 }
 
-                //console.log("IIMAP-refresh of '" + layername + "':", layerObject);
+                // console.log("IIMAP-refresh of with:", mapcontent);
 
                 // --------------------------------------------------
-                // Take a copy of existing mapfeatures   
+                // Take a copy of already existing mapfeatures   
                 Object.keys(this.mapfeatures).forEach(function(layer) {
                     var flist = scope.mapfeatures[layer];
                     mapfeatures[layer] = [];
@@ -334,7 +342,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                     })
                 });
 
-                var layerNames = Object.keys(mapcontent); // console.log("Refreshing iimap-layers", layerNames);
+                var layerNames = Object.keys(mapcontent);  // console.log("Refreshing iimap-layers", layerNames);
 
                 layerNames.forEach(function(layername, j) {
 
@@ -393,7 +401,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
 
                         // 1.C. (Re)Create layers 
                         if (!mapLayer) {
-                            console.log("layerTemplates for " + layername, layerTemplates, layerSource);
+                            // console.log("layerTemplates for " + layername, layerTemplates, layerSource);
                     
                             layerTemplates.forEach(function(l) {
                                 if (!map.getLayer(l.id)) {

@@ -1,11 +1,11 @@
 [{
-        "title": "jana-world-around",
+        "title": "jana-world",
         "key": "world",
         "type": "gpx",
         "url": "http://iimaps.de/data/gps/world/gpx/Current.gpx"
     },
     {
-        "title": "jana-horn-of-africa",
+        "title": "jana-horn",
         "key": "horn",
         "type": "gpx",
         "url": "http://iimaps.de/data/gps/kamerun/gpx/Current.gpx",
@@ -17,7 +17,7 @@
         "title": "praha-2012",
         "key": "prag",
         "type": "gpx",
-        "url": "http://iimaps.de/data/gps/prag/gpx/2012-05-01 10.16.20 Day.gpx"
+        "url": "wp-data/praha.gpx"
     },
     {
         "title": "SilvesterTag",
@@ -25,6 +25,7 @@
         "type": "usertable",
         "url": "wp-data/handheld-silv2016.json"
     },
+    
     {
         "title": "SilvesterBerg",
         "key": "berg",
