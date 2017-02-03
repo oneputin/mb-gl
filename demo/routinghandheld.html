@@ -213,13 +213,13 @@ Demo to view ship-data animation
             <!-- selectvalue="{{routeid}}"--> 
             <dataset-browser 
                 indexurl="[[indexurl]]" 
-                datasets="{{routesets}}" 
-                datasetslabel="TrackData Index" 
+                metadatasets="{{routesets}}" 
+                metadatasetslabel="TrackData Index" 
                 datasetmeta="{{routedatasrc}}"
 
-                dataset="[[routedata]]" 
+                dataset="[[menudata]]" 
                 datasetlabel="Tracks"
-                selectvalue="{{routedataelem}}"> 
+                selectvalue="{{menuitem}}"> 
             </dataset-browser>
 
             <!-- elements for viewing structurally standardized quickMapObjects -->
@@ -227,14 +227,15 @@ Demo to view ship-data animation
                 map="[[map]]" 
                 mapcontent="[[mapcontent]]" 
                 checked="[[usepreview]]" 
-                featurelist="{{routedata}}" 
-                featureselected="[[routedataelem]]">
+                featurelist="{{menudata}}" 
+                featureselected="[[menuitem]]">
             </mb-quickview>
 
             <!-- INTERFACE -->
+            <!-- routedata="{{routedata}}" --> 
             <routing-handheld 
                 tracksrcmeta="[[routedatasrc]]" 
-                routedata="{{routedata}}" 
+                routedata="{{menudata}}" 
                 usepreview="[[usepreview]]" 
                 quickmap="{{mapcontent}}" 
                 rawdata="{{rawdata}}" 
@@ -256,7 +257,8 @@ Demo to view ship-data animation
     scope.indexurl = "index-handheld.json"; // list of available datasets
     scope.basedataurl = ""; // list of available datasets
     scope.routedatasrc = {}; // metadata of selected dataset
-    scope.routedataelem = {}; // route-object
+    scope.menudata = []; // collection 
+    scope.menuitem = {}; // track/route-object
 
     // Map-INIT
     scope.cbox = "13,52";

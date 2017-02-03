@@ -16,8 +16,9 @@
     {
         "title": "praha-2012",
         "key": "prag",
-        "type": "gpx",
-        "url": "wp-data/praha.gpx"
+        "type": "gpx",        
+        "url": "wp-data/praha.gpx",
+        "start": 1
     },
     {
         "title": "SilvesterTag",

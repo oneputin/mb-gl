@@ -4,6 +4,8 @@
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
 <link rel="import" href="mb-api.html">
 <link rel="import" href="mb-tools-behavior.html">
 <!--
@@ -24,11 +26,21 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
             :host {
                 display: block;
                 position: absolute;
-                width: 600px;
+                width: 400px;
+                height: 600px;
+            }
+            .vertical {
+                @apply(--layout-vertical);
+            }
+            .horizontal {
+                @apply(--layout-horizontal);
+            }
+            .flexchild {
+                @apply(--layout-flex);
             }
 
             paper-dropdown-menu {
-                position: absolute;
+                /*position: absolute;*/
                 border-style: solid;
                 border-width: 1px;
                 padding: 10px;
@@ -36,15 +48,15 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
                 opacity: 0.8;
             }
             
-            paper-dropdown-menu.metadatasets {
+            /*paper-dropdown-menu.metadatasets {
                 left: 10px;
                 top: 0px;
-            }
+            }*/
             
-            paper-dropdown-menu.routes {
+            /*paper-dropdown-menu.dataitems {
                 left: 300px;
                 top: 0px;
-            }
+            }*/
                 
         </style>
         
@@ -55,34 +67,37 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
             on-response="_updateMenu1">
         </iron-ajax>
 
-        <div>
+        <div class="vertical">
+            <div class="flexchild">
             <template is="dom-if" if="{{metadatasets}}">
                 <!-- Menu (index) of Dataset-Metas -->
                 <paper-dropdown-menu class="metadatasets" label="{{metadatasetslabel}}">
-                    <paper-listbox class="dropdown-content" selected="{{_selected1}}" on-iron-select="_menu1Selected" attr-for-selected="src">
+                    <paper-listbox class="dropdown-content" on-iron-items-changed="_menu1changed" on-iron-select="_menu1Selected" attr-for-selected="src">
                         <template is="dom-repeat" items="{{metadatasets}}">
                             <paper-item src="{{item}}" url="{{item.url}}">
                                 {{item.title}}
                             </paper-item>
                         </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
-    </template>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+            </template>
+            </div>
 
-    <template is="dom-if" if="{{_selectset}}">
-                <!-- Menu of DATASET-entries -->
-                <!-- subselection a reference to one of the dataset-elements -->
-                <paper-dropdown-menu class="routes" label="{{routeslabel}}">
-                    <paper-listbox class="dropdown-content" selected="{{_selected2}}" on-iron-select="_menu2Selected" attr-for-selected="select">
+            <div class="flexchild">
+            <template is="dom-if" if="{{_selectset}}">
+                <!-- Menu of DATASET-items -->
+                <paper-dropdown-menu class="dataitems" label="{{datasetlabel}}">
+                    <paper-listbox class="dropdown-content" on-iron-items-changed="_menu2changed" on-iron-select="_menu2Selected" attr-for-selected="select">
                         <template is="dom-repeat" items="{{_selectset}}">
                             <paper-item select="{{item}}" id="{{item.id}}">
                                 {{item.title}}
                             </paper-item>
                         </template>
-    </paper-listbox>
-    </paper-dropdown-menu>
-    </template>
-    </div>
+                    </paper-listbox>
+            </paper-dropdown-menu>
+            </template>
+            </div>
+        </div>
 
     </template>
 
@@ -93,51 +108,69 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
             properties: {
 
                 // LEVEL 1
-
+                // 
                 indexurl: {
                     type: String
                 },
 
-                // Array of datasetMetas Loaded from indexurl-source or supplied from outside 
+                /** Array of datasetMetas 
+                 * Loaded from indexurl-source 
+                 * or supplied from outside
+                 */ 
                 metadatasets: {
                     type: Array,
                 },
 
-                // EXPORTED : DatasetMetaObject describing how to get the data 
-                // Triggers internally () or externally (notify binding) 
+                metadatasetslabel: {
+                    type: String,
+                    value: "DatasetCollections"
+                },
+
+                // EXPORTEd DatasetMetaObject to be processed by app-specific IF
+                // Triggers return of dataset for levels2-menu 
                 datasetmeta: {
                     type: Array,
                     notify: true,
                 },
 
                 // LEVEL 2
-                // Data to select in menu2 
+                // dataset used to create menu2 
                 dataset: {
                     type: Array,
                     notify: true
+                },
+
+                datasetlabel : {
+                    type: String,
+                    value: "Dataset"
                 },
 
                 // created from dataset if dataset.length > 1
                 _selectset: {
                     type: Array
                 },
+
                 _selected1 : {
                     type: Number
                 },
                 _selected2 : {
-                    type: Number
+                    type: Number,
                 },
 
+                // Flag ctrls adding all/clear items to the items of menu2
                 selectenhance: {
                     type: String,
-                    value: ""
+                    value: 1
                 },
 
+                // property of dataset-objects to return as selectvalue
+                // if null - entire object will be returned
                 selectprop: {
                     type: String,
                     value: ""
                 },
 
+                // Result of menu-selection returned !!
                 selectvalue: {
                     type: Object,
                     notify: true
@@ -146,7 +179,7 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
             },
 
             observers: [
-                '_updateMenu2(dataset)'
+                '_updateMenu2(dataset)',
             ],
 
             /**
@@ -158,35 +191,39 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
             _updateMenu1: function(ajaxresponse) {
                 var datasetmetas = ajaxresponse.detail.response,
                     datasetmeta;
-
                 if (datasetmetas.length) {
                     if (datasetmetas.length > 1) {  // * enable/fill IndexMenu only if more then one entry in idex-doc* 
+                        var selected = 0;
                         var i = 0;
                         datasetmetas.some(function(rs) {
                             if (rs.start) {
                                 datasetmeta = rs;
-                                this._selected1 = i;
+                                selected = i;
                                 return true;
                             }
                             i = i + 1;
                         });
+                        // console.log("_updateMenu1, datasetmetas",datasetmetas, selected); 
+                        this.metadatasets = datasetmetas; 
+                        this._selected1 = selected;
                     } else {
-                      datasetmeta = datasetmetas[0];
-                      this._selected1 = 0;
+                      // menu-1 will not be displayed     
+                      this.datasetmeta = datasetmetas[0];
                     }
-                    this.metadatasets = datasetmetas; 
-                    //***************************
-                    // this.datasetmeta = datasetmeta;   console.log("dataset marked as 'START'", datasetmeta);
                 }
             },
 
+            _menu1changed: function(e){
+                var i = this._selected1 ? this._selected1 : 0;
+                // console.log("_menu1changed and resets to "+i, e.detail);
+                e.detail.target.selectIndex(i);
+            },
             /**
              * Query / Load meta for a dataSet.
              *
-             * @param      {<type>}  e       { parameter_description }
              */
             _menu1Selected: function(e) {
-                console.log("YYY _menu1Selected", e.detail.item.src); //this.importurl = e.detail.item.url;
+                // console.log("_menu1Selected", e.detail.item.src); //this.importurl = e.detail.item.url;
                 this.datasetmeta = e.detail.item.src
             },
 
@@ -194,7 +231,7 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
              * Toggle a flag to Hide/Show the subselection - menu
              * if more than one dataobjects in active dataset
              *
-             * @param      {<type>}  dataset  The dataset
+             * @param      {object}  dataset  The dataset
              */
             _updateMenu2: function(dataset) {
                 // console.log("_updateMenu2. dataset=", dataset);
@@ -215,28 +252,30 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
                     });
                     return dset; 
                 };
-                var selected; 
 
                 if (dataset && dataset.length) {
+                    /*var selected = 
+                    if (this.selectprop) selected = selected[this.selectprop];
+                    this.selectvalue = dataset[0];*/
+                    // ************************
+
                     if (dataset.length > 1) {
                         if (this.selectenhance) this._selectset = enhanceMenu(dataset);
                         else this._selectset = dataset;
                     } else {
                         this._selectset = null; 
                     }
-                    selected = dataset[0];
-                    if (this.selectprop) selected = selected[this.selectprop];
-                    this.selectvalue = selected;
-                    // ************************
+                    this._selected2 = 0;
                 } else this._selectset = null;
                 // console.log("_updateMenu2. selected, _selectset", selected, this._selectset);
             },
 
+            _menu2changed: function(e){
+                // console.log("_menu2changed and resets to 0", e.detail);
+                e.detail.target.selectIndex(0);
+            },
             /**
              * Select an item of active dataset
-             * Return the id into property-IF
-             *
-             * @param      {<type>}  e       { parameter_description }
              */
             _menu2Selected: function(e) {
                 // this.dataid = e.detail.item.id;
