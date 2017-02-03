@@ -109,28 +109,30 @@ Optional: create quick-preview-data
         },
         
         // 
-        getRawTracks: function(rawdata, usepreview) {
+        getRawTracks: function(rawdata, srcmeta, usepreview) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
             // console.log("GPX-data, raw tracks", rawdata);
 
             // 1. Simplify list of "simple" tracks 
-            var flattracks = this.flattenTrackdata(rawdata);
-            // console.log("GPX-data, mode, flat tracks", flattracks);
+            var rawtracks = this.simpleTrackdata(rawdata);
+            // console.log("GPX-data, mode, flat tracks", rawtracks);
 
             if (usepreview) { 
                 // 3. CREATE/SUPPLY quickMapObject to quickViewer
-                // console.log(flattracks);  
-                var quickmap = this.quickmapCreate(flattracks);
-                if (quickmap) {  // console.log("GPX-data to view", quickmap);
+                // console.log(rawtracks);  
+                var quickmap = this.quickmapCreate(rawtracks);
+               
+               if (quickmap) {  // console.log("GPX-data to view", quickmap);
 
                     this.quickmap = quickmap;
-                    this.trackdata = flattracks.features;
+
+                    this.trackdata = rawtracks.features;
                 
                 }    
 
             } else {  
                 // 2. CREATE/SUPPLY list of tracks to animation-processor 
-                var routetracks = this.createRouteTracks(flattracks.features);
+                var routetracks = this.createRouteTracks(rawtracks.features);
                 if (routetracks.length) {
                     // console.log("GPX-data, routes",  routetracks);
                     this.trackdata = routetracks;
@@ -230,7 +232,7 @@ Optional: create quick-preview-data
         },
 
         // Process tracks from GPX, KML
-        flattenTrackdata: function(rawdata) {
+        simpleTrackdata: function(rawdata) {
             if (!rawdata) return; 
 
             var scope = this;

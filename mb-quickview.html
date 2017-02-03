@@ -333,18 +333,21 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                 // console.log("IIMAP-refresh of with:", mapcontent);
 
                 // --------------------------------------------------
-                // Take a copy of already existing mapfeatures   
-                Object.keys(this.mapfeatures).forEach(function(layer) {
-                    var flist = scope.mapfeatures[layer];
-                    mapfeatures[layer] = [];
-                    flist.forEach(function(f) {
-                        mapfeatures[layer].push(f);
-                    })
-                });
+                if (1) {   //  
 
-                var layerNames = Object.keys(mapcontent);  // console.log("Refreshing iimap-layers", layerNames);
+                } else {   // Take a copy of already existing mapfeatures   
+                    Object.keys(this.mapfeatures).forEach(function(layer) {
+                        var flist = scope.mapfeatures[layer];
+                        mapfeatures[layer] = [];
+                        flist.forEach(function(f) {
+                            mapfeatures[layer].push(f);
+                        })
+                    });
+                }
 
-                layerNames.forEach(function(layername, j) {
+                var mapcontentLayers = Object.keys(mapcontent);  // console.log("Refreshing iimap-layers", mapcontentLayers);
+
+                mapcontentLayers.forEach(function(layername, j) {
 
                     function hiliter(e) {
                         hilitefeature(e, layername);
@@ -420,7 +423,9 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                                 sourceLayer: 'original',
                                 filter: null
                             });
-                            if (features.length) console.log(features.length + " features of " + layername); // , features, layerSource);
+                            if (features.length) {
+                                console.log("Loaded "+features.length + " features of layer [" + layername+ "]"); // , features, layerSource);
+                            }    
                         }
                     }
 
