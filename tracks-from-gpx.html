@@ -120,11 +120,12 @@ Optional: create quick-preview-data
             if (usepreview) { 
                 // 3. CREATE/SUPPLY quickMapObject to quickViewer
                 // console.log(rawtracks);  
-                var quickmap = this.quickmapCreate(rawtracks);
+                var quickmap = this.quickmapCreate(rawtracks, srcmeta);
                
                if (quickmap) {  // console.log("GPX-data to view", quickmap);
 
                     this.quickmap = quickmap;
+                    console.log("gpx-data, map-tracks:", this.quickmap);  
 
                     this.trackdata = rawtracks.features;
                 
@@ -234,6 +235,7 @@ Optional: create quick-preview-data
         // Process tracks from GPX, KML
         simpleTrackdata: function(rawdata) {
             if (!rawdata) return; 
+            // console.log("simpleTrackdata: rawdata=", rawdata);
 
             var scope = this;
             var trackdata , mapboxlayer;
@@ -303,10 +305,9 @@ Optional: create quick-preview-data
         },
 
         // Process tracks from GPX, KML
-        quickmapCreate: function(trackdata) {
+        quickmapCreate: function(trackdata, srcmeta) {
 
-            var quickmapObject,
-                srcmeta = this.srcmeta; // console.log("quickmapCreate", srcmeta); 
+            var quickmapObject;
 
             function jsonTrackToQuickview(srcdata, title) {
 

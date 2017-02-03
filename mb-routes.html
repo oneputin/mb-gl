@@ -1,6 +1,9 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 <link rel="import" href="mb-api.html">
+
+<link rel="import" href="routing-classes.html">
+
 <link rel="import" href="mb-tools-behavior.html">
 <!--<link rel="import" href="mb-behavior-info-vendee.html">-->
 
@@ -193,9 +196,9 @@ along waypoint file loaded from url
             // 
             _animationContentSetup: function(id, type, srcdata, metas, paintprops, layoutprops) {
 
+                // A. GENERIC presentation-props (layout,paint)  for different animation  layers
                 var paints = {},
-                    layouts = {},
-                    layerObj = {};
+                    layouts = {};
 
                 if (id == "routes") {
                     paints = {
@@ -225,22 +228,25 @@ along waypoint file loaded from url
                     };
                 }
 
+                // B. Join with SPECIFIC props
                 if (paintprops) paints = Object.assign({}, paints, paintprops);
                 if (layoutprops) layouts = Object.assign({}, layouts, layoutprops);
 
+                // C. Create mb-Layer
+                
+                var layerObj = {};
 
                 if (1) { // NEW : use standard Qickmap
 
                     layerObj = new QuickMap(id, type, srcdata, paints, layouts, metas);
 
-                } else { // OLD : explicit builder
-
+                } else { // REPLACED !!
+                   
                     var mbLayer = {
                         "id": id,
                         "source": id,
                         "type": type
                     };
-
                     layerObj['layer'] = mbLayer;
                     layerObj['meta'] = metas;
                     layerObj['srcdata'] = srcdata;

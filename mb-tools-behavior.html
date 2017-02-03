@@ -102,6 +102,7 @@
             return t;
         },
 
+        // 
         deltaL : function(aLine, unit) {
           // aLine must be an element of src-data (!!!) , here   
           var unitshort ;
@@ -112,7 +113,8 @@
               unit="kilometers";
               unitshort ="nm";
           }    
-          var dl = turf.lineDistance(aLine, unit);
+          var dl = 1;
+          if (typeof turf !== "undefined") dl = turf.lineDistance(aLine, unit);
           if (typeof dl == "number") {
               if (unitshort=="nm") dl = dl / 1.856; 
               dl = this.toFixed(dl, 3) + unitshort;

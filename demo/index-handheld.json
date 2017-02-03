@@ -24,13 +24,14 @@
         "title": "SilvesterTag",
         "key": "silv",
         "type": "usertable",
+        "mintracklength": 5,
         "url": "wp-data/handheld-silv2016.json"
     },
-    
     {
         "title": "SilvesterBerg",
         "key": "berg",
         "type": "usertable",
+        "mintracklength": 5,
         "url": "wp-data/handheld-silvberg.json"
     }
 ]

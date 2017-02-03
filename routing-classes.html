@@ -1,0 +1,193 @@
+
+<script>
+
+    class QuickMap {
+        /**
+         * Container for quickmap-creation 
+         *
+         * @param      {string}  id           The identifier oof quickmaps
+         * @param      {string}  type         The type of vector data (line, point, area)
+         * @param      {object}  srcdata      The srcdata 
+         * @param      {object}  paints       The MB-layers paints
+         */
+        constructor(srcdata, id, type, paints, layout, meta ) {
+            // if (!id) id = "qm";
+            // if (!type) type = "line";
+            this.id = id;
+            this.srcdata = srcdata;
+            this.layer = {
+                "type": type,
+                "id": id,
+                "source": id
+            }
+            if (paints) this.paint = paints;
+            if (layout) this.layout = layout;
+            if (meta) this.meta = meta;
+        };
+    };
+
+    // Templates for mapbox-layer-data
+    // nodes,routes,traces,tracks,legs
+    /**
+     * A waypoint along a tracked route
+     */
+    class NodeSource {
+        /**
+         * Constructs the object.
+         *
+         * @param      {array}   coordinates  The wp's coordinates as [lng,lat]-array
+         * @param      {string}  id           The wp's identifier on maps
+         * @param      {string}  routeid      The wp's identifier
+         * @param      {string}  props        Descriptive wp-properties
+         */
+        constructor(coordinates, id, routeid, props) {
+            // if (!id) id = "wp";
+            this.id = id;
+            this.type = "Feature";
+            this.geometry = {
+                "type": "Point",
+                "coordinates": coordinates
+            }
+
+            if (!props) props = {};
+            props.id = id;
+            props.routeid = routeid;
+            // props.title = id;
+            if (!props.icon) props.icon = "dot-10";
+            this.properties = props;
+        };
+    };
+
+    /**
+     * A route-segment between two nodes (way- or track-points)
+     */
+    class LegSource {
+        /**
+         * Constructs the routeLeg
+         *
+         * @param      {array}  coordinates  The coordinates of the legs
+         *                                   start/stop
+         */
+        constructor(coordinates) {
+            this.type = "Feature";
+            this.geometry = {
+                "type": "LineString",
+                "coordinates": coordinates
+            }
+            this.properties = {
+
+            }
+        }
+    };
+
+    /**
+     * A mb-multi-object joining the animation points between multiple waypoints into a mb-geometry   
+     */
+    class RouteSource {
+
+        /**
+         * Constructs a RouteSource 
+         *
+         * @param      {<type>}  routeid     The routeid
+         * @param      {<type>}  props       The properties
+         * @param      {<type>}  legsCoords  The legs coordinates
+         * @param      {<type>}  legsData    The legs metadata
+         * @param      {<type>}  routeNodes  The route nodes
+         */
+        constructor(routeid, props, legsCoords, legsData, routeNodes) { // coordinates = array of coordinate-arrays (multiLine) 
+            this.id = routeid;
+            this.type = "Feature";
+            this.geometry = {
+                "type": "MultiLineString",
+                "coordinates": legsCoords
+            };
+
+            /**
+             * Metadata of route-components 
+             */
+            props.routeid = routeid;
+            props.trackid = props.key;
+            props.legs = legsData;
+            props.nodes = routeNodes;
+
+            // Compile all route-pnts into one list of coordinates, 
+            // usable for trace-extraction
+            /*var trace = [];
+            legsCoords.forEach(function(coords) {
+                trace = trace.concat(coords);
+            });
+            props.trace = trace;*/
+
+            this.properties = props;
+            // console.log("ROUTE" + routeid, this.properties);
+        }
+    };
+
+    /**
+     * A mapbox-point-feature ilustrationg the track on the map
+     */
+    class TrackSource {
+        /**
+         * Constructs the object.
+         *
+         * @param      {array}   coordinates  The coordinates
+         * @param      {string}  routeid      The identifier of route
+         * @param      {string}  props        Some props of tracks
+         * @return     {mb-feature}  { mapbox point feature }
+         */
+        constructor(coordinates, routeid, props) {
+            this.id = routeid;
+            this.type = "Feature";
+
+            this.geometry = {
+                "type": "Point",
+                "coordinates": coordinates
+            };
+
+            // add variable properties
+            if (!props) props = {};
+            props.id = routeid;
+            if (!props.unitsystem) props.unitsystem = "metric";
+            if (!props.icon) props.icon = "circle-15";
+            props.bearing = 0;
+            props.time = 0;
+            props.speed = 0;
+
+            this.properties = props;
+        }
+    };
+    
+    /**
+     * A route-trace 'behind' the animation-tracker
+     */
+    class TraceSource {
+        /**
+         * Constructs a container for all points a tracker has passed.
+         * alternatively "all" or "some only" (sich auflösender kondensstreifen)  
+         *
+         * @param      {<type>}  coordinates  The coordinates
+         * @param      {<type>}  routeid      The routeid
+         * @param      {<type>}  props        The properties
+         */
+        constructor(coordinates, routeid, props) {
+            
+            this.id = routeid;
+            this.type = "Feature";
+
+            // coordinates = [coordinates]; // only  IF geometry.type=="MultiLineString"
+
+            this.geometry = {
+                "type": "LineString",
+                "coordinates": coordinates
+            }
+
+            // add variable properties
+            if (!props) props = {};
+            props.id = routeid;
+            props.routeid = routeid;
+
+            this.properties = props;
+        }
+    };
+    //}
+</script>
