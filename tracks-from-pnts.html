@@ -7,7 +7,7 @@
 <!--<link rel="import" href="routing-behavior.html">-->
 
 <!--
-`tracks-from-table`
+`tracks-from-pnts`
 Interface for import/export of tracking data from handheld gps-devices
 
 Optional: create quick-preview-data 
@@ -15,7 +15,7 @@ Optional: create quick-preview-data
 @demo demo/routinghandheld.html 
 -->
 
-<dom-module id="tracks-from-table">
+<dom-module id="tracks-from-pnts">
 
 <template>
 
@@ -32,17 +32,23 @@ Optional: create quick-preview-data
 
     <iron-ajax
         auto
-        url="[[tableurl]]"
+        url="[[dataurl]]"
         handle-as="json"
         on-response="getRawData">
     </iron-ajax>
 
+    <iron-ajax
+        auto
+        url="[[masterurl]]"
+        handle-as="json"
+        on-response="getRawData">
+    </iron-ajax>
 
 </template>
 
 <script>
     Polymer({
-        is: 'tracks-from-table',
+        is: 'tracks-from-pnts',
 
         properties: {
 
@@ -50,8 +56,17 @@ Optional: create quick-preview-data
                 type: Object,
             },
 
-            tableurl : {
+            dataurl : {
                 type: String
+            },
+
+            masterurl : {
+                type: String
+            },
+
+            // Required (also if empty)
+            masterdata: {
+                type: Object                
             },
 
             rawdata: {
@@ -91,7 +106,7 @@ Optional: create quick-preview-data
 
         observers: [
             'triggerQuery(srcmeta.*)',
-            'getRawTracks(rawdata, srcmeta, usepreview)'
+            'deriveTracks(rawdata, srcmeta, usepreview, masterdata)'
         ],
 
         attached: function() {
@@ -101,24 +116,41 @@ Optional: create quick-preview-data
         // 
         triggerQuery: function(srcmeta) { // trigger new dataquery !!
             if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
-            if (srcmeta.type.indexOf("table") < 0) return;  
+            if (srcmeta.type.indexOf("table") < 0) {
+                this.rawdata = null; // 
+                return;
+            }  
             // set parameters for data-fetch with <iron-ajax>
-            this.tableurl = srcmeta.url;
+            this.dataurl = srcmeta.url;
+            if (srcmeta.masterurl) this.masterurl = srcmeta.masterurl;
+            else this.masterdata = {};
+        },
+
+        // Get rawdata from ajax-responses into element 
+        getRawData: function(ajaxresponse) {
+            if (!ajaxresponse || !ajaxresponse.detail) return;
+            // console.log("getRawData, response", ajaxresponse); // .detail.response);
+            var srcurl = ajaxresponse.detail.url;
+            if (srcurl == this.dataurl) this.rawdata = ajaxresponse.detail.response;
+            if (srcurl == this.masterurl) this.masterdata = ajaxresponse.detail.response;
         },
         
-        getRawTracks: function(rawdata, srcmeta, usepreview) {
+        // 
+        deriveTracks: function(rawdata, srcmeta, usepreview) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
             // console.log("table-data, raw:", rawdata);
 
-            // 1. "DETECT" the "table-mode"" 
+            // 1. "DETECT"  the  "table-mode"" 
             var tablemode = (rawdata[0]["geometry"]) ? "json" : "nn";
+
             tablemode = (rawdata[0]["Header"] == "Trackpoint") ? 'table-vomue1' : tablemode;
+            
             tablemode = rawdata[0]["Pnt"] ? 'table-vomue2' : tablemode;
+            
             if (tablemode == "nn") {
                 console.log("BREAK. Selected dataset cannot be analysed!!");
                 return;
-            }
-            // console.log("table-data, mode:", tablemode);   
+            }   // console.log("table-data, mode:", tablemode);   
 
             // 2. Extract raw tracks 
             //    by "very simple" segementation-algorithm 
@@ -126,21 +158,22 @@ Optional: create quick-preview-data
             var mintracklength;
             if (!usepreview) mintracklength = srcmeta.mintracklength;
             
-            var rawtracks = this.simpleTrackdata(rawdata, tablemode, mintracklength);
+            var rawtracks = this.getRawTracks(rawdata, tablemode, mintracklength);
 
-            // 3. 
-            if (usepreview) {
+            // 3. Create Derivates of rawTracks 
 
-                this.quickmap = this.quickmapCreate(rawtracks, srcmeta);
+            if (usepreview) {   // derive features for mb-visualization of rawTracks
+
+                this.quickmap = this.createQuickview(rawtracks, srcmeta);
                 
-                console.log("table-data, map-tracks:", this.quickmap);  
+                console.log("RAW-TRACKS (from TPs):", this.quickmap);  
                 
-            } else {
+            } else {    // derive structures for mb-based animation of 'suitable' tracks
 
-                var routedata = this.createRouteTracks(rawtracks); // , rawdbdata);
+                var routedata = this.createTrackRoutes(rawtracks); // , rawdbdata);
                 
                 if (routedata) {
-                    console.log("table-data, route-tracks:", routedata);  
+                    console.log("RAW ROUTEDATA (from TPs) :", routedata);  
                     this.routedata = routedata;
                 } 
             }
@@ -148,8 +181,8 @@ Optional: create quick-preview-data
 
         // Convert tabular data into point-collections
         // to be used as tracks 
-        simpleTrackdata: function(rawdata, tablemode, minTrackLength) {
-            // console.log("simpleTrackdata: rawdata=", rawdata);
+        getRawTracks: function(rawdata, tablemode, minTrackLength) {
+            // console.log("getRawTracks: rawdata=", rawdata);
 
             // Dis-assemble rawdata-recordings that contain "separable tracks"  
             // with mode-specific algorithms - assigning a unique track-ID
@@ -405,9 +438,8 @@ Optional: create quick-preview-data
             return tracks; 
         },
 
-        // Generate Datastructures 
-        // required by animation-api
-        createRouteTracks: function(routes, masterdata) {
+        // Derive input-data-structures for my-animatation-api
+        createTrackRoutes: function(routes, masterdata) {
 
             // C. Join temporary masters- and routes-objects 
             //    into array of api-conform routedata (wps sorted by time) 
@@ -443,13 +475,14 @@ Optional: create quick-preview-data
             return routedata;
         },
 
-        // Create Dastastructures 
-        // required bfor use in MB-quickmasp  
-        // 
-        quickmapCreate: function(trackdata, srcmeta, masterdata) {
+        // Deribe quickmb-container of raw tracks
+        createQuickview: function(trackdata, srcmeta, masterdata) {
 
             var scope = this;
-            
+            var prefix = "tracks";
+            var title = srcmeta.key;
+            if (!title) title = srcmeta.title;
+                        
             // 
             function srcDataCreate(trackdata) {
                 var features = [],
@@ -491,6 +524,7 @@ Optional: create quick-preview-data
                 return srcData;
             } 
 
+            // 
             function jsonTrackToQuickview(srcdata, title, prefix) {
                 if (!prefix) prefix = "tracks"
                 if (!title) title = srcdata.time;
@@ -510,22 +544,135 @@ Optional: create quick-preview-data
                 return quickmap; 
             }
 
-            var srcData = srcDataCreate(trackdata); 
-
-            var title = srcmeta.key;
-            if (!title) title = srcmeta.title;
-            var prefix = "tracks";
-            var quickMapObj = jsonTrackToQuickview(srcData, title, prefix);
+            var srcData = srcDataCreate(trackdata);  console.log("ok srcdata");
+            
+            var quickMapObj = jsonTrackToQuickview(srcData, title, prefix);  console.log("ok quickMapObj");
 
             return quickMapObj; 
         },    
 
-        // Get rawdata from ajax-response into element 
-        getRawData: function(ajaxresponse) {
-            // console.log("getRawData, response", ajaxresponse);
-            if (!ajaxresponse || !ajaxresponse.detail) return;
-            this.rawdata = ajaxresponse.detail.response;
-        }
+        // SPECIFIC import of specific vendee-data 
+        // into datastructure of routing-API
+        trackDataCreate: function(rawdata, rawdbdata) {
+            if (!rawdata || !rawdbdata) return;
+
+            var icontemplate;
+            // icontemplate = "circle-stroked-11"; // this.icon;
+            // icontemplate = "boat-blue"; // this.icon;
+
+            /**
+                *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
+                *  "maritime formatting"  
+                */
+            function dmtodd(dm, lonflag, prec) {
+                if (!prec) prec = 6;
+                dm = dm.split("°"); // console.log("dm-array", dm);
+                dd = parseInt(dm[0]) + parseFloat(dm[1]) / 60;
+                if (dm[1].slice(-1) == "W") dd = 0 - dd;
+                if (dm[1].slice(-1) == "S") dd = 0 - dd;
+                return dd;
+            }
+
+
+            // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
+            var routes = {},
+                masterdata = {},
+                route, master, id;
+
+            // A. Restructure master-table into collection    
+            rawdbdata.forEach(function(st, j) {
+                //  
+                id = st.id;
+                id = id.replace("<br>", "/")
+
+                master = masterdata[id];
+                if (!master) {
+                    masterdata[id] = st;
+                }
+            }.bind(this));
+
+            if (!this.connect) {
+                this.masterdata = masterdata;
+            }
+            // console.log("masters", masterdata);
+
+            // B. GROUP all position-records by id 
+            //    into objects for every resolved track
+            rawdata.forEach(function(wp, j) {
+                //  
+                var wpx = {},
+                    lng, lat;
+                var pass = mba.utcTime(wp.date + "." + wp.time);
+                wpx.ab = pass;
+                wpx.an = pass;
+
+                // Apply specific 
+                lat = dmtodd(wp.lat);
+                lng = dmtodd(wp.lng);
+
+                wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
+                wpx.icon = this.wpicon;
+
+                //  
+                id = wp.id;
+                route = routes[id];
+                if (!route) {
+                    route = [];
+                    routes[id] = route;
+                }
+                route.push(wpx);
+            }.bind(this));
+
+            // C. Join temporary masters- and routes-objects 
+            //    into array of api-conform routes with wps sorted by time 
+            var routedata = [],
+                menudata = [];
+
+            Object.keys(routes).forEach(function(id) {
+
+                var trackpoints = routes[id];
+                trackpoints.sort(function(wp1, wp2) {
+                    return wp1.ab - wp2.ab;
+                });
+
+                /*************************
+                    * Resolve original id into better readable one 
+                    * and a "good title"
+                    */
+                var title = id.split(">")[1];
+
+                id = id.replace("<br>", "/");
+                // *************************
+
+                var icon = icontemplate; // + "-" + id; // ???? 
+                var item = {
+                    "id": id,
+                    "title": title,
+                };
+                var route = {
+                    "id": id,
+                    "title": title,
+                    // "icon": icon,
+                    "unitsystem": "nautic",
+                    "nodes": trackpoints
+                };
+
+                // optionally include Stammdaten
+                if (masterdata[id] && this.connect) {
+                    route["master"] = masterdata[id];
+                }
+
+                routedata.push(route);
+                menudata.push(item)
+
+            }.bind(this));
+            // console.log("importVendee finaldata", routedata); // , rawdata);
+
+            this.routedata = routedata;
+            this.menudata = menudata;
+        },
+
+
 
     });
 </script>

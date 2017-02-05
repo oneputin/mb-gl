@@ -5,7 +5,7 @@ Demo to view ship-data animation
 -->
 
 <head>
-    <title>mb-routes demo</title>
+    <title>routing-api demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
@@ -21,10 +21,10 @@ Demo to view ship-data animation
     <link rel="import" href="../mb-location-log.html">
     <link rel="import" href="../mb-info-drag.html">
 
-    <link rel="import" href="../mb-routes.html">
-    <link rel="import" href="../mb-routes-ctrl.html">
-    <link rel="import" href="../mb-map-orientation-ctrl.html">
-    <link rel="import" href="../mb-routes-ctrl-time.html">
+    <link rel="import" href="../routing-api.html">
+    <link rel="import" href="../routing-ctrl.html">
+    <link rel="import" href="../mb-orientation-ctrl.html">
+    <link rel="import" href="../routing-ctrl-time.html">
 
     <link rel="import" href="../routing-vendee.html">
 
@@ -56,11 +56,11 @@ Demo to view ship-data animation
             width: 100%;
         }
         
-        mb-routes-ctrl {
+        routing-ctrl {
             @apply(--layout-flex);
         }
         
-        mb-map-orientation-ctrl {}
+        mb-orientation-ctrl {}
         
         .ctrls-out {
             /* itself flex layouted div */
@@ -81,7 +81,7 @@ Demo to view ship-data animation
               left: 30px;*/
         }
         
-        mb-routes-ctrl-time {
+        routing-ctrl-time {
             display: none;
             border-style: solid;
             border-width: 1px;
@@ -113,12 +113,12 @@ Demo to view ship-data animation
                 
                 <div class="ctrls-in">
                     <!-- ctrl of animation and maporientation -->
-                    <mb-routes-ctrl 
+                    <routing-ctrl 
                         timer="{{tracktimer}}"
                         trackctrl="{{trackctrl}}">
-                    </mb-routes-ctrl>
-                    <!--<mb-map-orientation-ctrl trackmode="{{trackmode}}">
-                    </mb-map-orientation-ctrl>-->                    
+                    </routing-ctrl>
+                    <!--<mb-orientation-ctrl trackmode="{{trackmode}}">
+                    </mb-orientation-ctrl>-->                    
                 </div>
 
                 <mb-location-log map="{{map}}" lnglat="{{lnglat}}" checked="[[uselocationlog]]">
@@ -144,7 +144,7 @@ Demo to view ship-data animation
             <!-- Right Block: several external app-controls -->
             <div class="ctrls_out">
                 <!-- element with n visible features -->
-                <mb-routes 
+                <routing-api 
                     map="[[map]]" 
                     timer="{{tracktimer}}"
                     routedata="[[routedata]]" 
@@ -154,13 +154,13 @@ Demo to view ship-data animation
                     trackmode="{{trackmode}}" 
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]">
-                </mb-routes>
+                </routing-api>
                 
                 <!-- Left -->
-                <mb-routes-ctrl-time  
+                <routing-ctrl-time  
                     timescalemax="[[tracktimer.timescalemax]]" 
                     timer="{{tracktimer}}">
-                </mb-routes-ctrl-time>
+                </routing-ctrl-time>
 
                 <dataset-browser
                     dataset= "{{routeset}}"
@@ -195,9 +195,7 @@ Demo to view ship-data animation
                 </template>
             -->
             </div>
-
         </div>
-
     </template>
 
     <script>

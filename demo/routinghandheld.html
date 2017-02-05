@@ -1,37 +1,38 @@
 <!doctype html>
 <html>
 <head>
-    <title>mb-routes demo</title>
+    <title>routing-api demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
    
+    <!-- web-components required for dev-gui --> 
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
     <link rel="import" href="../../paper-styles/demo-pages.html">
    
-<!-- components required for shell-gui --> 
+    <!-- web-components applied for app-gui --> 
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
     <link rel="import" href="../../iron-collapse/iron-collapse.html">
     <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 
-<!-- components dependent on map-api --> 
-<!--
+    <!-- app-components dependent on map-api --> 
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
-    <link rel="import" href="../mb-routes.html">
+    <link rel="import" href="../routing-api.html">
     <link rel="import" href="../mb-distance.html">
--->
-    <!--<link rel="import" href="../mb-info-drag.html">-->
-    <link rel="import" href="../mb-map-orientation-ctrl.html">
+    <link rel="import" href="../mb-orientation-ctrl.html">
     <link rel="import" href="../mb-quickview.html">
+    <!--<link rel="import" href="../mb-info-drag.html">-->
 
-    <link rel="import" href="../mb-routes-ctrl.html">
-    <link rel="import" href="../mb-routes-ctrl-time.html">
-
-    <link rel="import" href="../routing-handheld.html">
-    <link rel="import" href="../mb-tools-behavior.html">
+    <!-- generic animation components -->
     <link rel="import" href="../dataset-browser.html">
+    <link rel="import" href="../mb-tools-behavior.html">
+    <link rel="import" href="../routing-ctrl.html">
+    <link rel="import" href="../routing-ctrl-time.html">
+
+    <!-- specific animation components -->
+    <link rel="import" href="../routing-handheld.html">
 
     <style is="custom-style">
         .container {
@@ -62,15 +63,15 @@
             /*@apply(--layout-start);*/
         }
         
-        mb-routes-ctrl {
+        routing-ctrl {
             @apply(--layout-flex);
         }
         
-        mb-map-orientation-ctrl {
+        mb-orientation-ctrl {
             @apply(--layout-flex);
         }
         
-        mb-routes-ctrl-time {
+        routing-ctrl-time {
             display: none;
             border-style: solid;
             border-width: 1px;
@@ -137,16 +138,16 @@
             <div class="ctrls-in">
                 <template is="dom-if" if="{{!usepreview}}">
                     <!-- ctrl of animation (and maporientation) -->
-                    <mb-routes-ctrl 
+                    <routing-ctrl 
                         checked="[[userouting]]"
                         timer="{{timer}}"
                         trackctrl="{{trackctrl}}">
-                    </mb-routes-ctrl>
+                    </routing-ctrl>
                 </template>
                 <!-- ctrl of maporientation -->
-                <!-- <mb-map-orientation-ctrl 
+                <!-- <mb-orientation-ctrl 
                     trackmode="{{trackmode}}">
-                    </mb-map-orientation-ctrl>-->
+                    </mb-orientation-ctrl>-->
             </div>
 
 
@@ -168,28 +169,28 @@
 
             <!-- element with [n] visible features -->
             <template is="dom-if" if="{{!usepreview}}">
-                    <mb-routes 
-                        map="[[map]]" 
-                        timer="{{timer}}"
-                        routedata=[[routedata]] 
-                        routeid=[[routeid]] 
-                        trackctrl="{{trackctrl}}" 
-                        trackmapmode="{{trackmapmode}}" 
-                        trackdata="{{trackdata}}"
-                        trackinfo="[[trackinfo]]"
-                        mapcontent="{{mapcontent}}"                  
-                        tracksymbol="{{tracksymbol}}" 
-                        checked="[[userouting]]">
-                    </mb-routes>
-                    
-                    <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
-                    <mb-routes-ctrl-time  
-                        checked="[[userouting]]"
-                        timescalemax="[[timer.timescalemax]]" 
-                        timer="{{timer}}">
-                    </mb-routes-ctrl-time>
+                <routing-api 
+                    map="[[map]]" 
+                    timer="{{timer}}"
+                    routedata=[[routedata]] 
+                    routeid=[[routeid]] 
+                    trackctrl="{{trackctrl}}" 
+                    trackmapmode="{{trackmapmode}}" 
+                    trackdata="{{trackdata}}"
+                    trackinfo="[[trackinfo]]"
+                    mapcontent="{{mapcontent}}"                  
+                    tracksymbol="{{tracksymbol}}" 
+                    checked="[[userouting]]">
+                </routing-api>
+                
+                <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
+                <routing-ctrl-time  
+                    checked="[[userouting]]"
+                    timescalemax="[[timer.timescalemax]]" 
+                    timer="{{timer}}">
+                </routing-ctrl-time>
 
-                </template>
+            </template>
 
             <div id="radios">
                 <paper-radio-button checked="{{uselocationlog}}">Location Log</paper-radio-button>
@@ -240,7 +241,7 @@
     var scope = document.querySelector('#app');
 
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-    //scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
+    scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
 
     // Data-INIT
     scope.indexurl = "index-handheld.json"; // list of available datasets

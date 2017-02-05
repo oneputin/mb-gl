@@ -6,7 +6,7 @@
 <link rel="import" href="icons-svg.html">
 
 <!--
-`mb-routes-ctrl-time`
+`routing-ctrl-time`
 slider ctrls used to modify timescale(s) of routing animations  
 - `timescalemax` ctrls general dimension of animation scale (should be passed in by app-shell)
 - `throttle` varies timescale in 10 equal steps, can be remote-controlled 'step'-wise 
@@ -15,7 +15,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
 @demo demo/routemap.html 
 -->
 
-<dom-module id="mb-routes-ctrl-time">
+<dom-module id="routing-ctrl-time">
 
     <template>
     
@@ -80,7 +80,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
     <script>
         // on-change="fpsChange"
         Polymer({
-            is: 'mb-routes-ctrl-time',
+            is: 'routing-ctrl-time',
 
             properties: {
 

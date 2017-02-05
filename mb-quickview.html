@@ -54,7 +54,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                 },
 
                 // features of (all) json-layers loaded
-                // grouped by layer
+                // !! grouped by layer !!
                 mapfeatures: {
                     type: Object,
                     value: {},
@@ -138,8 +138,25 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
              */
             mapContentUpdate: function(mapcontent) {
                 if (!this.map || !this.checked) return;
+                // remove old content
+                this.mapContentClear();
+                // add new content
                 this.mapContentPrepare(mapcontent); 
             },    
+              
+            mapContentClear: function() {
+                var map = scope.map;
+                var lastLayers = Object.keys(this.mapfeatures);
+                if (!lastLayers.length) return; 
+                lastLayers.forEach(function(layername) { // console.log("remove Qview-layer(s)"+layername);
+                    if (map.getLayer(layername)) map.removeLayer(layername);
+                    if (map.getLayer(layername+"-hover")) map.removeLayer(layername+"-hover");
+                });  
+                lastLayers.forEach(function(layername) { // console.log("remove source"+layername);
+                    if (map.getSource(layername)) map.removeSource(layername);
+                });  
+                this.mapfeatures = {};
+            },
 
             mapContentPrepare: function(mapcontent) {    
                 // console.log("mapContentPrepare", mapcontent, this.map, this.checked);
@@ -336,7 +353,8 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                 if (1) {   //  
 
                 } else {   // Take a copy of already existing mapfeatures   
-                    Object.keys(this.mapfeatures).forEach(function(layer) {
+                    var lastLayers = Object.keys(this.mapfeatures);
+                    lastLayers.forEach(function(layer) {
                         var flist = scope.mapfeatures[layer];
                         mapfeatures[layer] = [];
                         flist.forEach(function(f) {
@@ -439,9 +457,8 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
 
                 }.bind(this));
 
-                // console.log("mapfeatures", mapfeatures);
+                // console.log("mapContentPrepare: new mapfeatures", mapfeatures);
                 this.mapfeatures = mapfeatures;
-
             },
 
         });

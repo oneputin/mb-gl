@@ -1,11 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
-
 <link rel="import" href="../kml-json/kml-json.html">
-
 <link rel="import" href="mb-tools-behavior.html">
-
 <!--<link rel="import" href="routing-behavior.html">-->
-
 
 <!--
 `tracks-from-gpx`
@@ -69,7 +65,7 @@ Optional: create quick-preview-data
             rawdata: {
                 type: Object,
                 value: {}
-                //observer: 'getRawTracks'
+                //observer: 'deriveTracks'
             },
 
             // can be processed in "quickViewer"
@@ -93,7 +89,7 @@ Optional: create quick-preview-data
 
         observers: [
             'triggerQuery(srcmeta.*)',
-            'getRawTracks(rawdata, srcmeta, usepreview)'
+            'deriveTracks(rawdata, srcmeta, usepreview)'
         ],
 
         attached: function() {
@@ -102,47 +98,157 @@ Optional: create quick-preview-data
 
         triggerQuery: function(srcmeta) { // trigger new dataquery !!
             if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
-            if (srcmeta.type != "gpx") return;  
+            if (srcmeta.type != "gpx") {
+                this.rawdata = null;
+                return;
+            }  
             // set parameters for data-fetch with <kml-json>
             this.xmlurl = srcmeta.url;
             if (srcmeta.xmlquery) this.xmlquery = srcmeta.xmlquery;
         },
         
         // 
-        getRawTracks: function(rawdata, srcmeta, usepreview) {
+        deriveTracks: function(rawdata, srcmeta, usepreview) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
             // console.log("GPX-data, raw tracks", rawdata);
 
             // 1. Simplify list of "simple" tracks 
-            var rawtracks = this.simpleTrackdata(rawdata);
+            var rawtracks = this.getRawTracks(rawdata);
             // console.log("GPX-data, mode, flat tracks", rawtracks);
 
-            if (usepreview) { 
-                // 3. CREATE/SUPPLY quickMapObject to quickViewer
+            // 2. 
+            if (usepreview) { // derive features for mb-visualization of rawTracks
                 // console.log(rawtracks);  
-                var quickmap = this.quickmapCreate(rawtracks, srcmeta);
+                var quickmap = this.createQuickview(rawtracks, srcmeta);
                
                if (quickmap) {  // console.log("GPX-data to view", quickmap);
-
+                    // 2.1
                     this.quickmap = quickmap;
-                    console.log("gpx-data, map-tracks:", this.quickmap);  
-
-                    this.trackdata = rawtracks.features;
-                
+                    console.log("RAW tracks (from GPX):", this.quickmap);  
+                    // 2.2 ?? 
+                    // this.trackdata = rawtracks.features;
                 }    
 
-            } else {  
-                // 2. CREATE/SUPPLY list of tracks to animation-processor 
-                var routetracks = this.createRouteTracks(rawtracks.features);
+            } else {   // // derive structures for mb-based animation of 'suitable' tracks
+
+                var routetracks = this.createTrackRoutes(rawtracks.features);
                 if (routetracks.length) {
-                    // console.log("GPX-data, routes",  routetracks);
+                    console.log("RAW ROUTEDATA (from GPX)",  routetracks);
                     this.trackdata = routetracks;
                 }    
             }    
         },
 
-        // 
-        createRouteTracks: function(rawdata, minTrackLength) {
+        // Derive "raw tracks" from GPX, KML 
+        getRawTracks: function(rawdata) {
+            if (!rawdata) return; 
+            // console.log("getRawTracks: rawdata=", rawdata);
+
+            var scope = this;
+            var trackdata , mapboxlayer;
+
+            // Split multiLineTracks into tracksegments 
+            // that are addressable by "own" start-time 
+            function jsonTrackSimplify(rawdata) {
+
+                var segmentFeatures = [],
+                    starttime;
+
+                rawdata.features.forEach(function(f, i) {
+
+                    coordinates = f.geometry.coordinates;
+
+                    tracktimes = f.properties.coordTimes;
+
+                    type = f.geometry.type;
+
+                    if (type == "MultiLineString") {
+
+                        coordinates.forEach(function(coords, j) {
+
+                            var cc = JSON.parse(JSON.stringify(coords)); // .slice(0);
+                            var tt = JSON.parse(JSON.stringify(tracktimes[j])); // .slice(0);
+
+                            if (!starttime) starttime = tt[0];
+
+                            var seg = {
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "LineString",
+                                    "coordinates": cc
+                                },
+                                "properties": {
+                                    "coordTimes": tt,
+                                    "name": tt[0],
+                                    "time": tt[0],
+                                    "color": scope.getRandomColor()
+                                }
+                            };
+
+                            segmentFeatures.push(seg);
+                        })
+
+                    } else {
+
+                        if (!starttime) starttime = tracktimes[0];
+                        f.properties.color = scope.getRandomColor();
+                        segmentFeatures.push(f);
+                    }
+                })
+
+                var segdata = {
+                    "time": starttime, // rawdata.time (probably time of gpxToJson-conversion)
+                    "type": rawdata.type,
+                    "features": segmentFeatures
+                };
+
+                return segdata;
+            }
+
+            trackdata = jsonTrackSimplify(rawdata);
+            // console.log("flattenRawTracks, geojson-2", data)
+
+            return trackdata;
+        },
+
+        // Derive quickmb-container of raw trackdata
+        createQuickview: function(trackdata, srcmeta) {
+
+            var quickmapObject;
+
+            function jsonTrackToQuickview(srcdata, title) {
+
+                if (!title) title = srcdata.time;
+               
+                var mapid = "tracks-" + title;
+
+                quickmap = {};
+                quickmap[mapid] = {
+                    "layer": {
+                        "type": "line",
+                        "id": mapid,
+                        "source": mapid
+                    },
+                    "srcdata": srcdata,
+                    "raw": 1
+                };
+                return quickmap; 
+            };
+
+            // Create data for quickview of raw trackdata 
+            // with "short as possible" id-entification of features 
+            var title = srcmeta.key;
+            if (!title) title = srcmeta.title;
+            quickmapObject = jsonTrackToQuickview(trackdata, title); 
+            
+            // SUPPLY quickmap to viewing element 
+            return quickmapObject;
+            // if (quickmapObject) this.mapcontent = quickmapObject;
+
+        },
+
+        // Derive Input-data for my-animatation-api 
+        createTrackRoutes: function(rawdata, minTrackLength) {
             if (!minTrackLength) minTrackLength=5; 
             var scope = this,
                 routedata = [],
@@ -230,115 +336,7 @@ Optional: create quick-preview-data
             })
 
             return routedata;
-        },
-
-        // Process tracks from GPX, KML
-        simpleTrackdata: function(rawdata) {
-            if (!rawdata) return; 
-            // console.log("simpleTrackdata: rawdata=", rawdata);
-
-            var scope = this;
-            var trackdata , mapboxlayer;
-
-            // Split multiLineTracks into tracksegments 
-            // that are addressable by "own" start-time 
-            function jsonTrackSimplify(rawdata) {
-
-                var segmentFeatures = [],
-                    starttime;
-
-                rawdata.features.forEach(function(f, i) {
-
-                    coordinates = f.geometry.coordinates;
-
-                    tracktimes = f.properties.coordTimes;
-
-                    type = f.geometry.type;
-
-                    if (type == "MultiLineString") {
-
-                        coordinates.forEach(function(coords, j) {
-
-                            var cc = JSON.parse(JSON.stringify(coords)); // .slice(0);
-                            var tt = JSON.parse(JSON.stringify(tracktimes[j])); // .slice(0);
-
-                            if (!starttime) starttime = tt[0];
-
-                            var seg = {
-                                "type": "Feature",
-                                "geometry": {
-                                    "type": "LineString",
-                                    "coordinates": cc
-                                },
-                                "properties": {
-                                    "coordTimes": tt,
-                                    "name": tt[0],
-                                    "time": tt[0],
-                                    "color": scope.getRandomColor()
-                                }
-                            };
-
-                            segmentFeatures.push(seg);
-                        })
-
-                    } else {
-
-                        if (!starttime) starttime = tracktimes[0];
-                        f.properties.color = scope.getRandomColor();
-                        segmentFeatures.push(f);
-                    }
-                })
-
-                var segdata = {
-                    "time": starttime, // rawdata.time (probably time of gpxToJson-conversion)
-                    "type": rawdata.type,
-                    "features": segmentFeatures
-                };
-
-                return segdata;
-            }
-
-            trackdata = jsonTrackSimplify(rawdata);
-            // console.log("flattenRawTracks, geojson-2", data)
-
-            return trackdata;
-        },
-
-        // Process tracks from GPX, KML
-        quickmapCreate: function(trackdata, srcmeta) {
-
-            var quickmapObject;
-
-            function jsonTrackToQuickview(srcdata, title) {
-
-                if (!title) title = srcdata.time;
-               
-                var mapid = "tracks-" + title;
-
-                quickmap = {};
-                quickmap[mapid] = {
-                    "layer": {
-                        "type": "line",
-                        "id": mapid,
-                        "source": mapid
-                    },
-                    "srcdata": srcdata,
-                    "raw": 1
-                };
-                return quickmap; 
-            };
-
-            // Create data for quickview of raw trackdata 
-            // with "short as possible" id-entification of features 
-            var title = srcmeta.key;
-            if (!title) title = srcmeta.title;
-            quickmapObject = jsonTrackToQuickview(trackdata, title); 
-            
-            // SUPPLY quickmap to viewing element 
-            return quickmapObject;
-            // if (quickmapObject) this.mapcontent = quickmapObject;
-
-        }    
+        }
 
     });
 </script>

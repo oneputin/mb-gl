@@ -14,7 +14,7 @@
 Interface for import/export of case-specific routing data
 
 IN: transfer raw vendee-data 
-    into 'routedata' (dataformat required by mb-routes-api)
+    into 'routedata' (dataformat required by routing-api-api)
 
 
 
@@ -135,6 +135,7 @@ To 'close'
     </template>
 
     <script>
+
         Polymer({
             is: 'routing-vendee',
 
@@ -209,6 +210,7 @@ To 'close'
                     route, master, id;
 
                 // A. Restructure master-table into collection    
+                
                 rawdbdata.forEach(function(st, j) {
                     //  
                     id = st.id;

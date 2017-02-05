@@ -11,7 +11,7 @@
 <!--<link rel="import" href="../kml-json/kml-json.html">-->
 
 <link rel="import" href="tracks-from-gpx.html">
-<link rel="import" href="tracks-from-table.html">
+<link rel="import" href="tracks-from-pnts.html">
 
 <link rel="import" href="mb-tools-behavior.html">
 
@@ -23,7 +23,7 @@
 Interface for import/export of tracking data from handheld gps-devices
 
 IN: transfer raw handheld-data (of different formats)
---- into 'routedata-template' (dataformat required by mb-routes-api)
+--- into 'routedata-template' (dataformat required by routing-api-api)
 
 OUT: RICH-content Info-card related to one selected feature,  
 ---  absolutely positioned as (mapbox-)map-overlay   
@@ -98,13 +98,13 @@ To 'close'
 
     </style>
 
-    <!-- alternative -->
-    <tracks-from-table 
-        srcmeta="[[srcmeta]]"
+    <!-- alternative srces -->
+    <tracks-from-pnts 
+        srcmeta="[[srcmeta]]"        
         usepreview="[[usepreview]]"
-        trackdata="{{rawdata}}"
+        trackdata = "{{rawdata}}"
         quickmap="{{quickmap}}">
-    </tracks-from-table>    
+    </tracks-from-pnts>    
 
     <tracks-from-gpx 
         srcmeta="[[srcmeta]]"
@@ -112,13 +112,6 @@ To 'close'
         trackdata="{{rawdata}}"
         quickmap="{{quickmap}}">
     </tracks-from-gpx>    
-
-    <iron-ajax
-        auto
-        url="[[basedataurl]]"
-        handle-as="json"
-        on-response="getRawDbData">
-    </iron-ajax>
 
     <paper-card 
         heading="{{carddata.title}}" 
@@ -194,11 +187,6 @@ To 'close'
                     value: []
                 },
 
-                rawdbdata: {
-                    type: Array,
-                    value: []
-                },
-
                 quickmap: {
                     type: Object,
                     notify: true
@@ -211,8 +199,7 @@ To 'close'
             ],
 
             observers: [
-                'trackSrcDispatcher(tracksrcmeta.*)'
-                // 'importTracks(rawdata, rawdbdata)'
+                'requestDispatcher(tracksrcmeta.*)'
             ],
 
             attached: function() {
@@ -221,67 +208,30 @@ To 'close'
 
             // Evaluate RoutingSource-Object to trigger import of rawdata
             // from different data-types 
-            trackSrcDispatcher: function(tracksrcmeta) {
+            requestDispatcher: function(tracksrcmeta) {
                 if (tracksrcmeta.path == 'tracksrcmeta') tracksrcmeta = tracksrcmeta.value;
-                // console.log("trackSrcDispatcher. BEFORE=", tracksrcmeta);
+                // console.log("requestDispatcher. BEFORE=", tracksrcmeta);
 
                 var srcurl = tracksrcmeta.url,
                     srctype = tracksrcmeta.type;
 
                 // Check some url - conditions ???
                 if (!srcurl) return;
-              
+                if (srcurl != this.dataurl) {
+                    this.routedata = {};
+                    
+                } 
+
                 if ((srctype == "kml") || (srctype == "gpx")) {  // trigger import from gpx/kml (kml-json)
                     tracksrcmeta.xmlquery = {
                         "tags": "Track",
                         "structure": "doc"
                     };
                 }
-                // console.log("trackSrcDispatcher. AFTER", tracksrcmeta);
+                // console.log("requestDispatcher. AFTER", tracksrcmeta);
                 
                 this.srcmeta = tracksrcmeta;
-
             },
-
-            getRawDbData: function(ajaxresponse) {
-                var rawdata = ajaxresponse.detail.response;
-                if (!rawdata) return {};
-                console.log("rawdbdata", rawdata);
-                this.rawdbdata = rawdata; // triggers 'setupTracking'
-            },
-
-
-            // SPECIFIC SPLICE with additional property data  
-            /*importTracks: function(rawdata, rawdbdata) {
-                if (!rawdata || !rawdata.length) return;
-
-                var debounceTime = 200;
-                var minTrackLength = 5;
-
-                this.debounce('import', function() {
-
-                    console.log("LOG: Handheld raw data", {
-                        "location": rawdata,
-                        "master": rawdbdata,
-                        "tracksrcmeta" : this.tracksrcmeta 
-                    }); // return;
-
-
-                    // Optional: Append track-masterData     
-                    if (rawdbdata) {
-                        // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
-                    }
-
-                    var routedata = rawdata;
-                    
-                    if (routedata && routedata.length) {
-                        // console.log("JSON-Handheld routedata:", routedata); // , rawdata);
-                        this.routedata = routedata;
-                    }
-
-                }.bind(this), debounceTime);
-
-            },*/
 
             // B. COMPILE Feature-data 
             /**

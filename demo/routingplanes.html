@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>mb-routes demo</title>
+    <title>routing-api demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
@@ -18,12 +18,12 @@
 
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
-    <link rel="import" href="../mb-map-orientation-ctrl.html">
+    <link rel="import" href="../mb-orientation-ctrl.html">
 
     <link rel="import" href="../routing-planes.html">
-    <link rel="import" href="../mb-routes.html">
-    <link rel="import" href="../mb-routes-ctrl.html">
-    <link rel="import" href="../mb-routes-ctrl-time.html">
+    <link rel="import" href="../routing-api.html">
+    <link rel="import" href="../routing-ctrl.html">
+    <link rel="import" href="../routing-ctrl-time.html">
 
 
     <style is="custom-style">
@@ -40,19 +40,19 @@
             height: 675px;
         }
         
-        mb-routes-ctrl-mode {
+        routing-ctrl-mode {
             position: absolute;
             bottom: 10px;
             right: 10px;
         }
         
-        mb-routes-ctrl {
+        routing-ctrl {
             position: absolute;
             bottom: 10px;
             left: 30px;
         }
         
-        mb-map-orientation-ctrl {
+        mb-orientation-ctrl {
             position: absolute;
             bottom: 10px;
             right: 30px;
@@ -76,7 +76,7 @@
             top: 40px;
         }
         
-        mb-routes-ctrl-time {
+        routing-ctrl-time {
             display: none;
             border-style: solid;
             border-width: 1px;
@@ -108,14 +108,14 @@
                     mapcontent="[[mapcontent]]">
                 </mb-quickview>
 
-                <mb-routes-ctrl 
+                <routing-ctrl 
                     timer="{{timer}}"
                     trackctrl="{{trackctrl}}">
-                </mb-routes-ctrl>
+                </routing-ctrl>
 
-                <mb-map-orientation-ctrl 
+                <mb-orientation-ctrl 
                     trackmapmode="{{trackmapmode}}">
-                </mb-map-orientation-ctrl>
+                </mb-orientation-ctrl>
 
                 <mb-location-log 
                     map="{{map}}" 
@@ -123,7 +123,7 @@
                     checked="[[uselocationlog]]">
                 </mb-location-log>
                 
-                <mb-routes 
+                <routing-api 
                     map="[[map]]" 
                     timer="{{timer}}" 
                     routedata=[[routedata]]  
@@ -134,11 +134,11 @@
                     trackinfo="[[trackinfo]]"
                     mapcontent="{{mapcontent}}" 
                     on-routedata-changed="logdata">
-                </mb-routes>
+                </routing-api>
                 
-                <mb-routes-ctrl-time 
+                <routing-ctrl-time 
                     timer="{{timer}}">
-                </mb-routes-ctrl-time>
+                </routing-ctrl-time>
 
                 <!-- app-specific IF between generic IN/OUT (routedata/trackdata) and routedata -->
                 <routing-planes 
