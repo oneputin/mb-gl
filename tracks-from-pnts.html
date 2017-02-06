@@ -166,7 +166,7 @@ Optional: create quick-preview-data
 
                 this.quickmap = this.createQuickview(rawtracks, srcmeta);
                 
-                console.log("RAW-TRACKS (from TPs):", this.quickmap);  
+                console.log("Quickview TRACKS (from TPs):", this.quickmap);  
                 
             } else {    // derive structures for mb-based animation of 'suitable' tracks
 
@@ -301,9 +301,9 @@ Optional: create quick-preview-data
                 dt_std = Math.round(stabw(dts));
                 dx_std = Math.round(stabw(dxs));
                 dv_std = Math.round(stabw(dvs));
-                console.log("dt-std [sec]:", dt_std);
-                console.log("dx-std [m]:", dx_std);
-                console.log("dv-std [km/h]:", dv_std);
+                //console.log("dt-std [sec]:", dt_std);
+                //console.log("dx-std [m]:", dx_std);
+                //console.log("dv-std [km/h]:", dv_std);
             }
 
             // Step2 : Abschnittsweise zuordnen untersch. ids  
@@ -479,7 +479,7 @@ Optional: create quick-preview-data
         createQuickview: function(trackdata, srcmeta, masterdata) {
 
             var scope = this;
-            var prefix = "tracks";
+            var prefix = ""; // tracks";
             var title = srcmeta.key;
             if (!title) title = srcmeta.title;
                         
@@ -526,10 +526,11 @@ Optional: create quick-preview-data
 
             // 
             function jsonTrackToQuickview(srcdata, title, prefix) {
-                if (!prefix) prefix = "tracks"
+                // if (!prefix) prefix = "tracks"
                 if (!title) title = srcdata.time;
 
-                var mapid = prefix + "-" + title;
+                var mapid = title;
+                if (prefix) mapid = prefix + "-" + mapid;
                 
                 var quickmap = {};                
                 quickmap[mapid] = {
@@ -544,11 +545,11 @@ Optional: create quick-preview-data
                 return quickmap; 
             }
 
-            var srcData = srcDataCreate(trackdata);  console.log("ok srcdata");
+            var srcData = srcDataCreate(trackdata);  // console.log("ok srcdata");
             
-            var quickMapObj = jsonTrackToQuickview(srcData, title, prefix);  console.log("ok quickMapObj");
+            var quickViewObj = jsonTrackToQuickview(srcData, title, prefix);  // console.log("ok quickMapObj");
 
-            return quickMapObj; 
+            return quickViewObj; 
         },    
 
         // SPECIFIC import of specific vendee-data 

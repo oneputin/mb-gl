@@ -244,14 +244,16 @@
                 m = m < 10 ? "0" + m : m;
 
             var logdate = D + "." + M;
+            
             logtime = h + ":" + m;
+
             if (sep) {
                 logtime = logtime + sep + logdate;
             }
             return logtime;
         },
 
-        // 
+        // ZoomTo
         setFeatureBounds: function(features, map) {
 
             if (features.features) features = features.features; //console.log(data); // return

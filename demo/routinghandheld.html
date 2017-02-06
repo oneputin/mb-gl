@@ -144,7 +144,7 @@
                         trackctrl="{{trackctrl}}">
                     </routing-ctrl>
                 </template>
-                <!-- ctrl of maporientation -->
+                <!-- ctrl of map-orientation -->
                 <!-- <mb-orientation-ctrl 
                     trackmode="{{trackmode}}">
                     </mb-orientation-ctrl>-->
@@ -159,6 +159,7 @@
 
             <!--<mb-info-drag carddata="[[trackdata]]">
                                 </mb-info-drag>-->
+
         </mb-map>
 
         <!-- RIGHT Block: several external app-controls -->
@@ -169,13 +170,14 @@
 
             <!-- element with [n] visible features -->
             <template is="dom-if" if="{{!usepreview}}">
+
                 <routing-api 
                     map="[[map]]" 
                     timer="{{timer}}"
                     routedata=[[routedata]] 
                     routeid=[[routeid]] 
                     trackctrl="{{trackctrl}}" 
-                    trackmapmode="{{trackmapmode}}" 
+                    trackalignmap="{{trackalignmap}}" 
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]"
                     mapcontent="{{mapcontent}}"                  
@@ -203,11 +205,11 @@
             <dataset-browser 
                 indexurl="[[indexurl]]" 
                 metadatasets="{{routesets}}" 
-                metadatasetslabel="TrackData Index" 
+                metadatasetslabel="[[metadatasetslabel]]" 
                 datasetmeta="{{routedatasrc}}"
 
                 dataset="[[menudata]]" 
-                datasetlabel="Tracks"
+                datasetlabel="[[datasetlabel]]"
                 selectvalue="{{menuitem}}"> 
             </dataset-browser>
 
@@ -224,10 +226,14 @@
             <!-- routedata="{{routedata}}" --> 
             <!-- rawdata="{{rawdata}}" --> 
             <routing-handheld 
+                metadatasetslabel="{{metadatasetslabel}}" 
+                datasetlabel="{{datasetlabel}}" 
                 tracksrcmeta="[[routedatasrc]]" 
-                routedata="{{menudata}}" 
+
                 usepreview="[[usepreview]]" 
                 quickmap="{{mapcontent}}" 
+                routedata="{{routedata}}" 
+
                 basedataurl="[[basedataurl]]" 
                 trackinfo="[[trackinfo]]" 
                 trackdata="{{trackdata}}">
@@ -258,11 +264,11 @@
     // STATE init
     scope.uselocationlog = true;
     scope.usepreview = true;
-
+    
     // Animation- INIT
     scope.tracksymbol = 'toilet-11';
     // console.log("scope.tracelength", scope.tracelength, scope.utcTime(scope.tracelength));
-    scope.trackmapmode; // 
+    scope.trackalignmap; // 
     scope.timer = {
         "timescalemax": 600, // 1min ~ 10h
         "timescalestart": 300,

@@ -74,7 +74,7 @@ along waypoint file loaded from url
                 /**
                  * StatusFlag toggling TrackingMap--NorthMap 
                  */
-                trackmapmode: {
+                trackalignmap: {
                     type: Boolean,
                     value: false,
                     observer: 'mapOrientationChange',
@@ -299,12 +299,12 @@ along waypoint file loaded from url
 
                         // only in DEFAULT mapmode (NORTH) 
                         map.on('movestart', function(e) {
-                            if (!mba.trackmapmode) { // console.log("movestart");
+                            if (!mba.trackalignmap) { // console.log("movestart");
                                 this._mapismoved = true;
                             }
                         });
                         map.on('moveend', function(e) {
-                            if (!mba.trackmapmode) { // console.log("moveend");
+                            if (!mba.trackalignmap) { // console.log("moveend");
                                 mba._mapismoved = false;
                             }
                         });
@@ -562,18 +562,19 @@ along waypoint file loaded from url
 
                 // Order(REIHENFOLGE) important, as wp-reduction in routedata possible during route-setup  
 
+                var sourceData = {};
                 // OLD 
-                // var sourceData = {};
                 // sourceData['routes'] = this.animationRoutesSetup(routedata, this.timer); // console.log("checked route-data", routedata);
                 // sourceData['traces'] = this.animationSetupTraces(routedata, this.timer);
-                // NEW                 
+                // NEW       
+                
+                // ROUTES and TRACE Layers          
                 sourceData = this.animationRoutesSetup(routedata, this.timer); // console.log("checked route-data", routedata);
-
+                // 
                 sourceData['nodes'] = this.animationNodesSetup(routedata); // wayPoints or trackPoints
-
                 sourceData['tracks'] = this.animationTrackerSetup(routedata, this.timer);
 
-                console.log("animationMapSources=", sourceData);
+                // console.log("animationMapSources=", sourceData);
                 // ??? Doubled assignment of sourceData to trigger multi-parameter observer  ???
                 this.animationsources = {};
                 this.animationsources = sourceData; // triggers "refresh-action
@@ -647,7 +648,7 @@ along waypoint file loaded from url
                     // console.log("trackCtrlActn:", typeof trackctrl, trackctrl);
                     if (trackctrl == "reset") {
                         this.trackctrl = false; // triggers this function (trackCtrlAction) again 
-                        this.trackmapmode = false; // 
+                        this.trackalignmap = false; // 
                         this._counter = 0;
                         this.trackid = undefined; // z.B. popup.remove();
 
@@ -920,8 +921,8 @@ along waypoint file loaded from url
                             if (mba.trackid == trackObj.properties.id) {
 
                                 // REFRESH trackdata to trigger INFO-element(-popup) 
-                                // NOT in trackmapmode
-                                if (!mba.trackmapmode) {
+                                // NOT in trackalignmap
+                                if (!mba.trackalignmap) {
                                     mba.trackdata = {
                                         "id": mba.trackid,
                                         "lnglat": cc,
@@ -937,8 +938,8 @@ along waypoint file loaded from url
                                 // the map is continuously centered at trackObj 
                                 // and the trackObj-symbol is aligned to bearing
                                 var trackBearing = trackObj.properties.bearing;
-                                console.log("trackBearing", trackBearing, mba.trackmapmode);
-                                if (mba.trackmapmode) {
+                                console.log("trackBearing", trackBearing, mba.trackalignmap);
+                                if (mba.trackalignmap) {
 
                                     let map = mba.map;
                                     map.easeTo({
@@ -953,7 +954,7 @@ along waypoint file loaded from url
                                 }
                                 // 
                                 if (trackObj.properties.arrived) {
-                                    // mba.trackmapmode = false;
+                                    // mba.trackalignmap = false;
                                 }
 
                             } else {
@@ -1760,7 +1761,7 @@ along waypoint file loaded from url
                             //  STOP animation, if no further track-Start is pendig 
 
                             mba.trackctrl = false;
-                            mba.trackmapmode = false;
+                            mba.trackalignmap = false;
                             let msg = "STOPPED. No more data after: " + msgTime;
 
                             // console.log(msg);

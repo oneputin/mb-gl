@@ -146,15 +146,21 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
               
             mapContentClear: function() {
                 var map = scope.map;
-                var lastLayers = Object.keys(this.mapfeatures);
-                if (!lastLayers.length) return; 
-                lastLayers.forEach(function(layername) { // console.log("remove Qview-layer(s)"+layername);
+                var lastContent = Object.keys(this.mapfeatures);
+                if (!lastContent.length) return; 
+
+                lastContent.forEach(function(layername) { // console.log("remove Qview-layer(s)"+layername);
                     if (map.getLayer(layername)) map.removeLayer(layername);
                     if (map.getLayer(layername+"-hover")) map.removeLayer(layername+"-hover");
+                    if (map.getLayer(layername+"-nodes")) map.removeLayer(layername+"-nodes");
+                    if (map.getLayer(layername+"-trace")) map.removeLayer(layername+"-trace");
                 });  
-                lastLayers.forEach(function(layername) { // console.log("remove source"+layername);
+                lastContent.forEach(function(layername) { // console.log("remove source"+layername);
                     if (map.getSource(layername)) map.removeSource(layername);
+                    if (map.getSource(layername+"-nodes")) map.removeSource(layername+"-nodes");
+                    if (map.getSource(layername+"-trace")) map.removeSource(layername+"-trace");
                 });  
+                
                 this.mapfeatures = {};
             },
 
@@ -167,42 +173,69 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                     map = scope.map,
                     mapfeatures = {};
 
-                // 
-                function getTrackInfo(aLine) {
+                // Get Info about "complete track", not only features in actually "visible" tile(s)
+                function getTrackInfo(aLine, layerid) {
                     
-                    var info = aLine.properties; // console.log("trackInfo", info); 
-                    if (info.coordTimes) {
-                        var trackTimes = JSON.parse(info.coordTimes),
-                            n = trackTimes.length,
+                    var trackLayer = map.getLayer(layerid),
+                        trackSource = map.getSource(trackLayer.source),
+                        srcFeatures = trackSource._data.features,
+
+                        trackInfo = aLine.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
+                    
+                    // Heuristik to identify suitable filter-key  
+                    var keyname, idNames = ["id", "name", "key", "time"];
+                    idNames.forEach(function(nom) {
+                        if (trackInfo[nom] && !keyname) keyname = nom;
+                    });
+
+                    var coords; 
+                    if (keyname) {
+                        trackInfo.keyname = keyname;  
+                        trackInfo.keyvalue = trackInfo[keyname];  
+                        
+                        srcFeatures.some(function(f){
+                            if (f.properties[keyname] == trackInfo[keyname]) {
+                                // console.log("detected", trackInfo[keyname], f);
+                                trackInfo.bbox = scope.setFeatureBounds([f]);
+                                trackInfo.coords = f.geometry.coordinates;
+                                trackInfo.fromnode = trackInfo.coords[0];
+                                trackInfo.tonode = trackInfo.coords[trackInfo.coords.length - 1];
+                                trackInfo.length = scope.deltaL(f);
+                                return true;
+                            }
+                        });
+                    }
+                    
+                    if (trackInfo.coordTimes) {
+                        var trackTimes = JSON.parse(trackInfo.coordTimes),
+                            n = trackTimes.length, // equal to number of coords
                             von = scope.utcTime(scope.trackTime(trackTimes[0]), null, "h"),
                             bis = scope.utcTime(scope.trackTime(trackTimes[n - 1]), null, "h"),
                             dt = bis - von;
-                        info.duration = scope.deltaT(dt);
-                        info.count = n;
+                        trackInfo.von = scope.logTime(von,"h");
+                        trackInfo.bis = scope.logTime(bis,"h");
+                        trackInfo.duration = scope.deltaT(dt);
+                        trackInfo.count = n;
                     }
 
-                    if (!info.length) info.length = scope.deltaL(aLine);
-
-                    info.html = info.time +
-                        "<br>Length: " + info.length +
-                        "<br>Duration: " + info.duration +
-                        "<br>TP's: " + info.count;
+                    trackInfo.html = trackInfo.time +
+                        "<br>Length: " + trackInfo.length +
+                        "<br>Duration: " + trackInfo.duration +
+                        "<br>TP's: " + trackInfo.count;
 
                     // console.log(trackTimes);
                     // console.log(info);
-                    return info;
+                    return trackInfo;
                 }
 
                 // Generic HILITE-function based on "id-Filter"	
-                function hilitefeature(e, layerid, featurekey) {
+                function hiliteTrack(e, layerid, featurekey) {
 
                     if (!map.getLayer(layerid)) return;
                     if (!map.getLayer(layerid + "-hover")) return;
 
                     // 
-                    var idNames = ["id", "name", "key", "time"];
-
-                    var key, hilayerid, hifilter, fInfo;
+                    var hilayerid, hifilter;
 
                     var features = map.queryRenderedFeatures(e.point, {
                         layers: [layerid]
@@ -212,62 +245,176 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
 
                     if (features && features.length) { 
 
-                        aLine = features[0];
+                        var trackInfo = getTrackInfo(features[0], layerid);
 
-                        fInfo = getTrackInfo(aLine);
+                        scope.popupOnMap(trackInfo.html);
 
-                        scope.popupOnMap(fInfo.html);
+                        if (!trackInfo.keyname) {
+                             console.log("hi " + layerid + ":", trackInfo);
+                        
+                        } else {    // Filtering the HOVER-Layer
 
-                        idNames.forEach(function(nom) {
-                            if (fInfo[nom]) key = nom;
-                        })
+                            var keyname = trackInfo.keyname; 
 
-                        if (!key) {
-                            console.log("hi " + layerid + ":", fInfo);
-                        } else {
-                            hifilter = ["==", key, fInfo[key]];
-                            // console.log("hi " + layerid + ":", fInfo.length+" km");
+                            hifilter = ["==", keyname, trackInfo[keyname]];
+                            // console.log("hi " + layerid + ":", trackInfo.length+" km");
 
                             hilayerid = layerid + "-hover";
+                           
                             map.setFilter(hilayerid, hifilter);
                         }
                     } else {
                         map.setFilter(layerid + "-hover", ["==", "name", ""]);
                     }
+
+                }
+
+                // Track-Select 
+                //   - zooms to the track
+                //   - show start/stop based on "id-Filter"	
+                function selectTrack(e, layerid, featurekey) {
+                    // console.log("selectTrack", layerid, featurekey); 
+                    // ONLY for 
+                    if (!map.getLayer(layerid)) return;
+                    // if (!map.getLayer(layerid + "-select")) return;
+
+                    // 
+                    function setTrackNodes(id, trackInfo) {
+                        // 
+                        id = id + "-nodes";
+                        if (map.getLayer(id)) map.removeLayer(id); 
+                        if (map.getSource(id)) map.removeSource(id); 
+
+                        var fromnode = trackInfo.fromnode.slice(0,2),
+                            tonode = trackInfo.tonode.slice(0,2),
+                            fromtime = trackInfo.von,
+                            totime = trackInfo.bis;
+
+                        map.addSource(id, {
+                            "type": "geojson",
+                            "data": {
+                                "type": "FeatureCollection",
+                                "features": [{
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Point",
+                                        "coordinates": fromnode
+                                    },
+                                    "properties": {
+                                        "title": fromtime,
+                                        "icon": "monument"
+                                    }
+                                }, {
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Point",
+                                        "coordinates": tonode
+                                    },
+                                    "properties": {
+                                        "title": totime,
+                                        "icon": "harbor"
+                                    }
+                                }]
+                            }
+                        });    
+                       
+                        map.addLayer({
+                            "id": id,
+                            "type": "symbol",
+                            "source": id,
+                            "layout": {
+                                "icon-image": "{icon}-15",
+                                "text-field": "{title}",
+                                "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                                "text-offset": [0, 0.6],
+                                "text-anchor": "top"
+                            }
+                        });
+                    } 
+
+                    // Filtering the TRACE-Layer
+                    function setTrackTrace(id, trackInfo) {
+                        // 
+                        var hilayerid = id + "-trace", // ?
+                            keyname = trackInfo.keyname, 
+                            hifilter = ["==", keyname, trackInfo[keyname]];
+                        
+                        if (!map.getLayer(hilayerid)) return ;
+
+                        map.setFilter(hilayerid, hifilter);
+                    } 
+
+                    var features = map.queryRenderedFeatures(e.point, {
+                        layers: [layerid]
+                    });
+
+                    if (features && features.length) { 
+
+                        var trackInfo = getTrackInfo(features[0], layerid);
+                        // console.log("Selected feature(s)", trackInfo);  
+
+                        // SHOW start- and stop-nodes
+                        setTrackNodes(layerid, trackInfo); 
+
+                        // SHOW start- and stop-nodes
+                        setTrackTrace(layerid, trackInfo); 
+
+                        // ZOOM to complete track
+                        map.fitBounds(trackInfo.bbox, {
+                            padding: 40
+                        });
+
+                    } else {
+                        
+                    }
+                    
                 }
 
                 // Layer that occurs on-mose-hover only 
-                function createHoverLayer(layertemplate) {
-                    var lhover = {}; // layertemplate,
+                function createHiliteLayer(layertemplate, hitype) {
+                    var lhilite = {}; // layertemplate,
                     var basetype = layertemplate.type;
                     Object.keys(layertemplate).forEach(function(k) {
-                        lhover[k] = layertemplate[k];
+                        lhilite[k] = layertemplate[k];
                     })
 
-                    lhover.id = layertemplate.id + "-hover";
+                    var linecolor, linewidth, lineopacity, linedasharray;
+                    if (hitype == "hover") {
+                       linecolor = "#FF0000";
+                       linewidth = 5;
+                       lineopacity = 1;
+                    } else {
+                       linecolor = "#000000";
+                       linewidth = 3;
+                       lineopacity = 0.7;
+                       linedasharray = [4,4];  
+                    }
 
-                    lhover.filter = ["==", "id", ""];
+                    lhilite.id = layertemplate.id + "-" + hitype;
+
+                    lhilite.filter = ["==", "id", ""];
 
                     if (basetype == "fill") {
-                        lhover.paint = {
+                        lhilite.paint = {
                             "fill-color": "#627BC1",
                             "fill-opacity": 1
                         }
+
                     } else if (basetype == "line") {
-                        lhover.paint = {
-                            "line-color": "#FF0000",
-                            "line-width": 5,
-                            "line-opacity": 1
+                        lhilite.paint = {
+                            "line-color": linecolor,
+                            "line-width": linewidth,
+                            "line-opacity": lineopacity,
                         }
+                        if (linedasharray)  lhilite.paint["line-dasharray"] = linedasharray;
 
                     } else if (basetype == "symbol") {
-                        lhover.layout = {
+                        lhilite.layout = {
                             "opacity": 1
                         }
                     }
-                    //console.log("Created HOVER", basetype, lhover);
-
-                    return lhover;
+                    //console.log("Created HOVER", basetype, lhilite);
+                    return lhilite;
                 }
 
                 // add temporary paint-properties 
@@ -311,16 +458,22 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                         layerObject['selectlayer'].forEach(function(l) {
                             layerTemplates.push(l);
                         })
-                    } else if (layerTemplate) {
-                        let hoverTemplate = createHoverLayer(layerTemplate);
+
+                    } else if (layerTemplate) { // "Standardisierte" HILITE-Layers
+                        
+                        let hoverTemplate = createHiliteLayer(layerTemplate, "hover");
                         if (hoverTemplate) layerTemplates.push(hoverTemplate);
+
+                        let traceTemplate = createHiliteLayer(layerTemplate, "trace");
+                        if (traceTemplate) layerTemplates.push(traceTemplate);
                     }
 
                     return layerTemplates;
                 }
 
-                // create liner list of features (for menu-generation)
-                function getFeatures(layername, layerData) {
+                // create linear list of features 
+                // suitable for "menu-generation"
+                function getFeatures(layerData, layername, longtitle) {
 
                     var flist = [],
                         fitem = {},
@@ -331,8 +484,11 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                         id = f.id;
                         if (!id) id = f.properties.name;
                         if (!id) id = f.properties.time;
+                        // Typische Nachbearbeitung
                         id = id.replace("ACTIVE LOG:", "");
-                        title = (layername + "_" + id).replace(/-/g, "_");
+                        title = id.replace(/-/g, "_");
+
+                        if (longtitle) title = layername + "_" + title;
                         title = title.replace(/ /g, "");
 
                         fitem = {
@@ -350,25 +506,16 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                 // console.log("IIMAP-refresh of with:", mapcontent);
 
                 // --------------------------------------------------
-                if (1) {   //  
-
-                } else {   // Take a copy of already existing mapfeatures   
-                    var lastLayers = Object.keys(this.mapfeatures);
-                    lastLayers.forEach(function(layer) {
-                        var flist = scope.mapfeatures[layer];
-                        mapfeatures[layer] = [];
-                        flist.forEach(function(f) {
-                            mapfeatures[layer].push(f);
-                        })
-                    });
-                }
 
                 var mapcontentLayers = Object.keys(mapcontent);  // console.log("Refreshing iimap-layers", mapcontentLayers);
 
                 mapcontentLayers.forEach(function(layername, j) {
 
                     function hiliter(e) {
-                        hilitefeature(e, layername);
+                        hiliteTrack(e, layername);
+                    }
+                    function selector(e) {
+                        selectTrack(e, layername);
                     }
 
                     var layerObject = mapcontent[layername];
@@ -379,7 +526,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                     var layerTemplates = getLayerTemplates(layerObject);
 
                     // REMOVE layers (on demand) 
-                    if (layerObject.delete) {
+                    if (layerObject.delete) { // ??? 
 
                         if (map.getSource(layername)) map.removeSource(layername);
 
@@ -388,6 +535,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                         });
 
                         map.off("mousemove", hiliter)
+                        map.off("click", selector)
 
                         return;
                     }
@@ -432,7 +580,10 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
 
                             mapLayer = map.getLayer(layername);
                             // 
-                            map.on("mousemove", hiliter)
+                            map.on("mousemove", hiliter);
+
+                            map.on("click", selector);
+
                         }
 
                         // Check in ??? 
@@ -441,6 +592,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                                 sourceLayer: 'original',
                                 filter: null
                             });
+
                             if (features.length) {
                                 console.log("Loaded "+features.length + " features of layer [" + layername+ "]"); // , features, layerSource);
                             }    
@@ -448,7 +600,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                     }
 
                     // GET all source-features of layer 
-                    var contentfeatures = getFeatures(layername, layerData);
+                    var contentfeatures = getFeatures(layerData, layername);
 
                     if (contentfeatures.length) {
                         // console.log("contentfeatures of " + layername, contentfeatures);

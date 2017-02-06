@@ -102,14 +102,14 @@ To 'close'
     <tracks-from-pnts 
         srcmeta="[[srcmeta]]"        
         usepreview="[[usepreview]]"
-        trackdata = "{{rawdata}}"
+        trackdata = "{{routedata}}"
         quickmap="{{quickmap}}">
     </tracks-from-pnts>    
 
     <tracks-from-gpx 
         srcmeta="[[srcmeta]]"
         usepreview="[[usepreview]]"
-        trackdata="{{rawdata}}"
+        trackdata="{{routedata}}"
         quickmap="{{quickmap}}">
     </tracks-from-gpx>    
 
@@ -151,6 +151,16 @@ To 'close'
             is: 'routing-handheld',
 
             properties: {
+
+                metadatasetslabel: {
+                    type: String,
+                    notify : true
+
+                },
+                datasetlabel: {
+                    type: String,
+                    notify : true
+                },
                 //
                 tracksrcmeta: {
                     type: Object
@@ -162,12 +172,15 @@ To 'close'
 
                 routedata: {
                     type: Object,
+                    value: [],
+                    observer: 'checkRoutedata',
                     notify: true
                 },
 
                 // 
                 usepreview: {
-                    type: Boolean
+                    type: Boolean,
+                    observer: 'dataUsageChanged'
                 },
 
                 xmlurl: {
@@ -180,11 +193,6 @@ To 'close'
 
                 jsonurl: {
                     type: String
-                },
-
-                rawdata: {
-                    type: Array,
-                    value: []
                 },
 
                 quickmap: {
@@ -203,23 +211,46 @@ To 'close'
             ],
 
             attached: function() {
+                this.dataUsageChanged();
                 // console.log("target attached");
             },
 
-            // Evaluate RoutingSource-Object to trigger import of rawdata
+            checkRoutedata : function(routedata) {
+                // console.log("checkRoutedata", routedata); 
+            },
+
+            // APP/GUI-elemente anpassen, 
+            // die sich bei verschiedenartiger Nutzung derselben Grunddatan unterscheiden  
+            dataUsageChanged : function(usepreview) {
+                if (usepreview == null) usepreview = this.usepreview; 
+                if (usepreview) {
+                    this.metadatasetslabel="TrackData Index"
+                    this.datasetlabel="Raw Tracks"
+                } else {
+                    this.metadatasetslabel="TrackData Index"
+                    this.datasetlabel="Track Routes"
+                }
+            },
+
+            clearSourceUsage : function() {
+                this.routedata = [];
+                var srcTitle = this.srcmeta.title;
+            },
+
+            // Evaluate RoutingSource-Object to trigger import of routedata
             // from different data-types 
             requestDispatcher: function(tracksrcmeta) {
                 if (tracksrcmeta.path == 'tracksrcmeta') tracksrcmeta = tracksrcmeta.value;
                 // console.log("requestDispatcher. BEFORE=", tracksrcmeta);
 
                 var srcurl = tracksrcmeta.url,
-                    srctype = tracksrcmeta.type;
+                    srctype = tracksrcmeta.type,
+                    srctitle = tracksrcmeta.title;
 
                 // Check some url - conditions ???
                 if (!srcurl) return;
-                if (srcurl != this.dataurl) {
-                    this.routedata = {};
-                    
+                if (this.srcmeta && (srcurl != this.srcmeta.url)) {
+                    this.clearSourceUsage();  // 
                 } 
 
                 if ((srctype == "kml") || (srctype == "gpx")) {  // trigger import from gpx/kml (kml-json)

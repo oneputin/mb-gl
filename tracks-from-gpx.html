@@ -118,20 +118,16 @@ Optional: create quick-preview-data
 
             // 2. 
             if (usepreview) { // derive features for mb-visualization of rawTracks
-                // console.log(rawtracks);  
+                // console.log("prepare quickmap", rawtracks);  
                 var quickmap = this.createQuickview(rawtracks, srcmeta);
-               
-               if (quickmap) {  // console.log("GPX-data to view", quickmap);
-                    // 2.1
+                if (quickmap) {  // console.log("GPX-data to view", quickmap);
                     this.quickmap = quickmap;
-                    console.log("RAW tracks (from GPX):", this.quickmap);  
-                    // 2.2 ?? 
-                    // this.trackdata = rawtracks.features;
+                    console.log("Quickview Tracks (from GPX):", this.quickmap);  
                 }    
 
-            } else {   // // derive structures for mb-based animation of 'suitable' tracks
-
-                var routetracks = this.createTrackRoutes(rawtracks.features);
+            } else {   // derive structures for mb-based animation of 'suitable' tracks
+                // console.log("prepare routedata", rawtracks);  
+                var routetracks = this.createTrackRoutes(rawtracks); // .features);
                 if (routetracks.length) {
                     console.log("RAW ROUTEDATA (from GPX)",  routetracks);
                     this.trackdata = routetracks;
@@ -191,7 +187,9 @@ Optional: create quick-preview-data
                     } else {
 
                         if (!starttime) starttime = tracktimes[0];
+
                         f.properties.color = scope.getRandomColor();
+
                         segmentFeatures.push(f);
                     }
                 })
@@ -206,7 +204,7 @@ Optional: create quick-preview-data
             }
 
             trackdata = jsonTrackSimplify(rawdata);
-            // console.log("flattenRawTracks, geojson-2", data)
+            // console.log("Raw Tracks, geojson-flat", trackdata)
 
             return trackdata;
         },
@@ -216,11 +214,11 @@ Optional: create quick-preview-data
 
             var quickmapObject;
 
-            function jsonTrackToQuickview(srcdata, title) {
+            function jsonTrackToQuickview(srcdata, title, prefix) {
 
                 if (!title) title = srcdata.time;
                
-                var mapid = "tracks-" + title;
+                var mapid = title;
 
                 quickmap = {};
                 quickmap[mapid] = {
@@ -237,7 +235,7 @@ Optional: create quick-preview-data
 
             // Create data for quickview of raw trackdata 
             // with "short as possible" id-entification of features 
-            var title = srcmeta.key;
+            var title; //  = srcmeta.key;
             if (!title) title = srcmeta.title;
             quickmapObject = jsonTrackToQuickview(trackdata, title); 
             
