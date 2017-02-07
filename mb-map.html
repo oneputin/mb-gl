@@ -127,10 +127,11 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 Mbb.ToolsBehavior
             ],
 
-            observers: [],
+            observers: [
+                'changeMap(mapctrl.*)'
+            ],
 
             attached: function() {
-                // console.log("mb-map setup", setup);
                 // console.log("this", this.mapapikey, this.mapstyle);
 
                 // Use default apikey if NONE available from app-shell
@@ -173,8 +174,11 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
             zoomthemap: function(zoom) {
                 // console.log("zoomthemap", zoom, this.map);
-                if (this.map) this.map.setZoom(zoom);
-                else this.mapctrl.zoom = zoom;
+                if (this.map) {
+                    this.map.setZoom(zoom);
+                } else {
+                    this.mapctrl.zoom = zoom;
+                }
             },
 
             centerthemap: function(cbox) {

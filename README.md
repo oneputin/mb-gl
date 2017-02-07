@@ -24,6 +24,9 @@ Bidirectional Zoom-Ctrl related to mapbox-gl-map ('map'-property)
 ### \<mb-target\>
 Target-box centered on client-map-viewbox.
 
+### \<mb-styles\>
+Switch "basemap-styles" used in actual map.
+
 ### \<mb-api\>
 Wraps the mapbox-gl-api as separate element
 

@@ -1,0 +1,179 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+
+<!--
+`dynamic-menu`  
+wraps the paper-dropdown-menu with main dynamic event-actions  
+- _updateMenu
+- _menuChanged
+- _menuSelected 
+
+@demo demo/routingplanes.html 
+-->
+
+<dom-module id="dynamic-menu">
+
+    <template>
+        <style>
+            :host {
+                display: block;
+                position: absolute;
+                width: 400px;
+                height: 600px;
+            }
+            paper-dropdown-menu {
+                border-style: solid;
+                border-width: 1px;
+                padding: 10px;
+                background-color: var(--paper-light-green-500);
+                /*opacity: 0.8;*/
+            }
+        </style>
+        
+        <template is="dom-if" if="{{menudata}}">
+            <paper-dropdown-menu class="dataitems" label="{{menulabel}}">
+                <paper-listbox class="dropdown-content" on-iron-items-changed="_menuChanged" on-iron-select="_menuSelected" attr-for-selected="select">
+                    <template is="dom-repeat" items="{{_selectset}}">
+                        <paper-item select="{{item}}" id="{{item.id}}">
+                            {{item.title}}
+                        </paper-item>
+                    </template>
+                </paper-listbox>
+            </paper-dropdown-menu>
+        </template>
+
+    </template>
+
+    <script>
+
+        Polymer({
+            is: 'dynamic-menu',
+
+            properties: {
+
+                // INPUT: menudata used to create menu
+                menudata: {
+                    type: Array,
+                    notify: true
+                },
+
+                // INPUT(opt): property of menudata-objects to return as selectvalue
+                // if null - entire object will be returned
+                selectprop: {
+                    type: String,
+                    value: ""
+                },
+
+                // INPUT(opt): Label of menu
+                menulabel : {
+                    type: String,
+                    value: "Menuitems"
+                },
+                // INPUT(opt): FLAG ctrls adding all/clear items to the items of menu2
+                selectenhance: {
+                    type: String,
+                    value: 0
+                },
+
+                // TEMP: Base of dynamic items-creationcreated from menudata if menudata.length > 1
+                _selectset: {
+                    type: Array
+                },
+
+                _preselected: {
+                    type: Number
+                },
+
+
+                // OUTPUT: of menu-selection returned !!
+                selectvalue: {
+                    type: Object,
+                    notify: true
+                }
+
+            },
+
+            observers: [
+                '_updateMenu(menudata)',
+            ],
+
+            /**
+             * Update the Menu-Content (List of menu-items)
+             * 
+             * @param      {object}  menudata  The menudata to 
+             */
+            _updateMenu: function(menudata) {
+                // console.log("_updateMenu. menudata=", menudata);
+                
+                // set optional standard-Items
+                function enhanceMenu(menudata) {
+                    var dset = [];
+                    menudata.forEach(function(d) {
+                        dset.push(d);
+                    })
+                    dset.push({
+                        id: "all",
+                        title: "Select all"
+                    });
+                    dset.push({
+                        id: "clear",
+                        title: "Clear all"
+                    });
+                    return dset; 
+                };
+
+                if (menudata && menudata.length) {
+                    var preselectindex = 0,
+                        preselectitem = menudata[0];
+
+                    if (menudata.length > 1) {
+                        var i = 0;
+                        menudata.some(function(rs) {
+                            if (rs.start) {
+                                preselectitem = rs;
+                                preselectindex = i;
+                                return true;
+                            }
+                            i = i + 1;
+                        });
+                        
+                        if (this.selectenhance) { 
+                            menudata = enhanceMenu(menudata);
+                        } 
+                        this._selectset = menudata;
+                    } else { // NO menu but return of SELECTRESULT
+                        this._selectset = null; // menu not required
+                        this.selectvalue = preselectitem;                    
+                    }
+
+                    this._preselected = preselectindex;
+
+                } else {
+                    this._selectset = null;
+                    this.selectvalue = null;
+                }
+                // console.log("_updateMenu. selected, _selectset", selected, this._selectset);
+            },
+
+            // AFTER modifiction of menu-items
+            _menuChanged: function(e){
+                var i = this._preselected ? this._preselected : 0;
+                // console.log("_menuChanged and resets to "+i, e.detail);
+                e.detail.target.selectIndex(i);
+            },
+            /**
+             * Select an item out of active menudata
+             */
+            _menuSelected: function(e) {
+                var selected = e.detail.item.select; // an object of processed menudata
+                if (this.selectprop) selected = selected[this.selectprop]; // a property of selected object
+                this.selectvalue = selected;
+            }
+
+        })
+    </script>
+</dom-module>

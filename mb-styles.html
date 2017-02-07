@@ -1,6 +1,94 @@
-<input id='' type='radio' name='rtoggle' value='Basic' checked='checked'>
-<label for='Basic'>Basic</label>
-<input id='ciuz8mtxy01dx2jl8mszelrkm' type='radio' name='rtoggle' value='Light'>
-<label for='Light'>Light</label>
-<input id='ciuv91dl2013z2iqq0y2z7ezg' type='radio' name='rtoggle' value='DEbunt'>
-<label for='DEbunt'>DEbunt</label>
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="dynamic-menu.html">
+
+<!--
+`mb-styles`  
+selects and applies a style to actual map
+
+@demo demo/routingplanes.html 
+-->
+<dom-module id="mb-styles">
+
+    <template>
+        <style>
+        </style>
+
+        <dynamic-menu
+            menudata="{{styles}}"
+            menulabel="MapStyles"
+            selectprop="id"
+            selectvalue="{{styleid}}">
+        </dynamic-menu>
+
+    </template>
+
+    <script>
+
+        Polymer({
+            is: 'mb-styles',
+
+            properties : {
+                map: {
+                    type: Object
+                },
+
+                styles: {
+                    type: Array
+                },
+
+                styleid : {
+                    type: String,
+                    observer: 'switchLayer'
+                }
+            },
+
+            attached : function(){
+                this.styles = [
+                    {
+                        id: "ciuz8mtxy01dx2jl8mszelrkm",
+                        title: "myLight",
+                        user: "oneputin"
+                    },
+                    {
+                        id: "ciuv91dl2013z2iqq0y2z7ezg",
+                        title: "myBunt",
+                        user: "oneputin"
+                    },
+                    {
+                        id: "basic",
+                        title: "basic"
+                    },
+                    {
+                        id: "streets",
+                        title: "streets"
+                    },
+                    {
+                        id: "bright",
+                        title: "bright"
+                    },
+                    {
+                        id: "light",
+                        title: "light"
+                    },
+                    {
+                        id: "satellite",
+                        title: "satellite"
+                    },
+                ]
+            },
+
+            switchLayer: function(styleid) {
+                var url ;
+                this.styles.some(function(s){
+                    if (s.id == styleid) {
+                        if (s.user) url = 'mapbox://styles/' + s.user +'/' + styleid ;
+                        else url = 'mapbox://styles/mapbox/' + styleid + '-v9';
+                        return true;
+                    } 
+                })
+                if (url) this.map.setStyle(url);
+            }
+        });
+    </script>
+
+</dom-module>
