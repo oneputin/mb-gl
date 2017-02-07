@@ -36,7 +36,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
         <div class="container">
             <div id='map'>
             </div>
-            <!--<mb-distance map="{{map}}" distance="{{distance}}" ></mb-distance>-->
             <content>
             </content>
         </div>
@@ -125,7 +124,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
             },
 
             behaviors: [
-                Polymer.ToolsBehavior
+                Mbb.ToolsBehavior
             ],
 
             observers: [],
@@ -165,12 +164,12 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 // C. Specify app-specific initial INSERT-LAYER
                 if (this.insertlayer) mapctrl.insertlayer = this.insertlayer;
 
-                // D. INSTALL the mapbox-map
+                // D. "INSTALL" the mapbox-map
+
                 this.mapctrl = mapctrl; //console.log(this.mapapikey, this.mapctrl);
 
                 this.installmap();
             },
-
 
             zoomthemap: function(zoom) {
                 // console.log("zoomthemap", zoom, this.map);
@@ -193,14 +192,8 @@ the map-ctrls can be placed as map-overlay or anywhere else
              */
             installmap: function() {
 
-                /*<input id='' type='radio' name='rtoggle' value='Basic' checked='checked'>
-                  <label for='Basic'>Basic</label>
-                  <input id='ciuz8mtxy01dx2jl8mszelrkm' type='radio' name='rtoggle' value='Light'>
-                  <label for='Light'>Light</label>
-                  <input id='ciuv91dl2013z2iqq0y2z7ezg' type='radio' name='rtoggle' value='DEbunt'>
-                  <label for='DEbunt'>DEbunt</label>*/
-
-                console.log("install map using", this.mapctrl, "apikey= " + this.mapapikey);
+                console.log("MAP installed:", this.mapctrl);
+                // console.log("apikey= " + this.mapapikey);
 
                 var that = this;
 

@@ -21,7 +21,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 @demo demo/slidemap.html 
 -->
 
-
 <dom-module id="mb-slide">
     <template>
 
@@ -110,10 +109,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
         Polymer({
             is: 'mb-slide',
-
-            behaviors: [
-                MbLayerAnimation
-            ],
 
             properties: {
                 /**
@@ -239,6 +234,10 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 }
 
             },
+
+            behaviors: [
+                Mbb.LayerAnimation
+            ],
 
             observers: [
                 'servicerequest(serviceflag, serviceparams.card, serviceparams.slide)',

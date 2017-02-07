@@ -1,7 +1,16 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <script>
-    Polymer.ToolsBehaviorImpl = {
+  /**
+   * `Mbb.ToolsBehavior` 
+   * Note, the `iron-resize` event is non-bubbling.
+   *
+   * @polymerBehavior Mbb.ToolsBehavior
+   * @demo demo/index.html
+   **/
+    window.Mbb = window.Mbb || {};
+
+    Mbb.ToolsBehavior = {
 
         properties: {},
 
@@ -326,9 +335,4 @@
             return roundedTempNumber / factor;
         }
     };
-
-    /** @polymerBehavior */
-    Polymer.ToolsBehavior = [
-        Polymer.ToolsBehaviorImpl
-    ];
 </script>

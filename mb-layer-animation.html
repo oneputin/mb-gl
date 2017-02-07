@@ -12,12 +12,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <script>
 /**
-   * Use `Polymer.MbLayerAnimation` to implement a custom element
+   * `Mbb.LayerAnimation` 
+   * Use to implement some attention-catcher animation
    *
+   * @polymerBehavior Mbb.LayerAnimation
    * @demo demo/index.html
-   * @polymerBehavior Polymer.MbLayerAnimation
    */
-    Polymer.MbLayerAnimationImpl = {
+   window.Mbb = window.Mbb || {};
+   
+   Mbb.LayerAnimation = {
 
         properties: {
             /**
@@ -28,12 +31,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 value: function() {
                     return {};
                 }
-            },
+            }
 
         },
 
         created: function() {
-            console.log('LayerLocate-animation enabled for ', this);
+            console.log('MbLayerAnimation enabled for ', this);
         },
 
         /*
@@ -274,10 +277,5 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             that.map.setPaintProperty(animation.layer, 'fill-opacity', opacity);
         }
     };
-
-    /** @polymerBehavior Polymer.MbLayerAnimation */
-    Polymer.MbLayerAnimation = [
-        Polymer.MbLayerAnimationImpl
-    ];
 
 </script>

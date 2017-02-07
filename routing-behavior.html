@@ -1,7 +1,15 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <script>
-    Polymer.BehaviorRoutingImpl = {
+  /**
+   * `Mbb.RoutingBehavior` 
+   * Note, the `BehaviorRouting` event is non-bubbling.
+   *
+   * @polymerBehavior Mbb.RoutingBehavior
+   * @demo demo/index.html
+   **/
+
+    Mbb.RoutingBehavior = {
 
         properties: {
 
@@ -103,7 +111,6 @@
             }
 
         },
-
 
         observers: [
             'processTrackdata(trackdata.*)',
@@ -302,11 +309,6 @@
             this._toggle(0);
             // this.style.display = "none";
         }
-
     };
 
-    /** @polymerBehavior */
-    Polymer.BehaviorRouting = [
-        Polymer.BehaviorRoutingImpl
-    ];
 </script>
