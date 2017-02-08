@@ -56,6 +56,10 @@
                 mapcontent: {
                     type: Object
                 },
+                // Old content 
+                _mapcontent: {
+                    type: Object
+                },
 
                 // features of (all) json-layers loaded
                 // !! grouped by layer !!
@@ -101,7 +105,7 @@
             },
 
             setupTool2: function(ss) {
-                console.log("setupTool2 stylesheet", ss.value); 
+                // console.log("setupTool2 stylesheet", ss.value); 
             },
 
             styleChanged: function(id) {
@@ -150,20 +154,20 @@
              * delivered with mapcontent container
              */
             quickContentUpdate: function(mapcontent) {
-                console.log("quickContentUpdate: "+ this.checked, mapcontent); 
                 if (!this.map || !this.checked) return;
+                console.log("quickContentUpdate: "+ this.checked, mapcontent); 
                 // remove old content
-                // this.quickContentClear();
-                this.quickContentPrepare(mapcontent, "delete");
+                this.quickContentPrepare(this._mapcontent, "delete");
                 // add new content
+                this._mapcontent = mapcontent; 
                 this.quickContentPrepare(mapcontent); 
             },    
 
             // 
             quickContentPrepare: function(mapcontent, deleteflag) {    
                 // console.log("quickContentPrepare", mapcontent, this.map, this.checked);
-                if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
                 if (!mapcontent || !Object.keys(mapcontent).length) return;
+                if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
 
                 var scope = this,
                     map = scope.map;
@@ -181,8 +185,10 @@
                         layers: [layerid]
                     });
 
+                    // CHANGE cursor temporarily
                     map.getCanvas().style.cursor = (features.length) ? 'pointer' : ''; // crosshair';
 
+                    // 
                     if (features && features.length) { 
 
                         var trackInfo = scope.trackGetInfo(features[0], layerid);
@@ -230,19 +236,18 @@
 
                 // Layer that occurs on-mose-hover only 
                 function createHiliteLayer(layertemplate, hitype) {
-                    var lhilite = {}; // layertemplate,
                     
-                    var basetype = layertemplate.type;
+                    var lhilite = {},// layertemplate,
+                        basetype = layertemplate.type,
+                        templateid = layertemplate.id + "-" + hitype;
+                    // console.log("createHiliteLayer for", templateid);
 
-                    if (hitype == "nodes") {
-                        // data will be filled to source later !!
-                        lhilite = {
-
+                    if (hitype == "nodes") { // sonderfall
+                        
+                       lhilite = {
                             "type": "symbol",
-                            "source": {
-                                "type": "geojson",
-                                "data": {}
-                            },
+                            "id": templateid,
+                            "source": templateid,
 
                             "layout": {
                                 "icon-image": "{icon}-15",
@@ -256,42 +261,42 @@
                                 "text-halo-width": 6,
                                 "text-color": "#ff0000"
                             }
-                       
                        };
-
-                    } else { // Copy from source lines 
-
-                        lhilite = {}; 
-
-                        Object.keys(layertemplate).forEach(function(k) {
-                            lhilite[k] = layertemplate[k];
-                        })
-
-                        lhilite.filter = ["==", "id", ""];
-
-                        var linecolor, linewidth, lineopacity, linedasharray;
-    
-                        if (hitype == "hover") {
-                            linecolor = "#FF0000";
-                            linewidth = 5;
-                            lineopacity = 1;
-                        } else if (hitype=="trace")  {
-                            linecolor = "#000000";
-                            linewidth = 3;
-                            lineopacity = 0.7;
-                            linedasharray = [4,4];  
-                        }
-
-                        lhilite.paint = {
-                            "line-color": linecolor,
-                            "line-width": linewidth,
-                            "line-opacity": lineopacity,
-                        }
-                        if (linedasharray)  lhilite.paint["line-dasharray"] = linedasharray;
-
+                       return lhilite; 
                     } 
+                    
+                    // Copy most properties from source template 
+                    // add some specific styling
 
-                    lhilite.id = layertemplate.id + "-" + hitype;
+                    lhilite = {}; 
+                    Object.keys(layertemplate).forEach(function(k) {
+                        lhilite[k] = layertemplate[k];
+                    })
+
+                    lhilite.id = templateid ;
+                    lhilite.filter = ["==", "id", ""];
+
+                    var linecolor, linewidth, lineopacity, linedasharray;
+
+                    if (hitype == "hover") {
+                        linecolor = "#FF0000";
+                        linewidth = 5;
+                        lineopacity = 1;
+                    } else if (hitype=="trace")  {
+                        linecolor = "#000000";
+                        linewidth = 3;
+                        lineopacity = 0.7;
+                        linedasharray = [4,4];  
+                    }
+
+                    lhilite.paint = {
+                        "line-color": linecolor,
+                        "line-width": linewidth,
+                        "line-opacity": lineopacity,
+                    }
+                    if (linedasharray) {
+                        lhilite.paint["line-dasharray"] = linedasharray;
+                    } 
 
                     return lhilite;
                 }
@@ -363,13 +368,15 @@
                     if (layerTemplate) layerTemplates.push(layerTemplate);
 
                     // Insert BELOW main layer 
-                    if (layerObject['bglayer']) layerTemplates.splice(0, 0, layerObject['bglayer']); // !!! 
+                    if (layerObject['bglayer']) {
+                        layerTemplates.splice(0, 0, layerObject['bglayer']); // !!! 
+                    }
 
                     if (layerObject['selectlayer']) {
-
+                       
                         layerObject['selectlayer'].forEach(function(l) {
                             layerTemplates.push(l);
-                        })
+                        });
 
                     } else if (layerTemplate) { // "Standardisierte" HILITE-Layers
                         
@@ -379,9 +386,9 @@
                         let traceTemplate = createHiliteLayer(layerTemplate, "trace");
                         if (traceTemplate) layerTemplates.push(traceTemplate);
 
+                        // another type 
                         let nodeTemplate = createHiliteLayer(layerTemplate, "nodes");
                         if (nodeTemplate) layerTemplates.push(nodeTemplate);
-
                     }
 
                     return layerTemplates;
@@ -421,8 +428,18 @@
                         var layerTemplates = getQuickTemplates(layerObject);
                 
                         layerTemplates.forEach(function(template) {
-                            console.log("adding layer", template);
                             if (!map.getLayer(template.id)) {
+
+                                console.log("adding layer", template);
+                                
+                                if ((template.type == "symbol") && !map.getSource(template.source)) {   
+                                    console.log("Set placeholder-source !!", template.src); 
+                                    map.addSource(template.source, {
+                                        "type": "geojson",
+                                        "data": { "type": "Point", "coordinates": [0, 0] }
+                                    });
+                                }    
+                                
                                 map.addLayer(template);
                             }
                         });
@@ -432,41 +449,44 @@
 
                     // Check in ??? 
                     if (mapLayer) {
-                        return layerData; 
-                      /*var features = map.querySourceFeatures(layername, {
+                        /*var features = map.querySourceFeatures(layername, {
                             sourceLayer: 'original',
                             filter: null
                         });
                         if (features.length) {
                             console.log("Loaded "+features.length + " features of layer [" + layername+ "]"); // , features, layerSource);
                         }*/    
+                        return layerData; 
                     }
 
                 }
 
                 function removeQuickContent(layerObject) {
 
-                    var layerTemplates = getQuickTemplates(layerObject);
-                    console.log("removing layerTemplates", layerTemplates);  
-                    layerTemplates.forEach(function(layername) {
-                        if (map.getLayer(layername)) {
-                            console.log("remove", layername) ;
-                            map.removeLayer(layername);
-                        }    
-                        if (map.getLayer(layername+"-hover")) map.removeLayer(layername+"-hover");
-                        if (map.getLayer(layername+"-trace")) map.removeLayer(layername+"-trace");
-                        if (map.getLayer(layername+"-nodes")) map.removeLayer(layername+"-nodes");                    
+                    var quickTemplates = getQuickTemplates(layerObject);
+                    console.log("removing quickContentLayers", quickTemplates);  
+                    
+                    quickTemplates.forEach(function(template) {
+                        var qlayername = template.id,
+                            qlayer = map.getLayer(qlayername);
+
+                        console.log("remove qlayer", qlayername, qlayer) ;                        
+                        if (qlayer) {
+                            map.removeLayer(qlayername);
+                        }  
                    });  
 
-                   layerTemplates.forEach(function(layername) { // console.log("remove source"+layername);
-                        if (map.getSource(layername)) map.removeSource(layername);
-                        if (map.getSource(layername+"-nodes")) map.removeSource(layername+"-nodes");
-                        if (map.getSource(layername+"-trace")) map.removeSource(layername+"-trace");
+                   quickTemplates.forEach(function(template) { 
+                        var srcid = template.source,
+                            qsrc = map.getSource(srcid);
+                        console.log("remove qsource ", srcid, qsrc);
+                        if (qsrc) {
+                            map.removeSource(srcid);
+                        }   
                     })    
                 }
 
                 // console.log("IIMAP-refresh of with:", mapcontent);
-
                 // --------------------------------------------------
 
                 var jsonContent = {};
@@ -485,10 +505,10 @@
                     var layerObject = mapcontent[layername];
 
                     // Option 
-                    if (layerObject.raw) rawBeautify(layerObject);
-                    console.log("layer"+layername, layerObject, deleteflag);
 
                     if (deleteflag) { // REMOVE layers (on demand) 
+
+                        console.log("DELETE qlayer " + layername, layerObject);
 
                         removeQuickContent(layerObject); 
 
@@ -496,6 +516,10 @@
                         map.off("click", selector)
 
                     } else {    // CREATE / REFRESH mapContent
+    
+                        if (layerObject.raw) rawBeautify(layerObject);
+
+                        console.log("SETUP qlayer " + layername, layerObject);
                         
                         var layerData = addQuickContent(layername, layerObject); 
 
@@ -518,37 +542,6 @@
 
                 console.log("quickContentPrepare: new jsonContent", jsonContent);
                 this.jsonContent = jsonContent;
-            },
-
-            // 
-            quickContentClear: function() {
-                var map = scope.map;
-                var lastContent = Object.keys(this.jsonContent);
-                if (!lastContent.length) return; 
-
-                function removeQuickContent(layername){
-
-                    if (map.getLayer(layername)) {
-                        map.removeLayer(layername);
-                    }    
-
-                    if (map.getLayer(layername+"-hover")) map.removeLayer(layername+"-hover");
-                    if (map.getLayer(layername+"-nodes")) map.removeLayer(layername+"-nodes");
-                    if (map.getLayer(layername+"-trace")) map.removeLayer(layername+"-trace");
-                
-                    // });  
-                    // lastContent.forEach(function(layername) { // console.log("remove source"+layername);
-                    if (map.getSource(layername)) map.removeSource(layername);
-                    if (map.getSource(layername+"-nodes")) map.removeSource(layername+"-nodes");
-                    if (map.getSource(layername+"-trace")) map.removeSource(layername+"-trace");
-
-                }
-
-                lastContent.forEach(function(layername) { // console.log("remove Qview-layer(s)"+layername);
-                    removeQuickContent(layername);
-                });  
-                
-                this.jsonContent = {};
             },
 
             // Get Info about "complete track", not only features in actually "visible" tile(s)
@@ -620,16 +613,14 @@
                 if (!features || !features.length) return;  
                 var trackFeature = features[0]; 
 
-                // Create a 
+                // Create trackEndMarkers
                 function setTrackNodes(layerid, trackInfo) {
                     // layer of nodes symbols with text in HALO
 
                     var hilayerid = layerid + "-nodes",
                         hilayer = map.getLayer(hilayerid);
-                    // if (hilayer) map.removeLayer(layerid); 
-                    // if (map.getSource(layerid)) map.removeSource(layerid); 
                     if (!hilayer) return; 
-                    console.log(); 
+                    
                     var fromnode = trackInfo.fromnode.slice(0,2),
                         tonode = trackInfo.tonode.slice(0,2),
                         fromtime = trackInfo.von,
@@ -660,30 +651,12 @@
                         } ;
 
                     // map.addSource(layerid, node);    
-                    // this.map.getSource(slidesource).setData(slidedata);
-                    this.map.getSource(hilayerid).setData(nodedata);                     
-
-                    /*map.addLayer({
-                        "id": layerid,
-                        "type": "symbol",
-                        "source": layerid,
-                        "layout": {
-                            "icon-image": "{icon}-15",
-                            "text-field": "{title}",
-                            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-                            "text-offset": [0, 0.6],
-                            "text-anchor": "top"
-                        },
-                        "paint": {
-                            "text-halo-color": "#ffffff",
-                            "text-halo-width": 6,
-                            "text-color": "#ff0000"
-                        }
-                       
-                    });*/
+                    var src = this.map.getSource(hilayerid); 
+                    if (src)  src.setData(nodedata);                     
+                    console.log("set nodes-data into ", hilayerid, nodedata, src); 
                 } 
 
-                // Filtering the TRACE-Layer
+                // HILITE the TRACE of the track (Filtering-Layer)
                 function setTrackTrace(layerid, trackInfo) {
                     // 
                     var hilayerid = layerid + "-trace", // ?
