@@ -11,6 +11,20 @@ selects and applies a style to actual map
 
     <template>
         <style>
+            :host {
+                display: block;
+                position: absolute;
+                z-index: 9;
+                top: 0;
+                
+                left: 50%;
+                margin-right: -50%;
+                transform: translate(-50%, 0);
+
+                font: 0.8em Courier, Lucida;
+                background-color: rgba(255,64,129,0.8); /*#ff4081*/
+                color: white;                    
+            }
         </style>
 
         <dynamic-menu
@@ -29,7 +43,15 @@ selects and applies a style to actual map
 
             properties : {
                 map: {
-                    type: Object
+                    type: Object,
+                    notify: true,
+                    observer: 'setupTool'
+                },
+
+                // 
+                mbversion: {
+                    type: String,
+                    value: '-v9'
                 },
 
                 styles: {
@@ -38,11 +60,20 @@ selects and applies a style to actual map
 
                 styleid : {
                     type: String,
-                    observer: 'switchLayer'
+                    notify: true,
+                    observer: 'switchStyle'
+                },
+
+                checked: {
+                    type: Boolean,
+                    value: true,
+                    observer: 'toggleTool'
                 }
+
             },
 
             attached : function(){
+
                 this.styles = [
                     {
                         id: "ciuz8mtxy01dx2jl8mszelrkm",
@@ -74,20 +105,54 @@ selects and applies a style to actual map
                         id: "satellite",
                         title: "satellite"
                     },
-                ]
+                ];
+
+                if (!this.checked) this.toggleTool(false);
             },
 
-            switchLayer: function(styleid) {
-                var url ;
+            // 
+            switchStyle: function(styleid) {
+                if (!this.map) return;  
+
+                console.log("stylesheet before switching", this.map.style.stylesheet); 
+
+                var url,
+                    mbversion = this.mbversion ;
+
                 this.styles.some(function(s){
                     if (s.id == styleid) {
-                        if (s.user) url = 'mapbox://styles/' + s.user +'/' + styleid ;
-                        else url = 'mapbox://styles/mapbox/' + styleid + '-v9';
+                        if (s.user) {
+                            url = 'mapbox://styles/' + s.user +'/' + styleid ;
+                        } else {
+                            url = 'mapbox://styles/mapbox/' + styleid + mbversion;
+                        }    
                         return true;
                     } 
-                })
-                if (url) this.map.setStyle(url);
-            }
+                }); 
+                if (url) {
+                    console.log("switching style", styleid, url);
+                    this.map.setStyle(url);
+                }    
+            },
+
+            setupTool: function(){
+                if (!this.map) return;
+                this.toggleTool();
+            },
+
+            toggleTool: function(checked) {
+                if (!this.map) return;
+
+                if (checked==null) checked = this.checked;
+                console.log("checked", checked);
+                if (checked) {
+                    this.style.display = "block";
+                } else {
+                    this.style.display = "none";
+                }
+            },
+
+
         });
     </script>
 

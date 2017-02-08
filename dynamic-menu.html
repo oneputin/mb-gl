@@ -7,7 +7,7 @@
 
 <!--
 `dynamic-menu`  
-wraps the paper-dropdown-menu with main dynamic event-actions  
+Container for paper-dropdown-menu reducing variable properties to main dynamic event-actions  
 - _updateMenu
 - _menuChanged
 - _menuSelected 
@@ -20,10 +20,8 @@ wraps the paper-dropdown-menu with main dynamic event-actions
     <template>
         <style>
             :host {
-                display: block;
-                position: absolute;
-                width: 400px;
-                height: 600px;
+                display: inline-block;
+                position: relative;
             }
             paper-dropdown-menu {
                 border-style: solid;
@@ -36,7 +34,7 @@ wraps the paper-dropdown-menu with main dynamic event-actions
         
         <template is="dom-if" if="{{menudata}}">
             <paper-dropdown-menu class="dataitems" label="{{menulabel}}">
-                <paper-listbox class="dropdown-content" on-iron-items-changed="_menuChanged" on-iron-select="_menuSelected" attr-for-selected="select">
+                <paper-listbox id="listbox" class="dropdown-content" on-iron-items-changed="_menuChanged" on-iron-select="_menuSelected" attr-for-selected="select">
                     <template is="dom-repeat" items="{{_selectset}}">
                         <paper-item select="{{item}}" id="{{item.id}}">
                             {{item.title}}
@@ -84,21 +82,25 @@ wraps the paper-dropdown-menu with main dynamic event-actions
                     type: Array
                 },
 
-                _preselected: {
-                    type: Number
+                // 
+                _selectindex: {
+                    type: Number,
+                    observer: '_refreshSelectedItem'
                 },
-
 
                 // OUTPUT: of menu-selection returned !!
                 selectvalue: {
                     type: Object,
                     notify: true
-                }
+                },
+
+                _lastid: String
 
             },
 
             observers: [
                 '_updateMenu(menudata)',
+                '_syncSelection(selectvalue.id)'
             ],
 
             /**
@@ -109,7 +111,7 @@ wraps the paper-dropdown-menu with main dynamic event-actions
             _updateMenu: function(menudata) {
                 // console.log("_updateMenu. menudata=", menudata);
                 
-                // set optional standard-Items
+                // optional standard-Items adding
                 function enhanceMenu(menudata) {
                     var dset = [];
                     menudata.forEach(function(d) {
@@ -150,7 +152,7 @@ wraps the paper-dropdown-menu with main dynamic event-actions
                         this.selectvalue = preselectitem;                    
                     }
 
-                    this._preselected = preselectindex;
+                    this._selectindex = preselectindex;
 
                 } else {
                     this._selectset = null;
@@ -159,10 +161,42 @@ wraps the paper-dropdown-menu with main dynamic event-actions
                 // console.log("_updateMenu. selected, _selectset", selected, this._selectset);
             },
 
+            // 
+            _syncSelection: function(selectvalueid) {
+                // use debounce to avoid doubling if evenbt from different sources
+                this.debounce("sync", function(){
+                    if (selectvalueid != this._lastid) {
+                        // console.log("sync for id= [" + selectvalueid+"]", "lastid was [" + this._lastid + "]"); // return; 
+                        var index,
+                            listbox = this.$$("paper-listbox"); // may be NOT located if hidden by "dom-if"
+                        
+                        this._selectset.some(function(item, i){
+                            if (item.id == selectvalueid) {
+                                index = i;
+                                return true;  
+                            }
+                        });
+
+                        if (index && listbox) {
+                            // console.log("set menu at index ["+index+"] of id=", selectvalueid); // , this._selectset); 
+                            listbox.selectIndex(index);
+                            this._lastid = selectvalueid;
+                        }    
+                    }
+                }, 100);    
+            },
+
+            // 
+            _refreshSelectedItem: function(selectindex) {
+                var listbox = this.$$("paper-listbox"); // NOT located if hidden by "dom-if"
+                // console.log("selectindex of ["+ this.menulabel+ "]", selectindex, listbox); 
+                // if (listbox) listbox.selectIndex(selectindex);
+            },
+
             // AFTER modifiction of menu-items
             _menuChanged: function(e){
-                var i = this._preselected ? this._preselected : 0;
-                // console.log("_menuChanged and resets to "+i, e.detail);
+                var i = this._selectindex ? this._selectindex : 0;
+                // console.log("_menuChanged and resets to "+i, e.detail.target);
                 e.detail.target.selectIndex(i);
             },
             /**

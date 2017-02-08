@@ -101,14 +101,14 @@ To 'close'
         srcmeta="[[srcmeta]]"        
         usepreview="[[usepreview]]"
         trackdata = "{{routedata}}"
-        quickmap="{{quickmap}}">
+        quickmap="{{quickmapcontent}}">
     </tracks-from-pnts>    
 
     <tracks-from-gpx 
         srcmeta="[[srcmeta]]"
         usepreview="[[usepreview]]"
         trackdata="{{routedata}}"
-        quickmap="{{quickmap}}">
+        quickmap="{{quickmapcontent}}">
     </tracks-from-gpx>    
 
     <paper-card 
@@ -150,11 +150,6 @@ To 'close'
 
             properties: {
 
-                metadatasetslabel: {
-                    type: String,
-                    notify : true
-
-                },
                 datasetlabel: {
                     type: String,
                     notify : true
@@ -193,7 +188,7 @@ To 'close'
                     type: String
                 },
 
-                quickmap: {
+                quickmapcontent: {
                     type: Object,
                     notify: true
                 }
@@ -222,10 +217,8 @@ To 'close'
             dataUsageChanged : function(usepreview) {
                 if (usepreview == null) usepreview = this.usepreview; 
                 if (usepreview) {
-                    this.metadatasetslabel="TrackData Index"
                     this.datasetlabel="Raw Tracks"
                 } else {
-                    this.metadatasetslabel="TrackData Index"
                     this.datasetlabel="Track Routes"
                 }
             },

@@ -40,7 +40,7 @@ wraps a distance utility
     </template>
 
     <script>
-        var myscope;
+        var logscope; // required to enable variable log-events (mapmove or mouse)
 
         Polymer({
 
@@ -86,25 +86,31 @@ wraps a distance utility
                 Mbb.ToolsBehavior,
             ],
 
+            observers: [],
+
             attached: function() {
-                myscope = this;
-                // console.log(myscope);
-                if (!myscope.checked) myscope.toggleTool(false);
+                logscope = this;
+                console.log(logscope);
+                if (!logscope.checked) logscope.toggleTool(false);
             },
 
             // 
             toggleTool: function(checked) {
                 if (!this.map) return;
-                // console.log("toggleTool-1", this.map);
-                var msg = "move-event toggled " + checked;
-                console.log(msg);
+                console.log("toggleTool-1", this.map);
+                var msg = "move-event toggled " + checked ; console.log(msg, "srcmode=", this.srcmode);
                 if (checked) {
+                    
                     this.style.display = "block";
 
-                    if (this.srcmode == "mouse") this.map.on('mousemove', this.onMoveEvent);
-                    else if (this.srcmode == "mapcenter") this.map.on('move', this.onMoveEvent);
+                    if (this.srcmode == "mouse") {
+                        this.map.on('mousemove', this.onMoveEvent);
+                    } else if (this.srcmode == "mapcenter") {
+                        this.map.on('move', this.onMoveEvent);
+                    }
 
                 } else {
+                    
                     this.style.display = "none";
 
                     if (this.srcmode == "mouse") { // 
@@ -113,28 +119,23 @@ wraps a distance utility
                         this.map.off('move', this.onMoveEvent);
                     }
                 }
-
-
             },
 
             // 
             onMoveEvent: function(e) {
-                if (myscope.srcmode == "mapcenter") myscope.lnglat = myscope.map.getCenter();
-                else myscope.lnglat = e.lngLat;
-                // console.log("MOVE-Event", e, myscope.lnglat);
+                if (logscope.srcmode == "mapcenter") logscope.lnglat = logscope.map.getCenter();
+                else logscope.lnglat = e.lngLat;
+                // console.log("MOVE-Event", e, logscope.lnglat);
             },
 
             // 
             setupTool: function(map) {
-                if (!map) return;
-
+                // if (!this.map) return;
                 if (this.checked) {
                     if (this.srcmode == "mouse") this.map.on('mousemove', this.onMoveEvent);
                     else if (this.srcmode == "mapcenter") this.map.on('move', this.onMoveEvent);
                 }
             },
-
-            observers: []
 
         });
     </script>

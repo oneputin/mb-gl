@@ -19,6 +19,8 @@
     <!-- app-components dependent on map-api --> 
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
+    <link rel="import" href="../mb-styles.html">
+    
     <link rel="import" href="../routing-api.html">
     <link rel="import" href="../mb-distance.html">
     <link rel="import" href="../mb-orientation-ctrl.html">
@@ -156,6 +158,12 @@
                 checked="[[uselocationlog]]">
             </mb-location-log>
 
+            <mb-styles 
+                map = "[[map]]" 
+                styleid = "{{styleid}}"
+                checked = "[[usestyleselect]]">
+            </mb-styles>
+
             <!--<mb-info-drag carddata="[[trackdata]]">
                                 </mb-info-drag>-->
 
@@ -194,6 +202,7 @@
             </template>
 
             <div id="radios">
+                <paper-radio-button checked="{{usestyleselect}}">Style slection</paper-radio-button>
                 <paper-radio-button checked="{{uselocationlog}}">Location Log</paper-radio-button>
                 <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
                 <paper-radio-button class="red" checked="{{usepreview}}">CheckSources</paper-radio-button>
@@ -203,34 +212,36 @@
             <!-- selectvalue="{{routeid}}"--> 
             <dataset-browser 
                 indexurl="[[indexurl]]" 
-                metadatasets="{{routesets}}" 
                 metadatasetslabel="[[metadatasetslabel]]" 
+                metadatasets="{{routesets}}" 
                 datasetmeta="{{routedatasrc}}"
 
-                dataset="[[menudata]]" 
                 datasetlabel="[[datasetlabel]]"
-                selectvalue="{{menuitem}}"> 
+                dataset="[[dataset]]" 
+                selectvalue="{{datasetitem}}"> 
             </dataset-browser>
 
-            <!-- elements for viewing structurally standardized quickMapObjects -->
+            <!-- Element for viewing structurally standardized quickMapObjects 
+                 + supply/sync processed features to sibling elements -->
             <mb-quickview 
                 map="[[map]]" 
+                styleid="[[styleid]]"
                 mapcontent="[[mapcontent]]" 
                 checked="[[usepreview]]" 
-                featurelist="{{menudata}}" 
-                featureselected="[[menuitem]]">
+                featurelist="{{dataset}}" 
+                featureselected="{{datasetitem}}">
             </mb-quickview>
 
             <!-- INTERFACE -->
             <!-- routedata="{{routedata}}" --> 
             <!-- rawdata="{{rawdata}}" --> 
             <routing-handheld 
-                metadatasetslabel="{{metadatasetslabel}}" 
                 datasetlabel="{{datasetlabel}}" 
+
                 tracksrcmeta="[[routedatasrc]]" 
 
                 usepreview="[[usepreview]]" 
-                quickmap="{{mapcontent}}" 
+                quickmapcontent="{{mapcontent}}" 
                 routedata="{{routedata}}" 
 
                 basedataurl="[[basedataurl]]" 
@@ -252,8 +263,10 @@
     scope.indexurl = "index-handheld.json"; // list of available datasets
     scope.basedataurl = ""; // list of available datasets
     scope.routedatasrc = {}; // metadata of selected dataset
-    scope.menudata = []; // collection 
-    scope.menuitem = {}; // track/route-object
+
+    scope.metadatasetslabel="TrackData Index"
+    scope.dataset = []; // collection 
+    scope.datasetitem = {}; // track/route-object
 
     // Map-INIT
     scope.cbox = "13,52";
@@ -261,6 +274,7 @@
     // scope.lnglat = "13,52";
 
     // STATE init
+    scope.usestyleselect = false;
     scope.uselocationlog = true;
     scope.usepreview = true;
     

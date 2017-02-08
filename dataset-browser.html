@@ -42,23 +42,25 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
             auto 
             url="[[indexurl]]" 
             handle-as="json" 
-            on-response="_updateMenu1">
+            on-response="_updateMetadata">
         </iron-ajax>
 
         <div class="vertical">
             <!-- get a datasetMeta -->
             <div class="flexchild">
                 <dynamic-menu 
+                    id="menu1"
                     class="metadata"
                     menudata="[[metadatasets]]"
                     menulabel="[[metadatasetslabel]]"
-                    selectedvalue="{{datasetmeta}}">
+                    selectvalue="{{datasetmeta}}">
                 </dynamic-menu>
             </div>
             
             <!-- present dataset-items and select one -->
             <div class="flexchild">
                 <dynamic-menu
+                    id="menu2"
                     menudata="[[dataset]]"
                     menulabel="[[datasetlabel]]"
                     selectenhance="true"
@@ -137,7 +139,6 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
             },
 
             observers: [
-                '_updateMenu2(dataset)',
             ],
 
             /**
@@ -146,29 +147,10 @@ wraps a 1-3-step NOSQL-dataset-browserion tool
              *
              * @param      {<type>}  ajaxresponse  The ajaxresponse
              */
-            _updateMenu1: function(ajaxresponse) {
-                var datasetmetas = ajaxresponse.detail.response,
-                    datasetmeta;
-                if (datasetmetas.length) {
-                    if (datasetmetas.length > 1) {  // * enable/fill IndexMenu only if more then one entry in idex-doc* 
-                        var selected = 0;
-                        var i = 0;
-                        datasetmetas.some(function(rs) {
-                            if (rs.start) {
-                                datasetmeta = rs;
-                                selected = i;
-                                return true;
-                            }
-                            i = i + 1;
-                        });
-                        // console.log("_updateMenu1, datasetmetas",datasetmetas, selected); 
-                        this.metadatasets = datasetmetas; 
-                        this._selected1 = selected;
-                    } else {
-                      // menu-1 will not be displayed     
-                      this.datasetmeta = datasetmetas[0];
-                    }
-                }
+            _updateMetadata: function(ajaxresponse) {
+                var datasetmetas = ajaxresponse.detail.response;
+                // optionally do some modification
+                this.metadatasets = datasetmetas;  
             },
 
         })

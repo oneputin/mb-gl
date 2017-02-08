@@ -2,24 +2,24 @@
 <link rel="import" href="mb-tools-behavior.html">
 
 <!--
-`mb-quickview`
-quick preview of "mapcontent" supplied in "quickformat" fi. 
-- derived from raw kml- or gpx-datasets
-- created for routing-api
+    `mb-quickview`
+    quick preview of "mapcontent" supplied in "quickformat" fi. 
+    - derived from raw kml- or gpx-datasets
+    - created for routing-api
 
-`quickformat` - object:
+    `quickformat` - object:
 
-        quickmap[mapid] = {
-            "layer": {
-                "type": "line",
-                "id": mapid,
-                "source": mapid
-            },
-            "srcdata": srcdata,
-            "raw": 1
-        };
+            quickmap[mapid] = {
+                "layer": {
+                    "type": "line",
+                    "id": mapid,
+                    "source": mapid
+                },
+                "srcdata": srcdata,
+                "raw": 1
+            };
 
-@demo demo/routinghandheld.html 
+    @demo demo/routinghandheld.html 
 -->
 
 <dom-module id="mb-quickview">
@@ -48,6 +48,10 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                     type: Object,
                     observer: "setupTool"
                 },
+                styleid: {
+                    type: String,
+                    observer: 'styleChanged'
+                },
                 // 
                 mapcontent: {
                     type: Object
@@ -55,9 +59,9 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
 
                 // features of (all) json-layers loaded
                 // !! grouped by layer !!
-                mapfeatures: {
+                jsonContent: {
                     type: Object,
-                    value: {},
+                    value: {}
                 },
 
                 featurelist: {
@@ -68,13 +72,12 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
 
                 featureselected: {
                     type: Object,
+                    notify: true,
                     observer: 'zoomToFeature'
                 },
 
                 checked: {
-                    type: Boolean,
-                    value: true,
-                    observer: "toggleTool"
+                    type: Boolean
                 }
 
             },
@@ -84,21 +87,26 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
             ],
 
             observers: [
-                'mapContentUpdate(mapcontent.*)',
-                'mapContentFeatureList(mapfeatures.*)'
+                'quickContentUpdate(mapcontent.*)',
+                'mapContentFeatureList(jsonContent.*)',
+                'setupTool2(map.style.stylesheet.*)'
             ],
 
             setupTool: function(map) {
                 if (!map) return;
-                // console.log("setup map with content:", this.mapcontent);
+                console.log("update map with content:", map, this.mapcontent);
                 if (this.mapcontent) {
-                    this.mapContentPrepare(this.mapcontent);
+                    this.quickContentUpdate(this.mapcontent);
                 }    
             },
 
-            toggleTool: function(checked) {
-                // console.log("checked Tool:", checked)
-                // console.log("this=", this);
+            setupTool2: function(ss) {
+                console.log("setupTool2 stylesheet", ss.value); 
+            },
+
+            styleChanged: function(id) {
+                console.log("styleChanged id=", id); 
+                this.quickContentUpdate(this.mapcontent);
             },
 
             attached: function() {
@@ -106,26 +114,30 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
             },
 
             zoomToFeature: function(f) {
-                if (!f.feature) return;
-                console.log("zoomToFeature: " + f.id, f.layer, f.feature);
-                if (f.feature.properties.coordTimes)  this.tracksSelect([f.feature], f.layer);
-                else this.setFeatureBounds([f.feature], this.map);
+                if (!f.feature || !this.map) return; 
+                // console.log("zoomToFeature: " + f.id, f.layer, f);
+                if (f.feature.properties.coordTimes)  {  // Extended method for tracks 
+                    this.tracksSelect([f.feature], f.layer);
+                } else { // SimpleGeometryZoom 
+                    this.setFeatureBounds([f.feature], this.map);
+                }    
             },
 
             /**
-             * Create a list of all features  contained in 'mapfeatures'-collection 
+             * Create a LIST(array) of all features  
+             * contained in the layers(keys) of 'jsonContent'-collection 
              * and supply to container ("notified" property)
              */
-            mapContentFeatureList: function(mapfeatures) {
+            mapContentFeatureList: function(jsonContent) {
                 if (!this.checked) return;
 
-                if (mapfeatures.path == 'mapfeatures') mapfeatures = mapfeatures.value;
-                if (!mapfeatures || !Object.keys(mapfeatures).length) return;
-                // console.log("mapfeatures after change:", mapfeatures);
+                if (jsonContent.path == 'jsonContent') jsonContent = jsonContent.value;
+                if (!jsonContent || !Object.keys(jsonContent).length) return;
+                // console.log("jsonContent after change:", jsonContent);
 
                 var featurelist = [];
-                Object.keys(mapfeatures).forEach(function(f) {
-                    mapfeatures[f].forEach(function(item) {
+                Object.keys(jsonContent).forEach(function(f) {
+                    jsonContent[f].forEach(function(item) {
                         featurelist.push(item);
                     })
                 });
@@ -137,42 +149,24 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
              * Create/Refresh ii(maps)Layers 
              * delivered with mapcontent container
              */
-            mapContentUpdate: function(mapcontent) {
+            quickContentUpdate: function(mapcontent) {
+                console.log("quickContentUpdate: "+ this.checked, mapcontent); 
                 if (!this.map || !this.checked) return;
                 // remove old content
-                this.mapContentClear();
+                // this.quickContentClear();
+                this.quickContentPrepare(mapcontent, "delete");
                 // add new content
-                this.mapContentPrepare(mapcontent); 
+                this.quickContentPrepare(mapcontent); 
             },    
-              
-            mapContentClear: function() {
-                var map = scope.map;
-                var lastContent = Object.keys(this.mapfeatures);
-                if (!lastContent.length) return; 
 
-                lastContent.forEach(function(layername) { // console.log("remove Qview-layer(s)"+layername);
-                    if (map.getLayer(layername)) map.removeLayer(layername);
-                    if (map.getLayer(layername+"-hover")) map.removeLayer(layername+"-hover");
-                    if (map.getLayer(layername+"-nodes")) map.removeLayer(layername+"-nodes");
-                    if (map.getLayer(layername+"-trace")) map.removeLayer(layername+"-trace");
-                });  
-                lastContent.forEach(function(layername) { // console.log("remove source"+layername);
-                    if (map.getSource(layername)) map.removeSource(layername);
-                    if (map.getSource(layername+"-nodes")) map.removeSource(layername+"-nodes");
-                    if (map.getSource(layername+"-trace")) map.removeSource(layername+"-trace");
-                });  
-                
-                this.mapfeatures = {};
-            },
-
-            mapContentPrepare: function(mapcontent) {    
-                // console.log("mapContentPrepare", mapcontent, this.map, this.checked);
+            // 
+            quickContentPrepare: function(mapcontent, deleteflag) {    
+                // console.log("quickContentPrepare", mapcontent, this.map, this.checked);
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
                 if (!mapcontent || !Object.keys(mapcontent).length) return;
 
                 var scope = this,
-                    map = scope.map,
-                    mapfeatures = {};
+                    map = scope.map;
 
                 // Generic HILITE-function based on "id-Filter"	
                 function featureHilite(e, layerid) {
@@ -193,7 +187,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
 
                         var trackInfo = scope.trackGetInfo(features[0], layerid);
 
-                        scope.popupOnMap(trackInfo.html);
+                        // scope.popupOnMap(trackInfo.html);
 
                         if (!trackInfo.keyname) {
                              console.log("hi " + layerid + ":", trackInfo);
@@ -237,34 +231,57 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                 // Layer that occurs on-mose-hover only 
                 function createHiliteLayer(layertemplate, hitype) {
                     var lhilite = {}; // layertemplate,
+                    
                     var basetype = layertemplate.type;
-                    Object.keys(layertemplate).forEach(function(k) {
-                        lhilite[k] = layertemplate[k];
-                    })
 
-                    var linecolor, linewidth, lineopacity, linedasharray;
-                    if (hitype == "hover") {
-                       linecolor = "#FF0000";
-                       linewidth = 5;
-                       lineopacity = 1;
-                    } else {
-                       linecolor = "#000000";
-                       linewidth = 3;
-                       lineopacity = 0.7;
-                       linedasharray = [4,4];  
-                    }
+                    if (hitype == "nodes") {
+                        // data will be filled to source later !!
+                        lhilite = {
 
-                    lhilite.id = layertemplate.id + "-" + hitype;
+                            "type": "symbol",
+                            "source": {
+                                "type": "geojson",
+                                "data": {}
+                            },
 
-                    lhilite.filter = ["==", "id", ""];
+                            "layout": {
+                                "icon-image": "{icon}-15",
+                                "text-field": "{title}",
+                                "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                                "text-offset": [0, 0.6],
+                                "text-anchor": "top"
+                            },
+                            "paint": {
+                                "text-halo-color": "#ffffff",
+                                "text-halo-width": 6,
+                                "text-color": "#ff0000"
+                            }
+                       
+                       };
 
-                    if (basetype == "fill") {
-                        lhilite.paint = {
-                            "fill-color": "#627BC1",
-                            "fill-opacity": 1
+                    } else { // Copy from source lines 
+
+                        lhilite = {}; 
+
+                        Object.keys(layertemplate).forEach(function(k) {
+                            lhilite[k] = layertemplate[k];
+                        })
+
+                        lhilite.filter = ["==", "id", ""];
+
+                        var linecolor, linewidth, lineopacity, linedasharray;
+    
+                        if (hitype == "hover") {
+                            linecolor = "#FF0000";
+                            linewidth = 5;
+                            lineopacity = 1;
+                        } else if (hitype=="trace")  {
+                            linecolor = "#000000";
+                            linewidth = 3;
+                            lineopacity = 0.7;
+                            linedasharray = [4,4];  
                         }
 
-                    } else if (basetype == "line") {
                         lhilite.paint = {
                             "line-color": linecolor,
                             "line-width": linewidth,
@@ -272,12 +289,10 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                         }
                         if (linedasharray)  lhilite.paint["line-dasharray"] = linedasharray;
 
-                    } else if (basetype == "symbol") {
-                        lhilite.layout = {
-                            "opacity": 1
-                        }
-                    }
-                    //console.log("Created HOVER", basetype, lhilite);
+                    } 
+
+                    lhilite.id = layertemplate.id + "-" + hitype;
+
                     return lhilite;
                 }
 
@@ -305,34 +320,6 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                     layerObject.layer.paint = paintObj;
 
                     return layerObject.layer;
-                }
-
-                // Create (multiple) layers to create "" 
-                function getLayerTemplates(layerObject) {
-
-                    var layerTemplates = []
-                    layerTemplate = layerObject['layer'];
-
-                    if (layerTemplate) layerTemplates.push(layerTemplate);
-
-                    // Insert BELOW main layer 
-                    if (layerObject['bglayer']) layerTemplates.splice(0, 0, layerObject['bglayer']); // !!! 
-
-                    if (layerObject['selectlayer']) {
-                        layerObject['selectlayer'].forEach(function(l) {
-                            layerTemplates.push(l);
-                        })
-
-                    } else if (layerTemplate) { // "Standardisierte" HILITE-Layers
-                        
-                        let hoverTemplate = createHiliteLayer(layerTemplate, "hover");
-                        if (hoverTemplate) layerTemplates.push(hoverTemplate);
-
-                        let traceTemplate = createHiliteLayer(layerTemplate, "trace");
-                        if (traceTemplate) layerTemplates.push(traceTemplate);
-                    }
-
-                    return layerTemplates;
                 }
 
                 // create linear list of features 
@@ -367,11 +354,124 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                     return flist;
                 }
 
+                // Create (multiple) layers to create "" 
+                function getQuickTemplates(layerObject) {
+
+                    var layerTemplates = [],
+                        layerTemplate = layerObject['layer'];
+
+                    if (layerTemplate) layerTemplates.push(layerTemplate);
+
+                    // Insert BELOW main layer 
+                    if (layerObject['bglayer']) layerTemplates.splice(0, 0, layerObject['bglayer']); // !!! 
+
+                    if (layerObject['selectlayer']) {
+
+                        layerObject['selectlayer'].forEach(function(l) {
+                            layerTemplates.push(l);
+                        })
+
+                    } else if (layerTemplate) { // "Standardisierte" HILITE-Layers
+                        
+                        let hoverTemplate = createHiliteLayer(layerTemplate, "hover");
+                        if (hoverTemplate) layerTemplates.push(hoverTemplate);
+
+                        let traceTemplate = createHiliteLayer(layerTemplate, "trace");
+                        if (traceTemplate) layerTemplates.push(traceTemplate);
+
+                        let nodeTemplate = createHiliteLayer(layerTemplate, "nodes");
+                        if (nodeTemplate) layerTemplates.push(nodeTemplate);
+
+                    }
+
+                    return layerTemplates;
+                }
+
+                // 
+                function addQuickContent(layername, layerObject){
+
+                    var layerData = layerObject.srcdata;
+                    if (!layerData) return ; 
+
+                    var layerSource = map.getSource(layername),
+                        mapLayer = map.getLayer(layername);
+
+                    // 1.A. (Re)Set datasources for all linear presentations
+                    if (!layerSource) {
+
+                        map.addSource(layername, {
+                            "type": "geojson",
+                            "data": layerData
+                        });
+
+                        layerSource = map.getSource(layername);
+
+                        // console.log("SRC", layername, layerData, layerSource);
+                    } else {
+                        // 1.B  CHECK 
+                        if (true) {
+                            layerSource.setData(layerData);
+                        }
+                    }
+
+
+                    // 1.C. (Re)Create layer(s) 
+                    if (!mapLayer) {
+                        // console.log("layerTemplates for " + layername, layerTemplates, layerSource);
+                        var layerTemplates = getQuickTemplates(layerObject);
+                
+                        layerTemplates.forEach(function(template) {
+                            console.log("adding layer", template);
+                            if (!map.getLayer(template.id)) {
+                                map.addLayer(template);
+                            }
+                        });
+
+                        mapLayer = map.getLayer(layername);
+                    }
+
+                    // Check in ??? 
+                    if (mapLayer) {
+                        return layerData; 
+                      /*var features = map.querySourceFeatures(layername, {
+                            sourceLayer: 'original',
+                            filter: null
+                        });
+                        if (features.length) {
+                            console.log("Loaded "+features.length + " features of layer [" + layername+ "]"); // , features, layerSource);
+                        }*/    
+                    }
+
+                }
+
+                function removeQuickContent(layerObject) {
+
+                    var layerTemplates = getQuickTemplates(layerObject);
+                    console.log("removing layerTemplates", layerTemplates);  
+                    layerTemplates.forEach(function(layername) {
+                        if (map.getLayer(layername)) {
+                            console.log("remove", layername) ;
+                            map.removeLayer(layername);
+                        }    
+                        if (map.getLayer(layername+"-hover")) map.removeLayer(layername+"-hover");
+                        if (map.getLayer(layername+"-trace")) map.removeLayer(layername+"-trace");
+                        if (map.getLayer(layername+"-nodes")) map.removeLayer(layername+"-nodes");                    
+                   });  
+
+                   layerTemplates.forEach(function(layername) { // console.log("remove source"+layername);
+                        if (map.getSource(layername)) map.removeSource(layername);
+                        if (map.getSource(layername+"-nodes")) map.removeSource(layername+"-nodes");
+                        if (map.getSource(layername+"-trace")) map.removeSource(layername+"-trace");
+                    })    
+                }
+
                 // console.log("IIMAP-refresh of with:", mapcontent);
 
                 // --------------------------------------------------
 
-                var mapcontentLayers = Object.keys(mapcontent);  // console.log("Refreshing iimap-layers", mapcontentLayers);
+                var jsonContent = {};
+                
+                var mapcontentLayers = Object.keys(mapcontent);   // console.log("Refreshing quickmap-layers", mapcontentLayers);
 
                 mapcontentLayers.forEach(function(layername, j) {
 
@@ -384,103 +484,79 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
 
                     var layerObject = mapcontent[layername];
 
-                    // 
+                    // Option 
                     if (layerObject.raw) rawBeautify(layerObject);
+                    console.log("layer"+layername, layerObject, deleteflag);
 
-                    var layerTemplates = getLayerTemplates(layerObject);
+                    if (deleteflag) { // REMOVE layers (on demand) 
 
-                    // REMOVE layers (on demand) 
-                    if (layerObject.delete) { // ??? 
-
-                        if (map.getSource(layername)) map.removeSource(layername);
-
-                        layerTemplates.forEach(function(l) {
-                            if (map.getLayer(l.id)) map.removeLayer(l.id);
-                        });
+                        removeQuickContent(layerObject); 
 
                         map.off("mousemove", hiliter)
                         map.off("click", selector)
 
-                        return;
-                    }
+                    } else {    // CREATE / REFRESH mapContent
+                        
+                        var layerData = addQuickContent(layername, layerObject); 
 
-                    // CREATE / REFRESH mapContent
-                    var layerData = layerObject.srcdata;
+                        if (layerData) {
 
-                    if (layerData) {
+                            map.on("mousemove", hiliter)
+                            map.on("click", selector)
 
-                        var layerSource = map.getSource(layername),
-                            mapLayer = map.getLayer(layername);
+                            // GET all source-features of the basic layer 
+                            var contentfeatures = getFeatures(layerData, layername);
 
-                        // 1.A. (Re)Set datasources
-                        if (!layerSource) {
-
-                            map.addSource(layername, {
-                                "type": "geojson",
-                                "data": layerData
-                            });
-
-                            layerSource = map.getSource(layername);
-
-                            // console.log("SRC", layername, layerData, layerSource);
-                        } else {
-                            // 1.B  CHECK 
-                            if (true) {
-                                layerSource.setData(layerData);
+                            if (contentfeatures.length) {
+                                // console.log("contentfeatures of " + layername, contentfeatures);
+                                jsonContent[layername] = contentfeatures;
                             }
-                        }
-
-                        // 1.B Check type-FIT of layerName ??? 
-
-                        // 1.C. (Re)Create layers 
-                        if (!mapLayer) {
-                            // console.log("layerTemplates for " + layername, layerTemplates, layerSource);
-                    
-                            layerTemplates.forEach(function(l) {
-                                if (!map.getLayer(l.id)) {
-                                    map.addLayer(l);
-                                }
-                            });
-
-                            mapLayer = map.getLayer(layername);
-                            // 
-                            map.on("mousemove", hiliter);
-
-                            map.on("click", selector);
-
-                        }
-
-                        // Check in ??? 
-                        if (mapLayer) {
-                            var features = map.querySourceFeatures(layername, {
-                                sourceLayer: 'original',
-                                filter: null
-                            });
-
-                            if (features.length) {
-                                console.log("Loaded "+features.length + " features of layer [" + layername+ "]"); // , features, layerSource);
-                            }    
-                        }
-                    }
-
-                    // GET all source-features of layer 
-                    var contentfeatures = getFeatures(layerData, layername);
-
-                    if (contentfeatures.length) {
-                        // console.log("contentfeatures of " + layername, contentfeatures);
-                        mapfeatures[layername] = contentfeatures;
+                        }                        
                     }
 
                 }.bind(this));
 
-                // console.log("mapContentPrepare: new mapfeatures", mapfeatures);
-                this.mapfeatures = mapfeatures;
+                console.log("quickContentPrepare: new jsonContent", jsonContent);
+                this.jsonContent = jsonContent;
+            },
+
+            // 
+            quickContentClear: function() {
+                var map = scope.map;
+                var lastContent = Object.keys(this.jsonContent);
+                if (!lastContent.length) return; 
+
+                function removeQuickContent(layername){
+
+                    if (map.getLayer(layername)) {
+                        map.removeLayer(layername);
+                    }    
+
+                    if (map.getLayer(layername+"-hover")) map.removeLayer(layername+"-hover");
+                    if (map.getLayer(layername+"-nodes")) map.removeLayer(layername+"-nodes");
+                    if (map.getLayer(layername+"-trace")) map.removeLayer(layername+"-trace");
+                
+                    // });  
+                    // lastContent.forEach(function(layername) { // console.log("remove source"+layername);
+                    if (map.getSource(layername)) map.removeSource(layername);
+                    if (map.getSource(layername+"-nodes")) map.removeSource(layername+"-nodes");
+                    if (map.getSource(layername+"-trace")) map.removeSource(layername+"-trace");
+
+                }
+
+                lastContent.forEach(function(layername) { // console.log("remove Qview-layer(s)"+layername);
+                    removeQuickContent(layername);
+                });  
+                
+                this.jsonContent = {};
             },
 
             // Get Info about "complete track", not only features in actually "visible" tile(s)
             trackGetInfo: function(aLine, layerid) {
+                if (!this.map) return; 
                 
                 var scope = this,
+                    map = this.map,
                     trackLayer = map.getLayer(layerid),
                     trackSource = map.getSource(trackLayer.source),
                     srcFeatures = trackSource._data.features,
@@ -489,6 +565,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                 
                 // Heuristik to identify suitable filter-key  
                 var keyname, idNames = ["id", "name", "key", "time"];
+
                 idNames.forEach(function(nom) {
                     if (trackInfo[nom] && !keyname) keyname = nom;
                 });
@@ -497,7 +574,8 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                 if (keyname) {
                     trackInfo.keyname = keyname;  
                     trackInfo.keyvalue = trackInfo[keyname];  
-                    
+                    trackInfo.id = trackInfo[keyname];
+
                     srcFeatures.some(function(f){
                         if (f.properties[keyname] == trackInfo[keyname]) {
                             // console.log("detected", trackInfo[keyname], f);
@@ -535,26 +613,28 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                 return trackInfo;
             },
 
-            // 
+            // Special "permanent" HILITE of selected tracks
+            // by HILITE-TRACE + "commented" end-nodes  
             tracksSelect: function(features, layerid) {
-
+                // by now for 1 feature onyl
                 if (!features || !features.length) return;  
-                    
-                // Create a 
-                function setTrackNodes(id, trackInfo) {
-                    // 
-                    id = id + "-nodes";
-                    if (map.getLayer(id)) map.removeLayer(id); 
-                    if (map.getSource(id)) map.removeSource(id); 
+                var trackFeature = features[0]; 
 
+                // Create a 
+                function setTrackNodes(layerid, trackInfo) {
+                    // layer of nodes symbols with text in HALO
+
+                    var hilayerid = layerid + "-nodes",
+                        hilayer = map.getLayer(hilayerid);
+                    // if (hilayer) map.removeLayer(layerid); 
+                    // if (map.getSource(layerid)) map.removeSource(layerid); 
+                    if (!hilayer) return; 
+                    console.log(); 
                     var fromnode = trackInfo.fromnode.slice(0,2),
                         tonode = trackInfo.tonode.slice(0,2),
                         fromtime = trackInfo.von,
-                        totime = trackInfo.bis;
-
-                    map.addSource(id, {
-                        "type": "geojson",
-                        "data": {
+                        totime = trackInfo.bis,
+                        nodedata = { // for nodes-source = 2 points
                             "type": "FeatureCollection",
                             "features": [{
                                 "type": "Feature",
@@ -577,27 +657,36 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                                     "icon": "harbor"
                                 }
                             }]
-                        }
-                    });    
-                
-                    map.addLayer({
-                        "id": id,
+                        } ;
+
+                    // map.addSource(layerid, node);    
+                    // this.map.getSource(slidesource).setData(slidedata);
+                    this.map.getSource(hilayerid).setData(nodedata);                     
+
+                    /*map.addLayer({
+                        "id": layerid,
                         "type": "symbol",
-                        "source": id,
+                        "source": layerid,
                         "layout": {
                             "icon-image": "{icon}-15",
                             "text-field": "{title}",
                             "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
                             "text-offset": [0, 0.6],
                             "text-anchor": "top"
+                        },
+                        "paint": {
+                            "text-halo-color": "#ffffff",
+                            "text-halo-width": 6,
+                            "text-color": "#ff0000"
                         }
-                    });
+                       
+                    });*/
                 } 
 
                 // Filtering the TRACE-Layer
-                function setTrackTrace(id, trackInfo) {
+                function setTrackTrace(layerid, trackInfo) {
                     // 
-                    var hilayerid = id + "-trace", // ?
+                    var hilayerid = layerid + "-trace", // ?
                         keyname = trackInfo.keyname, 
                         hifilter = ["==", keyname, trackInfo[keyname]];
                     
@@ -606,8 +695,7 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                     map.setFilter(hilayerid, hifilter);
                 } 
 
-                var trackInfo = this.trackGetInfo(features[0], layerid);
-                // console.log("Selected feature(s)", trackInfo);  
+                var trackInfo = this.trackGetInfo(trackFeature, layerid);  // console.log("Selected feature(s)", trackInfo);  
 
                 // SHOW start- and stop-nodes
                 setTrackNodes(layerid, trackInfo); 
@@ -619,6 +707,15 @@ quick preview of "mapcontent" supplied in "quickformat" fi.
                 map.fitBounds(trackInfo.bbox, {
                     padding: 40
                 });
+
+                // Triggersignal to enable SYNC with sibling elements (fi. with menues )
+                if (trackInfo.id) this.featureselected = trackInfo;
+
+                // show info after mapFit
+                map.once('moveend', function() {
+                    this.popupOnMap(trackInfo.html);
+                }.bind(this));
+
             },
 
         });
