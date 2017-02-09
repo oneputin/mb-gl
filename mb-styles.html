@@ -3,7 +3,8 @@
 
 <!--
 `mb-styles`  
-selects and applies a style to actual map
+recieves or selects a style from menu  
+- exports style-url
 
 @demo demo/routingplanes.html 
 -->
@@ -49,12 +50,6 @@ selects and applies a style to actual map
             is: 'mb-styles',
 
             properties : {
-                /*map: {
-                    type: Object,
-                    notify: true,
-                    observer: 'setupTool'
-                },*/
-
                 // 
                 mbversion: {
                     type: String,
@@ -105,15 +100,13 @@ selects and applies a style to actual map
 
             // 
             switchStyle: function(styleid) {
-                //if (!this.map) return;  
-                //console.log("Stylesheet BEFORE", this.map.style.stylesheet); 
 
                 var styleurl,
                     mbversion = this.mbversion ;
 
                 this.styles.some(function(s){
                     if (s.id == styleid) {
-                        if (s.owner) {
+                        if (s.owner) { // explicit declared owner
                             styleurl = 'mapbox://styles/' + s.owner +'/' + styleid ;
                         } else { // owner = "mapbox"
                             styleurl = 'mapbox://styles/mapbox/' + styleid + mbversion;
@@ -124,20 +117,12 @@ selects and applies a style to actual map
 
                 if (styleurl) {  // console.log("stylesheet switched TO " + styleid, styleurl);
                     this.mapstyle = styleurl;
-                    // this.map.setStyle(styleurl);
                 }    
             },
 
-            /*setupTool: function(){
-                if (!this.map) return;
-                this.toggleTool();
-            },*/
-
             toggleTool: function(checked) {
-                // if (!this.map) return;
 
                 if (checked==null) checked = this.checked;
-                // console.log("checked", checked);
                 if (checked) {
                     this.style.display = "block";
                 } else {
