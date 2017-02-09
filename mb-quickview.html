@@ -48,7 +48,8 @@
                     type: Object,
                     observer: "setupTool"
                 },
-                styleid: {
+
+                mapid: {
                     type: String,
                     observer: 'styleChanged'
                 },
@@ -92,8 +93,7 @@
 
             observers: [
                 'quickContentUpdate(mapcontent.*)',
-                'mapContentFeatureList(jsonContent.*)',
-                'setupTool2(map.style.stylesheet.*)'
+                'mapContentFeatureList(jsonContent.*)'
             ],
 
             setupTool: function(map) {
@@ -104,12 +104,8 @@
                 }    
             },
 
-            setupTool2: function(ss) {
-                // console.log("setupTool2 stylesheet", ss.value); 
-            },
-
-            styleChanged: function(id) {
-                console.log("styleChanged id=", id); 
+            // refresh mapcontent on changed basemap
+            styleChanged: function(mapid, mapidold) {
                 this.quickContentUpdate(this.mapcontent);
             },
 
@@ -119,8 +115,8 @@
 
             zoomToFeature: function(f) {
                 if (!f.feature || !this.map) return; 
-                // console.log("zoomToFeature: " + f.id, f.layer, f);
                 if (f.feature.properties.coordTimes)  {  // Extended method for tracks 
+                    // console.log("zoomToTrack: " + f.id, f);
                     this.tracksSelect([f.feature], f.layer);
                 } else { // SimpleGeometryZoom 
                     this.setFeatureBounds([f.feature], this.map);
@@ -155,7 +151,7 @@
              */
             quickContentUpdate: function(mapcontent) {
                 if (!this.map || !this.checked) return;
-                console.log("quickContentUpdate: "+ this.checked, mapcontent); 
+                console.log("quickContentUpdate to ", mapcontent); 
                 // remove old content
                 this.quickContentPrepare(this._mapcontent, "delete");
                 // add new content
@@ -219,7 +215,7 @@
                 //   - zooms to the track
                 //   - show start/stop based on "id-Filter"	
                 function featureSelect(e, layerid) {
-                    // console.log("featureSelect", layerid); 
+                    // console.log("featureSelect in ", layerid); 
 
                     if (!map.getLayer(layerid)) return;
                     // if (!map.getLayer(layerid + "-select")) return;
@@ -231,14 +227,12 @@
                     if (!features || !features.length) return;  
                         
                     scope.tracksSelect(features, layerid);
-
                 }
 
                 // Layer that occurs on-mose-hover only 
                 function createHiliteLayer(layertemplate, hitype) {
                     
                     var lhilite = {},// layertemplate,
-                        basetype = layertemplate.type,
                         templateid = layertemplate.id + "-" + hitype;
                     // console.log("createHiliteLayer for", templateid);
 
@@ -248,6 +242,7 @@
                             "type": "symbol",
                             "id": templateid,
                             "source": templateid,
+                            // "source": "",
 
                             "layout": {
                                 "icon-image": "{icon}-15",
@@ -268,7 +263,8 @@
                     // Copy most properties from source template 
                     // add some specific styling
 
-                    lhilite = {}; 
+                    basetype = layertemplate.type,
+
                     Object.keys(layertemplate).forEach(function(k) {
                         lhilite[k] = layertemplate[k];
                     })
@@ -410,7 +406,6 @@
                             "type": "geojson",
                             "data": layerData
                         });
-
                         layerSource = map.getSource(layername);
 
                         // console.log("SRC", layername, layerData, layerSource);
@@ -428,18 +423,21 @@
                         var layerTemplates = getQuickTemplates(layerObject);
                 
                         layerTemplates.forEach(function(template) {
+
                             if (!map.getLayer(template.id)) {
 
-                                console.log("adding layer", template);
+                                // console.log("adding layer", template);
                                 
-                                if ((template.type == "symbol") && !map.getSource(template.source)) {   
-                                    console.log("Set placeholder-source !!", template.src); 
-                                    map.addSource(template.source, {
-                                        "type": "geojson",
-                                        "data": { "type": "Point", "coordinates": [0, 0] }
-                                    });
-                                }    
-                                
+                                if ((template.type == "symbol") && template.source) { 
+                                    // console.log("Set placeholder-source !!", template.source); 
+                                    if (!map.getSource(template.source)) {   
+                                        map.addSource(template.source, {
+                                            "type": "geojson",
+                                            "data": { "type": "Point", "coordinates": [0, 0] }
+                                        });
+                                    }    
+                                }
+
                                 map.addLayer(template);
                             }
                         });
@@ -464,13 +462,13 @@
                 function removeQuickContent(layerObject) {
 
                     var quickTemplates = getQuickTemplates(layerObject);
-                    console.log("removing quickContentLayers", quickTemplates);  
+                    // console.log("removing quickContentLayers", quickTemplates);  
                     
                     quickTemplates.forEach(function(template) {
                         var qlayername = template.id,
                             qlayer = map.getLayer(qlayername);
 
-                        console.log("remove qlayer", qlayername, qlayer) ;                        
+                        // console.log("remove qlayer", qlayername, qlayer) ;                        
                         if (qlayer) {
                             map.removeLayer(qlayername);
                         }  
@@ -479,14 +477,13 @@
                    quickTemplates.forEach(function(template) { 
                         var srcid = template.source,
                             qsrc = map.getSource(srcid);
-                        console.log("remove qsource ", srcid, qsrc);
+                        // console.log("remove qsource ", srcid, qsrc);
                         if (qsrc) {
                             map.removeSource(srcid);
                         }   
                     })    
                 }
 
-                // console.log("IIMAP-refresh of with:", mapcontent);
                 // --------------------------------------------------
 
                 var jsonContent = {};
@@ -508,7 +505,7 @@
 
                     if (deleteflag) { // REMOVE layers (on demand) 
 
-                        console.log("DELETE qlayer " + layername, layerObject);
+                        // console.log("DELETE qlayer " + layername, layerObject);
 
                         removeQuickContent(layerObject); 
 
@@ -519,7 +516,7 @@
     
                         if (layerObject.raw) rawBeautify(layerObject);
 
-                        console.log("SETUP qlayer " + layername, layerObject);
+                        // console.log("SETUP qlayer " + layername, layerObject);
                         
                         var layerData = addQuickContent(layername, layerObject); 
 
@@ -537,10 +534,9 @@
                             }
                         }                        
                     }
-
                 }.bind(this));
 
-                console.log("quickContentPrepare: new jsonContent", jsonContent);
+                // console.log("DONE quickContentPrepare: " + deleteflag, jsonContent);
                 this.jsonContent = jsonContent;
             },
 
@@ -585,6 +581,7 @@
                 if (trackInfo.coordTimes) { // console.log("coordTimes", trackInfo.coordTimes);
                     var trackTimes = trackInfo.coordTimes;
                     if (typeof trackTimes == "string") trackTimes = JSON.parse(trackTimes);
+                    // console.log(trackTimes);
                     
                     var n = trackTimes.length, // equal to number of coords
                         von = scope.utcTime(scope.trackTime(trackTimes[0]), null, "h"),
@@ -601,8 +598,6 @@
                     "<br>Duration: " + trackInfo.duration +
                     "<br>TP's: " + trackInfo.count;
 
-                // console.log(trackTimes);
-                // console.log(info);
                 return trackInfo;
             },
 
@@ -610,84 +605,92 @@
             // by HILITE-TRACE + "commented" end-nodes  
             tracksSelect: function(features, layerid) {
                 // by now for 1 feature onyl
+                // var map = this.map; 
+
                 if (!features || !features.length) return;  
-                var trackFeature = features[0]; 
 
-                // Create trackEndMarkers
-                function setTrackNodes(layerid, trackInfo) {
-                    // layer of nodes symbols with text in HALO
+                // this.debounce("track", function(){
+                    var trackFeature = features[0]; 
 
-                    var hilayerid = layerid + "-nodes",
-                        hilayer = map.getLayer(hilayerid);
-                    if (!hilayer) return; 
-                    
-                    var fromnode = trackInfo.fromnode.slice(0,2),
-                        tonode = trackInfo.tonode.slice(0,2),
-                        fromtime = trackInfo.von,
-                        totime = trackInfo.bis,
-                        nodedata = { // for nodes-source = 2 points
-                            "type": "FeatureCollection",
-                            "features": [{
-                                "type": "Feature",
-                                "geometry": {
-                                    "type": "Point",
-                                    "coordinates": fromnode
-                                },
-                                "properties": {
-                                    "title": fromtime,
-                                    "icon": "monument"
-                                }
-                            }, {
-                                "type": "Feature",
-                                "geometry": {
-                                    "type": "Point",
-                                    "coordinates": tonode
-                                },
-                                "properties": {
-                                    "title": totime,
-                                    "icon": "harbor"
-                                }
-                            }]
-                        } ;
+                    // Create trackEndMarkers
+                    function setTrackNodes(layerid, trackInfo) {
+                        // layer of nodes symbols with text in HALO
+                        var hilayerid = layerid + "-nodes",
+                            hilayer = map.getLayer(hilayerid);
+                        if (!hilayer) return; 
+                        
+                        var fromnode = trackInfo.fromnode.slice(0,2),
+                            tonode = trackInfo.tonode.slice(0,2),
+                            fromtime = trackInfo.von,
+                            totime = trackInfo.bis,
+                            nodedata = { // for nodes-source = 2 points
+                                "type": "FeatureCollection",
+                                "features": [{
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Point",
+                                        "coordinates": fromnode
+                                    },
+                                    "properties": {
+                                        "title": fromtime,
+                                        "icon": "monument"
+                                    }
+                                }, {
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Point",
+                                        "coordinates": tonode
+                                    },
+                                    "properties": {
+                                        "title": totime,
+                                        "icon": "harbor"
+                                    }
+                                }]
+                            } ;
 
-                    // map.addSource(layerid, node);    
-                    var src = this.map.getSource(hilayerid); 
-                    if (src)  src.setData(nodedata);                     
-                    console.log("set nodes-data into ", hilayerid, nodedata, src); 
-                } 
+                        // map.addSource(layerid, node);    
+                        var src = map.getSource(hilayerid); 
+                        if (src)  {
+                            // console.log("set nodes-data into ", hilayerid, nodedata, src); 
+                            src.setData(nodedata);                     
+                        }    
+                    } 
 
-                // HILITE the TRACE of the track (Filtering-Layer)
-                function setTrackTrace(layerid, trackInfo) {
-                    // 
-                    var hilayerid = layerid + "-trace", // ?
-                        keyname = trackInfo.keyname, 
-                        hifilter = ["==", keyname, trackInfo[keyname]];
-                    
-                    if (!map.getLayer(hilayerid)) return ;
+                    // HILITE the TRACE of the track (Filtering-Layer)
+                    function setTrackTrace(layerid, trackInfo) {
+                        // 
+                        var hilayerid = layerid + "-trace", // ?
+                            hilayer = map.getLayer(hilayerid),  
+                            keyname = trackInfo.keyname,
+                            hifilter = ["==", keyname, trackInfo[keyname]];
+                        if (!hilayer) return ;
 
-                    map.setFilter(hilayerid, hifilter);
-                } 
+                        // console.log("set trace-filter in " + hilayerid, hifilter, hilayer); 
+                        map.setFilter(hilayerid, hifilter);
+                    } 
 
-                var trackInfo = this.trackGetInfo(trackFeature, layerid);  // console.log("Selected feature(s)", trackInfo);  
+                    var trackInfo = this.trackGetInfo(trackFeature, layerid);   // console.log("Selected track(s)", trackInfo);  
 
-                // SHOW start- and stop-nodes
-                setTrackNodes(layerid, trackInfo); 
+                    // APPLY start- and stop-nodes of track
+                    setTrackNodes(layerid, trackInfo); 
 
-                // SHOW start- and stop-nodes
-                setTrackTrace(layerid, trackInfo); 
+                    // APPLY trace-overlay (gestrichelt) on track
+                    setTrackTrace(layerid, trackInfo); 
 
-                // ZOOM to complete track
-                map.fitBounds(trackInfo.bbox, {
-                    padding: 40
-                });
+                    // Triggersignal to enable ZOOM & SYNC with sibling elements (fi. with menues )
+                    if (trackInfo.id)  this.featureselected = trackInfo;
 
-                // Triggersignal to enable SYNC with sibling elements (fi. with menues )
-                if (trackInfo.id) this.featureselected = trackInfo;
+                    // ZOOM to complete track
+                    map.fitBounds(trackInfo.bbox, {
+                        padding: 40
+                    });
 
-                // show info after mapFit
-                map.once('moveend', function() {
-                    this.popupOnMap(trackInfo.html);
-                }.bind(this));
+                    // Prepare info-popup after mapFit
+                    map.once('moveend', function() {
+                        this.popupOnMap(trackInfo.html);
+                    }.bind(this));
+               
+                // }, 100);     
 
             },
 

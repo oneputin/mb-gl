@@ -123,9 +123,10 @@
 
         <!-- lnglat="{{lnglat}} -->" 
         <mb-map 
-            mapapikey="[[mbkey]]" 
-            mapstyle="[[mbstyle]]" 
             map="{{map}}" 
+            mapapikey="[[mbkey]]" 
+            mapstyle="[[mapstyle]]" 
+            mapid="{{mapid}}" 
             cbox="{{cbox}}" 
             zoom="{{zoom}}" 
             mapctrl="[[mapctrl]]">
@@ -159,7 +160,7 @@
             </mb-location-log>
 
             <mb-styles 
-                map = "[[map]]" 
+                mapstyle = "{{mapstyle}}" 
                 styleid = "{{styleid}}"
                 checked = "[[usestyleselect]]">
             </mb-styles>
@@ -225,7 +226,7 @@
                  + supply/sync processed features to sibling elements -->
             <mb-quickview 
                 map="[[map]]" 
-                styleid="[[styleid]]"
+                mapid="[[mapid]]" 
                 mapcontent="[[mapcontent]]" 
                 checked="[[usepreview]]" 
                 featurelist="{{dataset}}" 
@@ -257,7 +258,8 @@
     var scope = document.querySelector('#app');
 
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-    scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
+    scope.mapstyle = 'mapbox://styles/mapbox/basic-v9' 
+    // scope.mapstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
 
     // Data-INIT
     scope.indexurl = "index-handheld.json"; // list of available datasets

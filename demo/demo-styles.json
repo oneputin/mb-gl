@@ -1,0 +1,33 @@
+[
+    {
+        "id": "ciuz8mtxy01dx2jl8mszelrkm",
+        "title": "myLight",
+        "owner": "oneputin"
+    },
+    {
+        "id": "ciuv91dl2013z2iqq0y2z7ezg",
+        "title": "myBunt",
+        "owner": "oneputin"
+    },
+    {
+        "id": "basic",
+        "title": "basic",
+        "start": true
+    },
+    {
+        "id": "streets",
+        "title": "streets"
+    },
+    {
+        "id": "bright",
+        "title": "bright"
+    },
+    {
+        "id": "light",
+        "title": "light"
+    },
+    {
+        "id": "satellite",
+        "title": "satellite"
+    }
+]

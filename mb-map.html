@@ -44,6 +44,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
     <script>
         var map;
+
         var setup = {
             // oneputin
             mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
@@ -79,8 +80,16 @@ the map-ctrls can be placed as map-overlay or anywhere else
                  *  mapbox-style  
                  */
                 mapstyle: {
-                    type: String
+                    type: String,
+                    notify: true,
+                    observer: 'changeMapStyle'
                 },
+
+                mapid: {
+                    type: String,
+                    notify: true,
+                },
+
                 /**
                  *  layer of mapbox-style 
                  *  below (!?!) which userdate are inserted into layerstack   
@@ -128,11 +137,10 @@ the map-ctrls can be placed as map-overlay or anywhere else
             ],
 
             observers: [
-                'changeMap(mapctrl.*)'
+                // 'changeMap(mapctrl.*)'
             ],
 
             attached: function() {
-                // console.log("this", this.mapapikey, this.mapstyle);
 
                 // Use default apikey if NONE available from app-shell
                 if (!this.mapapikey) this.mapapikey = setup.mapapikey;
@@ -172,8 +180,10 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 this.installmap();
             },
 
-            changeMap: function(mapctrl){
-                console.log("mapctrl",mapctrl);
+            changeMapStyle: function(mapstyle){
+                if (this.map) {  // console.log("CHANGE mapstyle", mapstyle);
+                    this.map.setStyle(mapstyle);
+                }    
             },
 
             zoomthemap: function(zoom) {
@@ -200,7 +210,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
              */
             installmap: function() {
 
-                console.log("MAP installed:", this.mapctrl);
+                console.log("MAP installs using:", this.mapctrl);
                 // console.log("apikey= " + this.mapapikey);
 
                 var that = this;
@@ -209,10 +219,8 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
                 map = new mapboxgl.Map(this.mapctrl);
 
-                map.on('load', function() { // console.log("map loaded", map);
-                    // inform app about new center after any move
-                    var von, bis, dist;
-                    // console.log("map loaded", this);
+                map.on('load', function(e) { // console.log("map loaded", map);
+                    // console.log("map LOADED", e);
 
                     if (this.zoom) map.setZoom(this.zoom);
                     if (this.cbox) map.setCenter(this.cbox);
@@ -232,6 +240,24 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         that.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
                         that.zoom = z;
                         // console.log(cb,bb,that.cbox,that.bbox);
+                    });
+
+                    map.on('data', function(e) {
+                        var typ = e.dataType;
+                        if (typ=="tile") return; 
+                        if (typ=="style") {
+                            var ssheet = e.style.stylesheet,
+                                name = ssheet.name,
+                                id = ssheet.id,
+                                sprite = ssheet.sprite;
+                            if (that.mapid != id)  {
+                                console.log("MAPSTYLE changed from [" + id+"]", "to ["+that.mapid+"]", e.style); 
+                                that.mapid = id; 
+                            }     
+                        }
+                        if (typ=="source") {
+                            // console.log("setup style", e.style); 
+                        }
                     });
 
                     //if zoom is NOT communicated to app via map-object : 

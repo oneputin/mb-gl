@@ -27,6 +27,13 @@ selects and applies a style to actual map
             }
         </style>
 
+        <iron-ajax
+            auto
+            url="[[stylesurl]]"
+            handle-as="json"
+            on-response="getStyles">
+        </iron-ajax>
+
         <dynamic-menu
             menudata="{{styles}}"
             menulabel="MapStyles"
@@ -42,11 +49,11 @@ selects and applies a style to actual map
             is: 'mb-styles',
 
             properties : {
-                map: {
+                /*map: {
                     type: Object,
                     notify: true,
                     observer: 'setupTool'
-                },
+                },*/
 
                 // 
                 mbversion: {
@@ -54,14 +61,23 @@ selects and applies a style to actual map
                     value: '-v9'
                 },
 
-                styles: {
-                    type: Array
+                stylesurl: {  // config-url
+                    type: String,
+                    value: "demo-styles.json"
                 },
 
-                styleid : {
+                styles: {
+                    type: Array,
+                },
+
+                styleid : { // internal parameter
                     type: String,
-                    notify: true,
                     observer: 'switchStyle'
+                },
+
+                mapstyle : {  // external paramater  
+                    type: String,
+                    notify: true
                 },
 
                 checked: {
@@ -73,78 +89,55 @@ selects and applies a style to actual map
             },
 
             attached : function(){
-
-                this.styles = [
-                    {
-                        id: "ciuz8mtxy01dx2jl8mszelrkm",
-                        title: "myLight",
-                        user: "oneputin"
-                    },
-                    {
-                        id: "ciuv91dl2013z2iqq0y2z7ezg",
-                        title: "myBunt",
-                        user: "oneputin"
-                    },
-                    {
+                if (!this.styles) {
+                    this.styles = [{
                         id: "basic",
                         title: "basic"
-                    },
-                    {
-                        id: "streets",
-                        title: "streets"
-                    },
-                    {
-                        id: "bright",
-                        title: "bright"
-                    },
-                    {
-                        id: "light",
-                        title: "light"
-                    },
-                    {
-                        id: "satellite",
-                        title: "satellite"
-                    },
-                ];
-
+                    }];
+                }     
                 if (!this.checked) this.toggleTool(false);
+            },
+
+            getStyles: function(ajaxresponse) {
+                if (!ajaxresponse || !ajaxresponse.detail) return;
+                this.styles = ajaxresponse.detail.response;
             },
 
             // 
             switchStyle: function(styleid) {
-                if (!this.map) return;  
+                //if (!this.map) return;  
+                //console.log("Stylesheet BEFORE", this.map.style.stylesheet); 
 
-                console.log("stylesheet before switching", this.map.style.stylesheet); 
-
-                var url,
+                var styleurl,
                     mbversion = this.mbversion ;
 
                 this.styles.some(function(s){
                     if (s.id == styleid) {
-                        if (s.user) {
-                            url = 'mapbox://styles/' + s.user +'/' + styleid ;
-                        } else {
-                            url = 'mapbox://styles/mapbox/' + styleid + mbversion;
+                        if (s.owner) {
+                            styleurl = 'mapbox://styles/' + s.owner +'/' + styleid ;
+                        } else { // owner = "mapbox"
+                            styleurl = 'mapbox://styles/mapbox/' + styleid + mbversion;
                         }    
                         return true;
                     } 
                 }); 
-                if (url) {
-                    console.log("switching style", styleid, url);
-                    this.map.setStyle(url);
+
+                if (styleurl) {  // console.log("stylesheet switched TO " + styleid, styleurl);
+                    this.mapstyle = styleurl;
+                    // this.map.setStyle(styleurl);
                 }    
             },
 
-            setupTool: function(){
+            /*setupTool: function(){
                 if (!this.map) return;
                 this.toggleTool();
-            },
+            },*/
 
             toggleTool: function(checked) {
-                if (!this.map) return;
+                // if (!this.map) return;
 
                 if (checked==null) checked = this.checked;
-                console.log("checked", checked);
+                // console.log("checked", checked);
                 if (checked) {
                     this.style.display = "block";
                 } else {
