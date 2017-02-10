@@ -110,7 +110,8 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
              */
             _updateMenu: function(menudata) {
                 // console.log("_updateMenu. menudata=", menudata);
-                
+                if (!menudata || !menudata.length) return; 
+
                 // optional standard-Items adding
                 function enhanceMenu(menudata) {
                     var dset = [];
@@ -147,6 +148,7 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                             menudata = enhanceMenu(menudata);
                         } 
                         this._selectset = menudata;
+
                     } else { // NO menu but return of SELECTRESULT
                         this._selectset = null; // menu not required
                         this.selectvalue = preselectitem;                    
@@ -163,9 +165,9 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
 
             // 
             _syncSelection: function(selectvalueid) {
-                // use debounce to avoid doubling if evenbt from different sources
+                // use debounce to avoid "doubling" if event from different sources
                 this.debounce("sync", function(){
-                    if (selectvalueid != this._lastid) {
+                    if (this._selectset && (selectvalueid != this._lastid)) {
                         // console.log("sync for id= [" + selectvalueid+"]", "lastid was [" + this._lastid + "]"); // return; 
                         var index,
                             listbox = this.$$("paper-listbox"); // may be NOT located if hidden by "dom-if"

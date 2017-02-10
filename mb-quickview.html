@@ -9,15 +9,17 @@
 
     `quickformat` - object:
 
-            quickmap[mapid] = {
+            quickmap[mbid] = {
                 "layer": {
                     "type": "line",
-                    "id": mapid,
-                    "source": mapid
+                    "id": mbid,
+                    "source": mbid
                 },
                 "srcdata": srcdata,
                 "raw": 1
             };
+    
+    Startsymbol: toilet-11
 
     @demo demo/routinghandheld.html 
 -->
@@ -49,7 +51,7 @@
                     observer: "setupTool"
                 },
 
-                mapid: {
+                mbid: {
                     type: String,
                     observer: 'styleChanged'
                 },
@@ -105,7 +107,7 @@
             },
 
             // refresh mapcontent on changed basemap
-            styleChanged: function(mapid, mapidold) {
+            styleChanged: function(mbid, mbidold) {
                 this.quickContentUpdate(this.mapcontent);
             },
 
@@ -151,7 +153,7 @@
              */
             quickContentUpdate: function(mapcontent) {
                 if (!this.map || !this.checked) return;
-                console.log("quickContentUpdate to ", mapcontent); 
+                console.log("quickContent UPDATE to ", mapcontent); 
                 // remove old content
                 this.quickContentPrepare(this._mapcontent, "delete");
                 // add new content
@@ -619,6 +621,9 @@
                             hilayer = map.getLayer(hilayerid);
                         if (!hilayer) return; 
                         
+                        var fromicon = "toilet"; // "monument",
+                            toicon = "harbor";
+
                         var fromnode = trackInfo.fromnode.slice(0,2),
                             tonode = trackInfo.tonode.slice(0,2),
                             fromtime = trackInfo.von,
@@ -633,7 +638,7 @@
                                     },
                                     "properties": {
                                         "title": fromtime,
-                                        "icon": "monument"
+                                        "icon": fromicon
                                     }
                                 }, {
                                     "type": "Feature",
@@ -643,7 +648,7 @@
                                     },
                                     "properties": {
                                         "title": totime,
-                                        "icon": "harbor"
+                                        "icon": toicon
                                     }
                                 }]
                             } ;

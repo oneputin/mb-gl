@@ -50,8 +50,8 @@ the map-ctrls can be placed as map-overlay or anywhere else
             mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
             // My "Light" style
             map: {
-                //style: 'mapbox://styles/mapbox/streets-v9',
-                style: 'mapbox://styles/oneputin/cimlpzor80051zpmctds91fxn',
+                style: 'mapbox://styles/mapbox/basic-v9',
+                //style: 'mapbox://styles/oneputin/cimlpzor80051zpmctds91fxn',
                 // center: [13.5, 52.5], // must be synced by client with service
                 insertlayer: 'water'
             },
@@ -85,7 +85,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     observer: 'changeMapStyle'
                 },
 
-                mapid: {
+                mbid: {
                     type: String,
                     notify: true,
                 },
@@ -242,19 +242,37 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         // console.log(cb,bb,that.cbox,that.bbox);
                     });
 
+                    // 
                     map.on('data', function(e) {
                         var typ = e.dataType;
                         if (typ=="tile") return; 
+                        // A. 
                         if (typ=="style") {
                             var ssheet = e.style.stylesheet,
                                 name = ssheet.name,
                                 id = ssheet.id,
                                 sprite = ssheet.sprite;
-                            if (that.mapid != id)  {
-                                console.log("MAPSTYLE changed from [" + id+"]", "to ["+that.mapid+"]", e.style); 
-                                that.mapid = id; 
+                            if (!that.mapstyle) {
+                                // console.log("MAPSTYLE changed to ["+ id +"]")
+                                return;
+                            }     
+
+                            // Compare style of mb-map-api with style-ctrl-parameters (id and url) of map-element
+                            // - inform app about id of actual api-mapstyle
+                            // - refresh mb-mapstyle if map-element got a new style-parameter meanwhile 
+                            //   (especially as SYNC during start-phase with style-menu )     
+                            if (that.mbid != id)  {
+                                // console.log("MAPSTYLE changed from [" + that.mbid+"]", "to ["+ id +"]")
+                                if (that.mapstyle.indexOf(id) < 0 ) {
+                                    // console.log("BUT LAST requested style is:", that.mapstyle );
+                                    that.map.setStyle(that.mapstyle);
+                                } else {
+                                    that.mbid = id; 
+                                }
+
                             }     
                         }
+                        // B. 
                         if (typ=="source") {
                             // console.log("setup style", e.style); 
                         }

@@ -10,24 +10,24 @@
         "owner": "oneputin"
     },
     {
-        "id": "basic",
-        "title": "basic",
+        "id": "basic-v9",
+        "title": "mb-basic"
+    },
+    {
+        "id": "streets-v9",
+        "title": "mb-streets"
+    },
+    {
+        "id": "bright-v9",
+        "title": "mb-bright",
         "start": true
     },
     {
-        "id": "streets",
-        "title": "streets"
+        "id": "light-v9",
+        "title": "mb-light"
     },
     {
-        "id": "bright",
-        "title": "bright"
-    },
-    {
-        "id": "light",
-        "title": "light"
-    },
-    {
-        "id": "satellite",
-        "title": "satellite"
+        "id": "satellite-v9",
+        "title": "mb-satellite"
     }
 ]

@@ -30,16 +30,16 @@ recieves or selects a style from menu
 
         <iron-ajax
             auto
-            url="[[stylesurl]]"
+            url="[[_styleseturl]]"
             handle-as="json"
-            on-response="getStyles">
+            on-response="_getStyles">
         </iron-ajax>
 
         <dynamic-menu
-            menudata="{{styles}}"
+            menudata="{{_styles}}"
             menulabel="MapStyles"
             selectprop="id"
-            selectvalue="{{styleid}}">
+            selectvalue="{{_styleid}}">
         </dynamic-menu>
 
     </template>
@@ -50,81 +50,92 @@ recieves or selects a style from menu
             is: 'mb-styles',
 
             properties : {
-                // 
-                mbversion: {
-                    type: String,
-                    value: '-v9'
-                },
 
-                stylesurl: {  // config-url
+                // IN: url of styles-collection or json-collection as string 
+                styleset: {  
                     type: String,
-                    value: "demo-styles.json"
-                },
-
-                styles: {
-                    type: Array,
-                },
-
-                styleid : { // internal parameter
-                    type: String,
-                    observer: 'switchStyle'
-                },
-
-                mapstyle : {  // external paramater  
-                    type: String,
-                    notify: true
+                    observer: '_stylesetCtrl'
+                    // value: "demo-styles.json"
                 },
 
                 checked: {
                     type: Boolean,
                     value: true,
-                    observer: 'toggleTool'
-                }
+                    observer: '_toggleVisibility'
+                },
 
+                // OUT: url of selected mapbox-style
+                mapstyle : {  // external paramater  
+                    type: String,
+                    notify: true
+                },
+
+                selectable: {
+                    type: Boolean,
+                    notify: true
+                },    
+                // 
+                _styleseturl : { 
+                    type: String
+                },
+                // 
+                _styleid : { 
+                    type: String,
+                    observer: 'switchStyle'
+                },
+
+                _styles: {
+                    type: Array,
+                    observer:'_stylesCheck'
+                }
             },
 
             attached : function(){
-                if (!this.styles) {
-                    this.styles = [{
-                        id: "basic",
-                        title: "basic"
-                    }];
-                }     
-                if (!this.checked) this.toggleTool(false);
+                if (!this.checked) this._toggleVisibility(false);
             },
 
-            getStyles: function(ajaxresponse) {
+            _stylesCheck : function(styles){
+                if (styles.length > 2) this.selectable = true;
+                else this.selectable = false; 
+                
+                // if (styles.length) {  } 
+            },
+
+            _stylesetCtrl : function(styleset){
+                this._styleseturl = styleset;
+            },
+
+            _getStyles: function(ajaxresponse) {
                 if (!ajaxresponse || !ajaxresponse.detail) return;
-                this.styles = ajaxresponse.detail.response;
+                this._styles = ajaxresponse.detail.response;
             },
 
-            // 
+            // triggered from menu  
             switchStyle: function(styleid) {
+                var styleurl;
 
-                var styleurl,
-                    mbversion = this.mbversion ;
-
-                this.styles.some(function(s){
+                this._styles.some(function(s){
                     if (s.id == styleid) {
-                        if (s.owner) { // explicit declared owner
-                            styleurl = 'mapbox://styles/' + s.owner +'/' + styleid ;
-                        } else { // owner = "mapbox"
-                            styleurl = 'mapbox://styles/mapbox/' + styleid + mbversion;
-                        }    
+                        if (!s.owner) s.owner = "mapbox";
+                        styleurl = 'mapbox://styles/' + s.owner +'/' + styleid ;
                         return true;
                     } 
                 }); 
 
-                if (styleurl) {  // console.log("stylesheet switched TO " + styleid, styleurl);
+                if (styleurl && (this.mapstyle != styleurl)) {  // console.log("SWITCHSTYLE TO " + styleid, styleurl);
                     this.mapstyle = styleurl;
                 }    
             },
 
-            toggleTool: function(checked) {
+            _toggleVisibility: function(checked) {
 
                 if (checked==null) checked = this.checked;
                 if (checked) {
-                    this.style.display = "block";
+                    if (this._styles &&  this._styles.length > 1) {
+                        this.style.display = "block";
+                    } else {
+                        console.log("no styles available"); 
+                    }    
                 } else {
                     this.style.display = "none";
                 }

@@ -54,6 +54,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
         <!-- optically grouped -->
         <paper-spinner-lite id="loadspinner" alt="loading next slide" active>
         </paper-spinner-lite>
+
         <paper-fab id="slidezoom" class="fab" icon="all-out" title="heart" on-tap="zoomslide">
         </paper-fab>
 
@@ -68,6 +69,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             <kml-json 
                 url     = "[[serviceurl]]"
                 service = "[[_servicequery]]"
+                query = "[[_clientquery]]"
                 geojson = "{{slidedata}}">
             </kml-json>
         </template>
@@ -147,9 +149,12 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     }
                 },
 
+
                 /**
                  * location for service-query.
-                 * default: actual map-center
+                 * default: actual map-center 
+                 *  - after stop of map-move   or 
+                 *  - continuously during map-move 
                  */
                 cbox: {
                     type: String,
@@ -158,6 +163,14 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
                 _servicequery: {
                     type: Object
+                },
+
+                // clientQuery
+                _clientquery: {
+                    type: Object,
+                    value: {
+                        "structure": "doc"
+                    }
                 },
 
                 /**
@@ -267,7 +280,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             },
 
             locationrequest: function(n, o) {
-                // don't request for very small 'movements' of cbox
+                // don't request after very small 'movements' of cbox
                 if (n && o && this.map && this.map.getBounds()) {
                     var mindy = 0.01, //  
                         mb = this.map.getBounds(),
@@ -297,8 +310,8 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
                     var servicequery = this.serviceparams;
                     servicequery["time"] = Date.now();
+                   
                     // console.log("Trigger SERVICEREQUEST as:", servicequery);
-
                     this._servicequery = {};
                     this._servicequery = servicequery;
 
@@ -314,11 +327,10 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
              *   action triggered after (slide)-server returns new data   
              */
             serviceresponse: function(rawslidedata) {
-                // console.log(typeof rawslidedata, rawslidedata, this.map);
 
                 this.$.loadspinner.active = false;
-
                 if (!this.map || (typeof rawslidedata != "object") || !Object.keys(rawslidedata).length) return;
+                // console.log(typeof rawslidedata, rawslidedata); // , this.map);
 
                 var slidedata;
                 if (rawslidedata.value) {
@@ -326,8 +338,9 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 } else {
                     slidedata = rawslidedata;
                 }
-
+                // console.log(typeof slidedata, slidedata); // , this.map);
                 if (!slidedata.features || !slidedata.features.length) return;
+                // if (!slidedata || !slidedata.length) return;
 
                 this.slidedata = slidedata;
                 // console.log("new slide data:", slidedata);
@@ -335,18 +348,18 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 this.slidebox = this.getBoundingBox(slidedata);
 
                 this.slidekeys = this.getSlideKeys(slidedata);
-                // console.log("ServiceResponse=slidelayer:", this.slidekeys, slidedata, this.slidebox);
+                // console.log("ServiceResponse [slidekeys,slidedata,slidebox]:", this.slidekeys, slidedata, this.slidebox);
 
-                // Specifically mb-gl: ? Test for source (not for layer) ?
                 var slidesource = this.slidectrl.source,
                     slidename = this.slidectrl.id;
 
+                // Specifically mb-gl: ? Test for SOURCE  (not for layer) ?
                 if (!this.map.getSource(slidesource)) {
                     // create NEW slidelayer
                     this.createSlideLayer();
 
                 } else {
-                    // Modify slide-data (insert NEW slide)     
+                    // Modify slide-data ( = insert NEW slide)     
                     if (this.slideanimation) {
                         // insert data as ANIMATED 
                         this.slideanimation.layerdata = slidedata;
@@ -371,7 +384,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     slidectrl = this.slidectrl,
                     insertlayer = this.insertslidebelow,
                     slidesource = slidectrl.source;
-
+                // console.log("createSlideLayer for source",slidesource, slidedata);     
                 // A. add slide-source to map    
                 this.map.addSource(slidesource, {
                     type: 'geojson',
@@ -482,7 +495,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
              */
             createCarddata: function(item) {
                 if (!item) return;
-                console.log("createCarddata of:", item);
+                // console.log("createCarddata of:", item);
                 var txt = typeof item == "string" ? item : JSON.stringify(item, null, '\n');
                 this.slidecard = {
                     "html": '<pre><code id="popupbody">' + txt + '</code></pre>',

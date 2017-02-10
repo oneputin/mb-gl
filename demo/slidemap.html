@@ -64,7 +64,7 @@
     <template is="dom-bind" id="app-demo">
         
         <div class="container flex-horizontal">
-            
+        
             <!-- LEFT container: Map -->
             <!--zoom="[[zoom]]"-->
             <mb-map 
@@ -87,7 +87,10 @@
                     serviceflag="{{flag}}">
                 </mb-target>
 
-                <mb-location-log map="{{map}}" lnglat="{{lnglat}}" mode="map" checked>
+                <mb-location-log 
+                    map="{{map}}" 
+                    lnglat="{{lnglat}}" 
+                    srcmode="mapcenter" checked>
                 </mb-location-log>
 
             </mb-map>

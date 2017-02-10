@@ -8,8 +8,6 @@
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="../paper-card/paper-card.html">
 
-<!--<link rel="import" href="../kml-json/kml-json.html">-->
-
 <link rel="import" href="tracks-from-gpx.html">
 <link rel="import" href="tracks-from-pnts.html">
 
@@ -244,7 +242,7 @@ To 'close'
                     this.clearSourceUsage();  // 
                 } 
 
-                if ((srctype == "kml") || (srctype == "gpx")) {  // trigger import from gpx/kml (kml-json)
+                if ((srctype == "kml") || (srctype == "gpx")) {
                     tracksrcmeta.xmlquery = {
                         "tags": "Track",
                         "structure": "doc"

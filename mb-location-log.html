@@ -130,7 +130,7 @@ wraps a distance utility
             // 
             setupTool: function(map) {
                 // if (!this.map) return;
-                if (this.checked) {
+                if (this.checked && this.map) {
                     if (this.srcmode == "mouse") this.map.on('mousemove', this.onMoveEvent);
                     else if (this.srcmode == "mapcenter") this.map.on('move', this.onMoveEvent);
                 }

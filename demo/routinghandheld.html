@@ -126,7 +126,7 @@
             map="{{map}}" 
             mapapikey="[[mbkey]]" 
             mapstyle="[[mapstyle]]" 
-            mapid="{{mapid}}" 
+            mbid="{{mbid}}" 
             cbox="{{cbox}}" 
             zoom="{{zoom}}" 
             mapctrl="[[mapctrl]]">
@@ -135,7 +135,7 @@
             <mb-distance 
                 map="{{map}}" 
                 distance="{{distance}}" 
-                checked="[[usemeasure]]">
+                checked="[[mapmeasureshow]]">
             </mb-distance>
 
             <div class="ctrls-in">
@@ -156,13 +156,14 @@
             <mb-location-log 
                 map="{{map}}" 
                 lnglat="{{lnglat}}" 
-                checked="[[uselocationlog]]">
+                checked="[[locationlogshow]]">
             </mb-location-log>
 
             <mb-styles 
-                mapstyle = "{{mapstyle}}" 
-                styleid = "{{styleid}}"
-                checked = "[[usestyleselect]]">
+                styleset ="[[morestyles]]"
+                checked = "[[styleselectshow]]"
+                selectable = "{{styleselectable}}"
+                mapstyle = "{{mapstyle}}"> 
             </mb-styles>
 
             <!--<mb-info-drag carddata="[[trackdata]]">
@@ -203,9 +204,9 @@
             </template>
 
             <div id="radios">
-                <paper-radio-button checked="{{usestyleselect}}">Style slection</paper-radio-button>
-                <paper-radio-button checked="{{uselocationlog}}">Location Log</paper-radio-button>
-                <paper-radio-button checked="{{usemeasure}}">Measure</paper-radio-button>
+                <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
+                <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
+                <paper-radio-button checked="{{mapmeasureshow}}">Measure</paper-radio-button>
                 <paper-radio-button class="red" checked="{{usepreview}}">CheckSources</paper-radio-button>
             </div>
 
@@ -226,7 +227,7 @@
                  + supply/sync processed features to sibling elements -->
             <mb-quickview 
                 map="[[map]]" 
-                mapid="[[mapid]]" 
+                mbid="[[mbid]]" 
                 mapcontent="[[mapcontent]]" 
                 checked="[[usepreview]]" 
                 featurelist="{{dataset}}" 
@@ -258,8 +259,9 @@
     var scope = document.querySelector('#app');
 
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-    scope.mapstyle = 'mapbox://styles/mapbox/basic-v9' 
+    scope.mapstyle = 'mapbox://styles/mapbox/light-v9' 
     // scope.mapstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
+    scope.morestyles = "demo-styles.json";
 
     // Data-INIT
     scope.indexurl = "index-handheld.json"; // list of available datasets
@@ -276,8 +278,8 @@
     // scope.lnglat = "13,52";
 
     // STATE init
-    scope.usestyleselect = false;
-    scope.uselocationlog = true;
+    scope.styleselectshow = false;
+    scope.locationlogshow = true;
     scope.usepreview = true;
     
     // Animation- INIT
