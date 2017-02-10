@@ -19,9 +19,7 @@
                 "raw": 1
             };
     
-    Startsymbol: toilet-11
-
-    @demo demo/routinghandheld.html 
+    @demo demo/routingtracks.html 
 -->
 
 <dom-module id="mb-quickview">
@@ -581,9 +579,10 @@
                 }
                 
                 if (trackInfo.coordTimes) { // console.log("coordTimes", trackInfo.coordTimes);
+                    
                     var trackTimes = trackInfo.coordTimes;
                     if (typeof trackTimes == "string") trackTimes = JSON.parse(trackTimes);
-                    // console.log(trackTimes);
+                    // console.log(trackInfo, trackTimes);
                     
                     var n = trackTimes.length, // equal to number of coords
                         von = scope.utcTime(scope.trackTime(trackTimes[0]), null, "h"),

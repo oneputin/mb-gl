@@ -23,15 +23,22 @@
     {
         "title": "SilvesterTag",
         "key": "silv",
-        "type": "usertable",
+        "type": "devicetable",
         "mintracklength": 5,
         "url": "wp-data/handheld-silv2016.json"
     },
     {
         "title": "SilvesterBerg",
         "key": "berg",
-        "type": "usertable",
+        "type": "devicetable",
         "mintracklength": 5,
         "url": "wp-data/handheld-silvberg.json"
+    },
+    {
+        "title": "Vendee",
+        "key": "vendee",
+        "type": "dbtable",
+        "url": "wp-data/vendee-1.json",
+        "master":"wp-data/vendee-db.json"
     }
 ]

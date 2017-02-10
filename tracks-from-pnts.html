@@ -10,7 +10,7 @@ Interface for import/export of tracking data from handheld gps-devices
 
 Optional: create quick-preview-data 
 
-@demo demo/routinghandheld.html 
+@demo demo/routingtracks.html 
 -->
 
 <dom-module id="tracks-from-pnts">
@@ -104,7 +104,7 @@ Optional: create quick-preview-data
 
         observers: [
             'triggerQuery(srcmeta.*)',
-            'deriveTracks(rawdata, srcmeta, usepreview, masterdata)'
+            'createTracks(rawdata, srcmeta, usepreview, masterdata)'
         ],
 
         attached: function() {
@@ -115,13 +115,17 @@ Optional: create quick-preview-data
         triggerQuery: function(srcmeta) { // trigger new dataquery !!
             if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
             if (srcmeta.type.indexOf("table") < 0) {
+                console.log("Cannot query data from:", srcmeta);  
                 this.rawdata = null; // 
                 return;
             }  
             // set parameters for data-fetch with <iron-ajax>
             this.dataurl = srcmeta.url;
-            if (srcmeta.masterurl) this.masterurl = srcmeta.masterurl;
-            else this.masterdata = {};
+            if (srcmeta.master) {
+                this.masterurl = srcmeta.master;
+            } else {
+                this.masterdata = {};
+            }    
         },
 
         // Get rawdata from ajax-responses into element 
@@ -133,42 +137,43 @@ Optional: create quick-preview-data
             if (srcurl == this.masterurl) this.masterdata = ajaxresponse.detail.response;
         },
         
-        // 
-        deriveTracks: function(rawdata, srcmeta, usepreview) {
+        // Common SHELL for processing variants of pntdata 
+        // Vomue, vendee 
+        createTracks: function(rawdata, srcmeta, usepreview, masterdata) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
-            // console.log("table-data, raw:", rawdata);
+            // console.log(srcmeta, "RAW-data:", rawdata, "MASTER-data", masterdata); // return; 
 
-            // 1. "DETECT"  the  "table-mode"" 
+            // 1. Heuristik "DETECT the  table-mode" 
             var tablemode = (rawdata[0]["geometry"]) ? "json" : "nn";
-
             tablemode = (rawdata[0]["Header"] == "Trackpoint") ? 'table-vomue1' : tablemode;
-            
             tablemode = rawdata[0]["Pnt"] ? 'table-vomue2' : tablemode;
-            
-            if (tablemode == "nn") {
-                console.log("BREAK. Selected dataset cannot be analysed!!");
+            tablemode = rawdata[0]["lat"] ? 'table-vendee' : tablemode;
+
+            // 2. Create RAW trackdata 
+            var rawtracks;
+            if (tablemode.indexOf("vomue") > 0) {
+                rawtracks = this.rawDeviceTracks(rawdata, tablemode, usepreview);
+            } else if (tablemode.indexOf("vendee") > 0) {
+                rawtracks = this.rawVendeeTracks(rawdata, masterdata);
+            } else {
+
+            }
+            if (!rawtracks) {
+                console.log("BREAK. Selected dataset cannot be analysed!!", srcmeta);
                 return;
-            }   // console.log("table-data, mode:", tablemode);   
+            }      
 
-            // 2. Extract raw tracks 
-            //    by "very simple" segementation-algorithm 
-            //    For animation abandon "short" segments 
-            var mintracklength;
-            if (!usepreview) mintracklength = srcmeta.mintracklength;
-            
-            var rawtracks = this.getRawTracks(rawdata, tablemode, mintracklength);
+            // 3. Create DERIVATES  of rawTracks 
 
-            // 3. Create Derivates of rawTracks 
+            if (usepreview) {   // 3.1 derive features for mb-visualization of rawTracks
 
-            if (usepreview) {   // derive features for mb-visualization of rawTracks
-
-                this.quickmap = this.createQuickview(rawtracks, srcmeta);
+                this.quickmap = this.deriveTrackPreview(rawtracks, srcmeta);
                 
                 console.log("Quickview TRACKS (from TPs):", this.quickmap);  
                 
-            } else {    // derive structures for mb-based animation of 'suitable' tracks
+            } else {    // 3.2 derive structures for mb-based animation of 'suitable' tracks
 
-                var routedata = this.createTrackRoutes(rawtracks); // , rawdbdata);
+                var routedata = this.deriveTrackRoutes(rawtracks); 
                 
                 if (routedata) {
                     console.log("RAW ROUTEDATA (from TPs) :", routedata);  
@@ -177,10 +182,14 @@ Optional: create quick-preview-data
             }
         },
 
-        // Convert tabular data into point-collections
-        // to be used as tracks 
-        getRawTracks: function(rawdata, tablemode, minTrackLength) {
-            // console.log("getRawTracks: rawdata=", rawdata);
+        // Convert tabular ( point-collections) data created on gps-devices 
+        // into point-collections to be used as tracks 
+        // Use "very simple" segementation-algorithm of point-collections
+        // !! For animation abandon "short" segments !! 
+        rawDeviceTracks: function(rawdata, tablemode, usepreview) {
+            // console.log("rawDeviceTracks: rawdata=", rawdata);
+            var minTrackLength;
+            if (!usepreview) minTrackLength = srcmeta.minTrackLength;
 
             // Dis-assemble rawdata-recordings that contain "separable tracks"  
             // with mode-specific algorithms - assigning a unique track-ID
@@ -251,7 +260,7 @@ Optional: create quick-preview-data
             };
 
             var routes = {},
-                routedata = [],
+                // routedata = [],
                 tp, trackpoints;
             var t, dt, dx, dt_std, dx_std, v, dv_std,
                 vprev = 0;
@@ -436,8 +445,127 @@ Optional: create quick-preview-data
             return tracks; 
         },
 
+
+        // SPECIFIC import of specific vendee-data 
+        // into datastructure of routing-API
+        rawVendeeTracks: function(rawdata, rawmasterdata) {
+            if (!rawdata || !rawmasterdata) return;
+
+            var icontemplate;
+            // icontemplate = "circle-stroked-11"; // this.icon;
+            // icontemplate = "boat-blue"; // this.icon;
+
+            // Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
+           
+            var routes = {},
+                masterdata = {},
+                route, master, id;
+
+            // A. Restructure master-table into collection    
+            if (rawmasterdata.constructor === Array) {
+                rawmasterdata.forEach(function(st, j) {
+                    //  
+                    id = st.id;
+                    id = id.replace("<br>", "/")
+
+                    master = masterdata[id];
+                    if (!master) {
+                        masterdata[id] = st;
+                    }
+                }.bind(this));
+
+                if (!this.connect) { // ???  
+                    // this.masterdata = masterdata;
+                }
+            }
+
+            // console.log("MASTERS preprocessed:", masterdata);
+
+            // B. GROUP all position-records by id 
+            //    into objects for every resolved track
+            rawdata.forEach(function(wp, j) {
+                //  
+                var wpx = {},
+                    lng, lat;
+                var pass = this.utcTime(wp.date + "." + wp.time);
+                wpx.ab = pass;
+                wpx.an = pass;
+
+                // Apply specific 
+                lat = this.dmtodd(wp.lat);
+                lng = this.dmtodd(wp.lng);
+
+                wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
+                wpx.icon = this.wpicon;
+
+                //  
+                id = wp.id;
+                route = routes[id];
+                if (!route) {
+                    route = [];
+                    routes[id] = route;
+                }
+                route.push(wpx);
+            }.bind(this));
+
+            // C. Join temporary masters- and routes-objects 
+            //    into array of api-conform routes with wps sorted by time 
+            var routedata = [];
+
+            Object.keys(routes).forEach(function(id) {
+
+                var trackpoints = routes[id];
+                trackpoints.sort(function(wp1, wp2) {
+                    return wp1.ab - wp2.ab;
+                });
+
+                /*************************
+                    * Resolve original id into better readable one 
+                    * and a "good title"
+                    */
+                var title = id.split(">")[1];
+
+                id = id.replace("<br>", "/");
+                // *************************
+
+                var icon = icontemplate; // + "-" + id; // ???? 
+                var item = {
+                    "id": id,
+                    "title": title,
+                };
+
+                var route = {
+                    "id": id,
+                    "title": title,
+                    // "icon": icon,
+                    "unitsystem": "nautic",
+                    "nodes": trackpoints
+                };
+
+                // optionally include Stammdaten
+                var addmaster = masterdata[id]; //  && this.connect; 
+                if (addmaster) {
+                    route["master"] = masterdata[id];
+                }
+                routedata.push(route);
+            }.bind(this));
+
+            this.routedata = routedata; 
+
+            // D. Convert into "mappable" tracks
+            var tracks = {};
+            routedata.forEach(function(rrec){
+                tracks[rrec.id] = rrec.nodes;
+            }) 
+
+            // console.log("importVendee rawdata", tracks); // , rawdata);
+
+            return tracks; 
+        },
+
+
         // Derive input-data-structures for my-animatation-api
-        createTrackRoutes: function(routes, masterdata) {
+        deriveTrackRoutes: function(routes, masterdata) {
 
             // C. Join temporary masters- and routes-objects 
             //    into array of api-conform routedata (wps sorted by time) 
@@ -459,7 +587,7 @@ Optional: create quick-preview-data
                 };
 
                 // Optionally: include Stammdaten
-                if (masterdata && masterdata[id] && this.connect) {
+                if (masterdata && masterdata[id]) { // && this.connect) {
                     route["master"] = masterdata[id];
                 }
 
@@ -474,14 +602,15 @@ Optional: create quick-preview-data
         },
 
         // Deribe quickmb-container of raw tracks
-        createQuickview: function(trackdata, srcmeta, masterdata) {
+        deriveTrackPreview: function(trackdata, srcmeta) {
+            // console.log("CREATEPREVIEW", trackdata, srcmeta ); 
 
             var scope = this;
             var prefix = ""; // tracks";
             var title = srcmeta.key;
             if (!title) title = srcmeta.title;
                         
-            // 
+            // Create 
             function srcDataCreate(trackdata) {
                 var features = [],
                     starttime ;
@@ -549,128 +678,6 @@ Optional: create quick-preview-data
 
             return quickViewObj; 
         },    
-
-        // SPECIFIC import of specific vendee-data 
-        // into datastructure of routing-API
-        trackDataCreate: function(rawdata, rawdbdata) {
-            if (!rawdata || !rawdbdata) return;
-
-            var icontemplate;
-            // icontemplate = "circle-stroked-11"; // this.icon;
-            // icontemplate = "boat-blue"; // this.icon;
-
-            /**
-                *  transform digitaldegree to d-m with 3 digits (last digit ca 1-2m)
-                *  "maritime formatting"  
-                */
-            function dmtodd(dm, lonflag, prec) {
-                if (!prec) prec = 6;
-                dm = dm.split("°"); // console.log("dm-array", dm);
-                dd = parseInt(dm[0]) + parseFloat(dm[1]) / 60;
-                if (dm[1].slice(-1) == "W") dd = 0 - dd;
-                if (dm[1].slice(-1) == "S") dd = 0 - dd;
-                return dd;
-            }
-
-
-            // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
-            var routes = {},
-                masterdata = {},
-                route, master, id;
-
-            // A. Restructure master-table into collection    
-            rawdbdata.forEach(function(st, j) {
-                //  
-                id = st.id;
-                id = id.replace("<br>", "/")
-
-                master = masterdata[id];
-                if (!master) {
-                    masterdata[id] = st;
-                }
-            }.bind(this));
-
-            if (!this.connect) {
-                this.masterdata = masterdata;
-            }
-            // console.log("masters", masterdata);
-
-            // B. GROUP all position-records by id 
-            //    into objects for every resolved track
-            rawdata.forEach(function(wp, j) {
-                //  
-                var wpx = {},
-                    lng, lat;
-                var pass = mba.utcTime(wp.date + "." + wp.time);
-                wpx.ab = pass;
-                wpx.an = pass;
-
-                // Apply specific 
-                lat = dmtodd(wp.lat);
-                lng = dmtodd(wp.lng);
-
-                wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
-                wpx.icon = this.wpicon;
-
-                //  
-                id = wp.id;
-                route = routes[id];
-                if (!route) {
-                    route = [];
-                    routes[id] = route;
-                }
-                route.push(wpx);
-            }.bind(this));
-
-            // C. Join temporary masters- and routes-objects 
-            //    into array of api-conform routes with wps sorted by time 
-            var routedata = [],
-                menudata = [];
-
-            Object.keys(routes).forEach(function(id) {
-
-                var trackpoints = routes[id];
-                trackpoints.sort(function(wp1, wp2) {
-                    return wp1.ab - wp2.ab;
-                });
-
-                /*************************
-                    * Resolve original id into better readable one 
-                    * and a "good title"
-                    */
-                var title = id.split(">")[1];
-
-                id = id.replace("<br>", "/");
-                // *************************
-
-                var icon = icontemplate; // + "-" + id; // ???? 
-                var item = {
-                    "id": id,
-                    "title": title,
-                };
-                var route = {
-                    "id": id,
-                    "title": title,
-                    // "icon": icon,
-                    "unitsystem": "nautic",
-                    "nodes": trackpoints
-                };
-
-                // optionally include Stammdaten
-                if (masterdata[id] && this.connect) {
-                    route["master"] = masterdata[id];
-                }
-
-                routedata.push(route);
-                menudata.push(item)
-
-            }.bind(this));
-            // console.log("importVendee finaldata", routedata); // , rawdata);
-
-            this.routedata = routedata;
-            this.menudata = menudata;
-        },
-
 
 
     });

@@ -132,6 +132,7 @@ Demo to view ship-data animation
                     menudata="{{menudata}}"
                     tmpdata="[[tmpdata]]"
                 -->
+                
                 <routing-vendee 
                     routedata="{{routedata}}"
                     basedataurl="[[basedataurl]]" 
@@ -171,29 +172,17 @@ Demo to view ship-data animation
                     datasetlabel= "Flights">
                 </dataset-browser>                
 
-            <!--
-                <paper-dropdown-menu class="routesets" label="Position sets">
-                    <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectedurl" attr-for-selected="url">
-                        <template is="dom-repeat" items="{{routedocs}}">
-                            <paper-item url="{{item.url}}">
-                                {{item.title}}
-                            </paper-item>
-                        </template>
-                    </paper-listbox>
-                </paper-dropdown-menu>
+                <dataset-browser 
+                    indexurl="[[indexurl]]" 
+                    metadatasetslabel="[[metadatasetslabel]]" 
+                    metadatasets="{{routesets}}" 
+                    datasetmeta="{{routedatasrc}}"
 
-                <template is="dom-if" if="{{menudata}}">
-                    <paper-dropdown-menu class="routes" label="Tracks">
-                        <paper-listbox class="dropdown-content" selected="0" on-iron-select="selectrouteid" attr-for-selected="id">
-                            <template is="dom-repeat" items="{{menudata}}">
-                                <paper-item id="{{item.id}}">
-                                    {{item.title}}
-                                </paper-item>
-                            </template>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
-                </template>
-            -->
+                    datasetlabel="[[datasetlabel]]"
+                    dataset="[[dataset]]" 
+                    selectvalue="{{datasetitem}}"> 
+                </dataset-browser>
+
             </div>
         </div>
     </template>

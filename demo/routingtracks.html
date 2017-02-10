@@ -34,7 +34,7 @@
     <link rel="import" href="../routing-ctrl-time.html">
 
     <!-- specific animation components -->
-    <link rel="import" href="../routing-handheld.html">
+    <link rel="import" href="../routing-tracks.html">
 
     <style is="custom-style">
         .container {
@@ -237,7 +237,7 @@
             <!-- INTERFACE -->
             <!-- routedata="{{routedata}}" --> 
             <!-- rawdata="{{rawdata}}" --> 
-            <routing-handheld 
+            <routing-tracks 
                 datasetlabel="{{datasetlabel}}" 
 
                 tracksrcmeta="[[routedatasrc]]" 
@@ -249,7 +249,7 @@
                 basedataurl="[[basedataurl]]" 
                 trackinfo="[[trackinfo]]" 
                 trackdata="{{trackdata}}">
-            </routing-handheld>
+            </routing-tracks>
 
         </div>
     </div>
@@ -260,7 +260,6 @@
 
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
     scope.mapstyle = 'mapbox://styles/mapbox/light-v9' 
-    // scope.mapstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm'; // 
     scope.morestyles = "demo-styles.json";
 
     // Data-INIT

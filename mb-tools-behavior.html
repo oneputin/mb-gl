@@ -101,14 +101,17 @@
             return tunit;
         },
 
+        // convert any(?) device-formatted track-times into "dot format" 
         trackTime : function (traw, asarray) {
-            var t = traw.replace("Z", "");
-            t = t.split(":").join(".");
-            t = t.split("-").join(".");
-            t = t.split("T").join(".");
-            // console.log(t);
-            if (asarray)  return t.split(".");
-            return t;
+            if (typeof traw == "string") {
+                var t = traw.replace("Z", "");
+                t = t.split(":").join(".");
+                t = t.split("-").join(".");
+                t = t.split("T").join(".");
+                // console.log(t);
+                if (asarray)  return t.split(".");
+            }     
+            return traw;
         },
 
         // 
@@ -223,13 +226,14 @@
          *                  "lng": "162°32.42'E"
          */
         dmtodd: function(dm, lonflag, prec) {
-            if (!prec) prec = 6;
+                if (!prec || prec > 6) prec = 6;
             dm = dm.split("°"); // console.log("dm-array", dm);
             dd = parseInt(dm[0]) + parseFloat(dm[1]) / 60;
             if (dm[1].slice(-1) == "W") dd = 0 - dd;
             if (dm[1].slice(-1) == "S") dd = 0 - dd;
             return dd;
         },
+
 
         /**
          * 

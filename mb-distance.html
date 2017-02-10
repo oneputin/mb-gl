@@ -8,7 +8,7 @@
 `mb-distance`
 wraps a distance utility 
 
-@demo demo/routinghandheld.html 
+@demo demo/routingtracks.html 
 -->
 
 <dom-module id="mb-distance">
@@ -69,7 +69,12 @@ wraps a distance utility
                  */
                 map: {
                     type: Object,
-                    observer: 'setupTool'
+                    observer: 'resetThemes'
+                },
+                
+                mbid: {
+                    type: String,
+                    observer: 'styleChanged'
                 },
 
                 // GeoJSON object to hold our measurement features
@@ -110,6 +115,12 @@ wraps a distance utility
                 // console.log(distscope);
             },
 
+
+            // refresh mapcontent on changed basemap
+            styleChanged: function(mbid, mbidold) {
+                this.quickContentUpdate(this.mapcontent);
+            },
+
             // 
             toggleMeasure: function(checked) {
                 if (!this.map) return;
@@ -128,7 +139,8 @@ wraps a distance utility
                 this.$.distance.innerHTML = '';
                 this.geojson.features = [];
                 this.linestring.geometry.coordinates = [];
-                this.map.getSource("geojson").setData(this.geojson);
+                var distsrc = this.map.getSource("geojson");
+                if (distsrc) distsrc.setData(this.geojson);
                 // console.log("toggleMeasure-2", msg);
             },
 
@@ -157,6 +169,7 @@ wraps a distance utility
                         return point.properties.id !== id;
                     });
                 } else {
+
                     var point = {
                         "type": "Feature",
                         "geometry": {
@@ -175,6 +188,7 @@ wraps a distance utility
                 }
 
                 if (geojson.features.length > 1) {
+
                     linestring.geometry.coordinates = geojson.features.map(function(point) {
                         return point.geometry.coordinates;
                     });
@@ -194,7 +208,7 @@ wraps a distance utility
                 map.getSource('geojson').setData(geojson);
             },
 
-            setupTool: function(map) {
+            resetThemes: function(map) {
                 if (!map) return;
                 // console.log("this=", this);
                 map.addSource('geojson', {
