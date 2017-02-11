@@ -19,40 +19,25 @@ wraps a distance utility
                 position: absolute;
                 z-index: 9;
                 top: 0%;
-                height: 1.5em;
+                height: 2 em;
 
                 /*left: 0%;*/
                 left: 50%;
                 margin-right: -50%;
                 transform: translate(-50%, 0);
 
-                font: 0.8em Courier, Lucida;
+                font: 1 em Courier, Lucida;
                 background-color: rgba(255,64,129,0.8); /*#ff4081*/
-                color: black;                    
+                color: white;                    
                 /*opacity: 0.7;*/ /*related to all content bg,fg*/
             }
 
-            .distance-container {
-                position: absolute;
-                top: 10px;
-                left: 10px;
-                z-index: 1;
+            #innerarea {
+                padding: 0.2em;
             }
-
-            .distance-container > * {
-                background-color: rgba(0, 0, 0, 0.5);
-                color: #fff;
-                font-size: 11px;
-                line-height: 18px;
-                display: block;
-                margin: 0;
-                padding: 5px 10px;
-                border-radius: 3px;
-            }
-
         </style>
 
-        <div id='distance' class='distance-container'></div>
+        <div id='innerarea'>[[info]]</div>
 
     </template>
 
@@ -68,8 +53,8 @@ wraps a distance utility
                  *  map-object of related mb-gl-map
                  */
                 map: {
-                    type: Object,
-                    observer: 'resetThemes'
+                    type: Object//,
+                    //observer: 'resetThemes'
                 },
                 
                 mbid: {
@@ -103,6 +88,11 @@ wraps a distance utility
                     notify: true
                 },
 
+                info: {
+                    type: String,
+                    observer: 'checkContent'
+                },
+
                 checked: {
                     type: Boolean,
                     value: true,
@@ -110,15 +100,23 @@ wraps a distance utility
                 }
             },
 
+            observers: [],
+
             attached: function() {
+                // make this-scope available in named event-functions
                 distscope = this;
-                // console.log(distscope);
             },
 
+            checkContent: function(content) {
+                // console.log("checkContent",content);
+            },
 
             // refresh mapcontent on changed basemap
             styleChanged: function(mbid, mbidold) {
-                this.quickContentUpdate(this.mapcontent);
+                if (this.checked) {
+                    this.toggleMeasure(false);
+                    this.toggleMeasure(true);                    
+                }
             },
 
             // 
@@ -126,21 +124,23 @@ wraps a distance utility
                 if (!this.map) return;
                 // console.log("toggleMeasure-1", this.map);
                 var msg = "measure toggled OFF";
+                var distsrc;
                 if (checked) {
                     msg = "measure toogled ON";
+                    distsrc = this.resetThemes(checked);
                     this.map.on('click', this.clickFunction);
                     this.style.display = "block";
                 } else {
                     this.map.off('click', this.clickFunction);
+                    distsrc = this.resetThemes(checked);                    
                     this.style.display = "none";
                 }
 
                 // clearAll
-                this.$.distance.innerHTML = '';
-                this.geojson.features = [];
+                this.info = "click to measure";
                 this.linestring.geometry.coordinates = [];
-                var distsrc = this.map.getSource("geojson");
-                if (distsrc) distsrc.setData(this.geojson);
+                this.geojson.features = [];
+                distsrc.setData(this.geojson);
                 // console.log("toggleMeasure-2", msg);
             },
 
@@ -149,7 +149,7 @@ wraps a distance utility
                 var map = distscope.map,
                     geojson = distscope.geojson,
                     linestring = distscope.linestring,
-                    distanceContainer = distscope.$.distance;
+                    distance;
 
                 var features = map.queryRenderedFeatures(e.point, {
                     layers: ['measure-points']
@@ -159,15 +159,13 @@ wraps a distance utility
                 // So we can redraw it based on the points collection
                 if (geojson.features.length > 1) geojson.features.pop();
 
-                // Clear the Distance container to populate it with a new value
-                distanceContainer.innerHTML = '';
-
                 // If a feature was clicked, remove it from the map
-                if (features.length) {
+                if (features && features.length) {
                     var id = features[0].properties.id;
                     geojson.features = geojson.features.filter(function(point) {
                         return point.properties.id !== id;
                     });
+
                 } else {
 
                     var point = {
@@ -195,65 +193,69 @@ wraps a distance utility
 
                     geojson.features.push(linestring);
 
-                    this.distance = turf.lineDistance(linestring);
+                    distance = turf.lineDistance(linestring);
 
-                    // Populate the distanceContainer with total distance
-                    //if (this.showflag) {
-                    var value = document.createElement('pre');
-                    value.textContent = 'Total distance: ' + this.distance.toLocaleString() + 'km';
-                    distanceContainer.appendChild(value);
-                    //} 
+                    distscope.info = 'Total distance: ' + distance.toLocaleString() + 'km';
                 }
 
                 map.getSource('geojson').setData(geojson);
             },
 
-            resetThemes: function(map) {
-                if (!map) return;
-                // console.log("this=", this);
-                map.addSource('geojson', {
-                    "type": "geojson",
-                    "data": this.geojson
-                });
+            // 
+            resetThemes: function(flag) {
+                if (!this.map) return;
+                var map = this.map;
 
-                // Add styles to the map
-                map.addLayer({
-                    id: 'measure-points',
-                    type: 'circle',
-                    source: 'geojson',
-                    paint: {
-                        'circle-radius': 5,
-                        'circle-color': '#000'
-                    },
-                    filter: ['in', '$type', 'Point']
-                });
+                function distmouse (e) {
+                    if (!map.getLayer('measure-points')) return; 
+                    var features = map.queryRenderedFeatures(e.point, { layers: ['measure-points'] });
+                    // UI indicator for clicking/hovering a point on the map
+                    map.getCanvas().style.cursor = (features.length) ? 'pointer' : 'crosshair';
+                }
 
-                map.addLayer({
-                    id: 'measure-lines',
-                    type: 'line',
-                    source: 'geojson',
-                    layout: {
-                        'line-cap': 'round',
-                        'line-join': 'round'
-                    },
-                    paint: {
-                        'line-color': '#000',
-                        'line-width': 2.5
-                    },
-                    filter: ['in', '$type', 'LineString']
-                });
+                if (!map.getSource('geojson')) {
+                    // console.log("this=", this);
+                    map.addSource('geojson', {
+                        "type": "geojson",
+                        "data": this.geojson
+                    });
+                }
 
-                if (this.checked) map.on('click', this.clickFunction);
+                if (flag) {  // Add styles to the map
+                    map.addLayer({
+                        id: 'measure-points',
+                        type: 'circle',
+                        source: 'geojson',
+                        paint: {
+                            'circle-radius': 5,
+                            'circle-color': '#000'
+                        },
+                        filter: ['in', '$type', 'Point']
+                    });
+                    map.addLayer({
+                        id: 'measure-lines',
+                        type: 'line',
+                        source: 'geojson',
+                        layout: {
+                            'line-cap': 'round',
+                            'line-join': 'round'
+                        },
+                        paint: {
+                            'line-color': '#000',
+                            'line-width': 2.5
+                        },
+                        filter: ['in', '$type', 'LineString']
+                    });
+                    map.on('mousemove', distmouse);
+                    // if (this.checked) map.on('click', this.clickFunction);
+                } else {
+                    map.off('mousemove', distmouse);
+                    map.removeLayer("measure-points");
+                    map.removeLayer('measure-lines');                    
+                }
 
-                //map.on('mousemove', function (e) {
-                //    var features = map.queryRenderedFeatures(e.point, { layers: ['measure-points'] });
-                //    if (features.length) console.log("distfeatures",features);
-                // UI indicator for clicking/hovering a point on the map
-                // map.getCanvas().style.cursor = (features.length) ? 'pointer' : 'crosshair';
-                //});
+                return map.getSource('geojson');
             },
-
-            observers: []
 
         });
     </script>

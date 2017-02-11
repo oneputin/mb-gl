@@ -43,7 +43,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
     </template>
 
     <script>
-        var map;
+        var map, mapscope;
 
         var setup = {
             // oneputin
@@ -141,7 +141,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
             ],
 
             attached: function() {
-
+                mapscope = this;
                 // Use default apikey if NONE available from app-shell
                 if (!this.mapapikey) this.mapapikey = setup.mapapikey;
 
@@ -182,6 +182,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
             changeMapStyle: function(mapstyle){
                 if (this.map) {  // console.log("CHANGE mapstyle", mapstyle);
+                    map.on('data', this.onStyleChange);
                     this.map.setStyle(mapstyle);
                 }    
             },
@@ -225,13 +226,8 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     if (this.zoom) map.setZoom(this.zoom);
                     if (this.cbox) map.setCenter(this.cbox);
 
-                    map.on('movestart', function() {
-                        // this.start = map.getCenter();
-                    });
-
                     // inform about map-center after map-move 
                     map.on('moveend', function() {
-
                         let cb = map.getCenter(),
                             bb = map.getBounds(),
                             z = map.getZoom();
@@ -243,48 +239,40 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     });
 
                     // 
-                    map.on('data', function(e) {
-                        var typ = e.dataType;
-                        if (typ=="tile") return; 
-                        // A. 
-                        if (typ=="style") {
-                            var ssheet = e.style.stylesheet,
-                                name = ssheet.name,
-                                id = ssheet.id,
-                                sprite = ssheet.sprite;
-                            if (!that.mapstyle) {
-                                // console.log("MAPSTYLE changed to ["+ id +"]")
-                                return;
-                            }     
-
-                            // Compare style of mb-map-api with style-ctrl-parameters (id and url) of map-element
-                            // - inform app about id of actual api-mapstyle
-                            // - refresh mb-mapstyle if map-element got a new style-parameter meanwhile 
-                            //   (especially as SYNC during start-phase with style-menu )     
-                            if (that.mbid != id)  {
-                                // console.log("MAPSTYLE changed from [" + that.mbid+"]", "to ["+ id +"]")
-                                if (that.mapstyle.indexOf(id) < 0 ) {
-                                    // console.log("BUT LAST requested style is:", that.mapstyle );
-                                    that.map.setStyle(that.mapstyle);
-                                } else {
-                                    that.mbid = id; 
-                                }
-
-                            }     
-                        }
-                        // B. 
-                        if (typ=="source") {
-                            // console.log("setup style", e.style); 
-                        }
-                    });
-
-                    //if zoom is NOT communicated to app via map-object : 
-                    //map.on('zoomend', function() { 
-                    //console.log("zoomed the map");                
-                    //});
-
+                    map.on('data', that.onStyleChange);
                     that.map = map;
                 });
+            },
+
+            // 
+            onStyleChange: function(e){
+                if (e.dataType == "style") {
+                    var ssheet = e.style.stylesheet,
+                        mbid = ssheet.id;
+
+                    var mapstyleid = mapscope.mbid,
+                        mapstyleurl = mapscope.mapstyle;
+
+                    if (!mapstyleurl) {
+                        // console.log("MAPSTYLE changed to ["+ mbid +"]")
+                        return;
+                    }     
+
+                    // Compare style of mb-map-api with style-ctrl-parameters (id and url) of map-element
+                    // - inform app about id of actual api-mapstyle
+                    // - refresh mb-mapstyle if map-element got a new style-parameter meanwhile 
+                    //   (especially as SYNC during start-phase with style-menu )     
+                    if (mapstyleid != mbid)  {
+                            console.log("MAPSTYLE changed from [" + mapstyleid+"]", "to ["+ mbid +"]")
+                        if (mapstyleurl.indexOf(mbid) < 0 ) {
+                            console.log("BUT LAST requested style is:", mapstyleurl );
+                            map.setStyle(mapstyleurl);
+                        } else {
+                            mapscope.mbid = mbid; 
+                            map.off("data", mapscope.onStyleChange); console.log("OFF onStyleChange");
+                        }
+                    }     
+                }
             }
 
         });

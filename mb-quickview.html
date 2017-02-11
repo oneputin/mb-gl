@@ -545,25 +545,28 @@
                 if (!this.map) return; 
                 
                 var scope = this,
-                    map = this.map,
-                    trackLayer = map.getLayer(layerid),
-                    trackSource = map.getSource(trackLayer.source),
-                    srcFeatures = trackSource._data.features,
+                    map = this.map;
 
-                    trackInfo = aLine.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
+                var trackInfo = aLine.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
                 
                 // Heuristik to identify suitable filter-key  
                 var keyname, idNames = ["id", "name", "key", "time"];
-
-                idNames.forEach(function(nom) {
-                    if (trackInfo[nom] && !keyname) keyname = nom;
+                idNames.some(function(nom) {
+                    if (trackInfo[nom]) {
+                        keyname = nom;
+                        return true;
+                    }
                 });
 
-                var coords; 
+                // Get SOURCE-properties for identified feature !!!
                 if (keyname) {
                     trackInfo.keyname = keyname;  
                     trackInfo.keyvalue = trackInfo[keyname];  
                     trackInfo.id = trackInfo[keyname];
+
+                    var trackLayer = map.getLayer(layerid),
+                        trackSource = map.getSource(trackLayer.source),
+                        srcFeatures = trackSource._data.features;
 
                     srcFeatures.some(function(f){
                         if (f.properties[keyname] == trackInfo[keyname]) {
@@ -578,22 +581,28 @@
                     });
                 }
                 
-                if (trackInfo.coordTimes) { // console.log("coordTimes", trackInfo.coordTimes);
-                    
-                    var trackTimes = trackInfo.coordTimes;
+                // Get typical track time parameters 
+                if (trackInfo.coordTimes) { 
+
+                    var trackTimes = trackInfo.coordTimes; // console.log("trackTimes", typeof trackTimes, trackTimes);
                     if (typeof trackTimes == "string") trackTimes = JSON.parse(trackTimes);
                     // console.log(trackInfo, trackTimes);
                     
                     var n = trackTimes.length, // equal to number of coords
-                        von = scope.utcTime(scope.trackTime(trackTimes[0]), null, "h"),
-                        bis = scope.utcTime(scope.trackTime(trackTimes[n - 1]), null, "h"),
+                        tvon = scope.trackTime(trackTimes[0]);
+                        tbis = scope.trackTime(trackTimes[n - 1])
+                        von = scope.utcTime(tvon, null, "h"),
+                        bis = scope.utcTime(tbis, null, "h"),
                         dt = bis - von;
-                    trackInfo.von = scope.logTime(von,"h");
-                    trackInfo.bis = scope.logTime(bis,"h");
+                    // console.log(trackTimes[0],trackTimes[n-1], tvon, tbis, von,bis,dt);
+
                     trackInfo.duration = scope.deltaT(dt);
                     trackInfo.count = n;
+                    trackInfo.von = scope.logTime(von, "h");
+                    trackInfo.bis = scope.logTime(bis, "h");
                 }
 
+                // compile basic parameters as HTML 
                 trackInfo.html = trackInfo.time +
                     "<br>Length: " + trackInfo.length +
                     "<br>Duration: " + trackInfo.duration +
@@ -673,7 +682,7 @@
                         map.setFilter(hilayerid, hifilter);
                     } 
 
-                    var trackInfo = this.trackGetInfo(trackFeature, layerid);   // console.log("Selected track(s)", trackInfo);  
+                    var trackInfo = this.trackGetInfo(trackFeature, layerid);  // console.log("Selected track(s)", trackInfo);  
 
                     // APPLY start- and stop-nodes of track
                     setTrackNodes(layerid, trackInfo); 
