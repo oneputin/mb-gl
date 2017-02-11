@@ -2,15 +2,15 @@
 
 <script>
   /**
-   * `Mbb.ToolsBehavior` 
+   * `Mbb.MapBehavior` 
    * Note, the `iron-resize` event is non-bubbling.
    *
-   * @polymerBehavior Mbb.ToolsBehavior
+   * @polymerBehavior Mbb.MapBehavior
    * @demo demo/index.html
    **/
     window.Mbb = window.Mbb || {};
 
-    Mbb.ToolsBehavior = {
+    Mbb.MapBehavior = {
 
         properties: {},
 
@@ -320,6 +320,71 @@
             map.fitBounds(bounds, {
                 padding: 20
             });
+        },
+
+        // (geo)id-list of slide-features
+        getFeatureKeys: function(data) {
+            if (data.features) data = data.features; //console.log(data); // return
+            if (!data.length) return; // console.log("getFeatureKeys", data); 
+            var props, id, keys = [];
+            for (var i = 0; i < data.length; i++) {
+                id = data[i].id;
+                props = data[i].properties;
+                if (!id) {
+                    id = props.id;
+                    if (!id) id = props.name;
+                    if (!id) id = i;
+                }
+                keys.push(id);
+            }
+            keys = keys.toString(); // 
+            return keys;
+        },
+
+        // analysing slide-geometries
+        getBoundingBox: function(data) {
+            
+            if (data.features) data = data.features; //console.log(data); // return
+            if (!data.length) return; //console.log(data); 
+
+            var segments, coords, pnt, latitude, longitude, bb = {};
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].geometry.geometries) {
+                    segments = data[i].geometry.geometries; //console.log("segments", segments);
+                } else {
+                    segments = [data[i].geometry];
+                }
+
+                for (var k = 0; k < segments.length; k++) {
+                    
+                    coords = segments[k].coordinates[0];
+
+                    if (!bb.xMin) {
+                        pnt = coords[0];
+                        bb = {
+                            "xMin": pnt[0],
+                            "xMax": pnt[0],
+                            "yMin": pnt[1],
+                            "yMax": pnt[1]
+                        };
+                    }
+
+                    for (var j = 0; j < coords.length; j++) {
+                        longitude = coords[j][0];
+                        latitude = coords[j][1];
+                        bb.xMin = bb.xMin < longitude ? bb.xMin : longitude;
+                        bb.xMax = bb.xMax > longitude ? bb.xMax : longitude;
+                        bb.yMin = bb.yMin < latitude ? bb.yMin : latitude;
+                        bb.yMax = bb.yMax > latitude ? bb.yMax : latitude;
+                    }
+                }
+            }
+
+            var bb = [
+                [bb.xMin, bb.yMin],
+                [bb.xMax, bb.yMax]
+            ]; //console.log(bb);
+            return bb;
         },
 
         // get color in hex-format

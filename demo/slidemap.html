@@ -77,14 +77,17 @@
                 <mb-slide
                     map="[[map]]"
                     serviceparams="[[serviceparams]]"
-                    cbox="[[cbox]]"
-                    slidectrl="[[layerctrl]]" 
+                    target="[[target]]"
+                    slidectrl="[[slidectrl]]" 
                     slideinfo="{{slideinfo}}"
-                    serviceflag="{{flag}}">
+                    serviceflag="{{serviceflag}}">
                 </mb-slide>
                 
                 <mb-target 
-                    serviceflag="{{flag}}">
+                    map = [[map]]
+                    target={{target}}
+                    targetarea="[[targetarea]]"
+                    serviceflag="{{serviceflag}}">
                 </mb-target>
 
                 <mb-location-log 
@@ -104,7 +107,7 @@
                 <!-- B. external input to change map-center -->
                 <paper-input 
                     class="slidecenter"
-                    label="actual target at (lngLat) = [[cbox]]" 
+                    label="actual target(lngLat) = [[target]]" 
                     value="{{cboxinput}}" 
                     always-float-label 
                     on-focused-changed="focuschanged">
@@ -126,17 +129,23 @@
 
     <script>
         var scope = document.querySelector('#app-demo');
-        scope.map = null;
         scope.serviceparams = {
             slide: "basintree"
         };
-        scope.cbox = "13.7,52.4";
+        scope.targetarea = [
+            [-10, 35], // Southwest 
+            [40, 65] // northeast
+        ]
+        scope.slidectrl = {};
+
+        scope.map = null;
+        scope.cbox = "13.7,55.4";
         scope.cboxinput = "";
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-        scope.mapctrl = {};
-        scope.layerctrl = {};
-        scope.popuptitle = "slideinfo";
-        scope.slidekeys = "";
+        scope.mapctrl = {
+            center: [10,52],
+        };
+
 
         scope.asstring = function(slideinfo) {
             console.log(slideinfo);

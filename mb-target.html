@@ -19,7 +19,7 @@ The visual signature can be toogled in sync with the value of the exported servi
                 display: block;
                 left: 50%;
                 top: 50%;      
-                /* sync target-center to location */
+                /* sync target-center to center-location ?? is size ??*/
                 transform: translate(-50%, -50%);
             }
 
@@ -30,16 +30,25 @@ The visual signature can be toogled in sync with the value of the exported servi
                 opacity: 0.8;
                 --paper-icon-button-ink-color: var(--paper-indigo-500);
             }          
+            
             paper-icon-button.target:hover {
                 background-color: var(--paper-pink-500);
                 color: white;
             }
+
             paper-icon-button.target.idle {
                 color: black;
             }
         </style>
 
-        <paper-icon-button icon="fullscreen" id="target" title="target" class="target" on-tap="toggletarget"></paper-icon-button>
+        <!-- -->
+        <paper-icon-button 
+            icon="fullscreen" 
+            id="target" 
+            title="target" 
+            class="target" 
+            on-tap="toggletarget">
+        </paper-icon-button>
         
     </template>
 
@@ -48,8 +57,15 @@ The visual signature can be toogled in sync with the value of the exported servi
             is: 'mb-target',
 
             properties: {
+
+                map: {
+                    type: Object,
+                    observer: 'setupTargetTrigger'
+                    // notify: true
+                },
+                
                 /**
-                 * flag, can be interactively toggled.  
+                 * bidirectional flag-property.  
                  * fi. by tap on mb-target.  
                  * - evaluable by dynamic layers (slides)
                  */
@@ -58,6 +74,29 @@ The visual signature can be toogled in sync with the value of the exported servi
                     notify: true,
                     value: true,
                     observer: 'toggletarget'
+                },
+
+                // area to be targetted (geofence,boundingbox)
+                targetarea: {
+                    type: Object
+                },
+                
+                // 
+                target: {
+                    type: String,
+                    notify: true
+                },
+
+                // 
+                cbox : {
+                    type: String,
+                    observer: 'locationCheck'
+                },
+
+                // minimum criterium for target-reactivation
+                mindy : {
+                    type: Number,
+                    value: 0.01
                 }
             },
 
@@ -81,7 +120,73 @@ The visual signature can be toogled in sync with the value of the exported servi
                     }
                 }, 300)
 
-            }
+            },
+
+            locationCheck: function(n, o) {
+                // 1. Check for 'too small movements' of cbox
+                //    using lat-differences
+                if (n && o && map && map.getBounds()) {
+                    var mbounds = map.getBounds(),
+                        dlat = Math.abs(mbounds.getNorth() - mbounds.getSouth()),
+                        dy = Math.abs(n.split(",")[1] - o.split(",")[1]);
+                    // console.log("locationCheck", dlat, dy);
+                    if ((dy / dlat) < this.mindy) return;
+                }
+                var cbox = n.split(",");
+
+                // 2. Check for cbox in targetArea
+                var x=parseFloat(cbox[0]), y=parseFloat(cbox[1]);
+                if (this.targetarea) {
+                    var box = this.targetarea,                    
+                        xmin=box[0][0], ymin=box[0][1],
+                        xmax=box[1][0], ymax=box[1][1];
+                    // console.log("testing target area",box,x,y);
+                    if (x < xmin)  x = xmin;
+                    if (y < ymin)  y = ymin;
+                    if (x > xmax)  x = xmax;
+                    if (x > xmax)  y = ymax;
+                }
+                var target = [x, y];
+                
+                this.target = target.toString();   
+
+                this.map.setCenter(target);   
+            },
+
+            /**
+             *
+             * Indirectly triggers a request for new servicedata 
+             * updating cbox in serviceparameters (observed by servicerequest)
+             */
+            targetTrigger: function(t) {
+                if ((t != undefined) && !t) return;
+
+                var that = this;
+                this.debounce('triggering', function() {
+                    var cbox = map.getCenter();
+                    this.cbox = cbox.lng + ',' + cbox.lat;
+                }, 300);
+            },
+
+            /**
+             *  setting up the 
+             */
+            setupTargetTrigger: function(newmap) { // console.log("setupTargetTrigger", newmap);
+                
+                if (newmap) {
+                    // var that = this;
+                    this.map.on('moveend', function() {
+                        // trigger overlay-request after every "map-move" 
+                        if (this.serviceflag) this.targetTrigger();
+                    }.bind(this));
+
+                    // console.log("trigger initial service-request on", this.map);
+                    this.serviceflag = true;
+                    this.targetTrigger();
+                }
+            },
+            
         });
     </script>
+
 </dom-module>

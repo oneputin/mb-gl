@@ -8,6 +8,7 @@
 <link rel="import" href="../iron-icons/iron-icons.html">
 
 <link rel="import" href="mb-api.html">
+<link rel="import" href="mb-map-behavior.html">
 <link rel="import" href="mb-info-drag.html">
 <link rel="import" href="mb-layer-animation.html">
 
@@ -51,19 +52,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
         </style>
 
-        <!-- optically grouped -->
-        <paper-spinner-lite id="loadspinner" alt="loading next slide" active>
-        </paper-spinner-lite>
-
-        <paper-fab id="slidezoom" class="fab" icon="all-out" title="heart" on-tap="zoomslide">
-        </paper-fab>
-
-        <mb-info-drag carddata="[[slidecard]]">
-        </mb-info-drag>
-
-        <content>
-        </content>    
-
         <!-- Async query for new {{slidedata}} -->
         <template is="dom-if" if="[[serviceflag]]">
             <kml-json 
@@ -74,11 +62,30 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             </kml-json>
         </template>
 
+        <!-- 2 elements optically grouped by css -->
+        <paper-spinner-lite 
+            id="loadspinner" 
+            alt="loading next slide" active>
+        </paper-spinner-lite>
+        <paper-fab 
+            id="slidezoom" 
+            class="fab" 
+            icon="all-out" 
+            title="heart" 
+            on-tap="zoomslide">
+        </paper-fab>
+
+        <mb-info-drag 
+            carddata="[[slidecard]]">
+        </mb-info-drag>
+
+        <content>
+        </content>    
+
     </template>
 
     <script>
         var slidesetup = {
-
 
             serviceurl: "http://iimaps.de/npp/if_slides.php",
 
@@ -118,8 +125,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                  */
                 map: {
                     type: Object,
-                    observer: 'setupthetrigger',
-                    notify: true
                 },
 
                 /*
@@ -129,7 +134,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     type: Boolean,
                     value: false,
                     notify: true,
-                    observer: 'servicetrigger'
                 },
 
                 /**
@@ -152,13 +156,13 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
                 /**
                  * location for service-query.
-                 * default: actual map-center 
+                 * default: actual map-center : Alternatively 
                  *  - after stop of map-move   or 
                  *  - continuously during map-move 
                  */
-                cbox: {
+                target: {
                     type: String,
-                    observer: ('locationrequest')
+                    observer: 'locationrequest'
                 },
 
                 _servicequery: {
@@ -249,10 +253,12 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             },
 
             behaviors: [
+                Mbb.MapBehavior,
                 Mbb.LayerAnimation
             ],
 
             observers: [
+                'locationrequest(target, serviceflag)',
                 'servicerequest(serviceflag, serviceparams.card, serviceparams.slide)',
                 'serviceresponse(slidedata.*)',
                 'requestlog(serviceurl, _servicequery.*)'
@@ -279,18 +285,9 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 }
             },
 
-            locationrequest: function(n, o) {
-                // don't request after very small 'movements' of cbox
-                if (n && o && this.map && this.map.getBounds()) {
-                    var mindy = 0.01, //  
-                        mb = this.map.getBounds(),
-                        dlat = Math.abs(mb.getNorth() - mb.getSouth()),
-                        dy = Math.abs(n.split(",")[1] - o.split(",")[1]);
-                    // console.log("locationrequest", dlat, dy);
-                    if ((dy / dlat) < mindy) return;
-                }
-                // console.log("locationrequest", n, o);
-                this.servicerequest(this.serviceflag);
+            locationrequest: function(target, serviceflag) {
+                this.serviceparams.cbox = target; 
+                this.servicerequest(serviceflag);
             },
 
             /**
@@ -298,7 +295,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
              *   mainly : cbox (mapcenter)
              */
             servicerequest: function(serviceflag) {
-                if (!serviceflag || !this.cbox) return;
+                if (!serviceflag || !this.serviceparams.cbox) return;
 
                 var servicelayer = this.slidectrl.id,
                     animation = this.slideanimation;
@@ -309,9 +306,11 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     // Trigger the ServiceIF (<kml-json>) toggling _servicequery 
 
                     var servicequery = this.serviceparams;
+
                     servicequery["time"] = Date.now();
                    
                     // console.log("Trigger SERVICEREQUEST as:", servicequery);
+                   
                     this._servicequery = {};
                     this._servicequery = servicequery;
 
@@ -347,7 +346,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
                 this.slidebox = this.getBoundingBox(slidedata);
 
-                this.slidekeys = this.getSlideKeys(slidedata);
+                this.slidekeys = this.getFeatureKeys(slidedata);
                 // console.log("ServiceResponse [slidekeys,slidedata,slidebox]:", this.slidekeys, slidedata, this.slidebox);
 
                 var slidesource = this.slidectrl.source,
@@ -427,42 +426,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 }); */
             },
 
-            /**
-             *  setting up the 
-             */
-            setupthetrigger: function(newmap) { // console.log("setupthetrigger", newmap);
-                if (newmap) {
-                    // var that = this;
-
-                    this.map.on('moveend', function() {
-                        // trigger overlay-request after every "map-move" 
-                        if (this.serviceflag) this.servicetrigger();
-                    }.bind(this));
-
-                    // console.log("trigger initial service-request on", this.map);
-                    this.serviceflag = true;
-                    this.servicetrigger();
-                } else {
-                    // this.map = undefined;
-                }
-            },
-
-            /**
-             *
-             * Indirectly triggers a request for new servicedata 
-             * updating cbox in serviceparameters (observed by servicerequest)
-             */
-            servicetrigger: function(t) {
-                if ((t != undefined) && !t) return;
-                var that = this;
-                this.debounce('triggering', function() {
-                    var cbox = that.map.getCenter();
-                    cbox = cbox.lng + ',' + cbox.lat;
-                    that.serviceparams.cbox = cbox; // the TRIGGER
-                    // console.log("Triggering service", that.serviceparams, that.serviceflag);
-                }, 300);
-            },
-
             // interactive feature-query at click-location 
             // (?? or at mapcenter after render-event ??)	
             slideinfoget: function(qpoint) {
@@ -523,72 +486,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     this.map.fitBounds(bb);
                 }
 
-            },
-
-            // utilities
-            // u1: bounding box
-            getBoundingBox: function(data) {
-                
-                if (data.features) data = data.features; //console.log(data); // return
-                if (!data.length) return; //console.log(data); 
-
-                var segments, coords, pnt, latitude, longitude, bb = {};
-                for (var i = 0; i < data.length; i++) {
-                    if (data[i].geometry.geometries) {
-                        segments = data[i].geometry.geometries; //console.log("segments", segments);
-                    } else {
-                        segments = [data[i].geometry];
-                    }
-
-                    for (var k = 0; k < segments.length; k++) {
-                        
-                        coords = segments[k].coordinates[0];
-
-                        if (!bb.xMin) {
-                            pnt = coords[0];
-                            bb = {
-                                "xMin": pnt[0],
-                                "xMax": pnt[0],
-                                "yMin": pnt[1],
-                                "yMax": pnt[1]
-                            };
-                        }
-
-                        for (var j = 0; j < coords.length; j++) {
-                            longitude = coords[j][0];
-                            latitude = coords[j][1];
-                            bb.xMin = bb.xMin < longitude ? bb.xMin : longitude;
-                            bb.xMax = bb.xMax > longitude ? bb.xMax : longitude;
-                            bb.yMin = bb.yMin < latitude ? bb.yMin : latitude;
-                            bb.yMax = bb.yMax > latitude ? bb.yMax : latitude;
-                        }
-                    }
-                }
-
-                var bb = [
-                    [bb.xMin, bb.yMin],
-                    [bb.xMax, bb.yMax]
-                ]; //console.log(bb);
-                return bb;
-            },
-
-            // u2: (geo)id-list of slide-features
-            getSlideKeys: function(data) {
-                if (data.features) data = data.features; //console.log(data); // return
-                if (!data.length) return; // console.log("getSlideKeys", data); 
-                var props, id, keys = [];
-                for (var i = 0; i < data.length; i++) {
-                    id = data[i].id;
-                    props = data[i].properties;
-                    if (!id) {
-                        id = props.id;
-                        if (!id) id = props.name;
-                        if (!id) id = i;
-                    }
-                    keys.push(id);
-                }
-                keys = keys.toString(); // 
-                return keys;
             }
 
         });

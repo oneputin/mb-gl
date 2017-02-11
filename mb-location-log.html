@@ -1,6 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="mb-api.html">
-<link rel="import" href="mb-tools-behavior.html">
+<link rel="import" href="mb-map-behavior.html">
 
 <!--
 `mb-location-log`
@@ -83,14 +83,13 @@ wraps a distance utility
             },
 
             behaviors: [
-                Mbb.ToolsBehavior,
+                Mbb.MapBehavior,
             ],
 
             observers: [],
 
             attached: function() {
-                logscope = this;
-                console.log(logscope);
+                logscope = this;  //console.log("logscope", logscope);
                 if (!logscope.checked) logscope.toggleTool(false);
             },
 
