@@ -139,14 +139,16 @@
             </mb-distance>
 
             <div class="ctrls-in">
-                <template is="dom-if" if="{{!usepreview}}">
+
+                <!--<template is="dom-if" if="{{userouting}}">-->
                     <!-- ctrl of animation (and maporientation) -->
                     <routing-ctrl 
                         checked="[[userouting]]"
                         timer="{{timer}}"
                         trackctrl="{{trackctrl}}">
                     </routing-ctrl>
-                </template>
+                <!--</template>-->
+
                 <!-- ctrl of map-orientation -->
                 <!-- <mb-orientation-ctrl 
                     trackmode="{{trackmode}}">
@@ -178,8 +180,7 @@
             <!--<mb -->
 
             <!-- element with [n] visible features -->
-            <template is="dom-if" if="{{!usepreview}}">
-
+            <template is="dom-if" if="{{userouting}}">
                 <routing-api 
                     map="[[map]]" 
                     timer="{{timer}}"
@@ -190,24 +191,21 @@
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]"
                     mapcontent="{{mapcontent}}"                  
-                    tracksymbol="{{tracksymbol}}" 
-                    checked="[[userouting]]">
+                    tracksymbol="{{tracksymbol}}">
                 </routing-api>
                 
                 <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
                 <routing-ctrl-time  
-                    checked="[[userouting]]"
                     timescalemax="[[timer.timescalemax]]" 
                     timer="{{timer}}">
                 </routing-ctrl-time>
-
             </template>
 
             <div id="radios">
                 <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
                 <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
                 <paper-radio-button checked="{{mapmeasureshow}}">Measure</paper-radio-button>
-                <paper-radio-button class="red" checked="{{usepreview}}">CheckSources</paper-radio-button>
+                <paper-radio-button class="preview red" checked="{{usepreview}}">CheckSources</paper-radio-button>
             </div>
 
             <!-- selectprop="id"--> 
@@ -226,10 +224,10 @@
             <!-- Element for viewing structurally standardized quickMapObjects 
                  + supply/sync processed features to sibling elements -->
             <mb-quickview 
+                checked="[[usepreview]]" 
                 map="[[map]]" 
                 mbid="[[mbid]]" 
                 mapcontent="[[mapcontent]]" 
-                checked="[[usepreview]]" 
                 featurelist="{{dataset}}" 
                 featureselected="{{datasetitem}}">
             </mb-quickview>
@@ -238,11 +236,11 @@
             <!-- routedata="{{routedata}}" --> 
             <!-- rawdata="{{rawdata}}" --> 
             <routing-tracks 
-                datasetlabel="{{datasetlabel}}" 
+                usepreview="[[usepreview]]" 
 
+                datasetlabel="{{datasetlabel}}" 
                 tracksrcmeta="[[routedatasrc]]" 
 
-                usepreview="[[usepreview]]" 
                 quickmapcontent="{{mapcontent}}" 
                 routedata="{{routedata}}" 
 
@@ -294,6 +292,29 @@
 
     // SHELL-actions
     scope.mapctrl = {};
+
+    document.addEventListener('WebComponentsReady', function() {
+        console.log("WebComponentsReady", scope.timer);
+        var r1 = document.querySelector("paper-radio-button.preview");
+        if (!r1.checked)  scope.userouting = true;
+        else  scope.userouting = false;
+        
+        r1.addEventListener("change", function(){  // console.log("R1-CHANGED", this.checked)
+            if (this.checked) {
+                scope.userouting = false;
+            } else {
+                scope.userouting = true; 
+            }
+        });
+
+        var x = document.createElement("paper-radio-button"), 
+            t = document.createTextNode("Test button");    
+        x.setAttribute("class", "red");
+        x.setAttribute("checked", "true");
+        x.appendChild(t);  
+        r1.parentElement.appendChild(x); 
+    });
+
 
 </script>
 

@@ -89,16 +89,16 @@ wraps a distance utility
             observers: [],
 
             attached: function() {
+                if (typeof this.checked == 'undefined') this.toggleTool(true);
                 logscope = this;  //console.log("logscope", logscope);
-                if (!logscope.checked) logscope.toggleTool(false);
             },
 
             // 
             toggleTool: function(checked) {
                 if (!this.map) return;
-                var msg = "move-event toggled " + checked ; // console.log(msg, "srcmode=", this.srcmode);
+                // var msg = "location ctrl toggled " + checked ; // console.log(msg, "srcmode=", this.srcmode);
+                
                 if (checked) {
-                    
                     this.style.display = "block";
 
                     if (this.srcmode == "mouse") {
@@ -106,9 +106,7 @@ wraps a distance utility
                     } else if (this.srcmode == "mapcenter") {
                         this.map.on('move', this.onMoveEvent);
                     }
-
                 } else {
-                    
                     this.style.display = "none";
 
                     if (this.srcmode == "mouse") { // 
