@@ -56,7 +56,7 @@ Optional: create quick-preview-data
                 }
             },
 
-            usepreview: {
+            previewmode: {
                 type: Boolean,
                 value: false
             },
@@ -88,7 +88,7 @@ Optional: create quick-preview-data
 
         observers: [
             'triggerQuery(srcmeta.*)',
-            'deriveTracks(rawdata, srcmeta, usepreview)'
+            'deriveTracks(rawdata, srcmeta, previewmode)'
         ],
 
         attached: function() {
@@ -107,7 +107,7 @@ Optional: create quick-preview-data
         },
         
         // 
-        deriveTracks: function(rawdata, srcmeta, usepreview) {
+        deriveTracks: function(rawdata, srcmeta, previewmode) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
             // console.log("GPX-data, raw tracks", rawdata);
 
@@ -116,7 +116,7 @@ Optional: create quick-preview-data
             // console.log("GPX-data, mode, flat tracks", rawtracks);
 
             // 2. 
-            if (usepreview) { // derive features for mb-visualization of rawTracks
+            if (previewmode) { // derive features for mb-visualization of rawTracks
                 // console.log("prepare quickmap", rawtracks);  
                 var quickmap = this.createQuickview(rawtracks, srcmeta);
                 if (quickmap) {  // console.log("GPX-data to view", quickmap);

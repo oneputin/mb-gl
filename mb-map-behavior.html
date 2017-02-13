@@ -12,7 +12,31 @@
 
     Mbb.MapBehavior = {
 
-        properties: {},
+        properties: {
+            mbbtest: {
+                value: 99
+            } 
+        },
+
+        // Get Info about "complete track", not only features in actually "visible" tile(s)
+        featureGetKeys: function(feature, idNames) {
+            // Heuristik to identify suitable filter-key  
+
+            if (!idNames) idNames = ["id", "name", "key", "time"];
+            var keyname; 
+
+            var fInfo = feature.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
+            
+            idNames.some(function(nom) {
+                if (fInfo[nom]) {
+                    keyname = nom;
+                    return true;
+                }
+            });
+            if (!keyname) return; 
+
+            return [keyname, fInfo[keyname]]; 
+        },    
 
         // Refresh content && location 
         // of an app-specific mapbox-popup 

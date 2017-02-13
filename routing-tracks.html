@@ -97,14 +97,14 @@ To 'close'
     <!-- alternative srces -->
     <tracks-from-pnts 
         srcmeta="[[srcmeta]]"        
-        usepreview="[[usepreview]]"
+        previewmode="[[previewmode]]"
         trackdata = "{{routedata}}"
         quickmap="{{quickmapcontent}}">
     </tracks-from-pnts>    
 
     <tracks-from-gpx 
         srcmeta="[[srcmeta]]"
-        usepreview="[[usepreview]]"
+        previewmode="[[previewmode]]"
         trackdata="{{routedata}}"
         quickmap="{{quickmapcontent}}">
     </tracks-from-gpx>    
@@ -164,12 +164,12 @@ To 'close'
                 routedata: {
                     type: Object,
                     value: [],
-                    observer: 'checkRoutedata',
+                    observer: '_checkPropObject',
                     notify: true
                 },
 
                 // 
-                usepreview: {
+                previewmode: {
                     type: Boolean,
                     observer: 'dataUsageChanged'
                 },
@@ -206,15 +206,15 @@ To 'close'
                 // console.log("target attached");
             },
 
-            checkRoutedata : function(routedata) {
-                // console.log("checkRoutedata", routedata); 
+            _checkPropObject : function(routedata) {
+                // console.log("_checkPropObject", routedata); 
             },
 
             // APP/GUI-elemente anpassen, 
             // die sich bei verschiedenartiger Nutzung derselben Grunddatan unterscheiden  
-            dataUsageChanged : function(usepreview) {
-                if (usepreview == null) usepreview = this.usepreview; 
-                if (usepreview) {
+            dataUsageChanged : function(previewmode) {
+                if (previewmode == null) previewmode = this.previewmode; 
+                if (previewmode) {
                     this.datasetlabel="Raw Tracks"
                 } else {
                     this.datasetlabel="Track Routes"

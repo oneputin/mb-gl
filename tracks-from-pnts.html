@@ -72,7 +72,7 @@ Optional: create quick-preview-data
                 value: {}
             },
 
-            usepreview: {
+            previewmode: {
                 type: Boolean,
                 value: false
             },
@@ -104,7 +104,7 @@ Optional: create quick-preview-data
 
         observers: [
             'triggerQuery(srcmeta.*)',
-            'createTracks(rawdata, srcmeta, usepreview, masterdata)'
+            'createTracks(rawdata, srcmeta, previewmode, masterdata)'
         ],
 
         attached: function() {
@@ -139,7 +139,7 @@ Optional: create quick-preview-data
         
         // Common SHELL for processing variants of pntdata 
         // Vomue, vendee 
-        createTracks: function(rawdata, srcmeta, usepreview, masterdata) {
+        createTracks: function(rawdata, srcmeta, previewmode, masterdata) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
             // console.log(srcmeta, "RAW-data:", rawdata, "MASTER-data", masterdata); // return; 
 
@@ -152,7 +152,7 @@ Optional: create quick-preview-data
             // 2. Create RAW trackdata 
             var rawtracks;
             if (tablemode.indexOf("vomue") > 0) {
-                rawtracks = this.rawDeviceTracks(rawdata, tablemode, usepreview);
+                rawtracks = this.rawDeviceTracks(rawdata, tablemode, previewmode);
             } else if (tablemode.indexOf("vendee") > 0) {
                 rawtracks = this.rawVendeeTracks(rawdata, masterdata);
             } else {
@@ -165,7 +165,7 @@ Optional: create quick-preview-data
 
             // 3. Create DERIVATES  of rawTracks 
 
-            if (usepreview) {   // 3.1 derive features for mb-visualization of rawTracks
+            if (previewmode) {   // 3.1 derive features for mb-visualization of rawTracks
 
                 this.quickmap = this.deriveTrackPreview(rawtracks, srcmeta);
                 
@@ -186,10 +186,10 @@ Optional: create quick-preview-data
         // into point-collections to be used as tracks 
         // Use "very simple" segementation-algorithm of point-collections
         // !! For animation abandon "short" segments !! 
-        rawDeviceTracks: function(rawdata, tablemode, usepreview) {
+        rawDeviceTracks: function(rawdata, tablemode, previewmode) {
             // console.log("rawDeviceTracks: rawdata=", rawdata);
             var minTrackLength;
-            if (!usepreview) minTrackLength = srcmeta.minTrackLength;
+            if (!previewmode) minTrackLength = srcmeta.minTrackLength;
 
             // Dis-assemble rawdata-recordings that contain "separable tracks"  
             // with mode-specific algorithms - assigning a unique track-ID

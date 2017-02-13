@@ -16,24 +16,26 @@
     <link rel="import" href="../../iron-collapse/iron-collapse.html">
     <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 
+    <link rel="import" href="../dataset-browser.html">
+
     <!-- app-components dependent on map-api --> 
     <link rel="import" href="../mb-map.html">
+    <link rel="import" href="../mb-map-behavior.html">
     <link rel="import" href="../mb-location-log.html">
     <link rel="import" href="../mb-styles.html">
-    
-    <link rel="import" href="../routing-api.html">
     <link rel="import" href="../mb-distance.html">
     <link rel="import" href="../mb-orientation-ctrl.html">
+
+    <!-- generic components for app-content-->
+    <link rel="import" href="../mb-contentbox.html">
     <link rel="import" href="../mb-quickview.html">
-    <!--<link rel="import" href="../mb-info-drag.html">-->
 
     <!-- generic animation components -->
-    <link rel="import" href="../dataset-browser.html">
-    <link rel="import" href="../mb-map-behavior.html">
+    <link rel="import" href="../routing-api.html">
     <link rel="import" href="../routing-ctrl.html">
     <link rel="import" href="../routing-ctrl-time.html">
 
-    <!-- specific animation components -->
+    <!-- specific animation components for some datasources -->
     <link rel="import" href="../routing-tracks.html">
 
     <style is="custom-style">
@@ -48,7 +50,7 @@
             height: 670px;
         }
         
-        .ctrls-in {
+        .ctrls-in-map {
             display: inline-block;
             position: absolute;
             @apply(--layout-horizontal);
@@ -70,7 +72,7 @@
         }
         
         mb-orientation-ctrl {
-            @apply(--layout-flex);
+            /*@apply(--layout-flex);*/
         }
         
         routing-ctrl-time {
@@ -138,21 +140,23 @@
                 checked="[[mapmeasureshow]]">
             </mb-distance>
 
-            <div class="ctrls-in">
+            <div class="ctrls-in-map">
 
-                <!--<template is="dom-if" if="{{userouting}}">-->
+                <template is="dom-if" if="{{userouting}}">
                     <!-- ctrl of animation (and maporientation) -->
                     <routing-ctrl 
                         checked="[[userouting]]"
                         timer="{{timer}}"
                         trackctrl="{{trackctrl}}">
                     </routing-ctrl>
-                <!--</template>-->
 
-                <!-- ctrl of map-orientation -->
-                <!-- <mb-orientation-ctrl 
-                    trackmode="{{trackmode}}">
-                    </mb-orientation-ctrl>-->
+                    <!-- ctrl of map-orientation -->
+                    <mb-orientation-ctrl 
+                        checked="[[userouting]]"
+                        trackmode="{{trackmode}}">
+                    </mb-orientation-ctrl>
+                </template>
+
             </div>
 
             <mb-location-log 
@@ -176,10 +180,15 @@
         <!-- RIGHT Block: several external app-controls -->
 
         <div class="ctrls_out">
-
-            <!--<mb -->
-
             <!-- element with [n] visible features -->
+            <div id="radios">
+                <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
+                <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
+                <paper-radio-button checked="{{mapmeasureshow}}">Measure</paper-radio-button>
+                <paper-radio-button class="preview red" checked="{{previewmode}}">CheckSources</paper-radio-button>
+            </div>
+
+            <!-- B. Routing APIs -->
             <template is="dom-if" if="{{userouting}}">
                 <routing-api 
                     map="[[map]]" 
@@ -190,7 +199,7 @@
                     trackalignmap="{{trackalignmap}}" 
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]"
-                    mapcontent="{{mapcontent}}"                  
+                    contentbox="{{contentbox}}"               
                     tracksymbol="{{tracksymbol}}">
                 </routing-api>
                 
@@ -201,15 +210,8 @@
                 </routing-ctrl-time>
             </template>
 
-            <div id="radios">
-                <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
-                <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
-                <paper-radio-button checked="{{mapmeasureshow}}">Measure</paper-radio-button>
-                <paper-radio-button class="preview red" checked="{{usepreview}}">CheckSources</paper-radio-button>
-            </div>
+            <!-- C. DATAFLOW INTERFACE -->
 
-            <!-- selectprop="id"--> 
-            <!-- selectvalue="{{routeid}}"--> 
             <dataset-browser 
                 indexurl="[[indexurl]]" 
                 metadatasetslabel="[[metadatasetslabel]]" 
@@ -220,34 +222,41 @@
                 dataset="[[dataset]]" 
                 selectvalue="{{datasetitem}}"> 
             </dataset-browser>
+            <!-- selectprop="id"--> 
+            <!-- selectvalue="{{routeid}}"--> 
 
-            <!-- Element for viewing structurally standardized quickMapObjects 
-                 + supply/sync processed features to sibling elements -->
-            <mb-quickview 
-                checked="[[usepreview]]" 
-                map="[[map]]" 
-                mbid="[[mbid]]" 
-                mapcontent="[[mapcontent]]" 
-                featurelist="{{dataset}}" 
-                featureselected="{{datasetitem}}">
-            </mb-quickview>
-
-            <!-- INTERFACE -->
-            <!-- routedata="{{routedata}}" --> 
-            <!-- rawdata="{{rawdata}}" --> 
             <routing-tracks 
-                usepreview="[[usepreview]]" 
+                previewmode="[[previewmode]]" 
 
                 datasetlabel="{{datasetlabel}}" 
                 tracksrcmeta="[[routedatasrc]]" 
 
-                quickmapcontent="{{mapcontent}}" 
+                quickmapcontent="{{contentbox}}" 
                 routedata="{{routedata}}" 
 
                 basedataurl="[[basedataurl]]" 
                 trackinfo="[[trackinfo]]" 
                 trackdata="{{trackdata}}">
             </routing-tracks>
+            <!-- routedata="{{routedata}}" --> 
+            <!-- rawdata="{{rawdata}}" --> 
+
+            <mb-contentbox 
+                checked="[[previewmode]]" 
+                map="[[map]]" 
+                mbid="[[mbid]]" 
+                contentbox="[[contentbox]]" 
+                mapcontent="{{mapcontent}}">
+            </contentbox>
+
+            <!-- Element for viewing structurally standardized mapContent 
+                 + supply/sync processed features to sibling elements -->
+            <mb-quickview 
+                map="[[map]]" 
+                mapcontent="[[mapcontent]]" 
+                featurelist="{{dataset}}" 
+                featureselected="{{datasetitem}}">
+            </mb-quickview>
 
         </div>
     </div>
@@ -277,7 +286,7 @@
     // STATE init
     scope.styleselectshow = false;
     scope.locationlogshow = true;
-    scope.usepreview = true;
+    scope.previewmode = true;
     
     // Animation- INIT
     scope.tracksymbol = 'toilet-11';
@@ -293,26 +302,80 @@
     // SHELL-actions
     scope.mapctrl = {};
 
+    //scope.addEventListener('dom-change', function() {
+        // console.log("DOM-CHANGED", scope.trackctrl, scope.timer);
+    //});
+
     document.addEventListener('WebComponentsReady', function() {
-        console.log("WebComponentsReady", scope.timer);
+        console.log("WebComponentsReady", scope.trackctrl, scope.timer);
+
         var r1 = document.querySelector("paper-radio-button.preview");
         if (!r1.checked)  scope.userouting = true;
         else  scope.userouting = false;
         
+        // A. events as defined for elements
         r1.addEventListener("change", function(){  // console.log("R1-CHANGED", this.checked)
             if (this.checked) {
                 scope.userouting = false;
+                // toggleRoutingControls(false);
             } else {
                 scope.userouting = true; 
+                // toggleRoutingControls(true);
             }
         });
 
-        var x = document.createElement("paper-radio-button"), 
-            t = document.createTextNode("Test button");    
-        x.setAttribute("class", "red");
-        x.setAttribute("checked", "true");
-        x.appendChild(t);  
-        r1.parentElement.appendChild(x); 
+        // B. events resulting from scope-property-changes 
+
+        // testfunction 
+        function toggleTestElement(r1, flag) {
+            var elname = "paper-radio-button",
+                x, t ;
+            if (flag) {
+                x = document.createElement(elname), 
+                t = document.createTextNode("Test button");    
+                x.setAttribute("class", "red");
+                x.classList.add("test");
+                // x.classList.add( "red");
+                x.setAttribute("checked", "true");
+                x.appendChild(t);  
+                r1.parentElement.appendChild(x); 
+            } else {
+                var p = r1.parentElement;
+                x = document.querySelector(elname + ".test");
+                console.log("parent", p, x )
+                r1.parentElement.removeChild(x);
+            }
+        }
+        // testfunction 
+        function toggleRoutingControls(flag) {
+            var el,
+                parent = document.querySelector("div.ctrls-in-map");
+            if (!parent) {
+                return; 
+            }     
+            if (flag) {
+                // animation-progress-ctrl
+                el = document.createElement("routing-ctrl"), 
+                el.setAttribute("timer", "{{timer}}");
+                el.setAttribute("trackctrl", "{{trackctrl}}");
+                parent.appendChild(el); 
+                // Polymer.dom(scope).appendChild(el); // NOPE 
+
+                // map-orientation
+                el = document.createElement("mb-orientation-ctrl"),
+                el.setAttribute("trackmapmode", "{{trackmode}}");
+                parent.appendChild(el); 
+                scope.render(); 
+            } else {
+
+                el = document.querySelector("routing-ctrl");
+                if (el && (el.parentNode == parent)) parent.removeChild(el);
+
+                el = document.querySelector("mb-orientation-ctrl");
+                if (el && (el.parentNode == parent)) parent.removeChild(el);
+            }
+        }
+
     });
 
 

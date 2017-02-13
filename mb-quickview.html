@@ -3,7 +3,7 @@
 
 <!--
     `mb-quickview`
-    quick preview of "mapcontent" supplied in "quickformat" fi. 
+    quick preview of "contentbox" supplied in "quickformat" fi. 
     - derived from raw kml- or gpx-datasets
     - created for routing-api
 
@@ -46,29 +46,17 @@
                  */
                 map: {
                     type: Object,
-                    observer: "setupTool"
-                },
-
-                mbid: {
-                    type: String,
-                    observer: 'styleChanged'
-                },
-                // 
-                mapcontent: {
-                    type: Object
-                },
-                // Old content 
-                _mapcontent: {
-                    type: Object
                 },
 
                 // features of (all) json-layers loaded
                 // !! grouped by layer !!
-                jsonContent: {
+                mapcontent: {
                     type: Object,
                     value: {}
                 },
 
+                // (linear) List of (basic) mapfeatures to be used for external selection
+                // optionally from 1-n layers
                 featurelist: {
                     type: Array,
                     value: [],
@@ -78,7 +66,7 @@
                 featureselected: {
                     type: Object,
                     notify: true,
-                    observer: 'zoomToFeature'
+                    observer: 'checkoutFeature'
                 },
 
                 checked: {
@@ -92,453 +80,54 @@
             ],
 
             observers: [
-                'quickContentUpdate(mapcontent.*)',
-                'mapContentFeatureList(jsonContent.*)'
+                'mapcontentFeatureList(mapcontent.*)'
             ],
 
-            setupTool: function(map) {
-                if (!map) return;
-                console.log("update map with content:", map, this.mapcontent);
-                if (this.mapcontent) {
-                    this.quickContentUpdate(this.mapcontent);
-                }    
-            },
-
-            // refresh mapcontent on changed basemap
-            styleChanged: function(mbid, mbidold) {
-                this.quickContentUpdate(this.mapcontent);
+            ready: function() {
+                console.log("READY: mb-quickview");
             },
 
             attached: function() {
                 // this.installmap();
             },
 
-            zoomToFeature: function(f) {
+            // 
+            checkoutFeature: function(f) {
                 if (!f.feature || !this.map) return; 
-                if (f.feature.properties.coordTimes)  {  // Extended method for tracks 
+
+                if (f.feature.properties.coordTimes)  {  // SPEC-CASE : Tracks 
                     // console.log("zoomToTrack: " + f.id, f);
-                    this.tracksSelect([f.feature], f.layer);
+                    this.tracksHilite([f.feature], f.layer);
                 } else { // SimpleGeometryZoom 
+
                     this.setFeatureBounds([f.feature], this.map);
                 }    
             },
 
             /**
-             * Create a LIST(array) of all features  
-             * contained in the layers(keys) of 'jsonContent'-collection 
+             * Create a linear LIST(array) of all features  
+             * of layernames (ggf keys of 'mapcontent'-collection) 
              * and supply to container ("notified" property)
              */
-            mapContentFeatureList: function(jsonContent) {
-                if (!this.checked) return;
+            mapcontentFeatureList: function(mapcontent, layernames) {
+                if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
+                if (!mapcontent || !Object.keys(mapcontent).length) return;
 
-                if (jsonContent.path == 'jsonContent') jsonContent = jsonContent.value;
-                if (!jsonContent || !Object.keys(jsonContent).length) return;
-                // console.log("jsonContent after change:", jsonContent);
+                if (!layernames) layernames = Object.keys(mapcontent);
+                console.log("GET mapcontentFeatureList of", layernames, mapcontent);
 
                 var featurelist = [];
-                Object.keys(jsonContent).forEach(function(f) {
-                    jsonContent[f].forEach(function(item) {
+                layernames.forEach(function(lname) {
+
+                    mapcontent[lname].forEach(function(item) {
                         featurelist.push(item);
                     })
+
                 });
-                // console.log("featurelist", featurelist); 
                 this.featurelist = featurelist; // notifies !!
+                console.log("GOT mapcontentFeatureList :", featurelist);
             },
 
-            /**
-             * Create/Refresh ii(maps)Layers 
-             * delivered with mapcontent container
-             */
-            quickContentUpdate: function(mapcontent) {
-                if (!this.map || !this.checked) return;
-                console.log("quickContent UPDATE to ", mapcontent); 
-                // remove old content
-                this.quickContentPrepare(this._mapcontent, "delete");
-                // add new content
-                this._mapcontent = mapcontent; 
-                this.quickContentPrepare(mapcontent); 
-            },    
-
-            // 
-            quickContentPrepare: function(mapcontent, deleteflag) {    
-                // console.log("quickContentPrepare", mapcontent, this.map, this.checked);
-                if (!mapcontent || !Object.keys(mapcontent).length) return;
-                if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
-
-                var scope = this,
-                    map = scope.map;
-
-                // Generic HILITE-function based on "id-Filter"	
-                function featureHilite(e, layerid) {
-
-                    if (!map.getLayer(layerid)) return;
-                    if (!map.getLayer(layerid + "-hover")) return;
-
-                    // 
-                    var hilayerid, hifilter;
-
-                    var features = map.queryRenderedFeatures(e.point, {
-                        layers: [layerid]
-                    });
-
-                    // CHANGE cursor temporarily
-                    map.getCanvas().style.cursor = (features.length) ? 'pointer' : ''; // crosshair';
-
-                    // 
-                    if (features && features.length) { 
-
-                        var trackInfo = scope.trackGetInfo(features[0], layerid);
-
-                        // scope.popupOnMap(trackInfo.html);
-
-                        if (!trackInfo.keyname) {
-                             console.log("hi " + layerid + ":", trackInfo);
-                        
-                        } else {    // Filtering the HOVER-Layer
-
-                            var keyname = trackInfo.keyname; 
-
-                            hifilter = ["==", keyname, trackInfo[keyname]];
-                            // console.log("hi " + layerid + ":", trackInfo.length+" km");
-
-                            hilayerid = layerid + "-hover";
-                           
-                            map.setFilter(hilayerid, hifilter);
-                        }
-                    } else {
-                        map.setFilter(layerid + "-hover", ["==", "name", ""]);
-                    }
-
-                }
-
-                // Track-Select 
-                //   - zooms to the track
-                //   - show start/stop based on "id-Filter"	
-                function featureSelect(e, layerid) {
-                    // console.log("featureSelect in ", layerid); 
-
-                    if (!map.getLayer(layerid)) return;
-                    // if (!map.getLayer(layerid + "-select")) return;
-
-                    var features = map.queryRenderedFeatures(e.point, {
-                        layers: [layerid]
-                    });
-
-                    if (!features || !features.length) return;  
-                        
-                    scope.tracksSelect(features, layerid);
-                }
-
-                // Layer that occurs on-mose-hover only 
-                function createHiliteLayer(layertemplate, hitype) {
-                    
-                    var lhilite = {},// layertemplate,
-                        templateid = layertemplate.id + "-" + hitype;
-                    // console.log("createHiliteLayer for", templateid);
-
-                    if (hitype == "nodes") { // sonderfall
-                        
-                       lhilite = {
-                            "type": "symbol",
-                            "id": templateid,
-                            "source": templateid,
-                            // "source": "",
-
-                            "layout": {
-                                "icon-image": "{icon}-15",
-                                "text-field": "{title}",
-                                "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-                                "text-offset": [0, 0.6],
-                                "text-anchor": "top"
-                            },
-                            "paint": {
-                                "text-halo-color": "#ffffff",
-                                "text-halo-width": 6,
-                                "text-color": "#ff0000"
-                            }
-                       };
-                       return lhilite; 
-                    } 
-                    
-                    // Copy most properties from source template 
-                    // add some specific styling
-
-                    basetype = layertemplate.type,
-
-                    Object.keys(layertemplate).forEach(function(k) {
-                        lhilite[k] = layertemplate[k];
-                    })
-
-                    lhilite.id = templateid ;
-                    lhilite.filter = ["==", "id", ""];
-
-                    var linecolor, linewidth, lineopacity, linedasharray;
-
-                    if (hitype == "hover") {
-                        linecolor = "#FF0000";
-                        linewidth = 5;
-                        lineopacity = 1;
-                    } else if (hitype=="trace")  {
-                        linecolor = "#000000";
-                        linewidth = 3;
-                        lineopacity = 0.7;
-                        linedasharray = [4,4];  
-                    }
-
-                    lhilite.paint = {
-                        "line-color": linecolor,
-                        "line-width": linewidth,
-                        "line-opacity": lineopacity,
-                    }
-                    if (linedasharray) {
-                        lhilite.paint["line-dasharray"] = linedasharray;
-                    } 
-
-                    return lhilite;
-                }
-
-                // add temporary paint-properties 
-                // to better identify features (line-width, random colors)
-                function rawBeautify(layerObject) {
-
-                    var srcdata = layerObject.srcdata;
-
-                    var lookuplist = [], paintObj;
-
-                    srcdata.features.forEach(function(f) {
-                        var col = f.properties.color;
-                        lookuplist.push([col, col]);
-                    });
-                    paintObj = {
-                        "line-width": 3,
-                        "line-color": {
-                            property: 'color',
-                            type: 'categorical',
-                            stops: lookuplist
-                        }
-                    }; // console.log("rawBeautify", paintObj);
-                    
-                    layerObject.layer.paint = paintObj;
-
-                    return layerObject.layer;
-                }
-
-                // create linear list of features 
-                // suitable for "menu-generation"
-                function getFeatures(layerData, layername, longtitle) {
-
-                    var flist = [],
-                        fitem = {},
-                        id, title;
-                    if (!layerData || !layerData.features) return flist;
-
-                    layerData.features.forEach(function(f) {
-                        id = f.id;
-                        if (!id) id = f.properties.name;
-                        if (!id) id = f.properties.time;
-                        // Typische Nachbearbeitung
-                        id = id.replace("ACTIVE LOG:", "");
-                        title = id.replace(/-/g, "_");
-
-                        if (longtitle) title = layername + "_" + title;
-                        title = title.replace(/ /g, "");
-
-                        fitem = {
-                            "layer": layername,
-                            "id": id,
-                            "title": title,
-                            "feature": f
-                        };
-                        flist.push(fitem);
-                    })
-
-                    return flist;
-                }
-
-                // Create (multiple) layers to create "" 
-                function getQuickTemplates(layerObject) {
-
-                    var layerTemplates = [],
-                        layerTemplate = layerObject['layer'];
-
-                    if (layerTemplate) layerTemplates.push(layerTemplate);
-
-                    // Insert BELOW main layer 
-                    if (layerObject['bglayer']) {
-                        layerTemplates.splice(0, 0, layerObject['bglayer']); // !!! 
-                    }
-
-                    if (layerObject['selectlayer']) {
-                       
-                        layerObject['selectlayer'].forEach(function(l) {
-                            layerTemplates.push(l);
-                        });
-
-                    } else if (layerTemplate) { // "Standardisierte" HILITE-Layers
-                        
-                        let hoverTemplate = createHiliteLayer(layerTemplate, "hover");
-                        if (hoverTemplate) layerTemplates.push(hoverTemplate);
-
-                        let traceTemplate = createHiliteLayer(layerTemplate, "trace");
-                        if (traceTemplate) layerTemplates.push(traceTemplate);
-
-                        // another type 
-                        let nodeTemplate = createHiliteLayer(layerTemplate, "nodes");
-                        if (nodeTemplate) layerTemplates.push(nodeTemplate);
-                    }
-
-                    return layerTemplates;
-                }
-
-                // 
-                function addQuickContent(layername, layerObject){
-
-                    var layerData = layerObject.srcdata;
-                    if (!layerData) return ; 
-
-                    var layerSource = map.getSource(layername),
-                        mapLayer = map.getLayer(layername);
-
-                    // 1.A. (Re)Set datasources for all linear presentations
-                    if (!layerSource) {
-
-                        map.addSource(layername, {
-                            "type": "geojson",
-                            "data": layerData
-                        });
-                        layerSource = map.getSource(layername);
-
-                        // console.log("SRC", layername, layerData, layerSource);
-                    } else {
-                        // 1.B  CHECK 
-                        if (true) {
-                            layerSource.setData(layerData);
-                        }
-                    }
-
-
-                    // 1.C. (Re)Create layer(s) 
-                    if (!mapLayer) {
-                        // console.log("layerTemplates for " + layername, layerTemplates, layerSource);
-                        var layerTemplates = getQuickTemplates(layerObject);
-                
-                        layerTemplates.forEach(function(template) {
-
-                            if (!map.getLayer(template.id)) {
-
-                                // console.log("adding layer", template);
-                                
-                                if ((template.type == "symbol") && template.source) { 
-                                    // console.log("Set placeholder-source !!", template.source); 
-                                    if (!map.getSource(template.source)) {   
-                                        map.addSource(template.source, {
-                                            "type": "geojson",
-                                            "data": { "type": "Point", "coordinates": [0, 0] }
-                                        });
-                                    }    
-                                }
-
-                                map.addLayer(template);
-                            }
-                        });
-
-                        mapLayer = map.getLayer(layername);
-                    }
-
-                    // Check in ??? 
-                    if (mapLayer) {
-                        /*var features = map.querySourceFeatures(layername, {
-                            sourceLayer: 'original',
-                            filter: null
-                        });
-                        if (features.length) {
-                            console.log("Loaded "+features.length + " features of layer [" + layername+ "]"); // , features, layerSource);
-                        }*/    
-                        return layerData; 
-                    }
-
-                }
-
-                function removeQuickContent(layerObject) {
-
-                    var quickTemplates = getQuickTemplates(layerObject);
-                    // console.log("removing quickContentLayers", quickTemplates);  
-                    
-                    quickTemplates.forEach(function(template) {
-                        var qlayername = template.id,
-                            qlayer = map.getLayer(qlayername);
-
-                        // console.log("remove qlayer", qlayername, qlayer) ;                        
-                        if (qlayer) {
-                            map.removeLayer(qlayername);
-                        }  
-                   });  
-
-                   quickTemplates.forEach(function(template) { 
-                        var srcid = template.source,
-                            qsrc = map.getSource(srcid);
-                        // console.log("remove qsource ", srcid, qsrc);
-                        if (qsrc) {
-                            map.removeSource(srcid);
-                        }   
-                    })    
-                }
-
-                // --------------------------------------------------
-
-                var jsonContent = {};
-                
-                var mapcontentLayers = Object.keys(mapcontent);   // console.log("Refreshing quickmap-layers", mapcontentLayers);
-
-                mapcontentLayers.forEach(function(layername, j) {
-
-                    function hiliter(e) {
-                        featureHilite(e, layername);
-                    }
-                    function selector(e) {
-                        featureSelect(e, layername);
-                    }
-
-                    var layerObject = mapcontent[layername];
-
-                    // Option 
-
-                    if (deleteflag) { // REMOVE layers (on demand) 
-
-                        // console.log("DELETE qlayer " + layername, layerObject);
-
-                        removeQuickContent(layerObject); 
-
-                        map.off("mousemove", hiliter)
-                        map.off("click", selector)
-
-                    } else {    // CREATE / REFRESH mapContent
-    
-                        if (layerObject.raw) rawBeautify(layerObject);
-
-                        // console.log("SETUP qlayer " + layername, layerObject);
-                        
-                        var layerData = addQuickContent(layername, layerObject); 
-
-                        if (layerData) {
-
-                            map.on("mousemove", hiliter)
-                            map.on("click", selector)
-
-                            // GET all source-features of the basic layer 
-                            var contentfeatures = getFeatures(layerData, layername);
-
-                            if (contentfeatures.length) {
-                                // console.log("contentfeatures of " + layername, contentfeatures);
-                                jsonContent[layername] = contentfeatures;
-                            }
-                        }                        
-                    }
-                }.bind(this));
-
-                // console.log("DONE quickContentPrepare: " + deleteflag, jsonContent);
-                this.jsonContent = jsonContent;
-            },
 
             // Get Info about "complete track", not only features in actually "visible" tile(s)
             trackGetInfo: function(aLine, layerid) {
@@ -548,26 +137,19 @@
                     map = this.map;
 
                 var trackInfo = aLine.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
-                
-                // Heuristik to identify suitable filter-key  
-                var keyname, idNames = ["id", "name", "key", "time"];
-                idNames.some(function(nom) {
-                    if (trackInfo[nom]) {
-                        keyname = nom;
-                        return true;
-                    }
-                });
 
                 // Get SOURCE-properties for identified feature !!!
-                if (keyname) {
-                    trackInfo.keyname = keyname;  
-                    trackInfo.keyvalue = trackInfo[keyname];  
-                    trackInfo.id = trackInfo[keyname];
+                var keys = this.featureGetKeys(aLine); 
+                if (keys) {
+                    trackInfo.keyname = keys[0];  
+                    trackInfo.keyvalue = keys[1];  
+                    trackInfo.id = keys[1];
 
                     var trackLayer = map.getLayer(layerid),
                         trackSource = map.getSource(trackLayer.source),
                         srcFeatures = trackSource._data.features;
 
+                    var keyname = trackInfo.keyname; 
                     srcFeatures.some(function(f){
                         if (f.properties[keyname] == trackInfo[keyname]) {
                             // console.log("detected", trackInfo[keyname], f);
@@ -613,13 +195,13 @@
 
             // Special "permanent" HILITE of selected tracks
             // by HILITE-TRACE + "commented" end-nodes  
-            tracksSelect: function(features, layerid) {
+            tracksHilite: function(features, layerid) {
                 // by now for 1 feature onyl
                 // var map = this.map; 
 
                 if (!features || !features.length) return;  
 
-                // this.debounce("track", function(){
+                    // this.debounce("track", function(){
                     var trackFeature = features[0]; 
 
                     // Create trackEndMarkers
@@ -702,8 +284,8 @@
                     map.once('moveend', function() {
                         this.popupOnMap(trackInfo.html);
                     }.bind(this));
-               
-                // }, 100);     
+                
+                    // }, 100);     
 
             },
 

@@ -54,7 +54,8 @@ along waypoint file loaded from url
 
                 mapcontent: {
                     type: Object,
-                    notify: true
+                    notify: true,
+                    observer: '_checkObject'
                 },
 
                 /**
@@ -109,7 +110,7 @@ along waypoint file loaded from url
                  */
                 trackobj: {
                     type: Object,
-                    observer: '_checkTrackobj'
+                    observer: '_checkObject'
                 },
 
                 /**
@@ -183,13 +184,145 @@ along waypoint file loaded from url
             ],
 
             observers: [
-                '_animationSourcesSetup(routedata, timer.timescale, map)',
-                '_animationMapSetup(map, animationsources.*)',
+                '_animationSourcesSetup(routedata, timer.timescale, map)', // creates animationsources
+                '_animationMapSetup(map, animationsources.*)',  // creates 'mapcontent'
                 '_animationTimerRefresh(timer.*)',
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)'
             ],
 
+            _checkObject: function(obj) {
+                console.log("CHECK", obj);
+            },
+            /**
+             * set 'quasiglobal' this-context for recursive calls during animation 
+             * and setup track-features
+             */
+            attached: function() {
+                // 1. setup global namespace 
+                mba = this;
+            },
+
+
+
+            // prepare all map- and animationdata required to view tracks on the map 
+            //  - for altered routedata
+            //  - if basic(=max) timescale of animation changed
+            _animationSourcesSetup: function(routedata, timescale, map) {
+                if (!routedata || !routedata[0] || !routedata[0].nodes) return;
+
+                console.log("ROUTESET rawdata:", routedata);
+
+                this.ctrlflag = false;
+
+                this._counter = 0;
+
+                // Remove old mapThemes, that are named like the new ones 
+                this.trackFeaturesReset();
+
+                this.trackTimerSetup(routedata, timescale);
+                console.log("ROUTESET timer=", this.timer); // , routedata);
+
+                // Order(REIHENFOLGE) important, as wp-reduction in routedata possible during route-setup  
+
+                var sourceData = {};
+
+                // Create ROUTES and TRACE (Meta)Layers (not adding yet)          
+                sourceData = this.animationRoutesSetup(routedata, this.timer); // console.log("checked route-data", routedata);
+                sourceData['nodes'] = this.animationNodesSetup(routedata); // wayPoints or trackPoints
+                sourceData['tracks'] = this.animationTrackerSetup(routedata, this.timer);
+
+                // console.log("animationMapSources=", sourceData);
+                // ??? Doubled assignment of sourceData to trigger multi-parameter observer  ???
+                this.animationsources = {};
+                this.animationsources = sourceData; // triggers "refresh-action
+
+            },
+
+
+            /**
+             * Create/Refresh mapLayers for changed content (routed Data)
+             *
+             * @param      {object}  mapcontent  The iimapslayers for animation-apps 
+             * @param      {object}  map         The map to show routetracker
+             */
+            _animationMapSetup: function(map, mapcontent) {
+                var debounceTime = 200;
+
+                this.debounce('tomap', function() {
+
+                    if (mapcontent.path == 'animationsources') mapcontent = mapcontent.value;
+                    if (!mapcontent || !Object.keys(mapcontent).length) return;
+
+                    console.log("SET/REFRESH content of animationMap: ", mapcontent);
+
+                    // 1. Create/Refresh (json)data-based animation-layers
+
+                    // private addLayer-actions (OLD)
+                    // mba.mbLayersSetup(map, mapcontent);
+
+                    // 2. Setup Map-Events to query track-features on "mouseover" and show info-popup 
+
+                    mba._animationMapEventsReset(map, true); 
+                    
+                    // 3. (Re)Start-action(s) 
+
+                    mba._counter = 1;
+
+                    // Primary Zoom to ALL features after Setup
+                    var mapfeatures  = mapcontent["routes"].srcdata.features; // console.log("f's at start", mapfeatures); 
+                    
+                    mba.trackRoutesZoomTo(mapfeatures);
+
+                    // Set Route and RouteCtrl for first "start-time" of animation-routes   
+                    mba.animationMapRefresh(mba.timer["start"], null, "FIRST START");
+
+                    // 4. Triggers the STANDARD addlayer-action off a quickmap-content ( in <mb-quickview>)
+
+                    mba.mapcontent = mapcontent;
+                    //*************************
+
+                }, debounceTime);
+            },
+
+
+            // Events related to animation elements on map
+            _animationMapEventsReset: function(map, status) {
+
+                    function f_mmove(e) {   // during animation only !!
+                        if (mba.trackctrl) mba.trackObjSelect(e);
+                    };
+
+                    function f_click(e) {   
+                        // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
+                        mba.trackObjSelect(e, true);
+                        mba.routeNodeSelect(e);
+                    };
+
+                    // f3,f4 in DEFAULT mapmode (NORTH-map) only  
+                    function f_movestart(e) {   
+                        if (!mba.trackalignmap) { // console.log("movestart");
+                            this._mapismoved = true;
+                        }
+                    };
+                    function f_moveeend(e) {   
+                        if (!mba.trackalignmap) { // console.log("moveend");
+                            mba._mapismoved = false;
+                        }
+                    };
+
+                    map.off('mousemove', f_mmove); 
+                    map.off('click', f_click); 
+                    map.off('movestart', f_movestart); 
+                    map.off('moveend', f_moveeend); 
+
+                    if (status) { console.log("Resetting animation events!"); 
+                        map.on('mousemove', f_mmove); 
+                        map.on('click', f_click); 
+                        map.on('movestart', f_movestart); 
+                        map.on('moveend', f_moveeend); 
+                    }
+            }, 
 
             // Create a mapContent-Object for basic Layers related to animation-datasrces 
             // id : "routes", "traces", "nodes", "tracks"
@@ -257,85 +390,6 @@ along waypoint file loaded from url
                 return layerObj;
             },
 
-
-            /**
-             * Create/Refresh mapLayers for changed content (routed Data)
-             *
-             * @param      {object}  mapcontent  The iimapslayers for animation-apps 
-             * @param      {object}  map         The map to show routetracker
-             */
-            _animationMapSetup: function(map, mapcontent) {
-                var debounceTime = 200;
-
-                this.debounce('tomap', function() {
-
-                    if (mapcontent.path == 'animationsources') mapcontent = mapcontent.value;
-                    if (!mapcontent || !Object.keys(mapcontent).length) return;
-
-                    console.log("SET/REFRESH content of animationMap: ", mapcontent);
-
-                    // 1. Create/Refresh (json)data-based animation-layers
-
-                    // OLD : private addLayer-actions
-                    // mba.mbLayersSetup(map, mapcontent);
-
-                    // NEW : trigger the STANDARD addlayer-action off quickmap-content in mb-quickview
-                    this.mapcontent = mapcontent;
-
-                    // 2. Setup Map-Events to query track-features on "mouseover" and show info-popup 
-
-                    if (!map.listens('mousemove')) {
-
-                        map.on('mousemove', function(e) {
-                            // during animation only !!
-                            if (mba.trackctrl) mba.trackObjSelect(e);
-                        });
-
-                        map.on('click', function(e) {
-                            // document.getElementById('info').innerHTML = JSON.stringify(e.lngLat);
-                            mba.trackObjSelect(e, true);
-                            mba.routeNodeSelect(e);
-                        });
-
-                        // only in DEFAULT mapmode (NORTH) 
-                        map.on('movestart', function(e) {
-                            if (!mba.trackalignmap) { // console.log("movestart");
-                                this._mapismoved = true;
-                            }
-                        });
-                        map.on('moveend', function(e) {
-                            if (!mba.trackalignmap) { // console.log("moveend");
-                                mba._mapismoved = false;
-                            }
-                        });
-                    } else {
-
-                    }
-
-                    // 3. (Re)Start-action(s) 
-
-                    mba._counter = 1;
-
-                    // Primary Zoom to ALL features after Setup
-                    var mapfeatures  = mapcontent["routes"].srcdata.features; // console.log("f's at start", mapfeatures); 
-                    
-                    mba.trackRoutesZoomTo(mapfeatures);
-
-                    // Set Route and RouteCtrl for first "start-time" of animation-routes   
-                    mba.animationMapRefresh(mba.timer["start"], null, "FIRST START");
-
-                }, debounceTime);
-            },
-
-            /**
-             * set 'quasiglobal' this-context for recursive calls during animation 
-             * and setup track-features
-             */
-            attached: function() {
-                // 1. setup global namespace 
-                mba = this;
-
-            },
 
             // 
             _animationTrigger: function(mapismoved, old) {
@@ -541,46 +595,6 @@ along waypoint file loaded from url
                 this.set("timer.time", start);
             },
 
-
-            // prepare all map- and animationdata required to view tracks on the map 
-            //  - for altered routedata
-            //  - if basic(=max) timescale of animation changed
-            _animationSourcesSetup: function(routedata, timescale, map) {
-                if (!routedata || !routedata[0] || !routedata[0].nodes) return;
-
-                console.log("ROUTESET rawdata:", routedata);
-
-                this.ctrlflag = false;
-
-                this._counter = 0;
-
-                // Remove old mapThemes, that are named like the new ones 
-                this.trackFeaturesReset();
-
-                this.trackTimerSetup(routedata, timescale);
-                console.log("ROUTESET timer=", this.timer); // , routedata);
-
-                // Order(REIHENFOLGE) important, as wp-reduction in routedata possible during route-setup  
-
-                var sourceData = {};
-                // OLD 
-                // sourceData['routes'] = this.animationRoutesSetup(routedata, this.timer); // console.log("checked route-data", routedata);
-                // sourceData['traces'] = this.animationSetupTraces(routedata, this.timer);
-                // NEW       
-                
-                // ROUTES and TRACE Layers          
-                sourceData = this.animationRoutesSetup(routedata, this.timer); // console.log("checked route-data", routedata);
-                // 
-                sourceData['nodes'] = this.animationNodesSetup(routedata); // wayPoints or trackPoints
-                sourceData['tracks'] = this.animationTrackerSetup(routedata, this.timer);
-
-                // console.log("animationMapSources=", sourceData);
-                // ??? Doubled assignment of sourceData to trigger multi-parameter observer  ???
-                this.animationsources = {};
-                this.animationsources = sourceData; // triggers "refresh-action
-
-            },
-
             // B. TrackCtrls
 
             /**
@@ -681,7 +695,6 @@ along waypoint file loaded from url
                     this.animationRoutesSetup(this.routedata, this.timer);
                     // Set the coordinates of the tracker and traces back to origin
                     this.animationTrackerSetup(this.routedata, this.timer);
-                    //this.animationSetupTraces(this.routedata, this.timer);
 
                     this.map.getSource('routes').setData(this.routes);
                     this.map.getSource('tracks').setData(this.tracks);
@@ -1710,6 +1723,16 @@ along waypoint file loaded from url
                 // console.log("DEBUG", mapTime, routeFilter, syncflag);
                 var stopDelay = 2000; // time to let last situation "visible" before reset 
 
+                // 1. Optional BREAK! 
+                //    Sync trackObjects (and it's routes) only as long as they "are tracked2 
+                if (!mba.map.getLayer("tracks") && mapTime) {
+                    var syncTime = this.logTime(mapTime, "h"),
+                        msg = "<b>No trackers on map to track</b>" + " at " + syncTime;
+                    mba.popupOnMap(msg);
+                    return;
+                }
+
+
                 // TIME filter: applied, on every maptime ??
                 function applyTrackFilter(mapTime, routeFilter, flag) {
                     if (!flag) flag = "noflag";
@@ -1810,15 +1833,6 @@ along waypoint file loaded from url
 
                     return routeids;
                 };
-
-                // 1. Optional BREAK! 
-                // Sync trackObjects(and it's routes) only as long as they are tracked 
-                if (!mba.map.getLayer("tracks") && mapTime) {
-                    var syncTime = this.logTime(mapTime, "h"),
-                        msg = "<b>No trackers on map to track</b>" + " at " + syncTime;
-                    mba.popupOnMap(msg);
-                    return;
-                }
 
                 // 2. Additional HIDE-Filters after STOP-action
                 if (syncflag && syncflag.indexOf("STOP") >= 0) {
@@ -1968,7 +1982,15 @@ along waypoint file loaded from url
              *
              */
             trackRouteGetRawFeatures: function(routeid) {
-                var rrall = this.animationsources.routes.srcdata.features;
+                // console.log("animationsrc routes", this.animationsources.routes); 
+                var routesrc = this.animationsources.routes.srcdata,
+                    rrall = [];
+                if (typeof routesrc == "string") {
+                    var routesrcdata = mba.map.getSource(routesrc); console.log("routesrc:", routesrc, routesrcdata);
+                    if (routesrcdata) rrall = routesrcdata.features;  
+                } else {
+                    rrall = routesrc.features;
+                }
                 if (!routeid || !rrall.length) {
                     console.log("NO Features queried for id=" + routeid);
                     return rrall;
@@ -2081,7 +2103,6 @@ along waypoint file loaded from url
                         "open": true
                     }
                 }
-
             },
 
             /*
@@ -2089,6 +2110,7 @@ along waypoint file loaded from url
              */
             routeNodeSelect: function(e) {
                 // Check waypoints(trackpoints)    
+                var features = [];
                 if (map.getLayer('nodes')) {
                     features = map.queryRenderedFeatures(e.point, {
                         layers: ['nodes']
@@ -2113,9 +2135,6 @@ along waypoint file loaded from url
             },
             _checkTrackdata: function(data) {
                 //console.log("checking trackdata", data);
-            },
-            _checkTrackobj: function(trackobj) {
-                // console.log("New TRACK obj", trackobj);
             },
             _checkTrackinfo: function(trackinfo) {
                 // console.log("New TRACKinfo", trackinfo);
