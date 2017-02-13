@@ -19,7 +19,7 @@
         },
 
         // Get Info about "complete track", not only features in actually "visible" tile(s)
-        featureGetKeys: function(feature, idNames) {
+        guessFeatureKeys: function(feature, idNames) {
             // Heuristik to identify suitable filter-key  
 
             if (!idNames) idNames = ["id", "name", "key", "time"];

@@ -210,7 +210,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
              * setup a mb-gl-map 
              */
             installmap: function() {
-
                 console.log("MAP installs using:", this.mapctrl);
                 // console.log("apikey= " + this.mapapikey);
 
@@ -254,7 +253,6 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         mapstyleurl = mapscope.mapstyle;
 
                     if (!mapstyleurl) {
-                        // console.log("MAPSTYLE changed to ["+ mbid +"]")
                         return;
                     }     
 
@@ -265,11 +263,11 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     if (mapstyleid != mbid)  {
                             console.log("MAPSTYLE changed from [" + mapstyleid+"]", "to ["+ mbid +"]")
                         if (mapstyleurl.indexOf(mbid) < 0 ) {
-                            console.log("BUT LAST requested style is:", mapstyleurl );
+                            // console.log("BUT LAST requested style is:", mapstyleurl );
                             map.setStyle(mapstyleurl);
                         } else {
-                            mapscope.mbid = mbid; 
-                            map.off("data", mapscope.onStyleChange); console.log("OFF onStyleChange");
+                            map.off("data", mapscope.onStyleChange); // console.log("onStyleChange OFF");
+                            mapscope.mbid = mbid; // Trigger to Rebuild themes of contentbox within new style
                         }
                     }     
                 }

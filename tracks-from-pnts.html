@@ -115,7 +115,7 @@ Optional: create quick-preview-data
         triggerQuery: function(srcmeta) { // trigger new dataquery !!
             if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
             if (srcmeta.type.indexOf("table") < 0) {
-                console.log("Cannot query data from:", srcmeta);  
+                // console.log("Cannot query data from:", srcmeta);  
                 this.rawdata = null; // 
                 return;
             }  

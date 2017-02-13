@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="mb-map-behavior.html">
+<link rel="import" href="routing-behavior.html">
 
 <!--
     `mb-contentbox`
@@ -29,7 +30,6 @@
     </template>
 
     <script>
-        var contentscope ; 
         Polymer({
             is: 'mb-contentbox',
 
@@ -54,7 +54,6 @@
                 _contentbox: {
                     type: Object
                 },
-
                 // features of (all) jsoncontent-layers loaded
                 // !! grouped by layer !!
                 mapcontent: {
@@ -62,16 +61,19 @@
                     value: {},
                     notify: true
                 },
-
             },
 
             observers: [
                 'mapContentRefresh(contentbox.*)',
             ],
 
+            behaviors: [
+                Mbb.MapBehavior,
+                Mbb.RoutingBehavior
+            ],
+
             ready: function() {
-                console.log("READY: mb-contentbox");
-                contentscope = this; 
+                // console.log("READY: mb-contentbox");
             },
 
             /**
@@ -96,7 +98,6 @@
 
                 var scope = this,
                     map = scope.map;
-                console.log("SCOPE.mbbtest", contentscope.mbbtest);     
 
                 // Generic HILITE-function based on "id-Filter"	
                 function featureHilite(e, layerid) {
@@ -117,7 +118,7 @@
                     if (features.length) {  // Apply HILITE-FILTER  
                     	
                         // var trackInfo = scope.trackGetInfo(features[0], layerid);
-                        var fkeys = contentscope.featureGetKeys(features[0]); 
+                        var fkeys = scope.guessFeatureKeys(features[0]); 
                         // scope.popupOnMap(trackInfo.html);
 
                         if (!fkeys) {
@@ -468,7 +469,7 @@
 
                 }.bind(this));
 
-                console.log("DONE mapContentPrepare: " + deleteflag, mapcontent);
+                // console.log("DONE mapContentPrepare: " + deleteflag, mapcontent);
                 this.mapcontent = mapcontent;
 
             },
@@ -476,7 +477,7 @@
             // rarely used 
             onMapSetup: function(map) {
                 if (!map || !this.contentbox) return;
-                console.log("FIRST prepare mapcontent from", this.contentbox);
+                // console.log("FIRST prepare mapcontent from", this.contentbox);
                 this.mapContentRefresh(this.contentbox);
             },
 
