@@ -16,15 +16,14 @@
     <link rel="import" href="../../iron-collapse/iron-collapse.html">
     <link rel="import" href="../../paper-radio-button/paper-radio-button.html">
 
-    <!-- app-components dependent on map-api --> 
+    <!-- app-components related to map-api --> 
     <link rel="import" href="../mb-map.html">
-    <!-- <link rel="import" href="../mb-map-behavior.html">-->
     <link rel="import" href="../mb-location-log.html">
     <link rel="import" href="../mb-styles.html">
     <link rel="import" href="../mb-distance.html">
     <link rel="import" href="../mb-orientation-ctrl.html">
 
-    <!-- generic components for app-content-->
+    <!-- generic components for app-content-ctrl -->
     <link rel="import" href="../dataset-browser.html"> 
     <link rel="import" href="../mb-contentbox.html">
     <link rel="import" href="../mb-quickview.html">
@@ -132,6 +131,13 @@
             zoom="{{zoom}}" 
             mapctrl="[[mapctrl]]">
             
+            <mb-styles 
+                styleset ="[[morestyles]]"
+                checked = "[[styleselectshow]]"
+                selectable = "{{styleselectable}}"
+                mapstyle = "{{mapstyle}}"> 
+            </mb-styles>
+
             <!-- TOOL to measure user-generated lines -->
             <mb-distance 
                 map="{{map}}" 
@@ -139,9 +145,14 @@
                 checked="[[mapmeasureshow]]">
             </mb-distance>
 
-            <div class="ctrls-in-map">
+            <mb-location-log 
+                map="{{map}}" 
+                lnglat="{{lnglat}}" 
+                checked="[[locationlogshow]]">
+            </mb-location-log>
 
-                <template is="dom-if" if="{{userouting}}">
+            <template is="dom-if" if="{{userouting}}">
+                <div class="ctrls-in-map">
                     <!-- ctrl of animation (and maporientation) -->
                     <routing-ctrl 
                         checked="[[userouting]]"
@@ -154,22 +165,8 @@
                         checked="[[userouting]]"
                         trackmode="{{trackmode}}">
                     </mb-orientation-ctrl>
-                </template>
-
-            </div>
-
-            <mb-location-log 
-                map="{{map}}" 
-                lnglat="{{lnglat}}" 
-                checked="[[locationlogshow]]">
-            </mb-location-log>
-
-            <mb-styles 
-                styleset ="[[morestyles]]"
-                checked = "[[styleselectshow]]"
-                selectable = "{{styleselectable}}"
-                mapstyle = "{{mapstyle}}"> 
-            </mb-styles>
+                </div>
+            </template>
 
             <!--<mb-info-drag carddata="[[trackdata]]">
                                 </mb-info-drag>-->
