@@ -185,6 +185,22 @@
             </div>
 
             <!-- B. Routing APIs -->
+
+            <routing-tracks 
+                previewmode="[[previewmode]]" 
+
+                datasetlabel="{{datasetlabel}}" 
+                tracksrcmeta="[[routedatasrc]]" 
+                rawtracks = "{{contentbox}}" 
+
+                basedataurl = "[[basedataurl]]" 
+                routedata = "{{routedata}}" 
+                trackinfo = "[[trackinfo]]" 
+                trackdata = "{{trackdata}}">
+            </routing-tracks>
+            <!-- routedata="{{routedata}}" --> 
+            <!-- rawdata="{{rawdata}}" --> 
+
             <template is="dom-if" if="{{userouting}}">
                 <routing-api 
                     map="[[map]]" 
@@ -208,21 +224,6 @@
 
             <!-- C. DATAFLOW INTERFACE -->
 
-            <routing-tracks 
-                previewmode="[[previewmode]]" 
-
-                datasetlabel="{{datasetlabel}}" 
-                tracksrcmeta="[[routedatasrc]]" 
-
-                quickmapcontent="{{contentbox}}" 
-                routedata="{{routedata}}" 
-
-                basedataurl="[[basedataurl]]" 
-                trackinfo="[[trackinfo]]" 
-                trackdata="{{trackdata}}">
-            </routing-tracks>
-            <!-- routedata="{{routedata}}" --> 
-            <!-- rawdata="{{rawdata}}" --> 
 
             <mb-content-browser 
                 indexurl="[[indexurl]]" 
@@ -303,25 +304,31 @@
         console.log("DOM-CHANGED", scope.trackctrl, scope.timer);
     });*/
 
-    /*document.addEventListener('WebComponentsReady', function() {
-        console.log("WebComponentsReady", scope.trackctrl, scope.timer);
+    document.addEventListener('WebComponentsReady', function() {
+        function toggleRouting(radio) {
+            if (!radio.checked)  scope.userouting = true;
+            else  scope.userouting = false;
+        }
 
         var r1 = document.querySelector("paper-radio-button.preview");
-        if (!r1.checked)  scope.userouting = true;
-        else  scope.userouting = false;
+        toggleRouting(r1); 
         
-        // A. events as defined for elements
+        // Inverse Toggling of RoutingFlag  
+        r1.addEventListener("change", function(){  // console.log("R1-CHANGED", this.checked)
+            toggleRouting(this); 
+        });
+    });
+
+    /*
+        // B. events resulting from scope-property-changes 
         r1.addEventListener("change", function(){  // console.log("R1-CHANGED", this.checked)
             if (this.checked) {
-                scope.userouting = false;
-                // toggleRoutingControls(false);
+                toggleRoutingControls(false);
             } else {
-                scope.userouting = true; 
-                // toggleRoutingControls(true);
+                toggleRoutingControls(true);
             }
         });
 
-        // B. events resulting from scope-property-changes 
 
         // testfunction 
         function toggleTestElement(r1, flag) {

@@ -68,7 +68,7 @@ Optional: create quick-preview-data
             },
 
             // can be processed in "quickViewer"
-            quickmap: {
+            rawtracks: {
                 type: Object,
                 notify: true
             },
@@ -117,11 +117,11 @@ Optional: create quick-preview-data
 
             // 2. 
             if (previewmode) { // derive features for mb-visualization of rawTracks
-                // console.log("prepare quickmap", rawtracks);  
-                var quickmap = this.createQuickview(rawtracks, srcmeta);
-                if (quickmap) {  // console.log("GPX-data to view", quickmap);
-                    this.quickmap = quickmap;
-                    console.log("Quickview Tracks (from GPX):", this.quickmap);  
+                // console.log("prepare quickmap of ", rawtracks);  
+                var rawtracks = this.createQuickview(rawtracks, srcmeta);
+                if (rawtracks) {  // console.log("GPX-data to view", rawtracks);
+                    this.rawtracks = rawtracks;
+                    console.log("Quickview Tracks (from GPX):", this.rawtracks);  
                 }    
 
             } else {   // derive structures for mb-based animation of 'suitable' tracks

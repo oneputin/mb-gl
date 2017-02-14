@@ -293,12 +293,12 @@
 
         // ZoomTo
         setFeatureBounds: function(features, map) {
+            // console.log("SFB:", features); // return
 
-            if (features.features) features = features.features; //console.log(data); // return
+            if (features.features) features = features.features; 
             if (!features.length) return; //console.log(features); 
-            // console.log("1-bounddata(features)", features);
 
-            // concat coordsets (x,y) and (x,y,z) into (x,y)
+            // UNIFY coordsets (x,y) and (x,y,z) into (x,y)
             function concatcoords(coordinates, segment) {
                 segment.forEach(function(cc) {
                     cc = [cc[0], cc[1]];
@@ -325,25 +325,39 @@
                 }
             };
 
-            // Correctur datumsgrenze
-            coordinates.forEach(function(coord) {
-                if (coord[0] > 180) coord[0] = coord[0] - 360;
-                if (coord[0] < -180) coord[0] = coord[0] + 360;
-            });
-            // console.log("2-coordinates", coordinates);
+            var bounds; 
 
-            // Pass the first coordinates to `lngLatBounds` 
-            // & wrap each coordinate pair in `extend` to include them in the bounds result. 
-            var bounds = coordinates.reduce(function(bounds, coord) {
-                return bounds.extend(coord);
-            }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
-            //console.log("4-totalbounds", bounds);
+            if (coordinates.length) {
+
+                // Correctur DatumsGrenze
+                coordinates.forEach(function(coord) {
+                    if (coord[0] > 180) coord[0] = coord[0] - 360;
+                    if (coord[0] < -180) coord[0] = coord[0] + 360;
+                });
+                // console.log("2-coordinates", coordinates);
+
+                // Pass the first coordinates to `lngLatBounds` 
+                // & wrap each coordinate pair in `extend` to include them in the bounds result. 
+                bounds = coordinates.reduce(function(bounds, coord) {
+                    return bounds.extend(coord);
+                }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+                //console.log("4-totalbounds", bounds);
+            }
 
             if (!map) return bounds;
 
-            map.fitBounds(bounds, {
-                padding: 20
-            });
+            if (bounds) {
+                map.fitBounds(bounds, {
+                    padding: 20
+                });
+            }
+            // useful in case of sigleFeatureZoom  
+            return {
+                "bounds": bounds,
+                "features": features,
+                "id" : features[0].id
+            }
+
         },
 
         // (geo)id-list of slide-features

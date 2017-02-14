@@ -8,18 +8,6 @@
     - derived from raw kml- or gpx-datasets
     - created for routing-api
 
-    `quickformat` - object:
-
-            quickmap[mbid] = {
-                "layer": {
-                    "type": "line",
-                    "id": mbid,
-                    "source": mbid
-                },
-                "srcdata": srcdata,
-                "raw": 1
-            };
-    
     @demo demo/routingtracks.html 
 -->
 
@@ -99,17 +87,7 @@
             checkoutFeature: function(f) {
                 if (!f.feature || !this.map) return; 
                 // console.log("Selected Track: " + f.id, f);
-
-                if (f.feature.properties.coordTimes)  {  // SPEC-CASE : Tracks 
-                    this.tracksHilite([f.feature], f.layer);
-
-                } else if (false)  {  // SPEC-CASE : Other 
-
-
-                } else { // SIMPLE GeometryZoom 
-
-                    this.setFeatureBounds([f.feature], this.map);
-                }    
+                this.featuresSelect([f.feature], f.layer);
             },
 
             /**
@@ -117,22 +95,30 @@
              * of layernames (ggf keys of 'mapcontent'-collection) 
              * and supply to container ("notified" property)
              */
-            mapcontentFeatureList: function(mapcontent, layernames) {
+            mapcontentFeatureList: function(mapcontent, keys) {
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
                 if (!mapcontent || !Object.keys(mapcontent).length) return;
-                if (!layernames) layernames = Object.keys(mapcontent);
-                // console.log("GET mapcontentFeatureList of", layernames, mapcontent);
+                
+                if (!keys) keys = Object.keys(mapcontent);
+                // console.log("GET mapcontentFeatureList of", keys, mapcontent);
+                
+                // Select features from layer with basefeatures only !! 
 
-                var featurelist = [];
-                layernames.forEach(function(lname) {
+                var obj, featurelist = [];
 
-                    mapcontent[lname].forEach(function(item) {
-                        featurelist.push(item);
-                    })
+                keys.forEach(function(lname) {
+                    obj = mapcontent[lname];
+                    // add features to featurelist if layer is "marked" or if only one layer exists   
+                    if ((keys.length == 1) || obj.usefeatures) { // 
+                        obj.features.forEach(function(item) {
+                            featurelist.push(item);
+                        })
+                    } 
 
                 });
-                this.featurelist = featurelist; // notifies !!
-                console.log("GOT mapcontentFeatureList :", layernames, featurelist);
+
+                this.featurelist = featurelist; // NOTIFIES  !!
+                // console.log("GOT mapcontentFeatureList :", layernames, featurelist);
             }
 
         });

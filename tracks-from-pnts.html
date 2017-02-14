@@ -84,7 +84,7 @@ Optional: create quick-preview-data
             },
 
             // can be processed in "quickViewer"
-            quickmap: {
+            rawtracks: {
                 type: Object,
                 notify: true
             },
@@ -150,11 +150,14 @@ Optional: create quick-preview-data
             tablemode = rawdata[0]["lat"] ? 'table-vendee' : tablemode;
 
             // 2. Create RAW trackdata 
-            var rawtracks;
+            var rawtracks, minTrackLength;
             if (tablemode.indexOf("vomue") > 0) {
-                rawtracks = this.rawDeviceTracks(rawdata, tablemode, previewmode);
+                if (!previewmode) minTrackLength = srcmeta.minTrackLength;
+                rawtracks = this.rawDeviceTracks(rawdata, tablemode, minTrackLength);
+           
             } else if (tablemode.indexOf("vendee") > 0) {
                 rawtracks = this.rawVendeeTracks(rawdata, masterdata);
+           
             } else {
 
             }
@@ -167,9 +170,9 @@ Optional: create quick-preview-data
 
             if (previewmode) {   // 3.1 derive features for mb-visualization of rawTracks
 
-                this.quickmap = this.deriveTrackPreview(rawtracks, srcmeta);
+                this.rawtracks = this.deriveTrackPreview(rawtracks, srcmeta);
                 
-                console.log("Quickview TRACKS (from TPs):", this.quickmap);  
+                console.log("Quickview TRACKS (from TPs):", this.rawtracks);  
                 
             } else {    // 3.2 derive structures for mb-based animation of 'suitable' tracks
 
@@ -177,7 +180,7 @@ Optional: create quick-preview-data
                 
                 if (routedata) {
                     console.log("RAW ROUTEDATA (from TPs) :", routedata);  
-                    this.routedata = routedata;
+                    this.trackdata = routedata;
                 } 
             }
         },
@@ -186,10 +189,8 @@ Optional: create quick-preview-data
         // into point-collections to be used as tracks 
         // Use "very simple" segementation-algorithm of point-collections
         // !! For animation abandon "short" segments !! 
-        rawDeviceTracks: function(rawdata, tablemode, previewmode) {
+        rawDeviceTracks: function(rawdata, tablemode, minTrackLength) {
             // console.log("rawDeviceTracks: rawdata=", rawdata);
-            var minTrackLength;
-            if (!previewmode) minTrackLength = srcmeta.minTrackLength;
 
             // Dis-assemble rawdata-recordings that contain "separable tracks"  
             // with mode-specific algorithms - assigning a unique track-ID
@@ -267,8 +268,10 @@ Optional: create quick-preview-data
 
             if (tablemode.indexOf("vomue1") >= 0) 
                 tablemode = "vomue1";
+
             else if (tablemode.indexOf("vomue2") >= 0) 
                 tablemode = "vomue2";
+            
             else {
                 console.log("BREAK. tablemode not usable: ", tablemode);
                 return;

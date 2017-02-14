@@ -19,73 +19,35 @@
                 notify : true
             }
         },    
+        
+        // Shell for diverse select-functions  
+        featuresSelect: function(features, layerid) {
+            // console.log("FS in "+ layerid, features); 
+            var selectObj,
+                f = features[0], 
+                fprops = f.properties; 
+            if (!fprops) return ; 
 
-        // Get Info about "complete track", not only features in actually "visible" tile(s)
-        trackGetInfo: function(aLine, layerid) {
-            if (!this.map) return; 
-            
-            var scope = this,
-                map = this.map;
+            if (fprops && fprops.coordTimes)  {  // SPEC-CASE : Tracks 
 
-            var trackInfo = aLine.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
+                selectObj = this.tracksHilite(features, layerid);
 
-            // Get SOURCE-properties for identified feature !!!
-            var keys = this.guessFeatureKeys(aLine); 
-            if (keys) {
-                trackInfo.keyname = keys[0];  
-                trackInfo.keyvalue = keys[1];  
-                trackInfo.id = keys[1];
+            } else if (false)  {  // SPEC-CASE : Other 
 
-                var trackLayer = map.getLayer(layerid),
-                    trackSource = map.getSource(trackLayer.source),
-                    srcFeatures = trackSource._data.features;
 
-                var keyname = trackInfo.keyname; 
-                srcFeatures.some(function(f){
-                    if (f.properties[keyname] == trackInfo[keyname]) {
-                        // console.log("detected", trackInfo[keyname], f);
-                        trackInfo.bbox = scope.setFeatureBounds([f]);
-                        trackInfo.coords = f.geometry.coordinates;
-                        trackInfo.fromnode = trackInfo.coords[0];
-                        trackInfo.tonode = trackInfo.coords[trackInfo.coords.length - 1];
-                        trackInfo.length = scope.deltaL(f);
-                        return true;
-                    }
-                });
-            }
-            
-            // Get typical track time parameters 
-            if (trackInfo.coordTimes) { 
+            } else { // SIMPLE GeometryZoom 
+                if (f.feature) f = f.feature;
+                selectObj = this.setFeatureBounds([f], this.map);
+            }    
 
-                var trackTimes = trackInfo.coordTimes; // console.log("trackTimes", typeof trackTimes, trackTimes);
-                if (typeof trackTimes == "string") trackTimes = JSON.parse(trackTimes);
-                // console.log(trackInfo, trackTimes);
-                
-                var n = trackTimes.length, // equal to number of coords
-                    tvon = scope.trackTime(trackTimes[0]);
-                    tbis = scope.trackTime(trackTimes[n - 1])
-                    von = scope.utcTime(tvon, null, "h"),
-                    bis = scope.utcTime(tbis, null, "h"),
-                    dt = bis - von;
-                // console.log(trackTimes[0],trackTimes[n-1], tvon, tbis, von,bis,dt);
-
-                trackInfo.duration = scope.deltaT(dt);
-                trackInfo.count = n;
-                trackInfo.von = scope.logTime(von, "h");
-                trackInfo.bis = scope.logTime(bis, "h");
-            }
-
-            // compile basic parameters as HTML 
-            trackInfo.html = trackInfo.time +
-                "<br>Length: " + trackInfo.length +
-                "<br>Duration: " + trackInfo.duration +
-                "<br>TP's: " + trackInfo.count;
-
-            return trackInfo;
+            return selectObj; 
         },
 
         // Special "permanent" HILITE of selected tracks
         // by HILITE-TRACE + "commented" end-nodes  
+        //   - zooms to the feature
+        //   - show start/stop based on "id-Filter"	
+
         tracksHilite: function(features, layerid) {
             // by now for 1 feature onyl
             // var map = this.map; 
@@ -182,6 +144,71 @@
             // }, 100);     
             return trackInfo; 
         },
+
+        // Get Info about "complete track", not only features in actually "visible" tile(s)
+        trackGetInfo: function(aLine, layerid) {
+            if (!this.map) return; 
+            
+            var scope = this,
+                map = this.map;
+
+            var trackInfo = aLine.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
+
+            // Get SOURCE-properties for identified feature !!!
+            var keys = this.guessFeatureKeys(aLine); 
+            if (keys) {
+                trackInfo.keyname = keys[0];  
+                trackInfo.keyvalue = keys[1];  
+                trackInfo.id = keys[1];
+
+                var trackLayer = map.getLayer(layerid),
+                    trackSource = map.getSource(trackLayer.source),
+                    srcFeatures = trackSource._data.features;
+
+                var keyname = trackInfo.keyname; 
+                srcFeatures.some(function(f){
+                    if (f.properties[keyname] == trackInfo[keyname]) {
+                        // console.log("detected", trackInfo[keyname], f);
+                        trackInfo.bbox = scope.setFeatureBounds([f]);
+                        trackInfo.coords = f.geometry.coordinates;
+                        trackInfo.fromnode = trackInfo.coords[0];
+                        trackInfo.tonode = trackInfo.coords[trackInfo.coords.length - 1];
+                        trackInfo.length = scope.deltaL(f);
+                        return true;
+                    }
+                });
+            }
+            
+            // Get typical track time parameters 
+            if (trackInfo.coordTimes) { 
+
+                var trackTimes = trackInfo.coordTimes; // console.log("trackTimes", typeof trackTimes, trackTimes);
+                if (typeof trackTimes == "string") trackTimes = JSON.parse(trackTimes);
+                // console.log(trackInfo, trackTimes);
+                
+                var n = trackTimes.length, // equal to number of coords
+                    tvon = scope.trackTime(trackTimes[0]);
+                    tbis = scope.trackTime(trackTimes[n - 1])
+                    von = scope.utcTime(tvon, null, "h"),
+                    bis = scope.utcTime(tbis, null, "h"),
+                    dt = bis - von;
+                // console.log(trackTimes[0],trackTimes[n-1], tvon, tbis, von,bis,dt);
+
+                trackInfo.duration = scope.deltaT(dt);
+                trackInfo.count = n;
+                trackInfo.von = scope.logTime(von, "h");
+                trackInfo.bis = scope.logTime(bis, "h");
+            }
+
+            // compile basic parameters as HTML 
+            trackInfo.html = trackInfo.time +
+                "<br>Length: " + trackInfo.length +
+                "<br>Duration: " + trackInfo.duration +
+                "<br>TP's: " + trackInfo.count;
+
+            return trackInfo;
+        }
+
     }
 
 </script>

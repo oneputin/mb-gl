@@ -99,14 +99,14 @@ To 'close'
         srcmeta="[[srcmeta]]"        
         previewmode="[[previewmode]]"
         trackdata = "{{routedata}}"
-        quickmap="{{quickmapcontent}}">
+        rawtracks="{{rawtracks}}">
     </tracks-from-pnts>    
 
     <tracks-from-gpx 
         srcmeta="[[srcmeta]]"
         previewmode="[[previewmode]]"
         trackdata="{{routedata}}"
-        quickmap="{{quickmapcontent}}">
+        rawtracks="{{rawtracks}}">
     </tracks-from-gpx>    
 
     <paper-card 
@@ -164,7 +164,7 @@ To 'close'
                 routedata: {
                     type: Object,
                     value: [],
-                    observer: '_checkPropObject',
+                    // observer: '_checkPropObject',
                     notify: true
                 },
 
@@ -186,7 +186,7 @@ To 'close'
                     type: String
                 },
 
-                quickmapcontent: {
+                rawtracks: {
                     type: Object,
                     notify: true
                 }
@@ -207,7 +207,7 @@ To 'close'
             },
 
             _checkPropObject : function(routedata) {
-                // console.log("_checkPropObject", routedata); 
+                console.log("_checkPropObject", routedata); 
             },
 
             // APP/GUI-elemente anpassen, 

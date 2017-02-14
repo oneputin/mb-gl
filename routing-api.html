@@ -45,17 +45,17 @@ along waypoint file loaded from url
                 },
 
                 /**
-                 * Data-Container for app-supplied mapContent 
+                 * Data-Container for app-supplied contentbox 
                  */
                 animationsources: {
                     type: Object,
                     notify: true
                 },
 
-                mapcontent: {
+                contentbox: {
                     type: Object,
-                    notify: true,
-                    observer: '_checkObject'
+                    notify: true
+                    // observer: '_checkObject'
                 },
 
                 /**
@@ -185,7 +185,7 @@ along waypoint file loaded from url
 
             observers: [
                 '_animationSourcesSetup(routedata, timer.timescale, map)', // creates animationsources
-                '_animationMapSetup(map, animationsources.*)',  // creates 'mapcontent'
+                '_animationMapSetup(map, animationsources.*)',  // creates 'contentbox' for 
                 '_animationTimerRefresh(timer.*)',
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)'
@@ -243,34 +243,40 @@ along waypoint file loaded from url
             /**
              * Create/Refresh mapLayers for changed content (routed Data)
              *
-             * @param      {object}  mapcontent  The iimapslayers for animation-apps 
+             * @param      {object}  contentbox  The iimapslayers for animation-apps 
              * @param      {object}  map         The map to show routetracker
              */
-            _animationMapSetup: function(map, mapcontent) {
+            _animationMapSetup: function(map, contentbox) {
                 var debounceTime = 200;
 
                 this.debounce('tomap', function() {
 
-                    if (mapcontent.path == 'animationsources') mapcontent = mapcontent.value;
-                    if (!mapcontent || !Object.keys(mapcontent).length) return;
+                    if (contentbox.path == 'animationsources') contentbox = contentbox.value;
+                    if (!contentbox || !Object.keys(contentbox).length) return;
 
-                    console.log("SET/REFRESH content of animationMap: ", mapcontent);
+                    console.log("SET/REFRESH contentbox of animationMap: ", contentbox);
 
-                    // 1. Create/Refresh (json)data-based animation-layers
+                    // 1. Specify baselayer to use for feature-ctrl 
+                        
+                    contentbox["routes"]["usefeatures"] = true; 
 
-                    // private addLayer-actions (OLD)
-                    // mba.mbLayersSetup(map, mapcontent);
+                    // 2. Setup Map-Events to query track-features on "mouseover" ( or show info-popup etc)  
 
-                    // 2. Setup Map-Events to query track-features on "mouseover" and show info-popup 
+                    Object.keys(contentbox).forEach(function(lname){
+                        contentbox[lname]["events"] = {};
+                    })
 
-                    mba._animationMapEventsReset(map, true); 
-                    
+                    var mapevents = mba._animationMapEvents(map); 
+                    if (mapevents)  {
+                        contentbox["routes"]["events"] = mapevents; 
+                    }
+
                     // 3. (Re)Start-action(s) 
 
                     mba._counter = 1;
 
                     // Primary Zoom to ALL features after Setup
-                    var mapfeatures  = mapcontent["routes"].srcdata.features; // console.log("f's at start", mapfeatures); 
+                    var mapfeatures  = contentbox["routes"].srcdata.features; // console.log("f's at start", mapfeatures); 
                     
                     mba.trackRoutesZoomTo(mapfeatures);
 
@@ -279,7 +285,7 @@ along waypoint file loaded from url
 
                     // 4. Triggers the STANDARD addlayer-action off a quickmap-content ( in <mb-content-view>)
 
-                    mba.mapcontent = mapcontent;
+                    mba.contentbox = contentbox;
                     //*************************
 
                 }, debounceTime);
@@ -287,7 +293,7 @@ along waypoint file loaded from url
 
 
             // Events related to animation elements on map
-            _animationMapEventsReset: function(map, status) {
+            _animationMapEvents: function(map) {
 
                     function f_mmove(e) {   // during animation only !!
                         if (mba.trackctrl) mba.trackObjSelect(e);
@@ -311,6 +317,15 @@ along waypoint file loaded from url
                         }
                     };
 
+                    var events = {
+                        'mousemove': f_mmove, 
+                        'click': f_click, 
+                        'movestart': f_movestart, 
+                        'moveend': f_moveeend 
+                    }
+
+                    return events; 
+                /*    
                     map.off('mousemove', f_mmove); 
                     map.off('click', f_click); 
                     map.off('movestart', f_movestart); 
@@ -322,9 +337,10 @@ along waypoint file loaded from url
                         map.on('movestart', f_movestart); 
                         map.on('moveend', f_moveeend); 
                     }
+                */    
             }, 
 
-            // Create a mapContent-Object for basic Layers related to animation-datasrces 
+            // Create a contentbox-Object for basic Layers related to animation-datasrces 
             // id : "routes", "traces", "nodes", "tracks"
             // 
             _animationContentSetup: function(id, type, srcdata, metas, paintprops, layoutprops) {
@@ -775,7 +791,7 @@ along waypoint file loaded from url
                     if (s) {
                         let ds = s - mapTime,
                             ds_msg = mba.deltaT(ds, "");
-                        msg = "NextStart at: " + mba.logTime(s, "h") + "<hr>TTT: " + ds_msg;
+                        msg = "Continue at: " + mba.logTime(s, "h") + "<hr>TTT: " + ds_msg;
                     } else {
                         msg = "IDLE: " + t_msg;
                     }
@@ -1226,7 +1242,7 @@ along waypoint file loaded from url
             },
 
             /**
-             * create the mapContentObj for trackLayer
+             * create the contentBoxObj for trackLayer
              *
              * @param      {object}  routedata     The routedata
              * @param      {object}  timer  The animation timer
@@ -1971,9 +1987,7 @@ along waypoint file loaded from url
                     console.log("BREAK. Route-Layer-Zoom. No features supplied!");
                     return;
                 }
-
                 // console.log(msg, routeFeatures); // .getCoordinates());
-
                 mba.setFeatureBounds(routeFeatures, mba.map);
             },
 
