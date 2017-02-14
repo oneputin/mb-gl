@@ -72,7 +72,6 @@
 
             observers: [
                 'mapcontentFeatureList(mapcontent.*)',
-                ''
             ],
 
             ready: function() {
@@ -80,10 +79,13 @@
             },
 
             attached: function() {
-                // this.installmap();
             },
 
-            // 
+            /**
+             * Select/Hilite the feature on the map 
+             * (fi. zoomTo)
+             * @param      {object}  f       { mapbox-jeature }
+             */
             checkoutFeature: function(f) {
                 if (!f.feature || !this.map) return; 
                 // console.log("Selected Track: " + f.id, f);
@@ -92,8 +94,8 @@
 
             /**
              * Create a linear LIST(array) of all features  
-             * of layernames (ggf keys of 'mapcontent'-collection) 
-             * and supply to container ("notified" property)
+             * of mapcontent-layers marked with flag 'usefeatures' 
+             * and supply as notify-parameter 'featurelist')
              */
             mapcontentFeatureList: function(mapcontent, keys) {
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
