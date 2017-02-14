@@ -24,9 +24,9 @@
     <link rel="import" href="../mb-orientation-ctrl.html">
 
     <!-- generic components for app-content-ctrl -->
-    <link rel="import" href="../dataset-browser.html"> 
-    <link rel="import" href="../mb-contentbox.html">
-    <link rel="import" href="../mb-quickview.html">
+    <link rel="import" href="../mb-content-browser.html"> 
+    <link rel="import" href="../mb-content-sync.html">
+    <link rel="import" href="../mb-content-view.html">
 
     <!-- generic animation components -->
     <link rel="import" href="../routing-api.html">
@@ -83,7 +83,7 @@
               right: 20px; */
         }
         
-        dataset-browser {
+        mb-content-browser {
             padding: 10px;
             display: inline-block;
             @apply(--layout-vertical);
@@ -208,19 +208,6 @@
 
             <!-- C. DATAFLOW INTERFACE -->
 
-            <dataset-browser 
-                indexurl="[[indexurl]]" 
-                metadatasetslabel="[[metadatasetslabel]]" 
-                metadatasets="{{routesets}}" 
-                datasetmeta="{{routedatasrc}}"
-
-                datasetlabel="[[datasetlabel]]"
-                dataset="[[dataset]]" 
-                selectvalue="{{datasetitem}}"> 
-            </dataset-browser>
-            <!-- selectprop="id"--> 
-            <!-- selectvalue="{{routeid}}"--> 
-
             <routing-tracks 
                 previewmode="[[previewmode]]" 
 
@@ -237,22 +224,36 @@
             <!-- routedata="{{routedata}}" --> 
             <!-- rawdata="{{rawdata}}" --> 
 
+            <mb-content-browser 
+                indexurl="[[indexurl]]" 
+                metadatasetslabel="[[metadatasetslabel]]" 
+                metadatasets="{{routesets}}" 
+                datasetmeta="{{routedatasrc}}"
+
+                datasetlabel="[[datasetlabel]]"
+                dataset="[[dataset]]" 
+                selectvalue="{{datasetitem}}"> 
+            </mb-content-browser>
+            <!-- selectprop="id"--> 
+            <!-- selectvalue="{{routeid}}"--> 
+
             <!-- SYNC mapcontent from contentbox -->
-            <mb-contentbox 
+            <mb-content-sync 
                 checked="[[previewmode]]" 
                 map="[[map]]" 
                 mbid="[[mbid]]" 
                 contentbox="[[contentbox]]" 
+                featureselected="{{datasetitem}}"
                 mapcontent="{{mapcontent}}">
             </contentbox>
 
-            <!-- DIALOG ctrl <mb-map> <dataset-browser> -->
-            <mb-quickview 
+            <!-- DIALOG ctrl <mb-map> <mb-content-browser> -->
+            <mb-content-view 
                 map="[[map]]" 
                 mapcontent="[[mapcontent]]" 
                 featurelist="{{dataset}}"
-                featureselected="{{datasetitem}}">
-            </mb-quickview>
+                featureselected="[[datasetitem]]">
+            </mb-content-view>
 
         </div>
     </div>
@@ -298,11 +299,11 @@
     // SHELL-actions
     scope.mapctrl = {};
 
-    //scope.addEventListener('dom-change', function() {
-        // console.log("DOM-CHANGED", scope.trackctrl, scope.timer);
-    //});
+    /*scope.addEventListener('dom-change', function() {
+        console.log("DOM-CHANGED", scope.trackctrl, scope.timer);
+    });*/
 
-    document.addEventListener('WebComponentsReady', function() {
+    /*document.addEventListener('WebComponentsReady', function() {
         console.log("WebComponentsReady", scope.trackctrl, scope.timer);
 
         var r1 = document.querySelector("paper-radio-button.preview");
@@ -372,8 +373,7 @@
             }
         }
 
-    });
-
+    });*/
 
 </script>
 

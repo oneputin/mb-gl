@@ -1,9 +1,9 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="mb-map-behavior.html">
-<link rel="import" href="routing-behavior.html">
+<link rel="import" href="mb-content-behavior.html">
 
 <!--
-    `mb-quickview`
+    `mb-content-view`
     quick preview of "contentbox" supplied in "quickformat" fi. 
     - derived from raw kml- or gpx-datasets
     - created for routing-api
@@ -23,7 +23,7 @@
     @demo demo/routingtracks.html 
 -->
 
-<dom-module id="mb-quickview">
+<dom-module id="mb-content-view">
 
     <template>
 
@@ -39,7 +39,7 @@
     <script>
         
         Polymer({
-            is: 'mb-quickview',
+            is: 'mb-content-view',
 
             properties: {
                 /**
@@ -64,6 +64,7 @@
                     notify: true
                 },
 
+                // bidirectional ctrl-prop
                 featureselected: {
                     type: Object,
                     notify: true,
@@ -77,8 +78,8 @@
             },
 
             behaviors: [
-                Mbb.MapBehavior,
-                Mbb.RoutingBehavior
+                Mbb.ContentBehavior,
+                Mbb.MapBehavior
             ],
 
             observers: [
@@ -87,7 +88,7 @@
             ],
 
             ready: function() {
-                // console.log("READY: mb-quickview");
+                // console.log("READY: mb-content-view");
             },
 
             attached: function() {
@@ -97,12 +98,15 @@
             // 
             checkoutFeature: function(f) {
                 if (!f.feature || !this.map) return; 
+                // console.log("Selected Track: " + f.id, f);
 
                 if (f.feature.properties.coordTimes)  {  // SPEC-CASE : Tracks 
-                    // console.log("zoomToTrack: " + f.id, f);
                     this.tracksHilite([f.feature], f.layer);
 
-                } else { // SimpleGeometryZoom 
+                } else if (false)  {  // SPEC-CASE : Other 
+
+
+                } else { // SIMPLE GeometryZoom 
 
                     this.setFeatureBounds([f.feature], this.map);
                 }    
@@ -116,9 +120,8 @@
             mapcontentFeatureList: function(mapcontent, layernames) {
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
                 if (!mapcontent || !Object.keys(mapcontent).length) return;
-
                 if (!layernames) layernames = Object.keys(mapcontent);
-                console.log("GET mapcontentFeatureList of", layernames, mapcontent);
+                // console.log("GET mapcontentFeatureList of", layernames, mapcontent);
 
                 var featurelist = [];
                 layernames.forEach(function(lname) {
@@ -129,7 +132,7 @@
 
                 });
                 this.featurelist = featurelist; // notifies !!
-                // console.log("GOT mapcontentFeatureList :", featurelist);
+                console.log("GOT mapcontentFeatureList :", layernames, featurelist);
             }
 
         });

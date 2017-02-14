@@ -14,7 +14,7 @@
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
     <link rel="import" href="../../iron-collapse/iron-collapse.html">
 
-    <link rel="import" href="../dataset-browser.html">
+    <link rel="import" href="../mb-content-browser.html">
 
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
@@ -58,7 +58,7 @@
             right: 30px;
         }
         
-        dataset-browser {
+        mb-content-browser {
             position: absolute;
             padding: 10px;
             left: 30px;
@@ -103,10 +103,10 @@
                 lnglat="{{lnglat}}" 
                 mapctrl="[[mapctrl]]">
                 
-                <mb-quickview
+                <mb-content-view
                     map="[[map]]"
                     mapcontent="[[mapcontent]]">
-                </mb-quickview>
+                </mb-content-view>
 
                 <routing-ctrl 
                     timer="{{timer}}"
@@ -149,7 +149,7 @@
                     trackinfo="{{trackinfo}}">
                 </routing-planes>
 
-                <dataset-browser
+                <mb-content-browser
                     indexurl="[[indexurl]]"
                     datasets="[[routesets]]"
                     datasetslabel="Flight sets"
@@ -157,7 +157,7 @@
                     datasetlabel= "Flights"
                     selectprop= "id"
                     selectvalue= "{{routeid}}">
-                </dataset-browser>    
+                </mb-content-browser>    
             
             </mb-map>    
         </div>
