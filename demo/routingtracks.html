@@ -206,14 +206,13 @@
             <template is="dom-if" if="{{userouting}}">
                 <routing-api 
                     map="[[map]]" 
+                    contentbox="{{contentbox}}"               
                     timer="{{timer}}"
-                    routedata=[[routedata]] 
-                    routeid=[[routeid]] 
                     trackctrl="{{trackctrl}}" 
-                    trackalignmap="{{trackalignmap}}" 
+                    routeid=[[routeid]] 
+                    routedata=[[routedata]] 
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]"
-                    contentbox="{{contentbox}}"               
                     tracksymbol="{{tracksymbol}}">
                 </routing-api>
                 
@@ -248,7 +247,7 @@
                 contentbox="[[contentbox]]" 
                 featureselected="{{datasetitem}}"
                 mapcontent="{{mapcontent}}">
-            </contentbox>
+            </mb-content-sync>
 
             <!-- DIALOG ctrl <mb-map> <mb-content-browser> -->
             <mb-content-view 
