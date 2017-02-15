@@ -92,7 +92,7 @@ along waypoint file loaded from url
                 /**
                  * temp. copy of trackctrl during animation-interrupt
                  */
-                _trackctrlsave: {
+                _trackctrl: {
                     type: Boolean
                 },
 
@@ -412,17 +412,17 @@ along waypoint file loaded from url
                 // console.log("mapismoved", mapismoved, old);
                 if (mapismoved) {
                     //this.debounce('movestarted', function() {
-                    mba._trackctrlsave = false;
+                    mba._trackctrl = false;
                     if (mba.trackctrl == true) {
-                        mba._trackctrlsave = true;
+                        mba._trackctrl = true;
                         mba.trackctrl = false;
-                        console.log("INTERRUPT track-animation");
+                        console.log("INTERRUPTING track-animation");
                     }
                     //}, 200);
                 } else {
                     this.debounce('movestopped', function() {
-                        if ((mba.trackctrl == false) && (mba._trackctrlsave == true)) {
-                            mba._trackctrlsave = false;
+                        if ((mba.trackctrl == false) && (mba._trackctrl == true)) {
+                            mba._trackctrl = false;
                             mba.trackctrl = true;
                             console.log("RESUME track-animation");
                         }
@@ -1725,12 +1725,10 @@ along waypoint file loaded from url
                 // A. HIDE the SELECT-Track-symbols
                 var names = ["tracks-select", "tracks-glow", "tracks-glow-strong"];
                 names.forEach(function(lname) {
-                    if (mba.map.getLayer(lname)) mba.map.setFilter(lname, ["==", "id", filter]);
+                    if (mba.map.getLayer(lname)) {
+                        mba.map.setFilter(lname, ["==", "id", filter]);
+                    }
                 });
-                
-                //mba.map.setFilter("tracks-select", ["==", "id", filter]);
-                //mba.map.setFilter("tracks-glow", ["==", "id", filter]);
-                //mba.map.setFilter("tracks-glow-strong", ["==", "id", filter]);
             },
 
             // SYNC visibility at "mapTime"
@@ -2046,9 +2044,10 @@ along waypoint file loaded from url
 
 
             /**
-             * Activate a trackObject,  on mouse-over ;selected by gui-event e (mode-over, click, ...) 
+             * Activate a trackObject on mouse-over ;
+             * selected by gui-event e (mode-over, click, ...) 
              */
-            trackObjSelect: function(e, clickflag) {
+            trackObjSelect: function(e, clickevent) {
                 // console.log("mousemove-event", e);
                 var features = [];
 
@@ -2058,7 +2057,7 @@ along waypoint file loaded from url
                     });
                 }
 
-                // Alternative for nodes
+                // Try nodes if no tracks selected
                 if (!features.length) {
                     // Check waypoints/trackpoints    
                     if (map.getLayer('nodes')) {
@@ -2080,10 +2079,11 @@ along waypoint file loaded from url
                     return;
                 }
 
-                // NO action if INFO already visible
+                // NO info-action if INFO already visible
                 // 
                 if (mba.trackid == features[0].properties.id) {
-                    if (clickflag) {
+
+                    if (clickevent) {
                         console.log("clear trackObj", mba.trackid, features[0]);
                         mba.popup.remove();
                         mba.trackFilterApply("");
@@ -2099,7 +2099,6 @@ along waypoint file loaded from url
                 // Update GLOBAL objects
                 mba.trackobj = features[0];
                 mba.trackid = mba.trackobj.properties.id;
-
                 mba.trackFilterApply(mba.trackid);
 
                 // Change the cursor style as a UI indicator.
