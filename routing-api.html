@@ -1826,14 +1826,15 @@ along waypoint file loaded from url
             // SYNC mapcontent (visibility of TrackObjects and "related" map-layers) 
             //   - primarely at "mapTime" (FIRST) 
             //   - or for (combined with) "routeFilter" (SECOND) 
-            _animationMapRefresh: function(mapTime, routeFilter, syncflag) {
+            _animationMapRefresh: function(mapTime, syncflag, routeFilter) {
                 // console.log("DEBUG", mapTime, routeFilter, syncflag);
                 var stopDelay = 2000; // time to let last situation "visible" before reset 
 
                 // TIME filter: applied, on every maptime ??
-                function applyTrackFilter(mapTime, routeFilter, flag) {
+                function applyTrackFilter(mapTime, flag, routeFilter) {
                     if (!flag) flag = "noflag";
-
+                    if (!routeFilter) routeFilter = mba.timer.filter;
+                    
                     var routeids = [],
                         routeid,
                         trackFilter,
@@ -1976,7 +1977,7 @@ along waypoint file loaded from url
                 } 
 
                 // 3. Filter for mapTime&&routeFilter (not for flag STOP) 
-                var trackids = applyTrackFilter(mapTime, routeFilter, syncflag);
+                var trackids = applyTrackFilter(mapTime, syncflag, routeFilter);
                 //console.log("REFRESH: ids of trackFeatures", trackids);
 
                 // 4. 
