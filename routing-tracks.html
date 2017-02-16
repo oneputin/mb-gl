@@ -103,7 +103,7 @@ To 'close'
     </tracks-from-pnts>    
 
     <tracks-from-gpx 
-        srcmeta="[[srcmeta]]"
+        srcmeta="[[srcmetax]]"
         previewmode="[[previewmode]]"
         trackdata="{{routedata}}"
         rawtracks="{{rawtracks}}">
@@ -161,12 +161,18 @@ To 'close'
                     type: Object
                 },
 
+                tracksymbol: {
+                    type: String,
+                    notify: true
+                },
+
                 routedata: {
                     type: Object,
                     value: [],
                     // observer: '_checkPropObject',
                     notify: true
                 },
+
 
                 // 
                 previewmode: {
@@ -238,6 +244,7 @@ To 'close'
 
                 // Check some url - conditions ???
                 if (!srcurl) return;
+
                 if (this.srcmeta && (srcurl != this.srcmeta.url)) {
                     this.clearSourceUsage();  // 
                 } 
@@ -247,10 +254,15 @@ To 'close'
                         "tags": "Track",
                         "structure": "doc"
                     };
-                }
-                // console.log("requestDispatcher. AFTER", tracksrcmeta);
+                    srctype = "gpx"
+                }   // console.log("requestDispatcher. AFTER", tracksrcmeta);
                 
-                this.srcmeta = tracksrcmeta;
+                // Trigger in the correct IF
+                if (srctype=="gpx") this.srcmetax = tracksrcmeta;
+                else                this.srcmeta = tracksrcmeta;       
+               
+                // 
+                // this.tracksymbol = tracksrcmeta.symbol;
             },
 
             // B. COMPILE Feature-data 

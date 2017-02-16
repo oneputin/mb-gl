@@ -105,7 +105,9 @@ Optional: create quick-preview-data
             }  
             // set parameters for data-fetch with <kml-json>
             this.xmlurl = srcmeta.url;
-            if (srcmeta.xmlquery) this.xmlquery = srcmeta.xmlquery;
+            if (srcmeta.xmlquery) {
+                this.xmlquery = srcmeta.xmlquery;
+            }
         },
         
         // 
@@ -127,7 +129,7 @@ Optional: create quick-preview-data
                 }    
 
             } else {   // derive structures for mb-based animation of 'suitable' tracks
-                // console.log("prepare routedata", rawtracks);  
+                console.log("prepare routedata of ", srcmeta, rawtracks);  
                 var routetracks = this.createTrackRoutes(rawtracks); // .features);
                 if (routetracks.length) {
                     console.log("RAW ROUTEDATA (from GPX)",  routetracks);
