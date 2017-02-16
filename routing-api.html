@@ -479,13 +479,13 @@ along waypoint file loaded from url
                     routeFilter = this._idFilterCreate(routeid);
                 }
 
-                // routeFilter is called from timer ...
+                // routeFilter (if any) is stored in timer-object
                 if (!routeFilter) {
                     delete this.timer.filter;
                 } else {
                     this.timer.filter = routeFilter;
                 }
-                console.log("Setup animation for ["+ routeid+"], timer, filter:", timerEntry, routefilter); 
+                console.log("Setup animation for ["+ routeid+"], timer, filter:", timerEntry, timer); 
 
                 // 
                 srcFeatures = this._animationMapRefresh(null, routeFilter);
@@ -811,6 +811,30 @@ along waypoint file loaded from url
              * Container to be called by requestAnimationFrame 
              */
             trackStepContainer: function() {
+                
+                function updateMapTrack() {
+                    var s1 = mba.map.getSource('tracks');
+                    var s2 = mba.map.getSource('traces');
+
+                    if (s1) s1.setData(mba.tracks);
+                    if (s2) s2.setData(mba.traces);
+                }
+
+                function generateCtrlMsg(counter) {    
+                    var mapTime = (mba.timer["start"]) + (counter * mba.timer.frametime / 3600);
+                        t_msg = mba.logTime(mapTime, "h"),
+                        s = mba.getNextStart(mapTime),
+                        msg;
+
+                    if (s) {
+                        let ds = s - mapTime,
+                            ds_msg = mba.deltaT(ds, "");
+                        msg = "Continue at: " + mba.logTime(s, "h") + "<hr>TTT: " + ds_msg;
+                    } else {
+                        msg = "IDLE: " + t_msg;
+                    }
+                    mba.popupOnMap(msg);
+                }
 
                 if (!mba.tracks || !mba.tracks.features) {
                     mba.popupOnMap("OOPS. TrackData n.a.");
@@ -822,33 +846,19 @@ along waypoint file loaded from url
                 // Calculate track geometries at new positions 
                 // based on counter denoting the index to access the route-position.
 
-                var mapTime = (mba.timer["start"]) + (mba._counter * mba.timer.frametime / 3600);
-
                 // ******************************
-                var located = mba.trackStepAction(mba._counter, mapTime);
+                var located = mba.trackStepAction(mba._counter);
                 // ******************************
 
-                // B. Transfer to map 
+                // B. Transfer updated track to map or generate ctrlMsg
 
                 if (!located) {
-                    var t_msg = mba.logTime(mapTime, "h"),
-                        s = mba.getNextStart(mapTime);
-
-                    if (s) {
-                        let ds = s - mapTime,
-                            ds_msg = mba.deltaT(ds, "");
-                        msg = "Continue at: " + mba.logTime(s, "h") + "<hr>TTT: " + ds_msg;
-                    } else {
-                        msg = "IDLE: " + t_msg;
-                    }
-
-                    mba.popupOnMap(msg);
-
-                } else {
-                    // mba.map.getSource('tracks').setData(mba.tracks);
+                    updateMapTrack(); 
+                } else {    
+                    generateCtrlMsg(mba._counter);
                 }
 
-                // C. Request the next frame of animation 
+                // C. Prepare request of next trackStepAction (animationFrame) 
                 mba._counter = mba._counter + 1;
 
                 // D. Animation RECALL 
@@ -864,62 +874,60 @@ along waypoint file loaded from url
              * @return     {number}  number of trackObjects visible after counter
              */
             trackStepAction: function(counter, mapTime) {
-                // Function ctrls 
-                // - the location of trackObjects 
-                // - the visibility (via Refresh of animationMap)  and  
-                // at the mapTime (related to "counter")     
+                // Function updates location and properties  
+                // of trackObjects and trackTraces at animationstep 'counter'
+                //  - passed as parameter directly  
+                //  - recalculated from mapTime 
 
                 var timer = mba.timer,
-                    map = mba.map,
-                    located = 0,
-                    mapMsg = "",
-                    routeFilter = timer.filter;
+                    map = mba.map;
+                // ctrl-parameters 
+                var located = 0, // counts trackObjs relocated at trackStep
+                    mapMsg = ""; // flag is set at "specific" situations (start,stop, ...)
 
-                // ----                    	
-                function getLegLocation (counter, route, routeProps) { 
-                    var legLocated; 
+                // Search location of (animation-)counter 
+                // on one of the routes legs                     	
+                function getLegLocation (counter, route) { 
+                    var legLocation; 
 
                     var geotype = route.geometry.type,
                         legCoordSet = route.geometry.coordinates;
-
                     if (geotype == "MultiLineString") { // multiple legs ?? 
                     } else { // one leg only 
                         legCoordSet = [legCoordSet];
                     }
 
-                    var legdata = routeProps.legs;
-
-                    var legStartAt = routeProps.startCounter; // routeStartCounter;
-
                     // Iterate along the positions of the route-legs 
-                    // until the track-counter is "located" within one. 
-                    // Get cc and legInfo of the leg selected.
+                    // until the track-counter is "located" within one of the legs. 
+                    // Get coords and legInfo of the leg selected.
 
-                    var cc; 
-                    // To break the cycle;
-                    // return false, if the counter is "within" a leg 
+                    var routeProps = route.properties,
+                        legdata = routeProps.legs,
+                        legStartAt = routeProps.startCounter,
+                        legStopAt, cc;
+
                     legCoordSet.every(function(legPositions, i) {
                         cc = null;
-                        if (counter < (legStartAt + legPositions.length)) {
+                        legStopAt = legStartAt + legPositions.length;
+                        if (counter < legStopAt) {
                             cc = legPositions[counter - legStartAt];
                             if (cc) {
-                                legLocated = {
+                                legLocation = {
                                     "leg": legdata[i],
                                     "coords": cc
                                 };
                                 return false;
                             }
                         }
+                        // move to next leg
                         legStartAt = legStartAt + legPositions.length;
                         return true; // wichtig !!
-                    })
-
-                    return legLocated; 
+                    });
+                    return legLocation; 
                 }
 
-                // A.0 Sync alternative timing sources 
-               // 
-                if (!counter) {
+                // A.0 Sync alternative animation-time-sources 
+                if (!counter) { 
                     counter = 0;
                     if (mapTime) {
                         counter = (mapTime - timer["start"]) * 3600 / timer.frametime;
@@ -936,7 +944,7 @@ along waypoint file loaded from url
 
                 mba._counter = counter;
 
-                // A.1 Timesignal for other elements 
+                // A.1 Export Timesignal for sync with other elements 
                 
                 mba.set('timer.time', mapTime);
                 // ****************************
@@ -944,27 +952,28 @@ along waypoint file loaded from url
                 // A.2 Integrated RESET-function 
                 //     after setting the animation-starttime
                 if (counter == 1) {
-                    console.log("zoom at counter=1", timer);
-                    mba.trackRoutesZoomTo(null, null, timer.filter); // zoom to max Extent of (all) route(s)
+                    // zoom to max Extent of (all) route(s)
+                    // console.log("zoom2max at counter=1", timer);
+                    mba.trackRoutesZoomTo(null, null, timer.filter); 
                     // mba.trackctrl = false // RESET trackObject 
                 }
 
                 // B. REFRESH the srcdata of those trackObjects/trackTraces 
                 //    whose start and stop surround actual mapTime  
-                
-                // console.log("mba.tracks", mba.tracks); 
-                
-                mba.tracks.features.forEach(function(trackObj, j) {
-                    // !!! routes and tracks(Objs) are linearely structured 
-                    //     "in-sync" referenced through the same index j  
+                var nn = mba.tracks.features.length;
+
+                for (j = 0; j < nn; j++) {
+                    // Easyly find route and trace for trackObj 
+                    // as routes, traces and track(Obj)s are equally indexed 
                     var route = mba.routes.features[j],
-                        trackTrace = mba.traces.features[j],
+                        trackObj = mba.tracks.features[j];
+                        trackTrace = mba.traces.features[j];
                     
-                        routeProps = route.properties, 
+                    var routeProps = route.properties, 
                         routeid = routeProps.id,
                         routeStartCounter = routeProps.startCounter;
 
-                    if (mapTime > routeProps.stop) {       // A. BREAK "" after end of this route 
+                    if (mapTime > routeProps.stop) {           // A. BREAK "" after end of this route 
 
                         if (routeStartCounter != null) {   // must be valid for 0 too
 
@@ -984,20 +993,21 @@ along waypoint file loaded from url
                             mapMsg += ",START:" + routeid;
                         }
 
-                        // if (true) {  // get legLocated
-                        var legLocated = getLegLocation(counter, route, routeProps) ; 
+                        // Find the legLocation of animation-counter 
+                        var legLocation = getLegLocation(counter, route) ; 
                         
-                        // Update the trackObj-properties according to its location on the route
-                        if (legLocated) {
+                        // Update the trackObj and trackTrace
+                        // according to its location on the route
+                        if (legLocation) {
 
                             located += 1;
 
-                            var coords = legLocated["coords"],
-                                legInfo = legLocated["leg"];
+                            var coords = legLocation["coords"],
+                                legInfo = legLocation["leg"];
                             console.log("On route:" + routeid, mapTime, coords, legInfo);
 
                             // A. Set new POSITION of trackObject 
-                            trackObj.geometry.coordinates = legLocated['coords']; 
+                            trackObj.geometry.coordinates = legLocation['coords']; 
 
                             // B. Option: EXTEND/MOVE the trackTrace 
 
@@ -1007,8 +1017,7 @@ along waypoint file loaded from url
                             }
 
                             // C. Option: SYNC content (and location) of the info-popup 
-                            //    if trackObj of this route was selected as "tracked Object" 
-
+                            //    if the trackObj of this route was selected as "selected-Object" 
                             if (mba._trackId == routeid) {
                                 
                                 // B. Eval DynamicSTATUS (properties) of trackObj between 2 animation-points 
@@ -1050,11 +1059,10 @@ along waypoint file loaded from url
                                         "lnglat": coords,
                                         "trackobj": trackObj
                                     }
-
                                     map.setLayoutProperty('tracks-select', 'icon-rotate', trackBearing);
                                 }
 
-                                // 
+                                // optional specAction if selectedObj "arrived"  
                                 if (trackObj.properties.arrived) {
                                     // mba.trackalignmap = false;
                                 }
@@ -1066,23 +1074,25 @@ along waypoint file loaded from url
                             }
 
                             // D. Mark this location as lastLocation for next animationStep 
-                            trackObj.properties.lastPos = legLocated['coords'];
+                            trackObj.properties.lastPos = legLocation['coords'];
                         }
-
                     }
-                });
+                };
+                
+                // C. APPLY the updated sources of the animation-layers                
+                if (located && false) {                    
+                    var s1 = mba.map.getSource('tracks');
+                    var s2 = mba.map.getSource('traces');
 
-                // C. APPLY the updated sources of the animation-layers
-                var s1 = mba.map.getSource('tracks');
-                var s2 = mba.map.getSource('traces');
-
-                if (s1) s1.setData(mba.tracks);
-                if (s2) s2.setData(mba.traces);
+                    if (s1) s1.setData(mba.tracks);
+                    if (s2) s2.setData(mba.traces);
+                }
 
                 // D. If flag "mapMsg" was created  
                 if (mapMsg) { // console.log(mapMsg);
+                    var routefilter = timer.filter;
                     mba._animationMapRefresh(mapTime, routeFilter, mapMsg);
-                }
+                } 
 
                 return located;
             },
