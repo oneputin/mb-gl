@@ -43,6 +43,20 @@
             return selectObj; 
         },
 
+        // convert any(?) device-formatted track-times into "dot format" 
+        trackTime : function (traw, asarray) { 
+            if (typeof traw == "string") {
+                var t = traw.replace("Z", "");
+                t = t.split(":").join(".");
+                t = t.split("-").join(".");
+                t = t.split("T").join(".");
+                // console.log(t);
+                if (asarray)  return t.split(".");
+                return t;
+            }     
+            return traw;
+        },
+
         // Special "permanent" HILITE of selected tracks
         // by HILITE-TRACE + "commented" end-nodes  
         //   - zooms to the feature

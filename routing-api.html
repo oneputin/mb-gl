@@ -109,7 +109,6 @@ along waypoint file loaded from url
                 trackalignmap: {
                     type: Boolean,
                     value: false,
-                    observer: 'mapOrientationChange',
                     notify: true
                 },
 
@@ -204,6 +203,7 @@ along waypoint file loaded from url
             observers: [
                 '_animationBoxSetup(routedata, timer.timescale, map)', // creates _animationbox
                 '_animationMapSetup(map, _animationbox.*)',  // creates 'contentbox' for 
+                'mapAlignChange(trackalignmap, _trackObj)',
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)',
                 '_checkTimer(timer.*)'
@@ -244,13 +244,13 @@ along waypoint file loaded from url
 
                 // Create ROUTES and TRACE (Meta)Layers (not adding yet)          
                 contentbox = this.animationRoutesSetup(routedata, this.timer); // console.log("checked route-data", routedata);
-                contentbox['nodes'] = this.animationNodesSetup(routedata); // wayPoints or trackPoints
                 contentbox['tracks'] = this.animationTrackerSetup(routedata, this.timer);
+                contentbox['nodes'] = this.animationNodesSetup(routedata); // wayPoints or trackPoints
 
                 // console.log("animationMapSources=", sourceData);
                 // ??? Doubled assignment of sourceData to trigger multi-parameter observer  ???
                 this._animationbox = {};
-                this._animationbox = contentbox; // triggers "refresh-action
+                this._animationbox = contentbox; // triggers polymer-based "refresh-action""
             },
 
 
@@ -295,7 +295,7 @@ along waypoint file loaded from url
                     mba.trackRoutesZoomTo(mapfeatures);
 
                     // Set Route and RouteCtrl for first "start-time" of animation-routes   
-                    mba._animationMapRefresh(mba.timer["start"], null, "FIRST START");
+                    mba._animationMapRefresh(mba.timer["start"], "FIRST START");
 
                     // 4. Triggers the STANDARD addlayer-action off a quickmap-content ( in <mb-content-view>)
 
@@ -355,10 +355,37 @@ along waypoint file loaded from url
                 */    
             }, 
 
+
+            // Manages START/STOP-Flag (trackctrl) of animation 
+            // if map-move events (map moved by user) are fired during animation 
+            _animationTrigger: function(mapismoved) {
+                // console.log("mapismoved", mapismoved, old);
+                if (mapismoved) {
+                    //this.debounce('movestarted', function() {
+                    mba._trackctrl = false;
+                    if (mba.trackctrl == true) {
+                        mba.trackctrl = false;
+                        mba._trackctrl = true;
+                        console.log("INTERRUPTED track-animation");
+                    }
+                    //}, 200);
+                } else {
+
+                    this.debounce('movestopped', function() {
+                        if ((mba.trackctrl == false) && (mba._trackctrl == true)) {
+                            mba.trackctrl = true;
+                            mba._trackctrl = false;
+                            console.log("RESUME track-animation");
+                        }
+                    }, 100);
+                }
+            },
+
             // Create a contentbox-Object for basic Layers related to animation-datasrces 
             // id : "routes", "traces", "nodes", "tracks"
             // 
-            _animationContentSetup: function(id, type, srcdata, metas, paintprops, layoutprops) {
+            _animationContentSetup: function(id, type, srcdata, metas, mapstyle) { //paintprops, layoutprops) {
+                if (!mapstyle) mapstyle = {};
 
                 // A. GENERIC presentation-props (layout,paint)  for different animation  layers
                 var paints = {},
@@ -392,9 +419,9 @@ along waypoint file loaded from url
                     };
                 }
 
-                // B. Join with SPECIFIC props
-                if (paintprops) paints = Object.assign({}, paints, paintprops);
-                if (layoutprops) layouts = Object.assign({}, layouts, layoutprops);
+                // B. Join with SPECIFIC props suppplied by app
+                if (mapstyle.paints) paints = Object.assign({}, paints, mapstyle.paints);
+                if (mapstyle.layouts) layouts = Object.assign({}, layouts, mapstyle.layouts);
 
                 // C. Create mb-Layer
                 
@@ -419,32 +446,6 @@ along waypoint file loaded from url
                 }
 
                 return layerObj;
-            },
-
-
-            // Manages START/STOP-Flag (trackctrl) of animation 
-            // if map-move events (map moved by user) are fired during animation 
-            _animationTrigger: function(mapismoved) {
-                // console.log("mapismoved", mapismoved, old);
-                if (mapismoved) {
-                    //this.debounce('movestarted', function() {
-                    mba._trackctrl = false;
-                    if (mba.trackctrl == true) {
-                        mba.trackctrl = false;
-                        mba._trackctrl = true;
-                        console.log("INTERRUPTED track-animation");
-                    }
-                    //}, 200);
-                } else {
-
-                    this.debounce('movestopped', function() {
-                        if ((mba.trackctrl == false) && (mba._trackctrl == true)) {
-                            mba.trackctrl = true;
-                            mba._trackctrl = false;
-                            console.log("RESUME track-animation");
-                        }
-                    }, 100);
-                }
             },
 
             /*_idFilterCreate: function(routeids) {
@@ -488,7 +489,7 @@ along waypoint file loaded from url
                 console.log("Setup animation for ["+ routeid+"], timer, filter:", timerEntry, timer); 
 
                 // 
-                srcFeatures = this._animationMapRefresh(null, routeFilter);
+                srcFeatures = this._animationMapRefresh(null, null,  routeFilter);
                 // console.log("srcFeatures filtered for:" + routeid, srcFeatures, this.timer);
 
                 if (srcFeatures.routes) {
@@ -637,7 +638,7 @@ along waypoint file loaded from url
                 this.set("timer.start", start);
                 this.set("timer.stop", stop);
                 this.set("timer.time", start);
-                console.log("Timer refreshed for ", timerEntry, this.timer);
+                // console.log("Timer refreshed for ", timerEntry, this.timer);
             },
 
             // B. TrackCtrls
@@ -694,7 +695,7 @@ along waypoint file loaded from url
                 // ******************************
             },
 
-            // 
+            // Reassign animation data (why) 
             animationReset: function(counter) {
 
                 if (counter == 1) {
@@ -717,56 +718,24 @@ along waypoint file loaded from url
 
 
             /**
-             *   switch map-orientation between north and trackaligned
+             *   Swing-switch of map-orientation between north and track-aligned
              *   maporientation: true = aligned along bearing of trackObject
              */
-            mapOrientationChange: function(maporientation, old) {
+            mapAlignChange: function(mapalign, geojson) {
                 if (!this.map) return;
-                var trackobj = this._trackObj;
-                // No maporientation if no trackObj selected
-                if (maporientation && !trackobj) {
-                    var msg = "<b>trackObject</b> must be activated<br> to align map along its track!"
-                    this.popupOnMap(msg);
-                    this.maporientation = false; // set to base 
-                    return;
-                }
+
+                var minZoom = 4;
+                var mm = {};
+                mm.center = geojson.geometry.coordinates;
+                mm.bearing = geojson.properties.bearing;
 
                 this.trackctrl = false; // STOP animation
 
-                var zoom = map.getZoom(),
-                    bearing = 360 + map.getBearing();
-                bearing = bearing == 360 ? 0 : bearing;
-                // bearing = Math.abs(map.getBearing());
-                // console.log("actual mapOrientation is:", bearing, zoom);
-                // zoom = Math.round(zoom); // may cause irritation
-
-                if (maporientation) {
-                    //console.log("ALIGN mapOrientation to TRACK", "object=", trackobj, "zoom=" + zoom);
-
-                    var cc = trackobj.geometry.coordinates;
-                    bearing = trackobj.properties.bearing;
-                    console.log("ALIGN mapOrientation to TRACK at cc=", cc, "bearing=", bearing, "zoom=" + zoom);
-
-                    if (zoom < 4) zoom = 4;
-                    map.flyTo({
-                        center: cc,
-                        bearing: bearing,
-                        zoom: zoom
-                    });
-
-                } else if (bearing > 0) {
-                    console.log("RESET mapOrientation to North from", "bearing=" + bearing, "zoom=" + zoom);
-
-                    if (zoom > 8) zoom = 8; // ?
-
-                    map.easeTo({
-                        bearing: 0,
-                        zoom: zoom
-                            //speed: 0.2, // make the easeMove slower
-                            //curve: 1,   // change the speed at which it changes zoom
-                    });
-                }
-
+                if (mapalign) {
+                    mm.align = true; 
+                }    
+                console.log("mapAlignChange", mm); 
+                this.mapLocate(mm, minZoom);
             },
 
             // C. TrackStep-Animation 
@@ -821,7 +790,7 @@ along waypoint file loaded from url
                 }
 
                 function generateCtrlMsg(counter) {    
-                    var mapTime = (mba.timer["start"]) + (counter * mba.timer.frametime / 3600);
+                    var mapTime = (mba.timer["start"]) + (counter * mba.timer.frametime / 3600),
                         t_msg = mba.logTime(mapTime, "h"),
                         s = mba.getNextStart(mapTime),
                         msg;
@@ -853,7 +822,7 @@ along waypoint file loaded from url
                 // B. Transfer updated track to map or generate ctrlMsg
 
                 if (!located) {
-                    updateMapTrack(); 
+                    // updateMapTrack(); 
                 } else {    
                     generateCtrlMsg(mba._counter);
                 }
@@ -925,6 +894,55 @@ along waypoint file loaded from url
                     });
                     return legLocation; 
                 }
+
+                function applyToMap(trackObj, legLocation) {
+
+                    var coords = legLocation["coords"],
+                        legInfo = legLocation["leg"];
+
+                    var trackBearing = trackObj.properties.bearing;
+
+                    if (mba.trackalignmap) {
+                        // In track-align-map-orientation 
+                        // The map is continuously 
+                        //  - rotated to bearing 
+                        //  - centered at trackObj 
+                        // NO mapInfo is shown   
+                        
+                        console.log("Map-Bearing aligned to track:", trackBearing);
+
+                        // Trigger CLOSE of trackInfo (fi. on map)
+                        mba.trackdata = {
+                            "open": false
+                        };
+
+                        let map = mba.map;
+                        map.easeTo({
+                            center: coords,
+                            bearing: trackBearing
+                        });
+
+                        map.setLayoutProperty('tracks-select', 'icon-rotate', 0);
+
+                    } else {
+                        // REFRESH trackdata to trigger INFO-element(-popup) 
+                        // and the trackObj-symbol is aligned to bearing
+
+                        mba.trackdata = {
+                            "id": mba._trackId,
+                            "lnglat": coords,
+                            "trackobj": trackObj
+                        }
+
+                        map.setLayoutProperty('tracks-select', 'icon-rotate', trackBearing);
+                    }
+
+                    // optional specAction if selectedObj "arrived"  
+                    if (trackObj.properties.arrived) {
+                        // mba.trackalignmap = false;
+                    }
+
+                } 
 
                 // A.0 Sync alternative animation-time-sources 
                 if (!counter) { 
@@ -1004,10 +1022,9 @@ along waypoint file loaded from url
 
                             var coords = legLocation["coords"],
                                 legInfo = legLocation["leg"];
-                            console.log("On route:" + routeid, mapTime, coords, legInfo);
 
                             // A. Set new POSITION of trackObject 
-                            trackObj.geometry.coordinates = legLocation['coords']; 
+                            trackObj.geometry.coordinates = coords; 
 
                             // B. Option: EXTEND/MOVE the trackTrace 
 
@@ -1016,59 +1033,23 @@ along waypoint file loaded from url
                                 trackTrace.geometry.coordinates = traceCoords;
                             }
 
-                            // C. Option: SYNC content (and location) of the info-popup 
+                            // C. Option: HILITE/SYNC content (and location) of the info-popup 
                             //    if the trackObj of this route was selected as "selected-Object" 
                             if (mba._trackId == routeid) {
-                                
-                                // B. Eval DynamicSTATUS (properties) of trackObj between 2 animation-points 
+
+                                // Eval DynamicSTATUS (properties) of trackObj between 2 animation-points 
                                 if (trackObj.properties.lastPos) {
-                                    mba.trackStepStatus(trackObj, legInfo, mapTime);
-                                    console.log("Selected id=" + routeid, trackObj, legInfo);
+                                    mba.getTrackStatus(trackObj, legInfo, mapTime);
+                                    // console.log("Refreshed " + routeid, trackObj); // , legInfo);
                                 }
 
-                                var trackBearing = trackObj.properties.bearing;
-
-                                if (mba.trackalignmap) {
-                                    // In track-align-map-orientation 
-                                    // The map is continuously 
-                                    //  - rotated to bearing 
-                                    //  - centered at trackObj 
-                                    // NO mapInfo is shown   
-                                    
-                                    console.log("Map-Bearing aligned to track:", trackBearing);
-
-                                    // Trigger CLOSE of trackInfo (fi. on map)
-                                    mba.trackdata = {
-                                        "open": false
-                                    };
-
-                                    let map = mba.map;
-                                    map.easeTo({
-                                        center: coords,
-                                        bearing: trackBearing
-                                    });
-
-                                    map.setLayoutProperty('tracks-select', 'icon-rotate', 0);
-
-                                } else {
-                                    // REFRESH trackdata to trigger INFO-element(-popup) 
-                                    // and the trackObj-symbol is aligned to bearing
-        
-                                    mba.trackdata = {
-                                        "id": mba._trackId,
-                                        "lnglat": coords,
-                                        "trackobj": trackObj
-                                    }
-                                    map.setLayoutProperty('tracks-select', 'icon-rotate', trackBearing);
-                                }
-
-                                // optional specAction if selectedObj "arrived"  
-                                if (trackObj.properties.arrived) {
-                                    // mba.trackalignmap = false;
-                                }
+                                applyToMap(trackObj, legLocation) ; 
 
                             } else {
-                                // ??? align all tracksymbols along its bearing
+    
+                                // console.log(mapTime, coords); 
+
+                                // ??? align all "active" trackers along its bearing (without hiliting)
                                 // requires filtering of the tracklayer-feature related to trackObj   
                                 // map.setLayoutProperty('tracks', 'icon-rotate', trackObj.properties.bearing);
                             }
@@ -1080,30 +1061,33 @@ along waypoint file loaded from url
                 };
                 
                 // C. APPLY the updated sources of the animation-layers                
-                if (located && false) {                    
+                if (located) {                    
                     var s1 = mba.map.getSource('tracks');
                     var s2 = mba.map.getSource('traces');
 
-                    if (s1) s1.setData(mba.tracks);
-                    if (s2) s2.setData(mba.traces);
+                    if (s1) {
+                        s1.setData(mba.tracks);
+                    }
+                    if (s2) {
+                        s2.setData(mba.traces);
+                    }    
                 }
 
                 // D. If flag "mapMsg" was created  
                 if (mapMsg) { // console.log(mapMsg);
-                    var routefilter = timer.filter;
-                    mba._animationMapRefresh(mapTime, routeFilter, mapMsg);
+                    mba._animationMapRefresh(mapTime, mapMsg, timer.filter);
                 } 
 
                 return located;
             },
 
             // Calc status-parameters at mapTime and save as trackObj-properties
-            trackStepStatus: function(trackObj, legInfo, mapTime) {
+            getTrackStatus: function(trackObj, legInfo, mapTime) {
 
                 var speedFlag = true;
 
                 var routeunitsystem = trackObj.properties.unitsystem;
-                // console.log("trackStepStatus with " + routeunitsystem + " unitsystem from ", legInfo, trackObj);
+                // console.log("getTrackStatus with " + routeunitsystem + " unitsystem from ", legInfo, trackObj);
 
                 trackObj.properties.time = this.logTime(mapTime, "h");
 
@@ -1119,13 +1103,14 @@ along waypoint file loaded from url
                 // Use temporary Leg to calculate DTA
                 var legTarget = legInfo.to;
                 var legToArrival = new LegSource([nowPos, legTarget.coords]),
-                    dta = turf.lineDistance(legToArrival, "kilometers");
+                    dta = turf.lineDistance(legToArrival, "kilometers"); // console.log("dta", dta); 
 
                 var v = legInfo.speed,
                     dist = legInfo.dist,
                     speedUnit, distUnit ;
 
-                if (v && Math.round(dta / 10)) { // TrackObj is "Moving" 
+                // if (v && Math.round(dta / 10)) { 
+                if (v && dta) { // TrackObj is "Moving" 
                     // trackObj.properties.stop = 0;
                     var t = dta / parseFloat(v),
                         tta = this.deltaT(t, "Arrived");
@@ -1162,7 +1147,7 @@ along waypoint file loaded from url
 
                     if (speedFlag) {
                         trackObj.properties.title = trackObj.properties.speed + speedUnit;
-                        console.log("speed=", trackObj.properties.title);
+                        // console.log("speed=", trackObj.properties.title);
                     }
 
                 } else { // Resting(pausing) objects 
@@ -1229,277 +1214,8 @@ along waypoint file loaded from url
             },
 
             /**
-             * { function_description }
-             *
-             * @param      {<type>}  routedata  The routedata
-             * @return     {<type>}  { description_of_the_return_value }
-             */
-            animationNodesSetup: function(routedata) {
-                // console.log("setupAnimationNodes. srcdata:", routedata);
-                this.nodes.features = [];
-                var allnodes = this.nodes,
-                    nodemetas = {},
-                    id;
-
-                routedata.forEach(function(route, j) {
-                    // locate trackObj at 'origin'
-                    if (route.nodes) {
-                        // console.log("route-" + j, route.nodes);
-                        route.nodes.forEach(function(wp, p) {
-                            var key,
-                                coords,
-                                newNode,
-                                props = {},
-                                meta = wp.meta;
-
-                            if (wp.id) key = wp.id;
-                            else if (meta && meta.id) key = meta.id;
-                            else key = p;
-
-                            allnodes.features.forEach(function(nod) {
-                                // do NOT add nodes multiple times (fi airports of different flights)
-                                if ((key != p) && (nod.id == key)) {
-                                    // console.log("doubling routenode", key, route.id);
-                                    newNode = nod;
-                                }
-                            });
-
-                            if (!newNode) {
-                                if (wp.coords) coords = wp.coords;
-                                else if (meta.coords) coords = meta.coords;
-                                else key = p;
-
-                                Object.keys(wp).forEach(function(k) {
-                                    if (k != "coords") props[k] = wp[k];
-                                });
-
-                                // console.log("wp-" + p, key, wp, props);
-                                newNode = new NodeSource(coords, key, route.id, props);
-                                if (wp.meta) {
-                                    newNode.properties = Object.assign({}, newNode.properties, wp.meta);
-                                    nodemetas[key] = wp.meta;
-                                }
-
-                                allnodes.features.push(newNode);
-                            }
-                        });
-                    }
-                });
-                // console.log("all waypoints collected", allwaypoints.features);
-
-                // Prepare ddr-styling (circle-size of symbol-bg)
-                var nodesize = 2,
-                    size, smin, smax;
-                Object.keys(nodemetas).forEach(function(id) {
-                    size = nodemetas[id].size;
-                    if (size) {
-                        if (!smin || (size < smin)) smin = size;
-                        if (!smax || (size > smax)) smax = size;
-                    }
-                })
-
-                if (smin && smax && (smin < smax)) {
-                    nodesize = {
-                        property: 'size',
-                        stops: [
-                            [smin, 4],
-                            [smax, 12]
-                        ]
-                    }
-                }
-
-                var mapObjNodes = this._animationContentSetup("nodes", "symbol", allnodes, nodemetas);
-
-                // additional layer to the same src
-                mapObjNodes['bglayer'] = {
-                    "id": "nodes-bg",
-                    "type": "circle",
-                    "source": "nodes",
-                    "paint": {
-                        "circle-radius": nodesize,
-                        "circle-opacity": 0.5,
-                        "circle-color": "red"
-                    }
-                };
-
-                //console.log("nodeLayer", nodeLayer);
-                return mapObjNodes;
-            },
-
-            /**
-             * create the contentBoxObj for trackLayer
-             *
-             * @param      {object}  routedata     The routedata
-             * @param      {object}  timer  The animation timer
-             * @return     {<type>}  { description_of_the_return_value }
-             */
-            animationTrackerSetup: function(routedata, timer) {
-                // console.log("routedata at setupAnimationTracker", routedata);
-                // the trackLayerObj contains the data, the styling of the baseLayer AND the styling for the selectLayer
-
-                var tracksymbol = this.tracksymbol;
-                if (!tracksymbol) tracksymbol = "airport-15";
-
-                // A. setup data 
-                this.tracks.features = [];
-
-                var allTracks = this.tracks,
-                    startort, trackmeta,
-                    props = {},
-                    routemetas = {};
-
-                routedata.forEach(function(route, j) {
-                    // console.log(route);
-                    if (route.nodes && route.nodes.length) {
-                        // Basic properties 
-                        trackmeta = route.item;
-                        if (!trackmeta) trackmeta = route.meta;
-                        if (!trackmeta) trackmeta = route.master;
-                        if (!trackmeta) trackmeta = {};
-                        trackmeta["id"] = route.id;
-
-                        routemetas[route.id] = trackmeta;
-                        // console.log(route,trackmeta);
-
-                        props = {
-                            "routeid": route.id,
-                            "id": trackmeta.id,
-                            "title": trackmeta.id,
-                            "unitsystem": route.unitsystem,
-                            "bearing": 0,
-                            "start": timer.routes[route.id]["start"],
-                            "stop": timer.routes[route.id]["stop"]
-                        };
-                        // Optional: masterdata-properties
-                        props["master"] = trackmeta;
-
-                        // Required : icon; 
-                        if (trackmeta.icon) props.icon = trackmeta.icon;
-
-                        // Optional: 
-                        if (trackmeta.iconsize) props.iconsize = trackmeta.iconsize;
-
-                        // Create Tracker and locate at start 
-                        startort = route.nodes[0].coords;
-
-                        var aTrack = new TrackSource(startort, route.id, props);
-
-                        allTracks.features.push(aTrack);
-                    }
-
-                });
-
-                // B. Setup ONE Layer for multiple trackers (DynamicPoints)
-                // = trackers should use "ddr styling" 
-
-                var type, layouts, paints;
-
-                var hasIcon = (routedata[0].item && routedata[0].item.icon);
-                if (hasIcon) { //  EITHER: RotatingSymbol-Layer 
-
-                    type = "symbol";
-
-                    // ddr styling enables  
-                    // A. in Quick-Mode: variable Icon and text 
-                    // B. in LUT-Mode: symbol-rotation according to bearing 
-                    // var symbolrotation = 0;
-                    var symbolrotation = {
-                        property: 'bearing',
-                        stops: [
-                            [0, 0],
-                            [360, 360]
-                        ]
-                    };
-
-                    layouts = {
-                        "icon-image": "{icon}",
-                        "icon-rotate": symbolrotation,
-                        "text-field": "{title}",
-                        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-                        "text-size": 12,
-                        "text-offset": [0, 0.6],
-                        "text-anchor": "top"
-                    };
-
-                } else { // OR : ColorableCircle-Layer 
-
-                    type = "circle";
-
-                    // ddr styling enables different colors for every tracker
-                    var symbolcolor = "black";
-                    var ddrSymbolcolor = {
-                        property: 'id',
-                        type: 'categorical',
-                        stops: []
-                    };
-
-                    Object.keys(routemetas).forEach(function(id) {
-                        var col = routemetas[id].color;
-                        // if (!col) col = symbolcolor;
-                        if (!col) col = this.getRandomColor();
-                        ddrSymbolcolor.stops.push([id, col]);
-                    }.bind(this))
-
-                    if (ddrSymbolcolor.stops.length) {
-                        symbolcolor = ddrSymbolcolor;
-                    }
-
-                    paints = {
-                        'circle-radius': 6,
-                        'circle-color': symbolcolor
-                    }
-                }
-
-                var trackLayerObj = this._animationContentSetup("tracks", type, allTracks, routemetas, paints, layouts);
-
-                // C. ADD SPECIFIC "multiSymbol" presentation 
-                // of one!! "filtered" trackObj (app-specific)
-                trackLayerObj['selectlayer'] =
-                    // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
-                    [
-                        {
-                            "id": "tracks-glow-strong",
-                            "type": "circle",
-                            "source": "tracks",
-                            "paint": {
-                                "circle-radius": 18,
-                                "circle-color": "#ff0",
-                                "circle-opacity": 0.6
-                            }
-                        }, 
-                        
-                        {
-                            "id": "tracks-glow",
-                            "type": "circle",
-                            "source": "tracks",
-                            "paint": {
-                                "circle-radius": 40,
-                                "circle-color": "#ff0",
-                                "circle-opacity": 0.2
-                            }
-                        }, 
-                        
-                        {
-                            "id": "tracks-select",
-                            "type": "symbol",
-                            "source": "tracks",
-                            "layout": {
-                                "icon-image": tracksymbol,
-                                "icon-rotate": 0,
-                                "text-field": "{title}",
-                                "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-                                "text-size": 12,
-                                "text-offset": [0, 0.6],
-                                "text-anchor": "top"
-                            }
-                        }
-                    ];
-                console.log("trackLayerObj", trackLayerObj);
-                return trackLayerObj;
-            },
-
-            /**
-             * Setup routes optimized for animation with "requestAnimationFrame (60 fps)"
+             * Setup "routes" optimized for animation with "requestAnimationFrame (60 fps)"
+             * Optional + "traces" (= route-geometries "behind" the tracker ) 
              *
              * @param      {<type>}  routedata  The routedata
              * @param      {object}  timer  The animation timer
@@ -1508,11 +1224,17 @@ along waypoint file loaded from url
             animationRoutesSetup: function(routedataset, timer) {
                 // console.log("setupAnimationRoutes, configdata:", routedataset);
 
+                this.routes.features = [];
+                this.traces.features = [];
+                var routemetas = {};  // separate collection of all routes metadata
+
                 /** Basic routeCreate-action   
-                 * compile coords of all route-legs into one coordinatecollection 
+                 *  compile coords of all route-legs into one coordinatecollection 
                  */
                 function animationRouteCreate(routedata, timer) {
                     // console.log("Initialize route from", data, timer);
+                    var routeNodes = routedata.nodes; // wps as given
+                    if (!routeNodes.length) return; // 
 
                     var frametime = timer.frametime;
 
@@ -1528,6 +1250,7 @@ along waypoint file loaded from url
                         "start": timer.routes[routeid]["start"],
                         "stop": timer.routes[routeid]["stop"]
                     };
+
                     if (routedata.speed) {
                         props.speed = routedata.speed;
                     }
@@ -1539,7 +1262,6 @@ along waypoint file loaded from url
                     // A. Create route-object consisting of 1-n legs
 
                     // Create route-legs between 2 waypoints at any one time 
-                    var routeNodes = routedata.nodes; // wps as given
 
                     routeNodes.forEach(function(wp, p) {
 
@@ -1634,60 +1356,107 @@ along waypoint file loaded from url
 
                     srces["routeSrc"] = new RouteSource(routeid, props, legsCoords, legsData, routeNodes);
 
-                    // B. Save the complete trace of a route as template for dynamic traces 
-                    // 
-                    if (timer.tracelength) {
+                    // B. Save a template for dynamic traces 
+                    //  - the complete trace of a route as
+                    //  - the first node 
+                    //  - an empty trace
+                    // if (timer.tracelength) {
                         var coordinates = [];
-                        legsCoords.forEach(function(legcoords) {
-                            coordinates = coordinates.concat(legcoords);
-                        });
-                        timer.traces[routeid] = coordinates;
+                        if (0) {    // complete route
+                            legsCoords.forEach(function(legcoords) {
+                                coordinates = coordinates.concat(legcoords);
+                            });
+                        } else if (legsCoords.length) { // first node
+                            coordinates.push(legsCoords[0][0]) 
+                        } else {    // empty
 
-                        // Create "complete" trace-object with startpoint only
-                        // var tSrc = new TraceSource(coordinates, routeid);
+                        }    
+
                         // Create "initial" trace-object with startpoint only
-                        srces["traceSrc"] = new TraceSource(coordinates.slice(0, 1), routeid);
-                    }
+                        var traceInit = coordinates;    
+                        if (coordinates.length) traceInit = coordinates.slice(0, 1);
+
+                        timer.traces[routeid] = traceInit;
+
+                        srces["traceSrc"] = new TraceSource(traceInit, routeid);
+                    // }
 
                     // console.log("New routeSrces: " + routeid, rSrc, tSrc);
                     return srces;
                 }
 
-                this.routes.features = [];
-                this.traces.features = [];
-                var routemetas = {},
-                    rr, r, t, m;
+                function setupRouteStyling(routemetas) {
 
+                    // Unique color 
+                    var linecolorProp = "#007cbf";
+
+                    // Option: Prepare differentiated linecolor-styling for every route
+                    // as mb-lookup with "stops"-table  
+                    
+                    if (Object.keys(routemetas).length) {
+                        // optional: ddr-styling based on routeid
+                        var ddrLinecolors = {
+                            property: 'id',
+                            type: 'categorical',
+                            stops: []
+                        };
+
+                        Object.keys(routemetas).forEach(function(id) {
+                            var col = routemetas[id].color;
+                            if (!col) col = linecolor;
+                            if (!col) col = this.getRandomColor();
+                            ddrLinecolors.stops.push([id, col]);
+                        }.bind(this));
+
+                        linecolorProp = ddrLinecolors;
+                    }
+
+                    var routePaintProps = {
+                        "line-color": linecolorProp
+                    };
+
+                    return { "paints": routePaintProps} ; 
+                }
+                
                 // A. Interpolate the Routes between waypoints(trackpoints) 
                 //    based on info about speed and/or arrival-/departure-times at waypoints
+                var nn = routedataset.length,
+                    rr, r, t, m;
+
                 routedataset.forEach(function(routedata, j) {
+                    
                     if (routedata.nodes && routedata.nodes.length) {
+                        
                         // A.1 track-based routes should be preprocessed to minimie gps-noise 
                         if (routedata.trackmode) {
                             routedata = this.trackedDataCheck(routedata, timer);
                         }
 
-                        // A.2 **********************
+                        // A.2 Create srcObjects 
                         rr = animationRouteCreate(routedata, timer);
                         // **********************
 
-                        // A.3 
+                        // A.3  Include srcObjects into api-Context
                         if (rr) {
                             // console.log("setupAnimationRoute:" + j, rr);
                             r = rr.routeSrc;
+                            t = rr.traceSrc;
+                            
                             if (!routedata.meta) routedata.meta = {};
                             if (!routedata.meta.color) routedata.meta.color = this.getRandomColor();
 
                             routemetas[r.id] = routedata.meta;
 
                             r.properties = Object.assign({}, r.properties, routedata.meta);
-                            this.routes.features.push(r);
 
-                            // IF prepared, add trace-features 
-                            t = rr.traceSrc;
+                            this.routes.features.push(r);
+                            // **************************
+
+                            // IF prepared, add trace-features with same properties 
                             if (t) {
                                 t.properties = r.properties;
                                 this.traces.features.push(t);
+                                //*********************
                             }
                         }
                     }
@@ -1696,45 +1465,328 @@ along waypoint file loaded from url
                 // console.log("Srces:", this.routes.features, this.traces.features);
                 // return;
 
-                // B. STYLING the color of different routes() line-color 
-                var linecolor = "#007cbf";
+                // B. Setup (differentiated) STYLING of routes (and traces) 
 
-                // optional: ddr-styling based on routeid
-                var ddrLinecolors = {
-                    property: 'id',
-                    type: 'categorical',
-                    stops: []
-                };
-
-                // insert different colors into "stops" 
-                // of linecolor-styling with ddrLinecolors 
-                if (Object.keys(routemetas).length) {
-                    Object.keys(routemetas).forEach(function(id) {
-                        var col = routemetas[id].color;
-                        if (!col) col = linecolor;
-                        if (!col) col = this.getRandomColor();
-                        ddrLinecolors.stops.push([id, col]);
-                    }.bind(this));
-
-                    linecolor = ddrLinecolors;
-                }
-
-                var routePaintProps = {
-                    "line-color": linecolor
-                };
+                var routeStyling = setupRouteStyling(routemetas); 
 
                 // C. FINAL mb-Objects
 
-                var mapObjRoutes = this._animationContentSetup("routes", "line", this.routes, routemetas, routePaintProps);
-
-                var mapObjTraces = this._animationContentSetup("traces", "line", this.traces, routemetas, routePaintProps);
+                var routesContent = this._animationContentSetup("routes", "line", this.routes, routemetas, routeStyling);
+                var tracesContent = this._animationContentSetup("traces", "line", this.traces, routemetas, routeStyling);
 
                 // RETURN: 
                 // console.log("ThemeObjs:", mapObjRoutes, mapObjTraces);
                 return {
-                    "routes": mapObjRoutes,
-                    "traces": mapObjTraces
+                    "routes": routesContent,
+                    "traces": tracesContent
                 };
+            },
+
+            /**
+             * { function_description }
+             *
+             * @param      {<type>}  routedata  The routedata
+             * @return     {<type>}  { description_of_the_return_value }
+             */
+            animationNodesSetup: function(routedata) {
+                // console.log("setupAnimationNodes. srcdata:", routedata);
+                this.nodes.features = [];
+                var nodemetas = {};
+
+                function setupBgLayer(nodemetas) {
+                    // Prepare ddr-styling (circle-size of symbol-bg)
+                    // fi. to visualize size of airport-nodes 
+
+                    var nodesize = 2,
+                        size, smin, smax;
+
+                    Object.keys(nodemetas).forEach(function(id) {
+                        size = nodemetas[id].size;
+                        if (size) {
+                            if (!smin || (size < smin)) smin = size;
+                            if (!smax || (size > smax)) smax = size;
+                        }
+                    })
+
+                    if (smin && smax && (smin < smax)) {
+                        nodesize = {
+                            property: 'size',
+                            stops: [
+                                [smin, 4],
+                                [smax, 12]
+                            ]
+                        }
+                    }
+
+                    var bglayer = {
+                        "id": "nodes-bg",
+                        "type": "circle",
+                        "source": "nodes",
+                        "paint": {
+                            "circle-radius": nodesize,
+                            "circle-opacity": 0.5,
+                            "circle-color": "red"
+                        }
+                    };
+
+                    return bglayer; 
+                }
+
+                // A. Collect nodes into features
+                var allnodes = this.nodes,
+                    id;
+
+                routedata.forEach(function(route, j) {
+                    // locate trackObj at 'origin'
+                    if (route.nodes) {
+                        // console.log("route-" + j, route.nodes);
+                        route.nodes.forEach(function(wp, p) {
+                            var key,
+                                coords,
+                                newNode,
+                                props = {},
+                                meta = wp.meta;
+
+                            if (wp.id) key = wp.id;
+                            else if (meta && meta.id) key = meta.id;
+                            else key = p;
+
+                            allnodes.features.forEach(function(nod) {
+                                // do NOT add nodes multiple times (fi airports of different flights)
+                                if ((key != p) && (nod.id == key)) {
+                                    // console.log("doubling routenode", key, route.id);
+                                    newNode = nod;
+                                }
+                            });
+
+                            if (!newNode) {
+                                if (wp.coords) coords = wp.coords;
+                                else if (meta.coords) coords = meta.coords;
+                                else key = p;
+
+                                Object.keys(wp).forEach(function(k) {
+                                    if (k != "coords") props[k] = wp[k];
+                                });
+
+                                // console.log("wp-" + p, key, wp, props);
+                                newNode = new NodeSource(coords, key, route.id, props);
+                                if (wp.meta) {
+                                    newNode.properties = Object.assign({}, newNode.properties, wp.meta);
+                                    nodemetas[key] = wp.meta;
+                                }
+
+                                allnodes.features.push(newNode);
+                            }
+                        });
+                    }
+                });
+                // console.log("all waypoints collected", allwaypoints.features);
+
+                // B. Create object 
+                var mapObjNodes = this._animationContentSetup("nodes", "symbol", allnodes, nodemetas);
+
+                // C. additional layer as node-background to the same src
+                mapObjNodes['bglayer'] = setupBgLayer(nodemetas) ;
+
+                //console.log("nodeLayer", nodeLayer);
+                return mapObjNodes;
+            },
+
+            /**
+             * create the contentBoxObj for trackLayer
+             *
+             * @param      {object}  routedata     The routedata
+             * @param      {object}  timer  The animation timer
+             * @return     {<type>}  { description_of_the_return_value }
+             */
+            animationTrackerSetup: function(routedataset, timer) {
+                // console.log("routedata at setupAnimationTracker", routedata);
+                // the trackLayerObj contains the data, the styling of the baseLayer AND the styling for the selectLayer
+
+                function setupTrackStyles(routemetas, routedata) {
+                    // includes options for 
+                    //  - different icon(color) per tracker 
+                    //  - data-driven rotation of the icon
+
+                    var trackStyle = {}, 
+                        type, layouts, paints,
+                        hasIcon = (routedata && routedata.item && routedata.item.icon); // the "last processed entry" of routedataset
+                    
+                    if (hasIcon) { //  EITHER: RotatingSymbol-Layer 
+
+                        trackStyle.type = "symbol";
+
+                        // ddr styling enables  
+                        // A. in Quick-Mode: variable Icon and text 
+                        // B. in LUT-Mode: symbol-rotation according to bearing 
+                        // var symbolrotation = 0;
+                        var symbolrotation = {
+                            property: 'bearing',
+                            stops: [
+                                [0, 0],
+                                [360, 360]
+                            ]
+                        };
+
+                        trackStyle.layouts = {
+                            "icon-image": "{icon}",
+                            "icon-rotate": symbolrotation,
+                            "text-field": "{title}",
+                            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                            "text-size": 12,
+                            "text-offset": [0, 0.6],
+                            "text-anchor": "top"
+                        };
+
+                    } else { // OR : ColorableCircle-Layer 
+
+                        trackStyle.type = "circle";
+
+                        // ddr styling enables different colors for every tracker
+                        var symbolcolor = "black";
+                        
+                        var ddrSymbolcolor = {
+                            property: 'id',
+                            type: 'categorical',
+                            stops: []
+                        };
+
+                        Object.keys(routemetas).forEach(function(id) {
+                            var col = routemetas[id].color;
+                            // if (!col) col = symbolcolor;
+                            if (!col) col = this.getRandomColor();
+                            ddrSymbolcolor.stops.push([id, col]);
+                        }.bind(this))
+
+                        if (ddrSymbolcolor.stops.length) {
+                            symbolcolor = ddrSymbolcolor;
+                        }
+
+                        trackStyle.paints = {
+                            'circle-radius': 6,
+                            'circle-color': symbolcolor
+                        }
+                    }
+
+
+                    return trackStyle; 
+
+                }
+
+                function setupSelectLayer(selectsymbol) {
+                    // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
+                    if (!selectsymbol) selectsymbol = "airport-15";
+
+                    var selectLayer =  [
+                        {
+                            "id": "tracks-glow-strong",
+                            "type": "circle",
+                            "source": "tracks",
+                            "paint": {
+                                "circle-radius": 18,
+                                "circle-color": "#ff0",
+                                "circle-opacity": 0.6
+                            }
+                        }, 
+                        
+                        {
+                            "id": "tracks-glow",
+                            "type": "circle",
+                            "source": "tracks",
+                            "paint": {
+                                "circle-radius": 40,
+                                "circle-color": "#ff0",
+                                "circle-opacity": 0.2
+                            }
+                        }, 
+                        
+                        {
+                            "id": "tracks-select",
+                            "type": "symbol",
+                            "source": "tracks",
+                            "layout": {
+                                "icon-image": selectsymbol,
+                                "icon-rotate": 0,
+                                "text-field": "{title}",
+                                "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                                "text-size": 12,
+                                "text-offset": [0, 0.6],
+                                "text-anchor": "top"
+                            }
+                        }
+                    ];
+                    return selectLayer; 
+                }  
+                
+                // A. setup data 
+                this.tracks.features = [];
+                var routemetas = {};
+
+                var allTracks = this.tracks,
+                    routedata, routeid, startort, trackmeta,
+                    props = {},
+                    nn = routedataset.length;
+
+                for (var j = 0; j < nn; j++) {
+                    routedata = routedataset[j];  // console.log(route);
+                    routeid = routedata.id;
+
+                    if (routedata.nodes && routedata.nodes.length) {
+                        // Basic properties 
+                        trackmeta = routedata.item;
+                        if (!trackmeta) trackmeta = routedata.meta;
+                        if (!trackmeta) trackmeta = routedata.master;
+                        if (!trackmeta) trackmeta = {};
+                        trackmeta["id"] = routeid;
+
+                        routemetas[routeid] = trackmeta;
+                        // console.log(route,trackmeta);
+
+                        props = {
+                            "routeid": routeid,
+                            "id": trackmeta.id,
+                            "title": trackmeta.id,
+                            "unitsystem": routedata.unitsystem,
+                            "bearing": 0,
+                            "start": timer.routes[routeid]["start"],
+                            "stop": timer.routes[routeid]["stop"]
+                        };
+                        // Optional: masterdata-properties
+                        props["master"] = trackmeta;
+
+                        // Required : icon; 
+                        if (trackmeta.icon) props.icon = trackmeta.icon;
+
+                        // Optional: 
+                        if (trackmeta.iconsize) props.iconsize = trackmeta.iconsize;
+
+                        // Create Tracker and locate at start 
+                        startort = routedata.nodes[0].coords;
+
+                        var aTrack = new TrackSource(startort, routeid, props);
+
+                        allTracks.features.push(aTrack);
+
+                    } else {
+                        // console.log("ALERT.", "No nodes in routedata" + routeid, routedata.nodes ) 
+                    }
+                };
+
+                // B. Setup ONE Layer for multiple trackers (DynamicPoints)
+                // = trackers should use "ddr styling" 
+
+                var mapStyle = setupTrackStyles(routemetas);
+
+                var trackLayerObj = this._animationContentSetup("tracks", mapStyle.type, allTracks, routemetas, mapStyle); // paints, layouts);
+
+                // C. ADD SPECIFIC "multiSymbol" presentation 
+                // of one!! "observed" trackObj (app-specific)
+
+                trackLayerObj['selectlayer'] = setupSelectLayer(this.tracksymbol);
+
+                // console.log("trackLayerObj", trackLayerObj);
+                
+                return trackLayerObj;
             },
 
             // Conditional routecreate-action (If a route is based on "trackPoints")  
@@ -1833,7 +1885,7 @@ along waypoint file loaded from url
                 // TIME filter: applied, on every maptime ??
                 function applyTrackFilter(mapTime, flag, routeFilter) {
                     if (!flag) flag = "noflag";
-                    if (!routeFilter) routeFilter = mba.timer.filter;
+                    // if (!routeFilter) routeFilter = mba.timer.filter;
                     
                     var routeids = [],
                         routeid,
@@ -2150,7 +2202,7 @@ along waypoint file loaded from url
 
                 if (!query || !query.filter) {
                     // as well if no filter or filter = null;
-                    return rrall;     
+                    return ffall;     
                 }
 
                 var filter = query.filter,
@@ -2248,7 +2300,7 @@ along waypoint file loaded from url
                     return;
                 }
 
-                console.log("mouse-event-trackObjSelect", e, features);
+                console.log("mouse-event-trackObjSelect", features, features[0].properties.id, mba._trackId );
 
                 // NO info-action if INFO already visible
                 // 
@@ -2267,33 +2319,45 @@ along waypoint file loaded from url
                     // Change the cursor style as a UI indicator.
                     // map.getCanvas().style.cursor = 'pointer';
                 }
-
+                // 
                 this.trackObjHilite(features[0]); 
             },    
 
-            // 
+            // SET global ctrl-variables 
             trackObjHilite: function(feature) {
                 // Update GLOBAL objects
                 mba._trackObj = feature;
                 mba._trackId = mba._trackObj.properties.id;
 
+                function toHtml(obj, title) {
+                    var val, html = "" ; 
+                    if (title) html = "<h3>"+title+"</h3>";
+                    Object.keys(obj).forEach(function(key){
+                        if (typeof obj[key] != "object") {
+                            html = html + key + ":" + obj[key] + "</br>";
+                        }  
+                    })
+                    return html;
+                }
                 // popup-strategy 2: 
                 // Update and reconnect the this.popup to the map at new object
                 // Trackdata with "Override dirty checking" 
                 // if (mba._trackObj) {
                 if (mba._trackId) {
-    
-                    console.log("Filtering tracker: " + mba._trackId, mba._trackObj);
+                    console.log("Hiliting track: " + mba._trackId, mba._trackObj);
 
                     mba.trackFilterApply(mba._trackId);
-
                     mba.trackdata = {
                         "lnglat": mba._trackObj.geometry.coordinates,
                         "trackobj": mba._trackObj,
                         "open": true
                     }
+                    var html = toHtml(mba._trackObj.properties, mba._trackId);
+                    mba.popupOnMap(html);
+
                 } else {
-                    mba.popupOnMap()
+
+                    mba.popupOnMap();
                 }
 
 

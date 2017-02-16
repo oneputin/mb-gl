@@ -3,7 +3,7 @@
 <script>
   /**
    * `Mbb.MapBehavior` 
-   * Note, the `iron-resize` event is non-bubbling.
+   * Utilities, useful in geo-context 
    *
    * @polymerBehavior Mbb.MapBehavior
    * @demo demo/index.html
@@ -15,8 +15,55 @@
         properties: {
             mbbtest: {
                 value: 99
+            },
+            popup:{
+                type: Object
             } 
         },
+
+        // Utility for one-click re-orientation of a map  
+        mapLocate: function(maporientation, minZoom, maxZoom) {
+            if (!this.map) return; 
+            if (!minZoom ) minZoom = 4; 
+            if (!maxZoom ) maxZoom = 8; 
+
+            var ma = maporientation,
+                map = this.map, 
+                mm = {};    
+
+            mm.zoom = map.getZoom(),
+            mm.center = map.getCenter(),
+            mm.bearing = 360 + map.getBearing();
+            mm.bearing = mm.bearing == 360 ? 0 : mm.bearing;
+
+            Object.keys(ma).forEach(function(k){
+                mm[k] = ma[k];
+            }) 
+
+            if (mm.align) {
+                console.log("ALIGN mapOrientation with params=", mm);
+
+                if (mm.zoom < minZoom) mm.zoom = minZoom;
+                map.flyTo({
+                    center: mm.center,
+                    bearing: mm.bearing,
+                    zoom: mm.zoom
+                });
+
+            } else if (mm.bearing > 0) {
+                console.log("RESET mapOrientation to North with params ", mm);
+
+                if (mm.zoom > 8) mm.zoom = 8; // ?
+
+                map.easeTo({
+                    bearing: 0,
+                    zoom: mm.zoom
+                    //speed: 0.2, // make the easeMove slower
+                    //curve: 1,   // change the speed at which it changes zoom
+                });
+            }
+        },    
+
 
         // Get Info about "complete track", not only features in actually "visible" tile(s)
         guessFeatureKeys: function(feature, idNames) {
@@ -51,8 +98,8 @@
             // to be closed on x-mark
             if (!this.popup) {
                 this.popup = new mapboxgl.Popup({
-                    closeButton: true,
-                    closeOnClick: false
+                    closeButton: false,
+                    closeOnClick: true
                 });
             }
 
@@ -123,20 +170,6 @@
             else tunit = tg; // [ms]
 
             return tunit;
-        },
-
-        // convert any(?) device-formatted track-times into "dot format" 
-        trackTime : function (traw, asarray) { 
-            if (typeof traw == "string") {
-                var t = traw.replace("Z", "");
-                t = t.split(":").join(".");
-                t = t.split("-").join(".");
-                t = t.split("T").join(".");
-                // console.log(t);
-                if (asarray)  return t.split(".");
-                return t;
-            }     
-            return traw;
         },
 
         // 

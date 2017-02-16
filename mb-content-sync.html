@@ -84,15 +84,16 @@
                 if (contentbox.path == 'contentbox') contentbox = contentbox.value;
                 // console.log("mapContentApply REFRESHING from ", contentbox); 
 
-                // REMOVE old content () 
+                // REMOVE old content (this._contentbox) 
                 this._mapContentCheckOut();
 
                 // Verify if content is "well defined"
                 contentbox = this._mapContentVerify(contentbox);
+                // push back as 
+                this._contentbox = contentbox;   
 
                 // INSERT new content
-                this._contentbox = contentbox;   
-                this._mapContentCheck(contentbox); 
+                this._mapContentCheckIn(contentbox); 
             },    
 
             // Make contentbox "complete"  
@@ -357,7 +358,7 @@
             },
 
             // Insert all layers of contentbox 
-            _mapContentCheck: function(contentbox, flag) {    
+            _mapContentChecker: function(contentbox, flag) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
                 if (!flag) flag = "IN";
 
@@ -412,22 +413,19 @@
                     var layerSource = map.getSource(layername),
                         mapLayer = map.getLayer(layername);
 
-                    // 1.A. (Re)Set datasources for all linear presentations
-                    if (!layerSource) {
+                    if (!layerSource) {   // 1.A. Add(create) mapSource 
 
                         map.addSource(layername, {
                             "type": "geojson",
                             "data": layerData
                         });
                         layerSource = map.getSource(layername);
-
-                        // console.log("SRC", layername, layerData, layerSource);
-                    } else {
-                        // 1.B  CHECK 
+                    } else {              // 1.B  Update data of existing mapSource  
                         if (true) {
                             layerSource.setData(layerData);
                         }
                     }
+                    // console.log("SRC", layername, layerData, layerSource);
 
 
                     // 1.C. (Re)Create layer(s) 
@@ -439,11 +437,10 @@
                         layerTemplates.forEach(function(template) {
 
                             if (!map.getLayer(template.id)) {
-
-                                // console.log("adding layer", template);
+                                // console.log("adding layer " + template.id, template);
                                 
+                                // console.log("Set placeholder-source !!", template.source); 
                                 if ((template.type == "symbol") && template.source) { 
-                                    // console.log("Set placeholder-source !!", template.source); 
                                     if (!map.getSource(template.source)) {   
                                         map.addSource(template.source, {
                                             "type": "geojson",
@@ -532,17 +529,16 @@
                     if (flag == "IN") { // CREATE / REFRESH contentbox 
                         
                         var layerData = addMapContent(layername, layerObject); 
-
                         if (layerData) {
-                            // GET all source-features of the basic layer 
+                            // Check/Get all source-features of the basic layer 
                             contentfeatures = getFeatures(layerData, layername);
-                            console.log("CHECKED-"+flag+" of " + layername, contentfeatures.length);
+                            console.log("CHECKED-"+flag+" ["+layername+"].", "n=" + contentfeatures.length); // , contentfeatures);
                         }                        
 
                     }   else {        // REMOVE layers (on demand)
 
                         removeMapContent(layerObject); 
-                        console.log("CHECKED-"+flag+" of " + layername); 
+                        console.log("CHECKED-"+flag+" [" + layername+"]"); 
                     }
 
                     toggleContentEvents(layerObject, flag) 
@@ -565,8 +561,12 @@
 
             // Remove previous Content-layers
             _mapContentCheckOut: function() { 
-                if (!this._contentbox || !Object.keys(this._contentbox).length) return; 
-                this._mapContentCheck(this._contentbox, "OUT") ;    
+                // if (!this._contentbox || !Object.keys(this._contentbox).length) return; 
+                this._mapContentChecker(this._contentbox, "OUT") ;    
+            },
+            // Add/Insert layers according contentbox
+            _mapContentCheckIn: function(contentbox) { 
+                this._mapContentChecker(contentbox, "IN") ;    
             },
 
             // rarely used 
