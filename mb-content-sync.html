@@ -526,21 +526,20 @@
                     // console.log("CHECK-CONTENT-"+flag+" of " + layername, layerObject);
 
                     // Option 
-                    if (flag == "IN") { // CREATE / REFRESH contentbox 
-                        
-                        var layerData = addMapContent(layername, layerObject); 
-                        if (layerData) {
-                            // Check/Get all source-features of the basic layer 
+                    if (flag == "IN") { // ADD/REFRESH a contentbox object 
+                        var layerData = addMapContent(layername, layerObject);
+                        var ids=[]; 
+                        if (layerData) {   // Check/Get all source-features of the basic layer 
                             contentfeatures = getFeatures(layerData, layername);
                             console.log("CHECKED-"+flag+" ["+layername+"].", "n=" + contentfeatures.length); // , contentfeatures);
                         }                        
 
-                    }   else {        // REMOVE layers (on demand)
-
+                    }   else {        // REMOVE object (on demand)
                         removeMapContent(layerObject); 
                         console.log("CHECKED-"+flag+" [" + layername+"]"); 
                     }
 
+                    // 
                     toggleContentEvents(layerObject, flag) 
 
                     // Add layer-features to mapcontent

@@ -1,11 +1,18 @@
-[{
+[
+    {
         "title": "jana-world",
         "key": "world",
         "type": "gpx",
         "url": "http://iimaps.de/data/gps/world/gpx/Current.gpx",
         "query": {
             "geometry": "Track"
-        }
+        },
+        "device": {
+            "name": "garmin-foretrex",
+            "user" : "jana",
+            "dop" : 10
+        },
+        "symbol": "toilet-11"
     },
     {
         "title": "jana-horn",
@@ -14,21 +21,39 @@
         "url": "http://iimaps.de/data/gps/kamerun/gpx/Current.gpx",
         "query": {
             "geometry": "Track"
-        }
+        },
+        "device": {
+            "name": "garmin-foretrex",
+            "user" : "jana",
+            "dop" : 10
+        },
+        "symbol": "toilet-11"
     },
     {
         "title": "praha-2012",
         "key": "prag",
         "type": "gpx",        
         "url": "wp-data/praha.gpx",
-        "start": 1
+        "device": {
+            "name": "garmin-oregon",
+            "user" : "wolf",
+            "dop" : 10
+        },
+        "symbol": "toilet-11"
     },
     {
+        "start": 1,
         "title": "SilvesterTag",
         "key": "silv",
         "type": "devicetable",
         "mintracklength": 5,
-        "url": "wp-data/handheld-silv2016.json"
+        "url": "wp-data/handheld-silv2016.json",
+        "device": {
+            "name": "gps-mobile",
+            "user" : "vomue",
+            "dop" : 10
+        },
+        "symbol": "car-15"
     },
     {
         "title": "SilvesterBerg",
@@ -36,13 +61,24 @@
         "type": "devicetable",
         "mintracklength": 5,
         "url": "wp-data/handheld-silvberg.json",
-        "symbol": "airport-15"
+        "device": {
+            "name": "gps-mobile",
+            "user" : "vomue",
+            "dop" : 10
+        },
+        "symbol": "cricket-15"
     },
     {
         "title": "Vendee",
         "key": "vendee",
         "type": "dbtable",
         "url": "wp-data/vendee-1.json",
-        "master":"wp-data/vendee-db.json"
+        "device": {
+            "name": "gps-mobile",
+            "user" : "vomue",
+            "dop" : 10
+        },
+        "master": "wp-data/vendee-db.json",
+        "symbol": "ferry-15"
     }
 ]

@@ -42,7 +42,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 margin: 1px; 
             }
 
-            #trace {
+            #slider {
                 @apply(--layout-flex);
                 border-style: solid;
                 border-width: 1px;
@@ -69,7 +69,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             
             <paper-icon-button id="speedup" icon="{{_icon_add}}" title="speedup" class="trans"></paper-icon-button>
             
-            <paper-slider id="trace" value="{{sliderval}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler"></paper-slider>
+            <paper-slider id="slider" value="{{sliderval}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler"></paper-slider>
            
             <paper-material elevation="2" id="logtime">{{logtime}}</paper-material>
 
@@ -101,6 +101,11 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 timer: {
                     type: Object,
                     notify: true
+                },
+
+                selector : {
+                    type: Object,
+                    observer: 'applySelector'
                 },
 
                 start: {
@@ -190,6 +195,21 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 // this.target = this.$$("div.ctrlbox");
             },
 
+            applySelector: function (selector) {
+                var feature = selector.feature.properties
+                console.log("Apply start/stop of ", feature);
+                
+                // Setup slider 
+                this.timer.start = feature.start;
+                this.timer.stop = feature.stop;
+                this.sliderinit(feature.stop, feature.start) ; 
+
+                // sync slider 
+                this.syncSlider(feature.start); 
+                // sync app
+                this.trackctrl = feature.start; // Export-property 
+            },
+
             toggleCtrl: function() {
                 if (this.trackctrl) {
                     this.trackctrl = false;
@@ -205,18 +225,21 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
              *
              * @param      {number}  stoptime  The stoptime
              */
-            sliderinit: function(stoptime) { // , stoptime) {
+            sliderinit: function(stoptime, starttime) { // , stoptime) {
                 if (!stoptime) return;
-                var starttime = this.timer.start;
-                // console.log("Setup timeslider from start-/stop-times ", starttime, stoptime);
+                if (!starttime) starttime = this.timer.start;
+                console.log("Setup timeslider from start-/stop-times ", starttime, stoptime);
 
                 var deltat = stoptime - starttime;
-                if (this.sliderunit == "min") deltat = deltat * 60;
-                else if (this.sliderunit == "sec") deltat = deltat * 3600;
+                if (this.sliderunit == "min")       deltat = deltat * 60;
+                else if (this.sliderunit == "sec")  deltat = deltat * 3600;
 
                 deltat = Math.round(deltat)
                 this.start = 0;
                 this.stop = deltat + 1;
+
+                var logtime = this.logTime(starttime, "h", "<br>");
+                this.$.logtime.innerHTML = logtime;
             },
 
             /**
@@ -287,25 +310,23 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     ctrl3a = this.$.slowdown,
                     ctrl3b = this.$.speedup;
 
-                var tracer = this.$.trace,
+                var slider = this.$.slider,
                     tracetime;
 
-                if (ctrl1) {
-                    // ReStart-Button-event
+                if (ctrl1) { // ReStart-Button-event
                     ctrl1.addEventListener('click', function() {
                         this.trackctrl = "reset";
                     }.bind(this));
                 }
 
-                if (ctrl2) {
-                    // Start/Stop-Button-event
+                if (ctrl2) {  // Start/Stop-Button-event
                     ctrl2.addEventListener('click', function() {
                         this.toggleCtrl();
                     }.bind(this));
                 }
 
-                if (ctrl3a) {
-                    // Slowdown/speedup animation
+                if (ctrl3a) {  // Slowdown/speedup animation events
+
                     ctrl3a.addEventListener('click', function() {
                         this.set("timer.ctrl", "down"); // console.log("slowdown");
                         //this.set("timer.ctrl", "none");
@@ -318,7 +339,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 }
 
                 document.body.addEventListener('keydown', function(e) {
-                    if (e.which === 32) { // left
+                    if (e.which === 32) { // space
                         console.log("space")
                     }
                     if (e.which === 37) { // left

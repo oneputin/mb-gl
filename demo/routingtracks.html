@@ -157,6 +157,7 @@
                     <!-- ctrl of animation (and maporientation) -->
                     <routing-ctrl 
                         checked="[[userouting]]"
+                        selector="[[datasetitem]]"
                         timer="{{timer}}"
                         trackctrl="{{trackctrl}}">
                     </routing-ctrl>
@@ -164,7 +165,7 @@
                     <!-- ctrl of map-orientation -->
                     <mb-orientation-ctrl 
                         checked="[[userouting]]"
-                        trackmode="{{trackmode}}">
+                        trackmap="{{trackmap}}">
                     </mb-orientation-ctrl>
                     
                 </div>
@@ -224,7 +225,6 @@
             </template>
 
             <!-- C. DATAFLOW INTERFACE -->
-
 
             <mb-content-browser 
                 indexurl="[[indexurl]]" 

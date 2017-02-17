@@ -35,7 +35,7 @@ ctrl to toglle map-orientation
 	
 		<div class="ctrlbox"> 
 
-            <paper-icon-button id="trackmodectrl" icon="{{_icon3}}" title="trackmode" class="green"></paper-icon-button>
+            <paper-icon-button id="trackmapctrl" icon="{{_icon}}" title="trackmode" class="green"></paper-icon-button>
 
 	    </div>
 
@@ -48,16 +48,16 @@ ctrl to toglle map-orientation
             properties: {
 
                 /**
-                 * trackmode (north, align-bearing)
+                 * trackmap (align-bearing) otherwise North
                  */
-                trackmapmode: {
+                trackmap: {
                     type: Boolean,
                     value: false,
                     notify: true,
                     observer: 'controlupdate'
                 },
 
-                _icon3: {
+                _icon: {
                     type: String,
                     value: "ctrl:near-me"
                 }
@@ -69,11 +69,11 @@ ctrl to toglle map-orientation
                 this.setupCtrls();
             },
 
-            controlupdate: function(trackmapmode) {
+            controlupdate: function(trackmap) {
                 // console.log("toggle ctrl-icon into trackmapmode=", trackmapmode);
                 // icon must reflect the alternative action to actual.
                 // to trigger with next click 
-                this._icon3 = trackmapmode ? "language" : "ctrl:near-me";
+                this._icon = trackmap ? "language" : "ctrl:near-me";
             },
 
             /**
@@ -82,11 +82,11 @@ ctrl to toglle map-orientation
              */
             setupCtrls: function() {
 
-                var ctrl3 = this.$.trackmodectrl;
+                var ctrl3 = this.$.trackmapctrl;
 
-                // Toggle trackmode
+                // Toggle trackmap
                 ctrl3.addEventListener('click', function() {
-                    this.trackmapmode = !this.trackmapmode;
+                    this.trackmap = !this.trackmap;
                 }.bind(this));
 
             }

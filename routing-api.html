@@ -236,8 +236,7 @@ along waypoint file loaded from url
             //  - if basic(=max) timescale of animation changed
             _animationSetup: function(routedata, timescale, map) {
                 if (!routedata || !routedata[0] || !routedata[0].nodes) return;
-
-                console.log("ROUTESET rawdata:", routedata);
+                // console.log("ROUTESET rawdata:", routedata);
 
                 this.ctrlflag = false;
 
@@ -258,16 +257,58 @@ along waypoint file loaded from url
             _animationBoxSetup: function(routedata) {
                 // Order(REIHENFOLGE) important, as wp-reduction in routedata possible during route-setup  
 
+                function checkContent(contentbox) {
+                    // check if content-arrays are simultan ??
+
+                    // console.log("checkContentBox", contentbox);
+                    var n, ncheck, kcheck, kmsg, msg, keys = Object.keys(contentbox) ;
+                    keys.every(function(k){
+
+                        n = contentbox[k].srcdata.features.length;
+                        if (!ncheck) {
+                            ncheck=n;
+                            kcheck=k;
+                        }                         
+                        if (n < ncheck) {
+                            msg = " less entries at "+k+":"+n+", "+kcheck+":"+ncheck;
+                            kmsg = k;
+                            return false;
+                        } else if (n > ncheck) {
+                            msg = " more entries at "+k+":"+n+", "+kcheck+":"+ncheck;
+                            kmsg = k;
+                            return false
+                        }
+                        return true; 
+                    })
+                    if (msg) {
+                        var ffcheck = contentbox[kcheck].srcdata.features,
+                            ff = contentbox[kmsg].srcdata.features,
+                            msg2;
+                        console.log(msg, ffcheck, ff);
+                        ffcheck.every(function(v,i) { 
+                            if (v.id !== ff[i].id) {
+                                msg2 = "first diff at index " + i + ", id=" + v.id; 
+                                return false; 
+                            } 
+                            return true;
+                        });    
+                        console.log(msg2);
+                        return false; 
+                    }
+                    return true ;
+                }
+
                 var contentbox = {},
                     timer = this.timer,
-                    metadata = this.objectClone(this.metadaset); // metadata of original dataset
+                    metadata = this.objectClone(this.metadataset); // metadata of original dataset
 
                 // Create ROUTES and TRACE (Meta)Layers (not adding yet)          
                 contentbox = this.animationRoutesSetup(routedata, timer, metadata); // console.log("checked route-data", routedata);
                 contentbox['tracks'] = this.animationTrackerSetup(routedata, timer, metadata);
                 // contentbox['nodes'] = this.animationNodesSetup(routedata, metadata); // wayPoints or trackPoints
 
-                // console.log("animationMapSources=", sourceData);
+                if (!checkContent(contentbox)) return; 
+
                 // ??? Doubled assignment of sourceData to trigger PM1-multi-parameter observer  ???
                 this._animationbox = {};
                 this._animationbox = contentbox; // triggers polymer-based "refresh-action""
@@ -294,6 +335,7 @@ along waypoint file loaded from url
                         
                     contentbox["routes"]["usefeatures"] = true; 
 
+
                     // 2. Setup Map-Events to query track-features on "mouseover" ( or show info-popup etc)  
 
                     Object.keys(contentbox).forEach(function(lname){
@@ -318,6 +360,7 @@ along waypoint file loaded from url
                     mba._animationMapRefresh(mba.timer["start"], "FIRST START");
 
                     // 4. Triggers the STANDARD addlayer-action off a quickmap-content ( in <mb-content-view>)
+                    console.log("contentbox", contentbox); 
 
                     mba.contentbox = contentbox;
                     //*************************
@@ -1250,7 +1293,7 @@ along waypoint file loaded from url
              * @param      {object}  timer  The animation timer
              * @return     {<type>}  { description_of_the_return_value }
              */
-            animationRoutesSetup: function(routedataset, timer) {
+            animationRoutesSetup: function(routedataset, timer, metadataset) {
                 // console.log("setupAnimationRoutes, configdata:", routedataset);
 
                 this.routes.features = [];
@@ -1263,7 +1306,7 @@ along waypoint file loaded from url
                 function animationRouteCreate(routedata, timer) {
                     // console.log("Initialize route from", data, timer);
                     var routeNodes = routedata.nodes; // wps as given
-                    if (!routeNodes.length) return; // 
+                    if (!routeNodes.length > 1)  return; // 
 
                     var frametime = timer.frametime;
 
@@ -1463,13 +1506,14 @@ along waypoint file loaded from url
 
                 routedataset.forEach(function(routedata, j) {
                     
+                    // A.1 track-based routes should be preprocessed to minimie gps-noise 
+
+                    if (routedata.trackmode) {
+                        routedata = this.trackDataFilter(routedata, timer);
+                    }
+
                     if (routedata.nodes && (routedata.nodes.length > 1)) { // minimum 2 points required 
                         
-                        // A.1 track-based routes should be preprocessed to minimie gps-noise 
-                        if (routedata.trackmode) {
-                            routedata = this.trackedDataCheck(routedata, timer);
-                        }
-
                         // A.2 Create srcObjects 
                         rr = animationRouteCreate(routedata, timer);
                         // **********************
@@ -1643,7 +1687,7 @@ along waypoint file loaded from url
                 // console.log("routedata at setupAnimationTracker", routedata);
                 // the trackLayerObj contains the data, the styling of the baseLayer AND the styling for the selectLayer
                 if (!timer) timer = this.timer;
-                if (!metadataset) timer = this.metadataset; // metadata of primary datasrc 
+                if (!metadataset) metadataset = this.metadataset; console.log("animationTrackerSetup metadata", metadataset); // metadata of primary datasrc 
                 
                 function guessRouteMeta(routedata) {
                     // HEURISTIC to alternatively(?) query from different properties 
@@ -1733,9 +1777,10 @@ along waypoint file loaded from url
                     return trackStyle; 
                 }
 
-                function setupSelectLayer(selectsymbol) {
+                function setupSelectLayer(metadataset) {
                     // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
-                    if (!selectsymbol) selectsymbol = "airport-15";
+                    var selectsymbol = "airport-15";
+                    if (metadataset.symbol) selectsymbol = metadataset.symbol; 
 
                     var selectLayer =  [
                         {
@@ -1840,22 +1885,36 @@ along waypoint file loaded from url
                 // C. ADD SPECIFIC "multiSymbol" presentation 
                 // of one!! "observed" trackObj (app-specific)
 
-                trackLayerObj['selectlayer'] = setupSelectLayer(this.tracksymbol);
+                trackLayerObj['selectlayer'] = setupSelectLayer(metadataset);
 
                 // console.log("trackLayerObj", trackLayerObj);
                 
                 return trackLayerObj;
             },
 
-            // Conditional routecreate-action (If a route is based on "trackPoints")  
-            trackedDataCheck: function(data, timer) {
+            // Preprocessing of tracks dependent on 
+            //  - DOP of tracking device   
+            //    ABANDON points closer as DOP  
+            //  - animation timescale (alias frametime) 
+            //    ABANDON wp, if smaller then timeframe 
+            trackDataFilter: function(data, timer, metadataset) {
+
+                // guess measure for spatial accuracy of track-device
+                if (!metadataset)  metadataset = this.metadataset;   // console.log("trackDataFilter with metadataset",metadataset) ;
+                var dop = 10, 
+                    device = metadataset.device;
+                if (device && device.dop) dop = device.dop;  
+
+                // Get frametime to use for  
+                if (!timer) timer = this.timer; 
+                var frametime = timer.frametime;
 
                 var trackpoints = [],
                     routeNodes = data.nodes, // waypoints/trackpoints 
-                    frametime = timer.frametime,
-                    deltaX = 10, // stdDev of device
                     legspeed, legTimeSec, wp, nextNode;
                 // console.log("original trackpoints", routeNodes);
+
+                var n1 = routeNodes.length, n2;
 
                 var p = 0;
                 while (p < routeNodes.length) {
@@ -1880,12 +1939,12 @@ along waypoint file loaded from url
                             // ABANDON wp, if smaller then timeframe 
                             if (legTimeSec > frametime / 2) {
                                 // B. Check DIST between routeNodes
-                                //    ABANDON wp, if smaller then deltaX
+                                //    ABANDON wp, if smaller then dop
                                 var leg = new LegSource([wp.coords, nextNode.coords]),
                                     legDistance = turf.lineDistance(leg, 'kilometers'),
                                     legDistMeters = Math.round(legDistance * 1000);
 
-                                if (legDistMeters > deltaX) {
+                                if (legDistMeters > dop) {
 
                                     // Time and number of animation-steps to travel between routeNodes in legTimeSec
                                     // legTimeSec = legDistance / legSpeed * 3600;
@@ -1914,7 +1973,12 @@ along waypoint file loaded from url
 
                 if (nextNode) trackpoints.push(nextNode);
                 // console.log("checked trackpoints", trackpoints);
+
                 data.nodes = trackpoints;
+                n2 = trackpoints.length;
+                if (n2 != n1) {
+                     console.log("trackData filtered", n1, n2); // , metadataset.device); 
+                }
                 return data;
             },
 
@@ -2149,7 +2213,8 @@ along waypoint file loaded from url
                     msg = "???"
                 }
 
-                // 2. Get src-features of animationThemes related to syncFilter 
+                // 2. Get (?src-)features of "visible" animationThemes 
+                //    related to syncFilter 
 
                 srcNames.forEach(function(sname) {
                     var src = mba.map.getSource(sname);
@@ -2164,17 +2229,21 @@ along waypoint file loaded from url
                     }
                 });
 
-                console.log("syncFilterApply with ["+syncFilter+"]", srcNames, srcFeatures); 
+                // 3. Update the "related" mapLayers
 
-                // 3. Update the mapLayers
+                var srcKeys = Object.keys(srcFeatures);
+                
+                if (srcKeys.length) {
+                    
+                    console.log("syncFilterApply with ["+syncFilter+"]", srcFeatures); 
 
-                srcNames.forEach(function(sname) {
-                    if (mba.map.getLayer(sname)) {
-                        mba.map.setFilter(sname, syncFilter);
-                        if (sname == "nodes") mba.map.setFilter(sname + '-bg', syncFilter);
-                    }
-                })
-
+                    srcNames.forEach(function(sname) {
+                        if (mba.map.getLayer(sname)) {
+                            mba.map.setFilter(sname, syncFilter);
+                            if (sname == "nodes") mba.map.setFilter(sname + '-bg', syncFilter);
+                        }
+                    })
+                } 
                 return srcFeatures;
             },
 
