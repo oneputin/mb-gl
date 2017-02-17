@@ -2,7 +2,10 @@
         "title": "jana-world",
         "key": "world",
         "type": "gpx",
-        "url": "http://iimaps.de/data/gps/world/gpx/Current.gpx"
+        "url": "http://iimaps.de/data/gps/world/gpx/Current.gpx",
+        "query": {
+            "geometry": "Track"
+        }
     },
     {
         "title": "jana-horn",
@@ -32,7 +35,8 @@
         "key": "berg",
         "type": "devicetable",
         "mintracklength": 5,
-        "url": "wp-data/handheld-silvberg.json"
+        "url": "wp-data/handheld-silvberg.json",
+        "symbol": "airport-15"
     },
     {
         "title": "Vendee",

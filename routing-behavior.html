@@ -126,6 +126,21 @@
             "tap": '_onBackClick'
         },
 
+
+        /**
+         * TOOL
+         *
+         */
+        objectClone: function(obj) {
+            var cloned = {}; 
+            if (obj) {
+                Object.keys(obj).forEach(function(k){
+                    cloned[k] = obj[k];
+                })
+            }
+            return cloned; 
+        },    
+
         // A. DATA-INTERFACE 
 
         /**

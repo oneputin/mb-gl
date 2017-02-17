@@ -96,14 +96,14 @@ To 'close'
 
     <!-- alternative srces -->
     <tracks-from-pnts 
-        srcmeta="[[srcmeta]]"        
+        srcmeta="[[srcmetad]]"        
         previewmode="[[previewmode]]"
         trackdata = "{{routedata}}"
         rawtracks="{{rawtracks}}">
     </tracks-from-pnts>    
 
     <tracks-from-gpx 
-        srcmeta="[[srcmeta]]"
+        srcmeta="[[srcmetax]]"
         previewmode="[[previewmode]]"
         trackdata="{{routedata}}"
         rawtracks="{{rawtracks}}">
@@ -152,12 +152,10 @@ To 'close'
                     type: String,
                     notify : true
                 },
-                //
-                tracksrcmeta: {
-                    type: Object
-                },
 
-                srcmeta: {
+                // metadata of srcdata to be processes
+                // processed to srcmetax or srcmetad
+                metadataset: {
                     type: Object
                 },
 
@@ -198,7 +196,7 @@ To 'close'
             ],
 
             observers: [
-                'requestDispatcher(tracksrcmeta.*)'
+                'requestDispatcher(metadataset.*)'
             ],
 
             attached: function() {
@@ -228,29 +226,32 @@ To 'close'
 
             // Evaluate RoutingSource-Object to trigger import of routedata
             // from different data-types 
-            requestDispatcher: function(tracksrcmeta) {
-                if (tracksrcmeta.path == 'tracksrcmeta') tracksrcmeta = tracksrcmeta.value;
-                // console.log("requestDispatcher. BEFORE=", tracksrcmeta);
+            requestDispatcher: function(metadataset) {
+                if (metadataset.path == 'metadataset') metadataset = metadataset.value;
+                // console.log("metadataset. RAW=", metadataset);
 
-                var srcurl = tracksrcmeta.url,
-                    srctype = tracksrcmeta.type,
-                    srctitle = tracksrcmeta.title;
+                var srcurl = metadataset.url,
+                    srctype = metadataset.type,
+                    srctitle = metadataset.title;
 
                 // Check some url - conditions ???
                 if (!srcurl) return;
+
                 if (this.srcmeta && (srcurl != this.srcmeta.url)) {
                     this.clearSourceUsage();  // 
                 } 
 
                 if ((srctype == "kml") || (srctype == "gpx")) {
-                    tracksrcmeta.xmlquery = {
+                    metadataset.xmlquery = {
                         "tags": "Track",
                         "structure": "doc"
                     };
+                    srctype = "xml"; 
                 }
-                // console.log("requestDispatcher. AFTER", tracksrcmeta);
-                
-                this.srcmeta = tracksrcmeta;
+                // console.log("metadataset. AFTER", metadataset);
+                this.srcmeta = metadataset;
+                if (srctype=="xml")  this.srcmetax = metadataset;
+                else                 this.srcmetad = metadataset;
             },
 
             // B. COMPILE Feature-data 

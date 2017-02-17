@@ -20,8 +20,8 @@
                 "id": id,
                 "source": id
             }
-            if (paints) this.paint = paints;
-            if (layout) this.layout = layout;
+            if (paints) this.layer.paint = paints;
+            if (layout) this.layer.layout = layout;
             if (meta) this.meta = meta;
         };
     };
@@ -149,10 +149,12 @@
             
             props.id = routeid;
             if (!props.unitsystem) props.unitsystem = "metric";
-            if (!props.icon) props.icon = "circle-15";
             props.bearing = 0;
             props.time = 0;
             props.speed = 0;
+
+            // 
+            // if (!props.icon) props.icon = "circle-15";
 
             this.properties = props;
         }

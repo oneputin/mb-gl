@@ -189,10 +189,10 @@
             <!-- B. Routing APIs -->
 
             <routing-tracks 
-                previewmode="[[previewmode]]" 
+                previewmode = "[[previewmode]]" 
+                metadataset = "[[metadataset]]" 
 
-                datasetlabel="{{datasetlabel}}" 
-                tracksrcmeta="[[routedatasrc]]" 
+                datasetlabel = "{{datasetlabel}}" 
                 rawtracks = "{{contentbox}}" 
 
                 basedataurl = "[[basedataurl]]" 
@@ -206,14 +206,14 @@
             <template is="dom-if" if="{{userouting}}">
                 <routing-api 
                     map="[[map]]" 
+                    metadataset="[[metadataset]]"
                     contentbox="{{contentbox}}"               
                     timer="{{timer}}"
                     trackctrl="{{trackctrl}}" 
                     routeid=[[routeid]] 
                     routedata=[[routedata]] 
                     trackdata="{{trackdata}}"
-                    trackinfo="[[trackinfo]]"
-                    tracksymbol="{{tracksymbol}}">
+                    trackinfo="[[trackinfo]]">
                 </routing-api>
                 
                 <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
@@ -229,8 +229,7 @@
             <mb-content-browser 
                 indexurl="[[indexurl]]" 
                 metadatasetslabel="[[metadatasetslabel]]" 
-                metadatasets="{{routesets}}" 
-                datasetmeta="{{routedatasrc}}"
+                metadataset="{{metadataset}}"
 
                 datasetlabel="[[datasetlabel]]"
                 dataset="[[dataset]]" 
@@ -271,7 +270,7 @@
     // Data-INIT
     scope.indexurl = "index-handheld.json"; // list of available datasets
     scope.basedataurl = ""; // list of available datasets
-    scope.routedatasrc = {}; // metadata of selected dataset
+    scope.metadataset = {}; // metadata of selected dataset
 
     scope.metadatasetslabel="TrackData Index"
     scope.dataset = []; // collection 
