@@ -125,85 +125,6 @@
                 .setHTML(html);
         },
 
-        // derive comparable/calculable times
-        // from dates of type "2016.12.11,16.00" or "2016.12.16,16:00"
-        utcTime: function(t, lonlat, unit) {
-            // !! for parser the MONTH must be numbered 0 .. 11 !!
-            var tlocal;
-            if (typeof t == "string") {
-                var t = t.replace(",", "."),
-                    t = t.replace(":", "."),
-                    a = t.split(".");
-
-                // Time intervals 
-                if (a[0] == "0") {
-                    a[0] = "1970";
-                    if (a[1] == "0") {
-                        a[1] = "1";
-                        if (a[2] == "0") {
-                            a[2] = "1";
-                            if (a[3] == "0") {
-                                a[3] = "1";
-                                if (a[4] == "0") {
-                                    a[4] = "1";
-                                }
-                            }
-                        }
-                    }
-                    // console.log("utcTime", t, a);
-                }
-
-                if (a.length > 5) { // 
-                    tlocal = new Date(parseInt(a[0]), parseInt(a[1]) - 1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4]), parseInt(a[5]));
-                } else {
-                    tlocal = new Date(parseInt(a[0]), parseInt(a[1]) - 1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4]));
-                }
-            } else {
-                tlocal = t;
-            }
-
-            var tg = tlocal,
-                tunit = tg;
-
-            if (unit == "h") tunit = tg / (1000 * 3600);
-            else if (unit == "s") tunit = tg / 1000;
-            else tunit = tg; // [ms]
-
-            return tunit;
-        },
-
-        // 
-        deltaL : function(aLine, unit) {
-          // aLine must be an element of src-data (!!!) , here   
-          var unitshort ;
-          if (!unit) unit="kilometers";
-          if (unit=="kilometers") unitshort ="km";
-          if (unit=="miles") unitshort ="mi";
-          if (unit=="nautic") {
-              unit="kilometers";
-              unitshort ="nm";
-          }    
-          var dl = 1;
-          if (typeof turf !== "undefined") dl = turf.lineDistance(aLine, unit);
-          if (typeof dl == "number") {
-              if (unitshort=="nm") dl = dl / 1.856; 
-              dl = this.toFixed(dl, 3) + unitshort;
-          }    
-          return dl;
-        },
-
-
-        // Create readable time period h:min
-        // from unixTime as [h]
-        deltaT: function(t, fallback) {
-            var h = Math.floor(t),
-                m = Math.round((t - h) * 60);
-            if (h > 0) h = h < 10 ? "0" + h + "h" : h + "h";
-            else h = "";
-            m = (m < 10) ? "0" + m : m;
-            return h || m ? h + m + "min" : fallback;
-        },
-
         /**
          * formats lonlat into [180W - 180E] if requested from "extended" mapview 
          */
@@ -425,24 +346,7 @@
                 [bb.xMax, bb.yMax]
             ]; //console.log(bb);
             return bb;
-        },
-
-        // get color in hex-format
-        getRandomColor: function() {
-            var letters = '0123456789ABCDEF';
-            var color = '#';
-            for (var i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-        },
-
-        // extended version optionally negative precision
-        toFixed : function(number, precision) {
-            var factor = Math.pow(10, precision);
-            var tempNumber = number * factor;
-            var roundedTempNumber = Math.round(tempNumber);
-            return roundedTempNumber / factor;
         }
+
     };
 </script>
