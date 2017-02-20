@@ -4,6 +4,7 @@
 
 <link rel="import" href="routing-classes.html">
 
+<link rel="import" href="mb-app-behavior.html">
 <link rel="import" href="mb-map-behavior.html">
 <link rel="import" href="routing-behavior.html">
 
@@ -155,15 +156,6 @@ along waypoint file loaded from url
                 },
 
                 /**
-                 * tmp. Flag indicating move/zoom-status of map 
-                 */
-                _mapismoved: {
-                    type: Boolean,
-                    observer: '_animationTrigger'
-                },
-
-
-                /**
                  * { item_description }
                  */
                 _trackObj: {
@@ -207,6 +199,7 @@ along waypoint file loaded from url
             },
 
             behaviors: [
+                Mbb.AppBehavior,
                 Mbb.MapBehavior,
                 Mbb.RoutingBehavior
             ],
@@ -369,86 +362,76 @@ along waypoint file loaded from url
             },
 
 
-            // Events related to animation elements on map
+            // Events are related to the contentobject "routes" 
+            // and are activated/deactivated when "routes"-contentobject is loaded/unloaded   
             _animationMapEvents: function(map) {
+                // 
+                function f_mmove(e) {   
+                    if (mba.trackctrl) { // acts during animation only !! 
+                        mba.trackObjSelect(e);
+                    }    
+                };
 
-                    function f_mmove(e) {   
-                        if (mba.trackctrl) { // acts during animation only !! 
-                            mba.trackObjSelect(e);
-                        }    
-                    };
+                function f_click(e) {   
+                    mba.trackObjSelect(e, true);
+                    mba.routeNodeSelect(e);
+                };
 
-                    function f_click(e) {   
-                        mba.trackObjSelect(e, true);
-                        mba.routeNodeSelect(e);
-                    };
-
-                    // f3,f4 act in DEFAULT mapmode only (NORTH-map)   
-                    // triggering the _animationTrigger
-                    function f_movestart(e) {   
-                        if (!mba.trackalignmap) { // console.log("movestart");
-                            this._mapismoved = true;
-                        }
-                    };
-                    function f_moveeend(e) {   
-                        if (!mba.trackalignmap) { // console.log("moveend");
-                            mba._mapismoved = false;
-                        }
-                    };
-
-                    var events = {
-                        'mousemove': f_mmove, 
-                        'click': f_click, 
-                        'movestart': f_movestart, 
-                        'moveend': f_moveeend 
+                // f3,f4 act in DEFAULT mapmode only (NORTH-map)   
+                // triggering the _animationPause
+                function f_movestart(e) {    // console.log("MAP - movestart. ","alignflag=" +  mba.trackalignmap);
+                    if (!mba.trackalignmap) {
+                        mba._animationPause(true); 
                     }
-                    return events; 
-
-                /*    
-                    map.off('mousemove', f_mmove); 
-                    map.off('click', f_click); 
-                    map.off('movestart', f_movestart); 
-                    map.off('moveend', f_moveeend); 
-
-                    if (status) { console.log("Resetting animation events!"); 
-                        map.on('mousemove', f_mmove); 
-                        map.on('click', f_click); 
-                        map.on('movestart', f_movestart); 
-                        map.on('moveend', f_moveeend); 
+                };
+                function f_moveeend(e) {   // console.log("MAP - moveend","alignflag=" +  mba.trackalignmap);
+                    if (!mba.trackalignmap) { 
+                        mba._animationPause(false); 
                     }
-                */    
+                };
+
+                var events = {
+                    'mousemove': f_mmove, 
+                    'click': f_click, 
+
+                    'movestart': f_movestart, 
+                    'moveend': f_moveeend 
+                }
+
+                return events; 
+
             }, 
-
 
             // Manages START/STOP-Flag (trackctrl) of animation 
             // if map-move events (map moved by user) are fired during animation 
-            _animationTrigger: function(mapismoved) {
-                console.log("map is moving:", mapismoved, "ctrl=", mba.trackctrl );
+            _animationPause: function(mapismoved) {
+                // console.log("map is moving:", mapismoved, "ctrl=", mba.trackctrl );
                 if (mapismoved) {
-                    //this.debounce('movestarted', function() {
-                    mba._trackctrl = false;
+                    // debouncing needless, becouse repeated movestart-events around first movend !!
+                    // this.debounce('movestarted', function() {
                     if (mba.trackctrl == true) {
                         mba.trackctrl = false;
                         mba._trackctrl = true;
-                        console.log("INTERRUPTED track-animation");
+                        console.log("PAUSED data-animation"); // , mba.trackctrl, mba._trackctrl);
                     }
                     //}, 200);
                 } else {
 
-                    this.debounce('movestopped', function() {
+                    this.debounce('movestopped', function() { 
+                        // console.log("After INTERRUPTED", mba.trackctrl, mba._trackctrl);
                         if ((mba.trackctrl == false) && (mba._trackctrl == true)) {
-                            // Reset animation, if it was running before last mapmove
+                            // Resume animation, if it was stopped by PAUSER temporarily (_trackCtrl = true)  
                             mba.trackctrl = true;
                             mba._trackctrl = false;
-                            console.log("RESUME track-animation");
+                            console.log("RESUMED data-animation");
                         }
                     }, 100);
                 }
             },
 
+
             // Create a contentbox-Object for basic Layers related to animation-datasrces 
             // id : "routes", "traces", "nodes", "tracks"
-            // 
             _animationContentSetup: function(id, type, srcdata, metas, mapstyle) { //paintprops, layoutprops) {
                 if (!mapstyle) mapstyle = {};
 
@@ -552,8 +535,7 @@ along waypoint file loaded from url
                     delete this.timer.filter;
                 } else {
                     this.timer.filter = routeFilter;
-                }
-                console.log("Setup animation for ["+ routeid+"], timer, filter:", timerEntry, timer); 
+                }   console.log("Setup animation for ["+ routeid+"], timer, filter:", timerEntry, timer); 
 
                 // 
                 srcFeatures = this._animationMapRefresh(null, null,  routeFilter);
@@ -716,20 +698,22 @@ along waypoint file loaded from url
              * @param      {any basic type}  trackctrl  Main animation Ctrl
              */
             trackCtrlAction: function(trackctrl) {
-                var ctrlflag = "STOP";
+                // var ctrlflag = "STOP";
+                var ctrlflag = this._trackctrl;
                 // console.log("LOG: trackctrl", trackctrl);
+                
                 if (trackctrl) {
                     // console.log("trackCtrlActn:", typeof trackctrl, trackctrl);
                     if (typeof trackctrl == "number") {  // A. 
                         // console.log("ctrltime[h] set (slider o.ä.)", trackctrl)
                         var mapTime = trackctrl,
                             located = this.trackStepAction(null, mapTime);
-                    
-                        if (located) ctrlflag = "CONT";
+                        // if (located) ctrlflag = "CONT";
+                        if (!located) ctrlflag = "STOP";
 
                     } else if (trackctrl == "reset") { // B. 
                         
-                        this.trackctrl = false; // triggers this function (trackCtrlAction) again 
+                        this.trackctrl = false;     // triggers this function (trackCtrlAction) again 
                         this.trackalignmap = false; // 
                         this._trackId = undefined; 
 
@@ -745,7 +729,6 @@ along waypoint file loaded from url
                     }
 
                 } else {
-
                     if (this._counter) {
                         var trackObjs = [];
                         if (this.map) {
@@ -754,15 +737,16 @@ along waypoint file loaded from url
                             });
                         }  // console.log("STOPPED track at cnt=" + this._counter + " with objs", trackObjs);
                     }
-
                     ctrlflag = "STOP";
                 }
 
+                this._trackctrl = ctrlflag; 
+                
                 this.trackStepAnimation(ctrlflag);
                 // ******************************
             },
 
-            // Reassign animation data (why) 
+            // Reassign animation data (w h y ) 
             animationReset: function(_counter) {
 
                 if (0) {
@@ -817,6 +801,7 @@ along waypoint file loaded from url
                     mba.trackctrl = false;
                     return;
                 }
+
                 // 1. Remove OLD animationRefs
                 var rfr = mba._requestframeref;
                 // console.log("CTRL " + flag, rfr, "timer=", mba.timer);
@@ -1762,6 +1747,8 @@ along waypoint file loaded from url
 
                         trackStyle.paints = {
                             'circle-radius': 6,
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': "#000",
                             'circle-color': symbolcolor
                         }; // console.log("trackStyle", trackStyle); 
                     }
@@ -2228,7 +2215,7 @@ along waypoint file loaded from url
                 
                 if (srcKeys.length) {
                     
-                    console.log("syncFilterApply with ["+syncFilter+"]", srcFeatures); 
+                    // console.log("syncFilterApply with ["+syncFilter+"]", srcFeatures); 
 
                     srcNames.forEach(function(sname) {
                         if (mba.map.getLayer(sname)) {

@@ -6,7 +6,7 @@
 
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
-<link rel="import" href="mb-map-behavior.html">
+<link rel="import" href="mb-app-behavior.html">
 
 <link rel="import" href="icons-svg.html">
 
@@ -15,9 +15,7 @@
 elements controling the time-parameters 
 of any animation behavior (fi. of track-objects)  
 
-(either on a map or a status-log)  
 some ctrls (back,forward...) and "slider" are "redundant and should be used exclusively 
-
 
 -->
 
@@ -61,9 +59,13 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 color: white;
             }
 
+            #logtime.running {
+                background-color: var(--paper-orange-500);
+            }    
+
     	</style>
 
-		<div id="target" class="ctrlbox"> 
+		<div id="_target" class="ctrlbox"> 
             
             <!--<paper-icon-button id="replay" icon="{{_icon1}}" title="restart" class="blue"></paper-icon-button>-->
             <!-- group of ctrls -->
@@ -88,7 +90,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             properties: {
 
                 /**
-                 * Animation status
+                 * OUT: Communicates requested animation-ctrl-action to outside
                  */
                 trackctrl: {
                     type: Boolean,
@@ -96,14 +98,21 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     notify: true
                 },
 
+                /**
+                 * IN:  
+                 *
+                 */
                 timer: {
-                    type: Object,
-                    notify: true
+                    type: Object
                 },
 
-                selector : {
-                    type: Object,
-                    observer: 'applySelector'
+                /**
+                 * IN: Unit of slidervalues required to convert between slider and animation-time (always [h])
+                 *  optional [h], [min], [sec]
+                 */
+                sliderunit: {
+                    type: String,
+                    value: "min"
                 },
 
                 start: {
@@ -114,14 +123,16 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     type: Number
                 },
 
-                sliderunit: {
-                    type: String,
-                    value: "min"
-                },
 
                 slidertime: {
                     type: Number
                 },
+
+                _trackctrl: {
+                    type: Boolean,
+                    value: false
+                },
+
 
                 _icon1: {
                     type: String,
@@ -143,37 +154,23 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     value: "ctrl:remove-circle-outline"
                 },
 
-                checked: {
+                /** 
+                 * optional 
+                 */ 
+                /*checked: {
                     type: Boolean,
                     value: true,
                     observer: 'toggleVisibility'
-                },
+                },*/
 
-                target: {
-                    type: Object,
-                    value: function() {
-                        // var target = this.$.parent; // document.body;
-                        var target = document.body; // 
-                        return target;
-                    },
-                    observer: '_checktarget'
-                }
             },
 
             behaviors: [
-                Mbb.MapBehavior,
+                Mbb.AppBehavior
             ],
 
             attached: function() {
                 // if (typeof this.checked == 'undefined') this.toggleVisibility(true);
-            },
-
-            toggleVisibility: function(checked) {
-                if (checked) {
-                    this.style.display = "block";
-                } else {
-                    this.style.display = "none";                
-                }
             },
 
             listeners: {
@@ -181,78 +178,54 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 //'change': 'changeHandler'
             },
 
-            _checktarget: function(t) {
-                // console.log("observed target", t);
-            },
-
             observers: [
-                'sliderinit(timer.stop)', // , timer.stop)',
                 'syncCtrls(trackctrl)',
-                'syncSlider(timer.time)'
+                'syncSlider(timer.time)',
+                'resetSlider(timer.stop, timer.start)' 
             ],
 
             ready: function() {
                 this.setupAnimationCtrls();
-                // console.log("ready-target:", this.target);
-                // this.target = Polymer.dom(parent); // this.$.parent;
-                // this.target = this.$.toggle; // target;
-                // this.target = this.$$("div.ctrlbox");
             },
 
             // 
-            applySelector: function (selector) {
-                if (!selector.feature || !selector.feature.properties) return; 
-                
-                this.trackctrl = false; // feature.start; // Export-property 
-                
-                var selprops = selector.feature.properties
-                console.log("Apply start/stop of ", selprops);
-                
-                // Setup slider 
-                this.sliderinit(selprops.stop, selprops.start) ; 
-
-                // sync slider 
-                // this.syncSlider(feature.start); 
-                // sync app
-            },
-
             toggleCtrl: function() {
-                if (this.trackctrl) {
+                if ((this.trackctrl == true)||(this._trackctrl == true)) {
                     this.trackctrl = false;
-                } else {
+                    this._trackctrl = false
+                } else if ((this.trackctrl == false)||(this._trackctrl == false)) {
                     this.trackctrl = true;
-                }
-                // console.log("this.trackctrl", this.trackctrl)
+                    this._trackctrl = true
+                } 
+                // console.log("AFTER toggleCtrl ", this.trackctrl, this._trackctrl)
             },
 
 
             /**
-             * Initialize the progress-slider for imported data
-             *
+             * Initialize/Reset the (animation-)progress-slider for imported data
+             * 
              * @param      {number}  stoptime  The stoptime
              */
-            sliderinit: function(stoptime, starttime) { // , stoptime) {
+            resetSlider: function(stoptime, starttime) { // , stoptime) {
+                this.trackctrl = false;  
+
                 if (!stoptime) return;
-                if (!starttime) starttime = this.starttime; //this.timer.start;
+                if (!starttime) starttime = this.starttime;
                 if (!starttime) {
                     this.starttime = 0;
                     starttime = 0;
                 } else  this.starttime = starttime;
-                console.log("Setup timeslider from start-/stop-times ", starttime, stoptime);
+
+                console.log("Setup timeslider for start-/stop-times ", starttime, stoptime, this.sliderunit);
 
                 var deltat = stoptime - starttime;
                 if (this.sliderunit == "min")       deltat = deltat * 60;
                 else if (this.sliderunit == "sec")  deltat = deltat * 3600;
                 deltat = Math.round(deltat);
 
-                // 
-                this.stop = deltat + 1;
+                // Setup the slider-parameters
                 this.start = 0;
-                if (this.timer) {
-                    this.timer.start = starttime ;
-                    this.timer.stop = starttime + this.stop;
-                    this.timer.time = starttime ;
-                }
+                this.stop = deltat + 1; // ?? + 1
 
                 var logtime = this.logTime(starttime, "h", "<br>");
                 this.$.logtime.innerHTML = logtime;
@@ -260,55 +233,90 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             /**
              * Sync ctrl-button-icons after remote "trackctrl"-change  
+             * ctrls must reflect the handling options during actual status 
              *
              * @param      {string}  trackctrl  The trackctrl
              * @param      {<type>}  trackmode  The trackmode
              */
-            syncCtrls: function(trackctrl, trackmode) {
-                // ctrls must reflect the handling options during actual status 
+            syncCtrls: function(trackctrl, _trackctrl) {
+                // console.log("trackctrl", trackctrl, _trackctrl);    
+
                 if (trackctrl) {
+
                     if (trackctrl == "reset") {
+                        // 
                         this._icon2 = "ctrl:play-arrow";
-                    } else {
+
+                    } else if (trackctrl == true) {   // dedicated START-action  
+                        // 
                         this._icon2 = "ctrl:pause";
+                        this.$.logtime.classList.add('running'); // console.log("this.$.logtime", this.$.logtime); 
+                    
+                    } else {    // new time 
+                        // NO style change 
+
                     }
+
                 } else {
+                    
                     this._icon2 = "ctrl:play-arrow";
+                    this.$.logtime.classList.remove('running');
                 }
             },
 
             /**
-             * Sync animation-status with contrils 
+             * Sync animation-status with controls 
              *
-             * @param      {number}  tracktime  The tracktime
+             * @param      {number}  tracktime  The time from FIRST start of animation-app
              */
             syncSlider: function(tracktime) {
                 if (!tracktime) return;
-                // console.log("timer=", this.timer);
 
                 // A. Sync the slider with externally modified tracktime 
-                var sliderval = tracktime - this.start; // this.timer.start;
+                var sliderval = tracktime - this.starttime; 
+                if ((sliderval < 0)||(sliderval > this.stop)) {
+                    console.log("sliderval outside!!"); 
+                    this.trackctrl = false; 
+                    return;
+                }
+
+                // A.2 Adjust the 
                 if (this.sliderunit == "min") sliderval = sliderval * 60;
                 if (this.sliderunit == "sec") sliderval = sliderval * 3600;
+
+                // B.1 Sync the slider-position
                 this.sliderval = sliderval;
 
-                // B. Display readable tracktime in special box
+                // B.2 Sync the tracktime in special box
                 var logtime = this.logTime(tracktime, "h", "<br>");
                 this.$.logtime.innerHTML = logtime;
             },
 
             /**
-             * Communicate the app-parameter connected to slider-value 
-             * via ctrl-parameter "trackctrl"
+             * Communicate changes of slidertime triggered by useraction on slider 
              */
             slideChangeHandler: function() {
+
                 var slidertime = this.slidertime;
                 if (this.sliderunit == "min") slidertime = slidertime / 60;
                 if (this.sliderunit == "sec") slidertime = slidertime / 3600;
 
-                slidertime = this.timer.start + slidertime;
-                // console.log("slidertime", slidertime, typeof slidertime);
-                this.trackctrl = slidertime; // Export-property 
+                var tracktime = this.starttime + slidertime;
+
+                // NOTIFY new time to routing-api 
+                this.trackctrl = tracktime;  
+                // ************************
+                // B.2 Sync the tracktime in LogBox
+                var logtime = this.logTime(tracktime, "h", "<br>");
+                this.$.logtime.innerHTML = logtime;
+
+                // STOP animation, if was running  
+                if (this._trackctrl)  {
+                    // console.log("STOPPED at slidertime: " + this.slidertime + "["+this.sliderunit+"]", "tracktime: "+this.logTime(tracktime, "h"));
+                    this.trackctrl = false;  
+                    this._trackctrl = false; 
+                }    
+
             },
 
 
@@ -335,41 +343,46 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     }.bind(this));
                 }
 
-                if (ctrl2) {  // Start/Stop-Button-event
+                if (ctrl2) {  
+                    // Start/Stop-Button-event
                     ctrl2.addEventListener('click', function() {
                         this.toggleCtrl();
                     }.bind(this));
                 }
 
-                if (ctrl3a) {  // Slowdown/speedup animation events
-
+                if (ctrl3a) {  // Used to externally Ctrl the animation frequency  
+                    // Slowdown animation-frequency
                     ctrl3a.addEventListener('click', function() {
                         this.set("timer.ctrl", "down"); // console.log("slowdown");
                         //this.set("timer.ctrl", "none");
                     }.bind(this));
 
+                    // Speedup animation-frequency
                     ctrl3b.addEventListener('click', function() {
                         this.set("timer.ctrl", "up"); //console.log("speedup");
                         //this.set("timer.ctrl", "none");
                     }.bind(this));
                 }
 
+                // QuickKeyCtrls 
                 document.body.addEventListener('keydown', function(e) {
                     if (e.which === 32) { // space
-                        console.log("space")
+                        console.log("Toggle start/stop")
                     }
+                    // Trigger a STOP always
                     if (e.which === 37) { // left
-                        console.log("left")
+                        console.log("timestep back")
                     }
                     if (e.which === 39) { // right
-                        console.log("right")
+                        console.log("timestep forward")
                     }
-                    if (e.which === 38) { // faster
-                        console.log("faster")
+                    // Do NOT change timechange-status
+                    if (e.which === 38) { // up
+                        console.log("run faster")
                         e.preventDefault();
                     }
-                    if (e.which === 40) { // slower
-                        console.log("slower")
+                    if (e.which === 40) { // down
+                        console.log("run slower")
                         e.preventDefault();
                     }
                 }, true);

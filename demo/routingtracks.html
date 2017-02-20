@@ -154,11 +154,10 @@
             <template is="dom-if" if="{{userouting}}">
                 
                 <div class="ctrls-in-map">
-                    <!-- ctrl of animation (and maporientation) -->
+                    <!-- ctrl of animation-progress  -->
                     <routing-ctrl 
                         trackctrl="{{trackctrl}}"
-                        timer="{{timer}}"
-                        selector="[[datasetitem]]">
+                        timer="{{timer}}">
                     </routing-ctrl>
 
                     <!-- ctrl of map-orientation -->
@@ -211,6 +210,7 @@
                     trackctrl="{{trackctrl}}" 
                     routeid=[[routeid]] 
                     routedata=[[routedata]] 
+                    routeselected="[[datasetitem]]" 
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]">
                 </routing-api>
@@ -251,7 +251,8 @@
                 map="[[map]]" 
                 mapcontent="[[mapcontent]]" 
                 featurelist="{{dataset}}"
-                featureselected="[[datasetitem]]">
+                featureselected="[[datasetitem]]"
+                featureapplied="{{selector}}">
             </mb-content-view>
 
         </div>
@@ -302,6 +303,7 @@
     });*/
 
     document.addEventListener('WebComponentsReady', function() {
+        // Switch "element-visibility" of routing-api- and routing-gui-elements  
         function toggleRouting(radio) {
             if (!radio.checked)  scope.userouting = true;
             else  scope.userouting = false;

@@ -116,7 +116,6 @@
         observers: [
             'processTrackdata(trackdata.*)',
             // 'refreshCardContent(carddata)',
-
             '_drag(dragctrl.x, dragctrl.y, dragtype)',
             '_toggle(carddata.open)'
         ],
@@ -125,21 +124,6 @@
             "track": '_myPopupTrackHandler',
             "tap": '_onBackClick'
         },
-
-
-        /**
-         * TOOL
-         *
-         */
-        objectClone: function(obj) {
-            var cloned = {}; 
-            if (obj) {
-                Object.keys(obj).forEach(function(k){
-                    cloned[k] = obj[k];
-                })
-            }
-            return cloned; 
-        },    
 
         // A. DATA-INTERFACE 
 
@@ -312,6 +296,7 @@
          */
         _toggle: function(open) {
             if (open == 0) {
+                console.log("_toggle NONE");
                 this.style.display = "none";
             } else if (open == 1) {
                 this.style.display = "inline-block";
@@ -319,11 +304,10 @@
             }
         },
         /**
-         * Default tap-action of close elements
+         * Default tap-action of "close elements""
          */
         _onBackClick: function() {
             this._toggle(0);
-            // this.style.display = "none";
         }
     };
 

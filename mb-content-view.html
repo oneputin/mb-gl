@@ -1,6 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="mb-map-behavior.html">
 <link rel="import" href="mb-content-behavior.html">
+<link rel="import" href="mb-app-behavior.html">
 
 <!--
     `mb-content-view`
@@ -58,17 +59,16 @@
                     notify: true,
                     observer: 'checkoutFeature'
                 },
-
                 checked: {
                     type: Boolean
                 }
-
             },
 
             behaviors: [
+                Mbb.AppBehavior,
                 Mbb.ContentBehavior,
                 Mbb.MapBehavior
-            ],
+            ],                
 
             observers: [
                 'mapcontentFeatureList(mapcontent.*)',
@@ -82,8 +82,7 @@
             },
 
             /**
-             * Select/Hilite the feature on the map 
-             * (fi. zoomTo)
+             * Select/Hilite a feature on the map  (fi. zoomTo)
              * @param      {object}  f       { mapbox-jeature }
              */
             checkoutFeature: function(f) {

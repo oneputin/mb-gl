@@ -1,0 +1,77 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<script>
+
+  /**
+   * `Mbb.AppBehavior` 
+   *
+   * @polymerBehavior Mbb.AppBehavior
+   * @demo demo/index.html
+   **/
+
+    window.Mbb = window.Mbb || {};
+
+    Mbb.AppBehavior = {
+
+        /**
+         * convert any(?) device-formatted track-times into "dot format"
+         */
+        trackTime : function (traw, asarray) { 
+            if (typeof traw == "string") {
+                var t = traw.replace("Z", "");
+                t = t.split(":").join(".");
+                t = t.split("-").join(".");
+                t = t.split("T").join(".");
+                // console.log(t);
+                if (asarray)  return t.split(".");
+                return t;
+            }     
+            return traw;
+        },
+
+        /**
+         * 
+         */
+        logTime: function(ms1970, unit, sep) {
+            // if (!sep) sep = ", ";
+            if (unit == "h") ms1970 = ms1970 * 3600 * 1000;
+            var logtime = new Date(ms1970);
+            //  logtime = logtime.getDate() + "." + (logtime.getMonth() + 1) + ", " + logtime.getHours() + ":" + logtime.getMinutes();
+
+            var D = logtime.getDate(),
+                D = D < 10 ? "0" + D : D,
+
+                M = logtime.getMonth() + 1,
+                M = M < 10 ? "0" + M : M,
+
+                h = logtime.getHours(),
+                h = h < 10 ? "0" + h : h,
+
+                m = logtime.getMinutes(),
+                m = m < 10 ? "0" + m : m;
+
+            var logdate = D + "." + M;
+            
+            logtime = h + ":" + m;
+
+            if (sep) {
+                logtime = logdate + sep + logtime;
+            }
+            return logtime;
+        },
+
+        /**
+         * TOOL
+         *
+         */
+        objectClone: function(obj) {
+            var cloned = {}; 
+            if (obj) {
+                Object.keys(obj).forEach(function(k){
+                    cloned[k] = obj[k];
+                })
+            }
+            return cloned; 
+        }
+    };
+</script>    

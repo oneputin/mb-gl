@@ -123,16 +123,18 @@ wraps a distance utility
             toggleMeasure: function(checked) {
                 if (!this.map) return;
                 // console.log("toggleMeasure-1", this.map);
-                var msg = "measure toggled OFF";
-                var distsrc;
+                var msg, distsrc, mousecursor;
                 if (checked) {
                     msg = "measure toogled ON";
+                    this._mousecursor = this.map.getCanvas().style.cursor; // console.log("_mousecursor", this._mousecursor); 
                     distsrc = this.resetThemes(checked);
                     this.map.on('click', this.clickFunction);
                     this.style.display = "block";
                 } else {
+                    msg = "measure toggled OFF";
                     this.map.off('click', this.clickFunction);
-                    distsrc = this.resetThemes(checked);                    
+                    distsrc = this.resetThemes(checked);           
+                    this.map.getCanvas().style.cursor = this._mousecursor;         
                     this.style.display = "none";
                 }
 

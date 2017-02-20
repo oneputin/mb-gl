@@ -293,37 +293,6 @@
         },
 
 
-        /**
-         * 
-         */
-        logTime: function(ms1970, unit, sep) {
-            // if (!sep) sep = ", ";
-            if (unit == "h") ms1970 = ms1970 * 3600 * 1000;
-            var logtime = new Date(ms1970);
-            //  logtime = logtime.getDate() + "." + (logtime.getMonth() + 1) + ", " + logtime.getHours() + ":" + logtime.getMinutes();
-
-            var D = logtime.getDate(),
-                D = D < 10 ? "0" + D : D,
-
-                M = logtime.getMonth() + 1,
-                M = M < 10 ? "0" + M : M,
-
-                h = logtime.getHours(),
-                h = h < 10 ? "0" + h : h,
-
-                m = logtime.getMinutes(),
-                m = m < 10 ? "0" + m : m;
-
-            var logdate = D + "." + M;
-            
-            logtime = h + ":" + m;
-
-            if (sep) {
-                logtime = logtime + sep + logdate;
-            }
-            return logtime;
-        },
-
         // ZoomTo
         setFeatureBounds: function(features, map) {
             // console.log("SFB:", features); // return

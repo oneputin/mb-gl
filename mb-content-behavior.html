@@ -1,5 +1,6 @@
 
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="mb-app-behavior.html">
 
 <script>
   /**
@@ -19,7 +20,11 @@
                 notify : true
             }
         },    
-        
+
+        behaviors: [
+            Mbb.AppBehavior
+        ],
+    
         // Shell for diverse select-functions  
         featuresSelect: function(features, layerid) {
             // console.log("FS in "+ layerid, features); 
@@ -41,20 +46,6 @@
             }    
 
             return selectObj; 
-        },
-
-        // convert any(?) device-formatted track-times into "dot format" 
-        trackTime : function (traw, asarray) { 
-            if (typeof traw == "string") {
-                var t = traw.replace("Z", "");
-                t = t.split(":").join(".");
-                t = t.split("-").join(".");
-                t = t.split("T").join(".");
-                // console.log(t);
-                if (asarray)  return t.split(".");
-                return t;
-            }     
-            return traw;
         },
 
         // Special "permanent" HILITE of selected tracks
