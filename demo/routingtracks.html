@@ -156,15 +156,13 @@
                 <div class="ctrls-in-map">
                     <!-- ctrl of animation (and maporientation) -->
                     <routing-ctrl 
-                        checked="[[userouting]]"
-                        selector="[[datasetitem]]"
+                        trackctrl="{{trackctrl}}"
                         timer="{{timer}}"
-                        trackctrl="{{trackctrl}}">
+                        selector="[[datasetitem]]">
                     </routing-ctrl>
 
                     <!-- ctrl of map-orientation -->
                     <mb-orientation-ctrl 
-                        checked="[[userouting]]"
                         trackmap="{{trackmap}}">
                     </mb-orientation-ctrl>
                     

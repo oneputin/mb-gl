@@ -384,6 +384,7 @@ along waypoint file loaded from url
                     };
 
                     // f3,f4 act in DEFAULT mapmode only (NORTH-map)   
+                    // triggering the _animationTrigger
                     function f_movestart(e) {   
                         if (!mba.trackalignmap) { // console.log("movestart");
                             this._mapismoved = true;
@@ -401,8 +402,8 @@ along waypoint file loaded from url
                         'movestart': f_movestart, 
                         'moveend': f_moveeend 
                     }
-
                     return events; 
+
                 /*    
                     map.off('mousemove', f_mmove); 
                     map.off('click', f_click); 
@@ -422,7 +423,7 @@ along waypoint file loaded from url
             // Manages START/STOP-Flag (trackctrl) of animation 
             // if map-move events (map moved by user) are fired during animation 
             _animationTrigger: function(mapismoved) {
-                // console.log("mapismoved", mapismoved, old);
+                console.log("map is moving:", mapismoved, "ctrl=", mba.trackctrl );
                 if (mapismoved) {
                     //this.debounce('movestarted', function() {
                     mba._trackctrl = false;
@@ -436,6 +437,7 @@ along waypoint file loaded from url
 
                     this.debounce('movestopped', function() {
                         if ((mba.trackctrl == false) && (mba._trackctrl == true)) {
+                            // Reset animation, if it was running before last mapmove
                             mba.trackctrl = true;
                             mba._trackctrl = false;
                             console.log("RESUME track-animation");

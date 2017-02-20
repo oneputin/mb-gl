@@ -12,9 +12,13 @@
 
 <!--
 `routing-ctrl`
-ctrl elements controling animation behavior of track-objects  
+elements controling the time-parameters 
+of any animation behavior (fi. of track-objects)  
+
 (either on a map or a status-log)  
 some ctrls (back,forward...) and "slider" are "redundant and should be used exclusively 
+
+
 -->
 
 <dom-module id="routing-ctrl">
@@ -83,12 +87,6 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             properties: {
 
-                checked: {
-                    type: Boolean,
-                    value: true,
-                    observer: 'toggleVisibility'
-                },
-
                 /**
                  * Animation status
                  */
@@ -145,6 +143,12 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     value: "ctrl:remove-circle-outline"
                 },
 
+                checked: {
+                    type: Boolean,
+                    value: true,
+                    observer: 'toggleVisibility'
+                },
+
                 target: {
                     type: Object,
                     value: function() {
@@ -195,19 +199,21 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 // this.target = this.$$("div.ctrlbox");
             },
 
+            // 
             applySelector: function (selector) {
-                var feature = selector.feature.properties
-                console.log("Apply start/stop of ", feature);
+                if (!selector.feature || !selector.feature.properties) return; 
+                
+                this.trackctrl = false; // feature.start; // Export-property 
+                
+                var selprops = selector.feature.properties
+                console.log("Apply start/stop of ", selprops);
                 
                 // Setup slider 
-                this.timer.start = feature.start;
-                this.timer.stop = feature.stop;
-                this.sliderinit(feature.stop, feature.start) ; 
+                this.sliderinit(selprops.stop, selprops.start) ; 
 
                 // sync slider 
-                this.syncSlider(feature.start); 
+                // this.syncSlider(feature.start); 
                 // sync app
-                this.trackctrl = feature.start; // Export-property 
             },
 
             toggleCtrl: function() {
@@ -227,16 +233,26 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
              */
             sliderinit: function(stoptime, starttime) { // , stoptime) {
                 if (!stoptime) return;
-                if (!starttime) starttime = this.timer.start;
+                if (!starttime) starttime = this.starttime; //this.timer.start;
+                if (!starttime) {
+                    this.starttime = 0;
+                    starttime = 0;
+                } else  this.starttime = starttime;
                 console.log("Setup timeslider from start-/stop-times ", starttime, stoptime);
 
                 var deltat = stoptime - starttime;
                 if (this.sliderunit == "min")       deltat = deltat * 60;
                 else if (this.sliderunit == "sec")  deltat = deltat * 3600;
+                deltat = Math.round(deltat);
 
-                deltat = Math.round(deltat)
-                this.start = 0;
+                // 
                 this.stop = deltat + 1;
+                this.start = 0;
+                if (this.timer) {
+                    this.timer.start = starttime ;
+                    this.timer.stop = starttime + this.stop;
+                    this.timer.time = starttime ;
+                }
 
                 var logtime = this.logTime(starttime, "h", "<br>");
                 this.$.logtime.innerHTML = logtime;
@@ -271,7 +287,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 // console.log("timer=", this.timer);
 
                 // A. Sync the slider with externally modified tracktime 
-                var sliderval = tracktime - this.timer.start;
+                var sliderval = tracktime - this.start; // this.timer.start;
                 if (this.sliderunit == "min") sliderval = sliderval * 60;
                 if (this.sliderunit == "sec") sliderval = sliderval * 3600;
                 this.sliderval = sliderval;
