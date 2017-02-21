@@ -48,6 +48,9 @@
         "type": "devicetable",
         "mintracklength": 5,
         "url": "wp-data/handheld-silv2016.json",
+        "timer":{
+            "timescalemax": 120  
+        },    
         "device": {
             "name": "gps-mobile",
             "user" : "vomue",
@@ -74,11 +77,18 @@
         "type": "dbtable",
         "url": "wp-data/vendee-1.json",
         "device": {
-            "name": "gps-mobile",
-            "user" : "vomue",
+            "name": "db-vendee",
+            "user" : "vendee",
             "dop" : 10
         },
         "master": "wp-data/vendee-db.json",
+        "timer":{
+            "timescalemax": 2880,  
+            "timescalestart": 2880,
+            "logunit": "h",
+            "fpsstart": 60
+        },
+        "units": "nautic",
         "symbol": "ferry-15"
     }
 ]

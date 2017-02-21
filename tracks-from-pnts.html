@@ -3,6 +3,7 @@
 
 <link rel="import" href="routing-classes.html">
 <link rel="import" href="mb-app-behavior.html">
+<link rel="import" href="mb-map-behavior.html">
 
 <!--
 `tracks-from-pnts`
@@ -100,6 +101,7 @@ Optional: create quick-preview-data
 
         behaviors: [
             Mbb.AppBehavior,
+            Mbb.MapBehavior
         ],
 
         observers: [
@@ -143,46 +145,56 @@ Optional: create quick-preview-data
             if (!rawdata || !Object.keys(rawdata).length) return; 
             // console.log(srcmeta, "RAW-data:", rawdata, "MASTER-data", masterdata); // return; 
 
-            // 1. Heuristik "DETECT the  table-mode" 
-            var tablemode = (rawdata[0]["geometry"]) ? "json" : "nn";
-            tablemode = (rawdata[0]["Header"] == "Trackpoint") ? 'table-vomue1' : tablemode;
-            tablemode = rawdata[0]["Pnt"] ? 'table-vomue2' : tablemode;
-            tablemode = rawdata[0]["lat"] ? 'table-vendee' : tablemode;
+            this.debounce('rawtracks', function() {
 
-            // 2. Create RAW trackdata 
-            var rawtracks, minTrackLength;
-            if (tablemode.indexOf("vomue") > 0) {
-                if (!previewmode) minTrackLength = srcmeta.minTrackLength;
-                rawtracks = this.rawDeviceTracks(rawdata, tablemode, minTrackLength);
-           
-            } else if (tablemode.indexOf("vendee") > 0) {
-                rawtracks = this.rawVendeeTracks(rawdata, masterdata);
-           
-            } else {
+                // 1. Heuristik "DETECT the table-mode" of rawdata 
 
-            }
-            if (!rawtracks) {
-                console.log("BREAK. Selected dataset cannot be analysed!!", srcmeta);
-                return;
-            }      
+                var tablemode = (rawdata[0]["geometry"]) ? "json" : "nn";
+            
+                tablemode = (rawdata[0]["Header"] == "Trackpoint") ? 'table-vomue1' : tablemode;
+            
+                tablemode = rawdata[0]["Pnt"] ? 'table-vomue2' : tablemode;
+            
+                tablemode = rawdata[0]["lat"] ? 'table-vendee' : tablemode;
 
-            // 3. Create DERIVATES  of rawTracks 
+                // 2. Create RAW trackdata 
+                var rawtracks, minTrackLength;
 
-            if (previewmode) {   // 3.1 derive features for mb-visualization of rawTracks
+                if (tablemode.indexOf("vomue") > 0) {            
 
-                this.rawtracks = this.deriveTrackPreview(rawtracks, srcmeta);
-                
-                console.log("Quickview TRACKS (from TPs):", this.rawtracks);  
-                
-            } else {    // 3.2 derive structures for mb-based animation of 'suitable' tracks
+                    if (!previewmode) minTrackLength = srcmeta.minTrackLength;
+                    rawtracks = this.rawDeviceTracks(rawdata, tablemode, minTrackLength);  // console.log("Raw GPSTracks. ", rawtracks); 
+            
+                } else if (tablemode.indexOf("vendee") > 0) {    
+                    
+                    rawtracks = this.rawVendeeTracks(rawdata, masterdata);  // console.log("Raw VENDEETracks.",  rawtracks); 
 
-                var routedata = this.deriveTrackRoutes(rawtracks); 
-                
-                if (routedata) {
-                    console.log("RAW ROUTEDATA (from TPs) :", routedata);  
-                    this.trackdata = routedata;
-                } 
-            }
+                } else {
+
+                }
+                if (!rawtracks) {
+                    console.log("BREAK. Selected dataset cannot be analysed!!", srcmeta);
+                    return;
+                }      
+
+                // 3. Create DERIVATES  of rawTracks 
+
+                if (previewmode) {   // 3.1 derive features for mb-visualization of rawTracks
+
+                    this.rawtracks = this.deriveTrackPreview(rawtracks, srcmeta);
+                    
+                    // console.log("Quickview TRACKS (from TPs):", this.rawtracks);  
+                    
+                } else {    // 3.2 derive structures for mb-based animation of 'suitable' tracks
+
+                    var routedata = this.deriveTrackRoutes(rawtracks, masterdata, srcmeta); 
+                    
+                    if (routedata) {    // console.log("RAW ROUTEDATA (from TPs) :", routedata);  
+                        this.trackdata = routedata;
+                    } 
+                }
+            }, 500); 
+
         },
 
         // Convert tabular ( point-collections) data created on gps-devices 
@@ -568,12 +580,15 @@ Optional: create quick-preview-data
 
 
         // Derive input-data-structures for my-animatation-api
-        deriveTrackRoutes: function(routes, masterdata) {
+        deriveTrackRoutes: function(routes, masterdata, metadata) {
 
             // C. Join temporary masters- and routes-objects 
             //    into array of api-conform routedata (wps sorted by time) 
+
             var routedata = [],
                 trackpoints;
+
+            var unitsystem = metadata.units ? metadata.units : "metric";
 
             Object.keys(routes).forEach(function(id) {
 
@@ -584,7 +599,7 @@ Optional: create quick-preview-data
                 var route = {
                     "id": id,
                     "title": title,
-                    "unitsystem": "metric",
+                    "unitsystem": unitsystem,
                     "nodes": trackpoints
                 };
 

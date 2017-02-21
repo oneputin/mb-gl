@@ -4,10 +4,11 @@
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
 <link rel="import" href="icons-svg.html">
+<link rel="import" href="mb-app-behavior.html">
 
 <!--
 `routing-ctrl-time`
-slider ctrls used to modify timescale(s) of routing animations  
+slider ctrls used to modify timescale-parameters of routing animations  
 - `timescalemax` ctrls general dimension of animation scale (should be passed in by app-shell)
 - `throttle` varies timescale in 10 equal steps, can be remote-controlled 'step'-wise 
 ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, fps, fpsmax     
@@ -99,6 +100,13 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                     notify: true
                 },
 
+                metadataset : {
+                    type: Object
+                },
+
+                starttimer : {
+                    type: Object
+                },
 
                 /**
                  * TimeScale of animation (real-minutes per animation-minute)
@@ -133,15 +141,47 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
 
             },
 
-            ready: function() {
-                this._setupTimeCtrls();
-            },
+            behaviors: [
+                Mbb.AppBehavior,
+            ],
 
             observers: [
                 'applyTimer(_timescale, _fps)',
                 'setThrottle(timer.ctrl)',
-                '_setupTimeCtrls(timer.timescalemax)'
+                '_setupTimeCtrls(timer.timescalemax)',
+                '_setupTimer(metadataset.timer, starttimer)'
             ],
+
+            ready: function(){
+                var metadataset = {}; 
+                // if (this.metadataset && this.metadataset.timer) metadataset = this.metadataset;
+                this._setupTimer(this.metadataset.timer, this.starttimer);
+                // this._setupTimeCtrls(this.timer.timescalemax);
+            },
+
+            _setupTimer: function(metadatatimer, starttimer) {
+                console.log("_setupTimer: metadatatimer",  metadatatimer, starttimer);
+                // A. Setup basic animation-parameters          
+                //    from Primary Timer-Setup from context in app-shell and/or from metadata
+
+                this.debounce('setup', function() {
+                    
+                    this.timer = {}
+
+                    var timer = {};
+                    if (starttimer && Object.keys(starttimer).length) {
+                        timer = this.objectClone(starttimer);
+                    }    
+
+                    if (metadatatimer && Object.keys(metadatatimer).length) {
+                        timer = Object.assign({}, timer, metadatatimer);
+                    } 
+                    this.timer = this.objectClone(timer);  console.log("SETUP timer as:", timer);
+
+                    this._setupTimeCtrls(this.timer.timescalemax);
+                }, 200);      
+
+            },    
 
             /**
              * Processes remotecontrol events for scale-throttle
@@ -179,6 +219,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                         this.set('timer.timescalemax', this.timescalemax);
                         this.set('timer.fpsmax', this._fpsmax);
                     }
+
                     this.set('timer.timescale', timescale);
                     this.set('timer.fps', fps);
 
@@ -215,16 +256,6 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                 this._timescale = this.scalemin * this.scaleslidervalue; // console.log("new timescale", this.timescale);
             },
 
-            // redundant
-            _resetTimeScale: function(timescalemax, timescalestart) {
-                if (!timescalestart) timescalestart = timescalemax; //
-
-                this.scalemin = timescalemax / 10;
-
-                this.scaleslidervalue = 10 * timescalestart / timescalemax;
-
-                this._timescale = this.scalemin * this.scaleslidervalue;
-            },
 
             /**
              * Setup the Ctrl-actions (start/stop, restart, fps-slider) 
@@ -232,19 +263,31 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
              */
             _setupTimeCtrls: function(timescalemax) {
                 // A. timescale
-                if (!timescalemax) {
-                    if (this.timer && this.timer.timescalemax) return;
-                    this.timer = {
-                        timescalemax: 600
-                    }
-                }
-                if (!this.timer.timescalestart) this.timer.timescalestart = timescalemax / 2;
-                this._resetTimeScale(timescalemax, this.timer.timescalestart);
+                if (!timescalemax) return; 
+
+                if (!this.timer.timescalestart) {
+                    this.timer.timescalestart = timescalemax; // was / 2; 
+                }    
+                // this._resetTimeScale(timescalemax, this.timer.timescalestart);
+
+                this.scalemin = timescalemax / 10;
+
+                this.scaleslidervalue = 10 * this.timer.timescalestart / timescalemax;
+
+                this._timescale = this.scalemin * this.scaleslidervalue;
 
                 // B. fps
-                if (!this.timer.fpsstart) this.timer.fpsstart = this._fpsmax / 2;
+
+                if (!this.timer.fpsstart) {
+                    this.timer.fpsstart = this._fpsmax; //  / 2;
+                }
+
                 this.fpsslidervalue = this.timer.fpsstart / this._fpsmax * this.fpsslidermax;
+                
                 this._fps = this._fpsmax * this.fpsslidervalue / this.fpsslidermax; //console.log("fps", fps)
+
+                console.log("_setupTimeCtrls-finished", this._timescale, this._fps ); 
+
             },
 
 

@@ -216,8 +216,10 @@
                 </routing-api>
                 
                 <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
+                <!--timescalemax="[[timer.timescalemax]]" -->
                 <routing-ctrl-time  
-                    timescalemax="[[timer.timescalemax]]" 
+                    starttimer="[[timershell]]"
+                    metadataset="[[metadataset]]"
                     timer="{{timer}}">
                 </routing-ctrl-time>
             </template>
@@ -288,11 +290,12 @@
     // Animation- INIT
     // console.log("scope.tracelength", scope.tracelength, scope.utcTime(scope.tracelength));
     scope.trackalignmap; // 
-    scope.timer = {
-        "timescalemax": 600, // 1min ~ 10h
-        "timescalestart": 300,
-        "fpsstart": 30
-            // "tracelength": true //  '0.0.0.0.5'
+    scope.timer = {};
+    scope.timershell = {  // parameters used if not defined otherwise in metadata
+        "timescalemax": 600 // 1min ~ 10h
+        //"timescalestart": 300
+        //"fpsstart": 30
+        // "tracelength": true //  '0.0.0.0.5'
     };
 
     // SHELL-actions
@@ -303,7 +306,8 @@
     });*/
 
     document.addEventListener('WebComponentsReady', function() {
-        // Switch "element-visibility" of routing-api- and routing-gui-elements  
+        
+        // Switch "visibility" of elements related with routing-api- and routing-gui  
         function toggleRouting(radio) {
             if (!radio.checked)  scope.userouting = true;
             else  scope.userouting = false;

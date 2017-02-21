@@ -77,7 +77,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             
             <paper-slider id="slider" value="{{sliderval}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler"></paper-slider>
            
-            <paper-material elevation="2" id="logtime">{{logtime}}</paper-material>
+            <paper-material elevation="2" id="logtime" on-click="timerlog">{{logtime}}</paper-material>
 
 	    </div>
 
@@ -99,7 +99,8 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 },
 
                 /**
-                 * IN:  
+                 * IN: - To reset ctrl-interval after changing timer.start and/or timer.stop 
+                 *     - to sync slider with timer.time
                  *
                  */
                 timer: {
@@ -173,6 +174,10 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 // if (typeof this.checked == 'undefined') this.toggleVisibility(true);
             },
 
+            timerlog: function(){
+                console.log("timerLog:", this.timer)
+            },
+
             listeners: {
                 // for value-sliders
                 //'change': 'changeHandler'
@@ -207,28 +212,32 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
              * @param      {number}  stoptime  The stoptime
              */
             resetSlider: function(stoptime, starttime) { // , stoptime) {
+                // console.log("RESET routing-ctrl for", starttime, stoptime, this.timer)
                 this.trackctrl = false;  
 
-                if (!stoptime) return;
-                if (!starttime) starttime = this.starttime;
-                if (!starttime) {
-                    this.starttime = 0;
-                    starttime = 0;
-                } else  this.starttime = starttime;
+                this.debounce("reset", function(){
+                    if (!stoptime) return;
+                    if (!starttime) starttime = this.starttime;
+                    if (!starttime) {
+                        this.starttime = 0;
+                        starttime = 0;
+                    } else {
+                        this.starttime = starttime;
+                    }
+                    console.log("Setup timeslider for start-/stop-times ", starttime, stoptime, this.sliderunit);
 
-                console.log("Setup timeslider for start-/stop-times ", starttime, stoptime, this.sliderunit);
+                    this.start = 0;
 
-                var deltat = stoptime - starttime;
-                if (this.sliderunit == "min")       deltat = deltat * 60;
-                else if (this.sliderunit == "sec")  deltat = deltat * 3600;
-                deltat = Math.round(deltat);
+                    // Setup the relative stop-time
+                    var deltat = stoptime - starttime;
+                    if (this.sliderunit == "min")       deltat = deltat * 60;
+                    else if (this.sliderunit == "sec")  deltat = deltat * 3600;
+                    deltat = Math.round(deltat);
+                    this.stop = deltat + 1; // ?? + 1
 
-                // Setup the slider-parameters
-                this.start = 0;
-                this.stop = deltat + 1; // ?? + 1
+                    this.syncSlider(starttime); 
 
-                var logtime = this.logTime(starttime, "h", "<br>");
-                this.$.logtime.innerHTML = logtime;
+                }, 100);    
             },
 
             /**

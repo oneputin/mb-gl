@@ -56,12 +56,12 @@ along waypoint file loaded from url
                 },
 
                 /**
-                 * Container for animation-ctrls
-                 * timescale, 
+                 * Container for animation-status-parameters
+                 * (timescale, start and stop in utcTime)
                  */
                 timer: {
                     type: Object,
-                    notify: true,
+                    notify: true
                 },
 
                 /**
@@ -85,6 +85,12 @@ along waypoint file loaded from url
                 routeid: {
                     type: String,
                     observer: 'routeFilterApply'
+                },
+
+
+                routeselected: {
+                    type: Object,
+                    observer: 'routeseletedTimer'
                 },
 
                 /**
@@ -214,27 +220,42 @@ along waypoint file loaded from url
             ],
 
             /**
-             * set 'quasiglobal' this-context for recursive calls during animation 
+             * set a 'quasiglobal' this-context for recursive calls during animation 
              * and setup track-features
              */
-            attached: function() {
-                // 1. setup global namespace 
-                mba = this;
+            ready: function() {
+                mba = this;  // console.log("mba is set!", mba); 
+            }, 
+
+            // Derive and notify timer-interval of selectzed route  
+            routeseletedTimer: function(routeselected){
+                // console.log("RRR routeselected", routeselected.feature); // TraceSource ???
+                var props;
+                if (routeselected.feature) { // trigger rebuild of routing-ctrl 
+                    props = routeselected.feature.properties;
+                    if (props.start || props.start) {  // console.log("RRR selected props", props);
+                        this.set("timer.start", props.start);
+                        this.set("timer.stop", props.stop);
+                    } 
+                }   
             },
 
-
-
-            // prepare all map- and animationdata required to view tracks on the map 
-            //  - for altered routedata
-            //  - if basic(=max) timescale of animation changed
+            // Prepare all map- and animationdata 
+            // required to view animated tracks on the map 
+            //  - if routedata changed
+            //  - if basic timescale of animation changed
             _animationSetup: function(routedata, timescale, map) {
-                if (!routedata || !routedata[0] || !routedata[0].nodes) return;
+                // _animationSetup: function(routedata, map) {
+                // var timescale; 
+                if (!map || !routedata || !routedata[0] || !routedata[0].nodes) return;
                 // console.log("ROUTESET rawdata:", routedata);
 
+                // RESET CTRL and 
                 this.ctrlflag = false;
+                // Remove existing mapThemes(&sources), that are named like the new ones 
+                this.trackFeaturesReset(map);
 
-                // Remove old mapThemes, that are named like the new ones 
-                this.trackFeaturesReset();
+                // A. Setup Timer for animation 
 
                 this.trackTimerSetup(routedata, timescale);
                 console.log("ROUTESET timer=", this.timer); // , routedata);
@@ -247,6 +268,8 @@ along waypoint file loaded from url
 
             },
 
+            // Create a contentBox with SpaceTime-objects: ROUTEs- and TRACEs-, TRACKs-content
+            // = (TiMeta)Layers, not adding content to map yet          
             _animationBoxSetup: function(routedata) {
                 // Order(REIHENFOLGE) important, as wp-reduction in routedata possible during route-setup  
 
@@ -291,13 +314,17 @@ along waypoint file loaded from url
                     return true ;
                 }
 
+                // A. Setup Timer for animation 
                 var contentbox = {},
-                    timer = this.timer,
-                    metadata = this.objectClone(this.metadataset); // metadata of original dataset
+                    timer = this.timer, 
+                    metadata = this.objectClone(this.metadataset);
 
-                // Create ROUTES and TRACE (Meta)Layers (not adding yet)          
+                // B. Setup contentBox for animation-Objects
+
                 contentbox = this.animationRoutesSetup(routedata, timer, metadata); // console.log("checked route-data", routedata);
+
                 contentbox['tracks'] = this.animationTrackerSetup(routedata, timer, metadata);
+
                 // contentbox['nodes'] = this.animationNodesSetup(routedata, metadata); // wayPoints or trackPoints
 
                 if (!checkContent(contentbox)) return; 
@@ -322,7 +349,7 @@ along waypoint file loaded from url
                     if (contentbox.path == '_animationbox') contentbox = contentbox.value;
                     if (!contentbox || !Object.keys(contentbox).length) return;
 
-                    console.log("SET/REFRESH contentbox of animationMap: ", contentbox);
+                    // console.log("SET/REFRESH contentbox of animationMap: ", contentbox);
 
                     // 1. Specify baselayer to use for feature-ctrl 
                         
@@ -353,7 +380,7 @@ along waypoint file loaded from url
                     mba._animationMapRefresh(mba.timer["start"], "FIRST START");
 
                     // 4. Triggers the STANDARD addlayer-action off a quickmap-content ( in <mb-content-view>)
-                    console.log("contentbox", contentbox); 
+                    // console.log("contentbox", contentbox); 
 
                     mba.contentbox = contentbox;
                     //*************************
@@ -560,20 +587,17 @@ along waypoint file loaded from url
              */
             trackTimerSetup: function(routedata, timescale) {
 
-                if (!this.timer) this.timer = {};
-                this.timer.routes = {};
-                this.timer.traces = {};
+                // A.2 **** Get Frametime ****
+                // Bsp: frametime: 6 s fuer scale = 360 und fps=60 !!
+                // Animationszeit 1s=6*60s=6min, 10s=1h Echtzeit 
 
-                // A. Setup basic animation-parameters          
+                var fpsmax = this.timer.fpsmax ? this.timer.fpsmax : 60; 
 
-                var fpsmax = this.timer.fpsmax ? this.timer.fpsmax : 60; // Animationszeit 1s=6*60s=6min, 10s=1h Echtzeit 
-                if (!timescale) timescale = 360; // Animationszeit 1s=360s=6min, 10s=1h Echtzeit 
+                this.timer.frametime = timescale / fpsmax; 
 
-                this.timer["timescale"] = timescale;
 
-                this.timer.frametime = timescale / fpsmax; // Bsp: frametime: 6 s fuer scale = 360 und fps=60 !!
+                // B. Convert tracelength from time to number of animation steps
 
-                // B. Convert tarcelength from time to number of animation steps
                 if (this.timer.tracelength) {
                     if (typeof this.timer.tracelength == "string") {
                         var tl = this.utcTime(this.timer.tracelength, null, "s"),
@@ -587,6 +611,7 @@ along waypoint file loaded from url
                 // C.1 Assemble start&stop 
                 //      for all waypoint-times 
                 //      of every route 
+
                 var wptimer = {};
 
                 routedata.forEach(function(route, j) {
@@ -609,12 +634,16 @@ along waypoint file loaded from url
                     }
 
                 }.bind(this));
-                console.log("trackTimerSetup. wptimes=", wptimer); // return;
+                // console.log("trackTimerSetup. wptimes=", wptimer); // return;
 
                 // C.2 Assemble start&stop times for timer 
                 //   - per route 
                 //   ( - and for overall animation period )
                 // var start, stop;
+
+                this.timer.routes = {};
+                this.timer.traces = {};
+
                 Object.keys(wptimer).forEach(function(id) {
 
                     var wpstart, wpstop, routestart, routestop;
@@ -1259,18 +1288,19 @@ along waypoint file loaded from url
             // D. SETUP elements ctrling and/or illustrating the tracking 
 
             // Initialisierung der animation-feature(collections)
-            trackFeaturesReset: function() {
+            trackFeaturesReset: function(map) {
+                // if (!mba || !mba.map) return;  
                 var lnames = ["routes", "traces", "tracks", "nodes"];
                 // console.log("trackFeaturesReset for objects:", lnames);
                 lnames.forEach(function(lname) {
                     // console.log("RES:", lname);
-                    if (mba.map.getLayer(lname)) mba.map.removeLayer(lname);
-                    if (mba.map.getLayer(lname + "-select")) mba.map.removeLayer(lname + "-select");
-                    if (mba.map.getLayer(lname + "-glow")) mba.map.removeLayer(lname + "-glow");
-                    if (mba.map.getLayer(lname + "-glow-strong")) mba.map.removeLayer(lname + "-glow-strong");
-                    if (mba.map.getLayer(lname + "-bg")) mba.map.removeLayer(lname + "-bg");
+                    if (map.getLayer(lname)) map.removeLayer(lname);
+                    if (map.getLayer(lname + "-select")) map.removeLayer(lname + "-select");
+                    if (map.getLayer(lname + "-glow")) map.removeLayer(lname + "-glow");
+                    if (map.getLayer(lname + "-glow-strong")) map.removeLayer(lname + "-glow-strong");
+                    if (map.getLayer(lname + "-bg")) map.removeLayer(lname + "-bg");
 
-                    if (mba.map.getSource(lname)) mba.map.removeSource(lname);
+                    if (map.getSource(lname)) map.removeSource(lname);
 
                     this[lname] = {
                         "type": "FeatureCollection"
@@ -1292,6 +1322,7 @@ along waypoint file loaded from url
 
                 this.routes.features = [];
                 this.traces.features = [];
+                var that = this; 
                 var routemetas = {};  // separate collection of all routes metadata
 
                 /** Basic routeCreate-action   
@@ -1344,8 +1375,8 @@ along waypoint file loaded from url
 
                             // Calculate a mean leg-speed between wp's with ab/an times
                             if (nextNode.an && wp.ab) {
-                                let dep = mba.utcTime(wp.ab, wp.coords, "h"),
-                                    arv = mba.utcTime(nextNode.an, nextNode.coords, "h");
+                                let dep = that.utcTime(wp.ab, wp.coords, "h"),
+                                    arv = that.utcTime(nextNode.an, nextNode.coords, "h");
                                 legSpeed = legDistance / (arv - dep);
                                 nextNode.arv = arv;
                             } else if (nextNode.speed) {
@@ -1356,8 +1387,8 @@ along waypoint file loaded from url
 
                             // Calculate arv and dep at "stopover"
                             if (nextNode.an && nextNode.ab) {
-                                let arv = mba.utcTime(nextNode.an, nextNode.coords, "h"),
-                                    dep = mba.utcTime(nextNode.ab, nextNode.coords, "h");
+                                let arv = that.utcTime(nextNode.an, nextNode.coords, "h"),
+                                    dep = that.utcTime(nextNode.ab, nextNode.coords, "h");
                                 legStopSec = (dep - arv) * 3600;
                                 nextNode.arv = arv;
                                 nextNode.dep = dep;
@@ -1418,7 +1449,7 @@ along waypoint file loaded from url
                             legsData.push(legInfo);
                             legsCoords.push(legPositions);
                         }
-                    });
+                    }.bind(this));
 
                     srcCollection["routeSrc"] = new RouteSource(routeid, props, legsCoords, legsData, routeNodes);
 
@@ -1445,7 +1476,7 @@ along waypoint file loaded from url
 
                     // console.log("New routeSrces: " + routeid, srcCollection);
                     return srcCollection;
-                }
+                }; 
 
                 function setupRouteStyling(routemetas) {
 
@@ -1502,10 +1533,9 @@ along waypoint file loaded from url
                         // A.3  Include srcObjects into api-Context
                         if (rr) { // console.log("setupAnimationRoute:" + j, rr);
                             
+                            // A. ROUTE
                             r = rr.routeSrc;
-                            t = rr.traceSrc;
-                            
-                            // 
+
                             if (!routedata.meta) routedata.meta = {};
                             if (!routedata.meta.color) routedata.meta.color = this.getRandomColor();
                             r.properties = Object.assign({}, r.properties, routedata.meta);
@@ -1515,7 +1545,9 @@ along waypoint file loaded from url
                             this.routes.features.push(r);
                             // **************************
 
-                            // IF prepared, add trace-features (with same properties as routes) 
+                            // B. TRACE, if prepared, add trace-features (with same properties as routes) 
+                            t = rr.traceSrc;
+                            
                             if (t) {
                                 t.properties = r.properties;
                                 this.traces.features.push(t);
@@ -1525,6 +1557,7 @@ along waypoint file loaded from url
                     }
 
                 }.bind(this));
+                console.log("routedataset:", routedataset) ; 
                 // console.log("Srces:", this.routes.features, this.traces.features);
                 // return;
 
@@ -1687,7 +1720,7 @@ along waypoint file loaded from url
                         type, layouts, paints;
                     const metas = Object.keys(routemetas).map(key => routemetas[key]);  // JS2015
                    
-                    const hasIcon = metas[0].icon; 
+                    const hasIcon = metas && metas[0] && metas[0].icon; 
                     
                     if (hasIcon) { //  EITHER: Symbol 
                         // - with rotating-property 
@@ -1908,8 +1941,8 @@ along waypoint file loaded from url
                             // console.log("routeNodes:" + p, wp, nextNode);
                             // A. Check 
                             if (nextNode.an && wp.ab) {
-                                let dep = mba.utcTime(wp.ab, wp.coords, "s"),
-                                    arv = mba.utcTime(nextNode.an, nextNode.coords, "s");
+                                let dep = this.utcTime(wp.ab, wp.coords, "s"),
+                                    arv = this.utcTime(nextNode.an, nextNode.coords, "s");
                                 legTimeSec = (arv - dep);
                             } else {
                                 legTimeSec = wp.stopover;
