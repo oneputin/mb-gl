@@ -57,7 +57,8 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             <kml-json 
                 url     = "[[serviceurl]]"
                 service = "[[_servicequery]]"
-                query = "[[_clientquery]]"
+                query   = "[[_clientquery]]"
+                msg = "{{msg}}"
                 geojson = "{{slidedata}}">
             </kml-json>
         </template>
@@ -67,6 +68,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             id="loadspinner" 
             alt="loading next slide" active>
         </paper-spinner-lite>
+
         <paper-fab 
             id="slidezoom" 
             class="fab" 
@@ -127,15 +129,6 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     type: Object,
                 },
 
-                /*
-                 *  flag to enable/disable automatic sliderequests
-                 */
-                serviceflag: {
-                    type: Boolean,
-                    value: false,
-                    notify: true,
-                },
-
                 /**
                  * basic server-url of overlay-dataservice
                  */
@@ -153,6 +146,14 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     }
                 },
 
+                /*
+                 *  Flag to enable/disable automatic sliderequests
+                 */
+                serviceflag: {
+                    type: Boolean,
+                    value: false,
+                    notify: true,
+                },
 
                 /**
                  * location for service-query.
@@ -161,8 +162,12 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                  *  - continuously during map-move 
                  */
                 target: {
+                    type: String //, observer: 'locationrequest'
+                },
+
+                msg: {
                     type: String,
-                    observer: 'locationrequest'
+                    observer: 'showmsg'
                 },
 
                 _servicequery: {
@@ -259,10 +264,14 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
             observers: [
                 'locationrequest(target, serviceflag)',
-                'servicerequest(serviceflag, serviceparams.card, serviceparams.slide)',
+                //'servicerequest(serviceflag, serviceparams.card, serviceparams.slide)',
                 'serviceresponse(slidedata.*)',
                 'requestlog(serviceurl, _servicequery.*)'
             ],
+
+            showmsg : function(msg){
+                console.log("server-msg", msg)
+            },
 
             requestlog: function(a, b) {
                 // console.log("requestlog", a, b, b.value);
@@ -309,8 +318,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
                     servicequery["time"] = Date.now();
                    
-                    // console.log("Trigger SERVICEREQUEST as:", servicequery);
-                   
+                    // console.log("Trigger SERVICEREQUEST as:", servicequery, "to " + this.serviceurl);
                     this._servicequery = {};
                     this._servicequery = servicequery;
 
@@ -326,7 +334,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
              *   action triggered after (slide)-server returns new data   
              */
             serviceresponse: function(rawslidedata) {
-
+                // console.log("RAW serviceresponse", rawslidedata) 
                 this.$.loadspinner.active = false;
                 if (!this.map || (typeof rawslidedata != "object") || !Object.keys(rawslidedata).length) return;
                 // console.log(typeof rawslidedata, rawslidedata); // , this.map);
@@ -342,9 +350,10 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 // if (!slidedata || !slidedata.length) return;
 
                 this.slidedata = slidedata;
+                this.slideindex = null;
                 // console.log("new slide data:", slidedata);
 
-                this.slidebox = this.getBoundingBox(slidedata);
+                this.slidebox = this.getBoundingBox(slidedata.features);
 
                 this.slidekeys = this.getFeatureKeys(slidedata);
                 // console.log("ServiceResponse [slidekeys,slidedata,slidebox]:", this.slidekeys, slidedata, this.slidebox);
@@ -482,8 +491,20 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     // A. deactivate service-trigger
                     this.serviceflag = false;
                     // C. 
-                    var bb = this.slidebox; // console.log("fitToSlide", bb);
+
+                    // var bb = this.slidebox; // console.log("fitToSlide", bb);
+                    var slidedata = this.slidedata,
+                        n = slidedata.features.length,
+                        index = this.slideindex;
+                    if (index == undefined) index = n - 1;  
+
+                    var slide = slidedata.features[index],  
+                        bb = this.getBoundingBox([slide]);
                     this.map.fitBounds(bb);
+                    
+                    index = index - 1 < 0 ? n - 1 : index - 1 ; 
+                    this.slideindex = index; 
+
                 }
 
             }

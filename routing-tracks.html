@@ -242,11 +242,15 @@ To 'close'
                 } 
 
                 if ((srctype == "kml") || (srctype == "gpx")) {
+                    srctype = "xml"; 
+                    // ALWAYS
                     metadataset.xmlquery = {
                         "tags": "Track",
                         "structure": "doc"
                     };
-                    srctype = "xml"; 
+                    if (metadataset.query) {  // OPTIONAL
+                        metadataset.xmlquery = Object.assign(metadataset.xmlquery, metadataset.query); 
+                    } 
                 }
                 // console.log("metadataset. AFTER", metadataset);
                 this.srcmeta = metadataset;

@@ -331,7 +331,8 @@ along waypoint file loaded from url
 
                 // ??? Doubled assignment of sourceData to trigger PM1-multi-parameter observer  ???
                 this._animationbox = {};
-                this._animationbox = contentbox; // triggers polymer-based "refresh-action""
+                this._animationbox = contentbox; // triggers data-binding "refresh-action"
+
             } ,
 
 
@@ -349,12 +350,11 @@ along waypoint file loaded from url
                     if (contentbox.path == '_animationbox') contentbox = contentbox.value;
                     if (!contentbox || !Object.keys(contentbox).length) return;
 
-                    // console.log("SET/REFRESH contentbox of animationMap: ", contentbox);
+                    console.log("SET/REFRESH animationMap from contentbox: ", contentbox);
 
                     // 1. Specify baselayer to use for feature-ctrl 
-                        
-                    contentbox["routes"]["usefeatures"] = true; 
 
+                    contentbox["routes"]["usefeatures"] = true; 
 
                     // 2. Setup Map-Events to query track-features on "mouseover" ( or show info-popup etc)  
 
@@ -371,13 +371,17 @@ along waypoint file loaded from url
 
                     mba._counter = 1;
 
-                    // Primary Zoom to ALL features after Setup
-                    var mapfeatures  = contentbox["routes"].srcdata.features; // console.log("f's at start", mapfeatures); 
-                    
-                    mba.trackRoutesZoomTo(mapfeatures);
+                    // Primary Zoom/Start 
+                    var allfeatures  = contentbox["routes"].srcdata.features, // console.log("f's at start", mapfeatures); 
+                        startid = allfeatures[0].properties.id; 
 
-                    // Set Route and RouteCtrl for first "start-time" of animation-routes   
-                    mba._animationMapRefresh(mba.timer["start"], "FIRST START");
+                    if (0) {    // to ALL features after Setup
+                        mba.trackRoutesZoomTo(allfeatures);
+                        mba._animationMapRefresh(mba.timer["start"], "FIRST START");
+                    } else {    // to FIRST feature
+                        this.routeFilterApply(startid); 
+                        // mba.trackRoutesZoomTo(allfeatures.slice(0,1));
+                    }
 
                     // 4. Triggers the STANDARD addlayer-action off a quickmap-content ( in <mb-content-view>)
                     // console.log("contentbox", contentbox); 
@@ -528,7 +532,7 @@ along waypoint file loaded from url
             /*_idFilterCreate: function(routeids) {
             },*/
 
-            // reset app conform with selected routeid  
+            // reset app for selected routeid  
             routeFilterApply: function(routeid) {
                 var routeFilter, srcFeatures,
                     timer = this.timer;
@@ -1557,8 +1561,7 @@ along waypoint file loaded from url
                     }
 
                 }.bind(this));
-                console.log("routedataset:", routedataset) ; 
-                // console.log("Srces:", this.routes.features, this.traces.features);
+                console.log("Srces:", this.routes.features, this.traces.features);
                 // return;
 
                 // B. Setup (differentiated) STYLING of routes (and traces) 
@@ -1568,8 +1571,9 @@ along waypoint file loaded from url
                 // C. FINAL mb-Objects
 
                 var routesContent = this._animationContentSetup("routes", "line", this.routes, routemetas, routeStyling);
-                
                 var tracesContent = this._animationContentSetup("traces", "line", this.traces, routemetas, routeStyling);
+
+                console.log("Content:", routesContent, tracesContent);
 
                 return {
                     "routes": routesContent,
@@ -2336,7 +2340,7 @@ along waypoint file loaded from url
 
             // Generic function to test 
             _contentGetSrcFeatures: function(boxcontent, query) {
-                // console.log("GetSrcFeatures for ", boxcontent);  
+                // console.log("GetSrcFeatures for ", boxcontent, query);  
 
                 var contentsrc = boxcontent.srcdata,
                     ffall = contentsrc.features;
@@ -2363,18 +2367,25 @@ along waypoint file loaded from url
 
                 var ff = [];
 
+                // SIMULATE MB-filtering
                 ffall.forEach(function(f) {
                     var expr, op, prop, value, test, 
                         found = true,
                         props = f.properties;
                     qq.forEach(function(q){
-                        op=q[0]; value=props[q[1]]; test=q[2]; 
-                        expr = test + op + value; 
-                        found = eval(expr) ? (found && true) : false;  // console.log(expr, found); 
+                        op=q[0]; 
+                        value=props[q[1]]; 
+                        test=q[2]; 
+                        if (op =="in") {  // Specialcase
+                            found = test.indexOf(value) >= 0; 
+                        } else {
+                            expr = test + op + value;  
+                            found = eval(expr) ? (found && true) : false;  // console.log(q, expr, found); 
+                        }
                     }) 
                     if (found) ff.push(f);
                 });
-                // console.log("_contentGetSrcFeatures. queried raw routeData for id=" + routeid, rr);
+                console.log("_contentGetSrcFeatures. queried rawRoute for q=", query, ff);
                 return ff;
             },
 

@@ -8,7 +8,7 @@
             "geometry": "Track"
         },
         "device": {
-            "name": "garmin-foretrex",
+            "name": "foretrex",
             "user" : "jana",
             "dop" : 10
         },
@@ -23,10 +23,65 @@
             "geometry": "Track"
         },
         "device": {
-            "name": "garmin-foretrex",
+            "name": "foretrex",
             "user" : "jana",
             "dop" : 10
         },
+        "symbol": "toilet-11"
+    },
+    {
+        "title": "jana-polar",
+        "key": "polar",
+        "type": "gpx",
+        "url": "wp-data/foretrex20170223.gpx",
+        "query": {
+            "geometry": "Track",
+            "time": "2013-09"
+        },
+        "device": {
+            "name": "foretrex",
+            "user" : "jana",
+            "dop" : 10
+        },
+        "symbol": "toilet-11"
+    },
+    {
+        "title": "jana-diving",
+        "key": "diving",
+        "type": "gpx",
+        "url": "wp-data/foretrex20170223.gpx",
+        "query": {
+            "geometry": "Track",
+            "time": "2013-04"
+        },
+        "device": {
+            "name": "foretrex",
+            "user" : "jana",
+            "dop" : 10
+        },
+        "symbol": "toilet-11"
+    },
+    
+    {
+        "start": 1,
+        "title": "jana-sulawesi",
+        "key": "sulawesi",
+        "type": "gpx",
+        "url": "wp-data/foretrex20170223.gpx",
+        "query": {
+            "geometry": "Track",
+            "start": "2017-02-01",
+            "stop": "2017-02-20"
+        },
+        "device": {
+            "name": "foretrex",
+            "user" : "jana",
+            "dop" : 10
+        },
+        "timer":{
+            "timescalemax": 120  
+        },    
+
         "symbol": "toilet-11"
     },
     {
@@ -35,14 +90,13 @@
         "type": "gpx",        
         "url": "wp-data/praha.gpx",
         "device": {
-            "name": "garmin-oregon",
+            "name": "oregon",
             "user" : "wolf",
             "dop" : 10
         },
         "symbol": "toilet-11"
     },
     {
-        "start": 1,
         "title": "SilvesterTag",
         "key": "silv",
         "type": "devicetable",

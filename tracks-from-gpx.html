@@ -50,6 +50,7 @@ Optional: create quick-preview-data
                 type: String
             },
 
+            // Query to be applied in kml-json 
             xmlquery: {
                 type: Object,
                 value: {
@@ -100,13 +101,14 @@ Optional: create quick-preview-data
 
         triggerQuery: function(srcmeta) { // trigger new dataquery !!
             if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
+            console.log("triggerQuery srcmeta",srcmeta) ;
             if (srcmeta.type != "gpx") {
                 this.rawdata = null;
                 return;
             }  
             // set parameters for data-fetch with <kml-json>
-            this.xmlurl = srcmeta.url;
             if (srcmeta.xmlquery) this.xmlquery = srcmeta.xmlquery;
+            this.xmlurl = srcmeta.url; // !! TRIGGER !!
         },
         
         // 

@@ -129,12 +129,12 @@ The visual signature can be toogled in sync with the value of the exported servi
                     var mbounds = map.getBounds(),
                         dlat = Math.abs(mbounds.getNorth() - mbounds.getSouth()),
                         dy = Math.abs(n.split(",")[1] - o.split(",")[1]);
-                    // console.log("locationCheck", dlat, dy);
+                        console.log("locationCheck", dlat, dy, dy / dlat , this.mindy);
                     if ((dy / dlat) < this.mindy) return;
                 }
-                var cbox = n.split(",");
 
                 // 2. Check for cbox in targetArea
+                var cbox = n.split(",");
                 var x=parseFloat(cbox[0]), y=parseFloat(cbox[1]);
                 if (this.targetarea) {
                     var box = this.targetarea,                    
@@ -177,7 +177,8 @@ The visual signature can be toogled in sync with the value of the exported servi
                     // var that = this;
                     this.map.on('moveend', function() {
                         // trigger overlay-request after every "map-move" 
-                        if (this.serviceflag) this.targetTrigger();
+                        // if (this.serviceflag) this.targetTrigger();
+                        this.targetTrigger();
                     }.bind(this));
 
                     // console.log("trigger initial service-request on", this.map);
