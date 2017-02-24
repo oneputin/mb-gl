@@ -217,27 +217,88 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
                 this.debounce("reset", function(){
                     if (!stoptime) return;
+
+                    // 1. GUESSS and set the startTime
                     if (!starttime) starttime = this.starttime;
                     if (!starttime) {
                         this.starttime = 0;
                         starttime = 0;
                     } else {
                         this.starttime = starttime;
-                    }
-                    console.log("Setup timeSlider for start-/stop-times ", starttime, stoptime, "Unit=["+this.sliderunit+"]");
+                    }   
 
-                    this.start = 0;
+                    // this.set("time.time", starttime); 
 
-                    // Setup the relative stop-time
+                    // 2. SET the Slider-Boundaries for "relative routeTime" in "sliderunits" 
+
+                    this.start = 0; // 
+
+                    // Setup the "relative"" stop-time
                     var deltat = stoptime - starttime;
                     if (this.sliderunit == "min")       deltat = deltat * 60;
                     else if (this.sliderunit == "sec")  deltat = deltat * 3600;
-                    deltat = Math.round(deltat);
-                    this.stop = deltat + 1; // ?? + 1
+                    this.stop  = Math.ceil(deltat);
 
-                    this.syncSlider(starttime); 
+                    console.log("Setup timeSlider for start-/stop-times ", starttime, stoptime, "SLIDERLENGTH = "+this.stop+"["+this.sliderunit+"]");
+
+                    // this.syncSlider(starttime); 
+
+                    // this.slideChangeHandler(starttime); 
 
                 }, 100);    
+            },
+
+            /**
+             * Sync animation-status with controls 
+             *
+             * @param      {number}  tracktime  The time from FIRST start of animation-app
+             */
+            syncSlider: function(tracktime) {
+                if (!tracktime) return;
+
+                // A. Sync the slider with externally modified tracktime 
+                var sliderval = tracktime - this.starttime; 
+                if ((sliderval < 0)||(sliderval > this.stop)) {
+                    console.log("sliderval outside: ", tracktime, this.starttime, sliderval); 
+                    this.trackctrl = false; 
+                    return;
+                }
+
+                // A.2 Adjust the "unixHours"
+                if (this.sliderunit == "min") sliderval = sliderval * 60;
+                if (this.sliderunit == "sec") sliderval = sliderval * 3600;
+
+                // B.1 Sync the slider-position
+                this.sliderval = sliderval;
+
+                // B.2 Sync the tracktime in special box
+                var logtime = this.logTime(tracktime, "h", "<br>");
+                this.$.logtime.innerHTML = logtime;
+            },
+
+            /**
+             * Communicate changes of slidertime triggered by useraction on slider 
+             */
+            slideChangeHandler: function() {
+
+                var slidertime = this.slidertime;
+                if (this.sliderunit == "min") slidertime = slidertime / 60;
+                if (this.sliderunit == "sec") slidertime = slidertime / 3600;
+
+                var tracktime = this.starttime + slidertime;
+
+                // NOTIFY new time to routing-api 
+                this.trackctrl = tracktime;  
+                // ************************
+                // B.2 Sync the tracktime in LogBox
+                var logtime = this.logTime(tracktime, "h", "<br>");
+                this.$.logtime.innerHTML = logtime;
+
+                // STOP animation, if it was running  
+                if (this._trackctrl)  {  // console.log("STOPPED at slidertime: " + this.slidertime + "["+this.sliderunit+"]", "tracktime: "+this.logTime(tracktime, "h"));
+                    this.trackctrl = false;  
+                    this._trackctrl = false; 
+                }    
             },
 
             /**
@@ -273,60 +334,6 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 }
             },
 
-            /**
-             * Sync animation-status with controls 
-             *
-             * @param      {number}  tracktime  The time from FIRST start of animation-app
-             */
-            syncSlider: function(tracktime) {
-                if (!tracktime) return;
-
-                // A. Sync the slider with externally modified tracktime 
-                var sliderval = tracktime - this.starttime; 
-                if ((sliderval < 0)||(sliderval > this.stop)) {
-                    console.log("sliderval outside!!"); 
-                    this.trackctrl = false; 
-                    return;
-                }
-
-                // A.2 Adjust the 
-                if (this.sliderunit == "min") sliderval = sliderval * 60;
-                if (this.sliderunit == "sec") sliderval = sliderval * 3600;
-
-                // B.1 Sync the slider-position
-                this.sliderval = sliderval;
-
-                // B.2 Sync the tracktime in special box
-                var logtime = this.logTime(tracktime, "h", "<br>");
-                this.$.logtime.innerHTML = logtime;
-            },
-
-            /**
-             * Communicate changes of slidertime triggered by useraction on slider 
-             */
-            slideChangeHandler: function() {
-
-                var slidertime = this.slidertime;
-                if (this.sliderunit == "min") slidertime = slidertime / 60;
-                if (this.sliderunit == "sec") slidertime = slidertime / 3600;
-
-                var tracktime = this.starttime + slidertime;
-
-                // NOTIFY new time to routing-api 
-                this.trackctrl = tracktime;  
-                // ************************
-                // B.2 Sync the tracktime in LogBox
-                var logtime = this.logTime(tracktime, "h", "<br>");
-                this.$.logtime.innerHTML = logtime;
-
-                // STOP animation, if was running  
-                if (this._trackctrl)  {
-                    // console.log("STOPPED at slidertime: " + this.slidertime + "["+this.sliderunit+"]", "tracktime: "+this.logTime(tracktime, "h"));
-                    this.trackctrl = false;  
-                    this._trackctrl = false; 
-                }    
-
-            },
 
 
             /**
