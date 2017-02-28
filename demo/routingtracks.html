@@ -26,7 +26,7 @@
     <!-- generic components for app-content-ctrl -->
     <link rel="import" href="../mb-content-browser.html"> 
     <link rel="import" href="../mb-content-sync.html">
-    <link rel="import" href="../mb-content-view.html">
+    <link rel="import" href="../mb-content-features.html">
 
     <!-- generic animation components -->
     <link rel="import" href="../routing-api.html">
@@ -34,8 +34,9 @@
     <link rel="import" href="../routing-ctrl-time.html">
 
     <!-- specific animation components for some datasources -->
-    <link rel="import" href="../routing-tracks.html">
-
+    <link rel="import" href="../tracks-info.html">
+    <link rel="import" href="../tracks-load.html">
+    
     <style is="custom-style">
         .container {
             @apply(--layout-horizontal);
@@ -151,6 +152,12 @@
                 checked="[[locationlogshow]]">
             </mb-location-log>
 
+            <tracks-info 
+                metadataset = "[[metadataset]]" 
+                trackinfo = "[[trackinfo]]" 
+                trackdata = "{{trackdata}}">
+            </tracks-info>
+
             <template is="dom-if" if="{{userouting}}">
                 
                 <div class="ctrls-in-map">
@@ -181,27 +188,17 @@
                 <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
                 <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
                 <paper-radio-button checked="{{mapmeasureshow}}">Measure</paper-radio-button>
-                <paper-radio-button class="preview red" checked="{{previewmode}}">CheckSources</paper-radio-button>
+                <paper-radio-button class="preview red" checked="{{logmode}}">CheckSources</paper-radio-button>
+                <paper-radio-button checked="{{waypointmode}}">Show Waypoints</paper-radio-button>
             </div>
 
             <!-- B. Routing APIs -->
 
-            <routing-tracks 
-                previewmode = "[[previewmode]]" 
-                metadataset = "[[metadataset]]" 
-
-                datasetlabel = "{{datasetlabel}}" 
-                rawtracks = "{{contentbox}}" 
-
-                basedataurl = "[[basedataurl]]" 
-                routedata = "{{routedata}}" 
-                trackinfo = "[[trackinfo]]" 
-                trackdata = "{{trackdata}}">
-            </routing-tracks>
             <!-- routedata="{{routedata}}" --> 
             <!-- rawdata="{{rawdata}}" --> 
 
             <template is="dom-if" if="{{userouting}}">
+
                 <routing-api 
                     map="[[map]]" 
                     metadataset="[[metadataset]]"
@@ -216,12 +213,12 @@
                 </routing-api>
                 
                 <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
-                <!--timescalemax="[[timer.timescalemax]]" -->
                 <routing-ctrl-time  
-                    starttimer="[[timershell]]"
+                    starttimer="[[starttimer]]"
                     metadataset="[[metadataset]]"
                     timer="{{timer}}">
                 </routing-ctrl-time>
+
             </template>
 
             <!-- C. DATAFLOW INTERFACE -->
@@ -234,13 +231,24 @@
                 datasetlabel="[[datasetlabel]]"
                 dataset="[[dataset]]" 
                 selectvalue="{{datasetitem}}"> 
+
+                <tracks-load 
+                    metadataset = "[[metadataset]]" 
+                    basedataurl = "[[basedataurl]]" 
+
+                    logmode = "[[logmode]]" 
+                    datasetlabel = "{{datasetlabel}}" 
+                    logdata = "{{contentbox}}" 
+                    routedata = "{{routedata}}" 
+                </tracks-load>
+
             </mb-content-browser>
             <!-- selectprop="id"--> 
             <!-- selectvalue="{{routeid}}"--> 
 
             <!-- SYNC mapcontent from contentbox -->
             <mb-content-sync 
-                checked="[[previewmode]]" 
+                checked="[[logmode]]" 
                 map="[[map]]" 
                 mbid="[[mbid]]" 
                 contentbox="[[contentbox]]" 
@@ -249,13 +257,13 @@
             </mb-content-sync>
 
             <!-- DIALOG ctrl <mb-map> <mb-content-browser> -->
-            <mb-content-view 
+            <mb-content-features 
                 map="[[map]]" 
                 mapcontent="[[mapcontent]]" 
                 featurelist="{{dataset}}"
                 featureselected="[[datasetitem]]"
                 featureapplied="{{selector}}">
-            </mb-content-view>
+            </mb-content-features>
 
         </div>
     </div>
@@ -285,17 +293,18 @@
     // STATE init
     scope.styleselectshow = false;
     scope.locationlogshow = true;
-    scope.previewmode = true;
+    scope.logmode = true;
+    scope.waypointmode = false;
     
     // Animation- INIT
     // console.log("scope.tracelength", scope.tracelength, scope.utcTime(scope.tracelength));
     scope.trackalignmap; // 
-    scope.timer = {};
-    scope.timershell = {  // parameters used if not defined otherwise in metadata
+    scope.timer = {}; //
+    scope.starttimer = {  // parameters used if not defined otherwise in metadata
         "timescalemax": 600 // 1min ~ 10h
         //"timescalestart": 300
         //"fpsstart": 30
-        // "tracelength": true //  '0.0.0.0.5'
+        //"tracelength": true //  '0.0.0.0.5'
     };
 
     // SHELL-actions

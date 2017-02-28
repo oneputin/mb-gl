@@ -4,15 +4,15 @@
 <link rel="import" href="mb-app-behavior.html">
 
 <!--
-    `mb-content-view`
-    quick preview of "contentbox" supplied in "quickformat" fi. 
-    - derived from raw kml- or gpx-datasets
+    `mb-content-features`
+    ctrl of map-faetures contained/supplied in a "contentbox", as fi. 
+    - derived from raw kml- or gpx-datasets  or 
     - created for routing-api
 
     @demo demo/routingtracks.html 
 -->
 
-<dom-module id="mb-content-view">
+<dom-module id="mb-content-features">
 
     <template>
 
@@ -28,7 +28,7 @@
     <script>
         
         Polymer({
-            is: 'mb-content-view',
+            is: 'mb-content-features',
 
             properties: {
                 /**
@@ -38,7 +38,7 @@
                     type: Object,
                 },
 
-                // features of (all) json-layers loaded
+                // features of (1-n) json-layers loaded
                 // !! grouped by layer !!
                 mapcontent: {
                     type: Object,
@@ -75,7 +75,7 @@
             ],
 
             ready: function() {
-                // console.log("READY: mb-content-view");
+                // console.log("READY: mb-content-features");
             },
 
             attached: function() {
@@ -94,7 +94,7 @@
             /**
              * Create a linear LIST(array) of all features  
              * of mapcontent-layers marked with flag 'usefeatures' 
-             * and supply as notify-parameter 'featurelist')
+             * and supply as notify-parameter 'featurelist'
              */
             mapcontentFeatureList: function(mapcontent, keys) {
                 if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
@@ -115,7 +115,6 @@
                             featurelist.push(item);
                         })
                     } 
-
                 });
 
                 this.featurelist = featurelist; // NOTIFIES  !!

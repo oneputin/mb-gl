@@ -73,21 +73,21 @@ along waypoint file loaded from url
                 },
 
                 /**
-                 * IN: raw data of all routes to be  
+                 * IN: raw data of all routes to be animated
                  */
                 routedata: {
                     type: Object
                 },
                 
                 /**
-                 * IN: Unique id of route to be processed
+                 * IN: Unique id of route to be "processed" (fi. animated)
                  */
                 routeid: {
                     type: String,
                     observer: 'routeFilterApply'
                 },
 
-
+                // 
                 routeselected: {
                     type: Object,
                     observer: 'routeseletedApply'
@@ -270,7 +270,7 @@ along waypoint file loaded from url
             },
 
             // Create a contentBox with SpaceTime-objects: ROUTEs- and TRACEs-, TRACKs-content
-            // = (TiMeta)Layers, not adding content to map yet          
+            // = (Meta)Layers, describing mapContent but not not adding to map yet          
             _animationBoxSetup: function(routedata) {
                 // Order(REIHENFOLGE) important, as wp-reduction in routedata possible during route-setup  
 
@@ -336,6 +336,10 @@ along waypoint file loaded from url
 
             } ,
 
+            // Create a contentBox with Userdata-objects (fi. not animated waypoints)
+            _bgBoxSetup: function(bgdata) {
+
+            },
 
             /**
              * Create/Refresh mapLayers for changed content (routed Data)
@@ -385,7 +389,7 @@ along waypoint file loaded from url
                         // mba.trackRoutesZoomTo(allfeatures.slice(0,1));
                     }
 
-                    // 4. Triggers the STANDARD addlayer-action off a quickmap-content ( in <mb-content-view>)
+                    // 4. Triggers the STANDARD addlayer-action off a quickmap-content ( in <mb-content-features>)
                     // console.log("contentbox", contentbox); 
 
                     mba.contentbox = contentbox;
@@ -1609,7 +1613,7 @@ along waypoint file loaded from url
                     return { "paints": routePaintProps} ; 
                 }
                 
-                // A. Interpolate the Routes between waypoints(trackpoints) 
+                // A. Interpolate the Routes between trackpoints (waypoints of the track) 
                 //    based on info about speed and/or arrival-/departure-times at waypoints
                 var nn = routedataset.length,
                     rr, r, t, m;

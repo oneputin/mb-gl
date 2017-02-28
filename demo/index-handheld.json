@@ -81,9 +81,9 @@
         "timer":{
             "timescalemax": 120  
         },    
-
         "symbol": "toilet-11"
     },
+    
     {
         "title": "praha-2012",
         "key": "prag",

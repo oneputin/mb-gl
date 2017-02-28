@@ -59,7 +59,7 @@ Optional: create quick-preview-data
                 }
             },
 
-            previewmode: {
+            logmode: {
                 type: Boolean,
                 value: false
             },
@@ -92,7 +92,7 @@ Optional: create quick-preview-data
 
         observers: [
             'triggerQuery(srcmeta.*)',
-            'deriveTracks(rawdata, srcmeta, previewmode)'
+            'deriveTracks(rawdata, srcmeta, logmode)'
         ],
 
         attached: function() {
@@ -111,8 +111,8 @@ Optional: create quick-preview-data
             this.xmlurl = srcmeta.url; // !! TRIGGER !!
         },
         
-        // 
-        deriveTracks: function(rawdata, srcmeta, previewmode) {
+        // Convert raw gpx-json-data into 
+        deriveTracks: function(rawdata, srcmeta, logmode) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
             // console.log("GPX-data, raw tracks", rawdata);
 
@@ -121,12 +121,11 @@ Optional: create quick-preview-data
             // console.log("GPX-data, mode, flat tracks", rawtracks);
 
             // 2. 
-            if (previewmode) { // derive features for mb-visualization of rawTracks
+            if (logmode) { // derive features for mb-visualization of rawTracks
                 // console.log("prepare quickmap of ", rawtracks);  
-                var rawtracks = this.createQuickview(rawtracks, srcmeta);
-                if (rawtracks) {  // console.log("GPX-data to view", rawtracks);
+                var rawtracks = this.createTrackLogs(rawtracks, srcmeta);
+                if (rawtracks) {  console.log("RAW GPX-track data", rawtracks);
                     this.rawtracks = rawtracks;
-                    console.log("Quickview Tracks (from GPX):", this.rawtracks);  
                 }    
 
             } else {   // derive structures for mb-based animation of 'suitable' tracks
@@ -213,18 +212,18 @@ Optional: create quick-preview-data
             return trackdata;
         },
 
-        // Derive quickmb-container of raw trackdata
-        createQuickview: function(trackdata, srcmeta) {
+        // Derive mb-content to view RAW trackdata 
+        createTrackLogs: function(trackdata, srcmeta) {
 
-            var quickmapObject;
+            var trackLogObject;
 
-            function jsonTrackToQuickview(srcdata, title, prefix) {
+            function trackLogCreate(srcdata, title, prefix) {
 
                 if (!title) title = srcdata.time;
                
-                var mapid = title;
-
-                quickmap = {};
+                var mapid = title,
+                    quickmap = {};
+    
                 quickmap[mapid] = {
                     "layer": {
                         "type": "line",
@@ -241,15 +240,15 @@ Optional: create quick-preview-data
             // with "short as possible" id-entification of features 
             var title; //  = srcmeta.key;
             if (!title) title = srcmeta.title;
-            quickmapObject = jsonTrackToQuickview(trackdata, title); 
+            trackLogObject = trackLogCreate(trackdata, title); 
             
             // SUPPLY quickmap to viewing element 
-            return quickmapObject;
-            // if (quickmapObject) this.mapcontent = quickmapObject;
+            return trackLogObject;
+            // if (trackLogObject) this.mapcontent = trackLogObject;
 
         },
 
-        // Derive Input-data for my-animatation-api 
+        // Derive mb-content usable by (gia-)animatation-api 
         createTrackRoutes: function(rawdata, minTrackLength) {
             if (!minTrackLength) minTrackLength=5; 
             var scope = this,

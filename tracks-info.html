@@ -8,14 +8,11 @@
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="../paper-card/paper-card.html">
 
-<link rel="import" href="tracks-from-gpx.html">
-<link rel="import" href="tracks-from-pnts.html">
-
 <link rel="import" href="mb-map-behavior.html">
 
 
 <!--
-`routing-tracks`
+`tracks-info`
 Interface for import/export of tracking data from handheld gps-devices
 
 IN: transfer raw handheld-data (of different formats)
@@ -34,7 +31,7 @@ To 'close'
 @demo demo/routingtracks.html 
 -->
 
-<dom-module id="routing-tracks">
+<dom-module id="tracks-info">
 
     <template>
 
@@ -93,22 +90,7 @@ To 'close'
         }
 
     </style>
-
-    <!-- alternative srces -->
-    <tracks-from-pnts 
-        srcmeta="[[srcmetad]]"        
-        previewmode="[[previewmode]]"
-        trackdata = "{{routedata}}"
-        rawtracks="{{rawtracks}}">
-    </tracks-from-pnts>    
-
-    <tracks-from-gpx 
-        srcmeta="[[srcmetax]]"
-        previewmode="[[previewmode]]"
-        trackdata="{{routedata}}"
-        rawtracks="{{rawtracks}}">
-    </tracks-from-gpx>    
-
+    <!--  -->
     <paper-card 
         heading="{{carddata.title}}" 
         image="{{cardimgurl}}" 
@@ -144,49 +126,13 @@ To 'close'
 
     <script>
         Polymer({
-            is: 'routing-tracks',
+            is: 'tracks-info',
 
             properties: {
 
-                datasetlabel: {
-                    type: String,
-                    notify : true
-                },
-
-                // metadata of srcdata to be processes
-                // processed to srcmetax or srcmetad
-                metadataset: {
-                    type: Object
-                },
-
-                routedata: {
-                    type: Object,
-                    value: [],
-                    // observer: '_checkPropObject',
-                    notify: true
-                },
-
-                // 
-                previewmode: {
-                    type: Boolean,
-                    observer: 'dataUsageChanged'
-                },
-
-                xmlurl: {
-                    type: String
-                },
-
-                xmlquery: {
-                    type: Object
-                },
 
                 jsonurl: {
                     type: String
-                },
-
-                rawtracks: {
-                    type: Object,
-                    notify: true
                 }
 
             },
@@ -196,7 +142,6 @@ To 'close'
             ],
 
             observers: [
-                'requestDispatcher(metadataset.*)'
             ],
 
             attached: function() {
@@ -210,55 +155,16 @@ To 'close'
 
             // APP/GUI-elemente anpassen, 
             // die sich bei verschiedenartiger Nutzung derselben Grunddatan unterscheiden  
-            dataUsageChanged : function(previewmode) {
-                if (previewmode == null) previewmode = this.previewmode; 
-                if (previewmode) {
+            dataUsageChanged : function(logmode) {
+                if (logmode == null) logmode = this.logmode; 
+                if (logmode) {
                     this.datasetlabel="Raw Tracks"
                 } else {
                     this.datasetlabel="Track Routes"
                 }
             },
 
-            clearSourceUsage : function() {
-                this.routedata = [];
-                var srcTitle = this.srcmeta.title;
-            },
-
-            // Evaluate RoutingSource-Object to trigger import of routedata
-            // from different data-types 
-            requestDispatcher: function(metadataset) {
-                if (metadataset.path == 'metadataset') metadataset = metadataset.value;
-                // console.log("metadataset. RAW=", metadataset);
-
-                var srcurl = metadataset.url,
-                    srctype = metadataset.type,
-                    srctitle = metadataset.title;
-
-                // Check some url - conditions ???
-                if (!srcurl) return;
-
-                if (this.srcmeta && (srcurl != this.srcmeta.url)) {
-                    this.clearSourceUsage();  // 
-                } 
-
-                if ((srctype == "kml") || (srctype == "gpx")) {
-                    srctype = "xml"; 
-                    // ALWAYS
-                    metadataset.xmlquery = {
-                        "tags": "Track",
-                        "structure": "doc"
-                    };
-                    if (metadataset.query) {  // OPTIONAL
-                        metadataset.xmlquery = Object.assign(metadataset.xmlquery, metadataset.query); 
-                    } 
-                }
-                // console.log("metadataset. AFTER", metadataset);
-                this.srcmeta = metadataset;
-                if (srctype=="xml")  this.srcmetax = metadataset;
-                else                 this.srcmetad = metadataset;
-            },
-
-            // B. COMPILE Feature-data 
+            // B. COMPILE Feature-data for OUTPUT
             /**
              * Create some formatted html-text(dom?) 
              * to identify basic properties of an animated object (animation status)
