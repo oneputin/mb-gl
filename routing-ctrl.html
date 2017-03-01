@@ -241,7 +241,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
                     console.log("Setup timeSlider for start-/stop-times ", starttime, stoptime, "SLIDERLENGTH = "+this.stop+"["+this.sliderunit+"]");
 
-                    // this.syncSlider(starttime); 
+                    this.syncSlider(starttime); 
 
                     // this.slideChangeHandler(starttime); 
 
@@ -261,7 +261,8 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 if ((sliderval < 0)||(sliderval > this.stop)) {
                     console.log("sliderval outside: ", tracktime, this.starttime, sliderval); 
                     this.trackctrl = false; 
-                    return;
+                    sliderval = 0; 
+                    // return;
                 }
 
                 // A.2 Adjust the "unixHours"

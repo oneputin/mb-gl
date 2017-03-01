@@ -130,10 +130,9 @@ To 'close'
 
             properties: {
 
-
-                jsonurl: {
-                    type: String
-                }
+                metadataset: {
+                    type: Object
+                },
 
             },
 
@@ -151,17 +150,6 @@ To 'close'
 
             _checkPropObject : function(routedata) {
                 console.log("_checkPropObject", routedata); 
-            },
-
-            // APP/GUI-elemente anpassen, 
-            // die sich bei verschiedenartiger Nutzung derselben Grunddatan unterscheiden  
-            dataUsageChanged : function(logmode) {
-                if (logmode == null) logmode = this.logmode; 
-                if (logmode) {
-                    this.datasetlabel="Raw Tracks"
-                } else {
-                    this.datasetlabel="Track Routes"
-                }
             },
 
             // B. COMPILE Feature-data for OUTPUT

@@ -27,45 +27,55 @@
             is: 'mb-content-sync',
 
             properties: {
+                // OUT: features of (all) contentbox-layers loaded
+                // !! grouped by layer !!
+                contentfeatures: {
+                    type: Object,
+                    value: {},
+                    notify: true
+                },
+
+                // OUT: feature selected by map-events defined for layers of contentbox 
+                logselected : {
+                    type: Object,
+                    notify: true
+                },
+                // OUT: feature selected by map-events defined for layers of contentbox 
+                routeselected : {
+                    type: Object,
+                    notify: true
+                },
+
+                // OUT: feature selected by map-events defined for layers of contentbox 
+                featureselected : {
+                    type: Object
+                    // observer: 'checkoutSelected'
+                },
+
+
+                // IN: new contentbox to be 
+                contentbox: {
+                    type: Object
+                },
                 /**
-                 *  map-object available for query and manipulation outside 
+                 *  IN: map-object triggers content-draw when available first time 
                  */
                 map: {
                     type: Object,
                     observer: "onMapSetup"
                 },
 
-                // id of mb-mapstyle used as map-background
+                // IN: id of mb-mapstyle (basemap) triggers content-redraw when changed
                 mbid: {
                     type: String,
                     observer: 'styleChanged'
                 },
-                // 
-                contentbox: {
-                    type: Object
-                },
+
                 // Old content 
                 _contentbox: {
                     type: Object
                 },
-                // features of (all) jsoncontent-layers loaded
-                // !! grouped by layer !!
-                mapcontent: {
-                    type: Object,
-                    value: {},
-                    notify: true
-                },
-
-                // Used for sync 
-                featureselected : {
-                    type: Object,
-                    notify: true
-                }
             },
-
-            observers: [
-                'mapContentApply(contentbox.*)',
-            ],
 
             behaviors: [
                 Mbb.AppBehavior,
@@ -73,13 +83,29 @@
                 Mbb.MapBehavior
             ],
 
-            ready: function() {
-                // console.log("READY: mb-content-sync");
+
+            observers: [
+                'mapContentApply(contentbox.*)',
+            ],
+
+
+
+            // rarely used 
+            onMapSetup: function(map) {
+                // if (!map || !this.contentbox) return;
+                // console.log("FIRST prepare mapcontent from", this.contentbox);
+                this.mapContentApply(this.contentbox);
+            },
+
+            // refresh contentbox on changed basemap
+            styleChanged: function(mbid) {
+
+                this.mapContentApply(this.contentbox);
             },
 
             /**
              * Create/Replaces all mb-Layers 
-             * related to selected contentbox
+             * related to newly selected contentbox
              */
             mapContentApply: function(contentbox) {
                 if (!this.map) return;
@@ -87,17 +113,20 @@
                 if (contentbox.path == 'contentbox') contentbox = contentbox.value;
                 // console.log("mapContentApply REFRESHING from ", contentbox); 
 
-                // REMOVE old content (this._contentbox) 
+                // Verify weather (at least some) content is "well defined"
+                contentbox = this._mapContentVerify(contentbox);
+                if (!contentbox || !Object.keys(contentbox).length)  return; 
+
+                // REMOVE all old content (this._contentbox) from actual map 
                 this._mapContentCheckOut();
 
-                // Verify if content is "well defined"
-                contentbox = this._mapContentVerify(contentbox);
-                // push back as 
+                // Memorize push back as 
                 this._contentbox = contentbox;   
 
-                // INSERT new content
+                // INSERT new content into map
                 this._mapContentCheckIn(contentbox); 
             },    
+
 
             // Make contentbox "complete"  
             _mapContentVerify: function(contentbox) {    
@@ -105,7 +134,7 @@
 
                 var scope = this, map = scope.map;
 
-                var newbox = {}, layerObject ;
+                var verifiedBox = {}, layerObject ;
                 
                 // Add temporary paint-properties 
                 // for easy identification of features (line-width, random colors)
@@ -138,6 +167,7 @@
                     return layerObject.layer;
                 }
 
+                // 
                 function rawEvents(layername) {
 
                     // Generic HILITE-function based on "id-Filter"	
@@ -198,6 +228,7 @@
                         
                         // Necessary to SYNC with content-browser    
                         scope.featureselected = scope.featuresSelect(features, layerid);
+                        // scope.syncid = 
                         // ******************
                     }
 
@@ -334,6 +365,7 @@
                     return layerTemplates;
                 }
 
+
                 var contentboxLayers = Object.keys(contentbox);   // console.log("Refreshing quickmap-layers", contentboxLayers);
 
                 contentboxLayers.forEach(function(layername, j) {
@@ -354,10 +386,10 @@
                         layerObject.events = rawEvents(layername);
                     }
 
-                    newbox[layername] = layerObject;
+                    verifiedBox[layername] = layerObject;
                 })
-                // console.log("NEW contentBox", newbox);  
-                return newbox; 
+                // console.log("NEW contentBox", verifiedBox);  
+                return verifiedBox; 
             },
 
             // Insert all layers of contentbox 
@@ -557,7 +589,7 @@
                 }.bind(this));
 
                 // console.log("DONE _mapContentCheck" + flag, mapcontent);
-                this.mapcontent = mapcontent;
+                this.contentfeatures = mapcontent;
 
             },
 
@@ -571,18 +603,9 @@
                 this._mapContentChecker(contentbox, "IN") ;    
             },
 
-            // rarely used 
-            onMapSetup: function(map) {
-                // if (!map || !this.contentbox) return;
-                // console.log("FIRST prepare mapcontent from", this.contentbox);
-                this.mapContentApply(this.contentbox);
-            },
-
-            // refresh contentbox on changed basemap
-            styleChanged: function(mbid) {
-
-                this.mapContentApply(this.contentbox);
-            },
+            ready: function() {
+                // console.log("READY: mb-content-sync");
+            }
 
         })
     </script>

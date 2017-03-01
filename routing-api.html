@@ -94,7 +94,7 @@ along waypoint file loaded from url
                 },
 
                 /**
-                 * Status of trackobj avilable to external services 
+                 * Status of trackobj available to external services 
                  * processing the data for presentation u.ä.  
                  */
                 trackdata: {
@@ -227,17 +227,20 @@ along waypoint file loaded from url
                 mba = this;  // console.log("mba is set!", mba); 
             }, 
 
-            // Derive and notify timer-interval of selectzed route  
+            // Derive and notify id and timer-interval of selectzed route/track  
             routeseletedApply: function(routeselected){
                 // console.log("RRR routeselected", routeselected.feature); // TraceSource ???
                 var props;
                 if (routeselected.feature) { // trigger rebuild of routing-ctrl 
-                    props = routeselected.feature.properties;  console.log("selectedRoute, props", props);
-                    if (props.start || props.start) {  
-                        this.set("timer.start", props.start);
-                        this.set("timer.stop", props.stop);
-                    } 
-                    this.routeid = props.id; 
+                    props = routeselected.feature.properties;  console.log("props of selectedRoute:" + this.routeid, props);
+                    if (!props.start && !props.stop) return;  
+                    
+                    // A. Trigger timer-ctrl-sync
+                    this.set("timer.start", props.start);
+                    this.set("timer.stop", props.stop);
+                    
+                    // B. Trigger "routeFilterApply" on map 
+                    this.routeid = props.id; // triggers 
                 }   
             },
 
@@ -245,11 +248,11 @@ along waypoint file loaded from url
             // required to view animated tracks on the map 
             //  - if routedata changed
             //  - if basic timescale of animation changed
+            // _animationSetup: function(routedata, map) {
             _animationSetup: function(routedata, timescale, map) {
-                // _animationSetup: function(routedata, map) {
+                console.log("ROUTESET rawdata:", routedata, timescale, map);
                 // var timescale; 
                 if (!map || !routedata || !routedata[0] || !routedata[0].nodes) return;
-                // console.log("ROUTESET rawdata:", routedata);
 
                 // RESET CTRL and 
                 this.ctrlflag = false;
@@ -384,7 +387,13 @@ along waypoint file loaded from url
                     if (0) {    // to ALL features after Setup
                         mba.trackRoutesZoomTo(allfeatures);
                         mba._animationMapRefresh(mba.timer["start"], "FIRST START");
+
+                    } else if (this.routeid) {    // to LAST selected feature
+
+                        this.routeFilterApply(this.routeid); 
+
                     } else {    // to FIRST feature
+                    
                         this.routeFilterApply(startid); 
                         // mba.trackRoutesZoomTo(allfeatures.slice(0,1));
                     }
@@ -1659,7 +1668,7 @@ along waypoint file loaded from url
                     }
 
                 }.bind(this));
-                console.log("Srces:", this.routes.features, this.traces.features);
+                // console.log("Srces:", this.routes.features, this.traces.features);
                 // return;
 
                 // B. Setup (differentiated) STYLING of routes (and traces) 

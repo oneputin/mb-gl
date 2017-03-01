@@ -31,18 +31,18 @@ Interface for import of tracking data
     </style>
 
     <!-- IF's to alternatively formatted srces -->
+    <!-- routedata = "{{routedata}}"
+        rawtracks="{{logdata}}"> -->
     <tracks-from-pnts 
         srcmeta="[[srcmetad]]"        
         logmode="[[logmode]]"
-        routedata = "{{routedata}}"
-        rawtracks="{{logdata}}">
+        trackdata="{{_trackdata}}">
     </tracks-from-pnts>    
 
     <tracks-from-gpx 
         srcmeta="[[srcmetax]]"
         logmode="[[logmode]]"
-        routedata="{{routedata}}"
-        rawtracks="{{logdata}}">
+        trackdata="{{_trackdata}}">
     </tracks-from-gpx>    
 
     <content>
@@ -72,11 +72,14 @@ Interface for import of tracking data
                     type: Boolean,
                     observer: 'dataUsageChanged'
                 },
+
+                _trackdata: {
+                    type: Object
+                },
+
                 // OUT: 
                 routedata: {
                     type: Object,
-                    value: [],
-                    // observer: '_checkPropObject',
                     notify: true
                 },
                 // OUT 
@@ -101,7 +104,8 @@ Interface for import of tracking data
             ],
 
             observers: [
-                'requestDispatcher(metadataset.*)'
+                'checkoutTrackData(_trackdata)',
+                'requestDispatcher(metadataset.*, logmode)'
             ],
 
             attached: function() {
@@ -109,8 +113,12 @@ Interface for import of tracking data
                 // console.log("target attached");
             },
 
-            _checkPropObject : function(routedata) {
-                console.log("_checkPropObject", routedata); 
+            // 
+            checkoutTrackData : function(trackdata) {
+                console.log("checkoutTrackData: OUT", this.logmode,  trackdata); 
+                console.log("checkoutTrackData: META", this.logmode, this.metadataset); 
+                if (this.logmode) this.logdata = trackdata;
+                else  this.routedata = trackdata
             },
 
             // APP/GUI-elemente anpassen, 
@@ -129,7 +137,7 @@ Interface for import of tracking data
                 var srcTitle = this.srcmeta.title;
             },
 
-            // Evaluate RoutingSource-Object to trigger import of routedata
+            // Evaluate RoutingSource-Object to trigger import of trackdata
             // from different data-types 
             requestDispatcher: function(metadataset) {
                 if (metadataset.path == 'metadataset') metadataset = metadataset.value;

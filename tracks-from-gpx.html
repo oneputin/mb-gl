@@ -70,6 +70,11 @@ Optional: create quick-preview-data
                 //observer: 'deriveTracks'
             },
 
+            trackdata : {
+                type: Object,
+                notify: true
+            },
+
             // can be processed in "quickViewer"
             rawtracks: {
                 type: Object,
@@ -77,7 +82,7 @@ Optional: create quick-preview-data
             },
 
             // to be processed in "trackAnimation"
-            trackdata: {
+            routedata: {
                 type: Array,
                 value: [],
                 notify: true
@@ -125,15 +130,16 @@ Optional: create quick-preview-data
                 // console.log("prepare quickmap of ", rawtracks);  
                 var rawtracks = this.createTrackLogs(rawtracks, srcmeta);
                 if (rawtracks) {  console.log("RAW GPX-track data", rawtracks);
-                    this.rawtracks = rawtracks;
+                    // this.rawtracks = rawtracks;
+                    this.trackdata = rawtracks;
                 }    
 
             } else {   // derive structures for mb-based animation of 'suitable' tracks
                 // console.log("prepare routedata", rawtracks);  
-                var routetracks = this.createTrackRoutes(rawtracks); // .features);
-                if (routetracks.length) {
-                    console.log("RAW ROUTEDATA (from GPX)",  routetracks);
-                    this.trackdata = routetracks;
+                var trackroutes = this.createTrackRoutes(rawtracks); // .features);
+                if (trackroutes.length) {  console.log("RAW ROUTEDATA (from GPX)",  trackroutes);
+                    // this.routedata = trackroutes;
+                    this.trackdata = trackroutes;
                 }    
             }    
         },

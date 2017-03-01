@@ -122,7 +122,6 @@
     <div class="container">
         <!-- LEFT block: Map -->
 
-        <!-- lnglat="{{lnglat}} -->" 
         <mb-map 
             map="{{map}}" 
             mapapikey="[[mbkey]]" 
@@ -152,11 +151,13 @@
                 checked="[[locationlogshow]]">
             </mb-location-log>
 
+            <!-- not implemented 
             <tracks-info 
                 metadataset = "[[metadataset]]" 
                 trackinfo = "[[trackinfo]]" 
                 trackdata = "{{trackdata}}">
             </tracks-info>
+            -->
 
             <template is="dom-if" if="{{userouting}}">
                 
@@ -173,6 +174,7 @@
                     </mb-orientation-ctrl>
                     
                 </div>
+
             </template>
 
             <!--<mb-info-drag carddata="[[trackdata]]">
@@ -202,17 +204,19 @@
                 <routing-api 
                     map="[[map]]" 
                     metadataset="[[metadataset]]"
-                    contentbox="{{contentbox}}"               
+                    routedata=[[routedata]] 
+
                     timer="{{timer}}"
                     trackctrl="{{trackctrl}}" 
-                    routeid=[[routeid]] 
-                    routedata=[[routedata]] 
+                    contentbox="{{contentbox}}"               
+
                     routeselected="[[datasetitem]]" 
+                    syncid=[[syncid]] 
+
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]">
                 </routing-api>
                 
-                <!--timescalemax="[[timer.timescalemax]]" fps="{{timer.fps}}" timescale="{{timer.timescale}}">-->
                 <routing-ctrl-time  
                     starttimer="[[starttimer]]"
                     metadataset="[[metadataset]]"
@@ -235,34 +239,34 @@
                 <tracks-load 
                     metadataset = "[[metadataset]]" 
                     basedataurl = "[[basedataurl]]" 
+                    datasetlabel = "{{datasetlabel}}" 
 
                     logmode = "[[logmode]]" 
-                    datasetlabel = "{{datasetlabel}}" 
                     logdata = "{{contentbox}}" 
-                    routedata = "{{routedata}}" 
+                    routedata = "{{routedata}}"> 
                 </tracks-load>
 
             </mb-content-browser>
             <!-- selectprop="id"--> 
-            <!-- selectvalue="{{routeid}}"--> 
+            <!-- selectvalue="{{syncid}}"--> 
 
-            <!-- SYNC mapcontent from contentbox -->
+            <!-- SYNC contentfeatures from contentbox -->
+            <!-- checked="[[logmode]]" --> 
             <mb-content-sync 
-                checked="[[logmode]]" 
-                map="[[map]]" 
-                mbid="[[mbid]]" 
                 contentbox="[[contentbox]]" 
-                featureselected="{{datasetitem}}"
-                mapcontent="{{mapcontent}}">
+                map = "[[map]]" 
+                mbid = "[[mbid]]" 
+                contentfeatures="{{contentfeatures}}"
+                featureselected="{{datasetitem}}">
             </mb-content-sync>
 
             <!-- DIALOG ctrl <mb-map> <mb-content-browser> -->
+            <!-- featureselected="[[datasetitem]]" -->
+            <!-- featureapplied="{{selector}}"> -->
             <mb-content-features 
                 map="[[map]]" 
-                mapcontent="[[mapcontent]]" 
                 featurelist="{{dataset}}"
-                featureselected="[[datasetitem]]"
-                featureapplied="{{selector}}">
+                contentfeatures="[[contentfeatures]]"> 
             </mb-content-features>
 
         </div>

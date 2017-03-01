@@ -38,30 +38,27 @@
                     type: Object,
                 },
 
-                // features of (1-n) json-layers loaded
+                // IN: content-box-features of (1-n) layers 
                 // !! grouped by layer !!
-                mapcontent: {
+                contentfeatures: {
                     type: Object,
                     value: {}
                 },
 
-                // (linear) List of (basic) mapfeatures to be used for external selection
-                // optionally from 1-n layers
+                // OUT: (linear) List of (basic) mapcontent-features from 1(optionally more) layer(s)
+                // fi. to be used for external selection
                 featurelist: {
                     type: Array,
-                    value: [],
                     notify: true
                 },
 
-                // bidirectional ctrl-prop
-                featureselected: {
+                // IN/OUT: bidirectional ctrl-property
+                /*featureselected: {
                     type: Object,
                     notify: true,
                     observer: 'checkoutFeature'
-                },
-                checked: {
-                    type: Boolean
-                }
+                }*/
+
             },
 
             behaviors: [
@@ -71,7 +68,7 @@
             ],                
 
             observers: [
-                'mapcontentFeatureList(mapcontent.*)',
+                'contentFeaturesToList(contentfeatures.*)',
             ],
 
             ready: function() {
@@ -96,20 +93,20 @@
              * of mapcontent-layers marked with flag 'usefeatures' 
              * and supply as notify-parameter 'featurelist'
              */
-            mapcontentFeatureList: function(mapcontent, keys) {
-                if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
-                if (!mapcontent || !Object.keys(mapcontent).length) return;
+            contentFeaturesToList: function(contentfeatures, keys) {
+                if (contentfeatures.path == 'contentfeatures') contentfeatures = contentfeatures.value;
+                if (!contentfeatures || !Object.keys(contentfeatures).length) return;
                 
-                if (!keys) keys = Object.keys(mapcontent);
-                // console.log("GET mapcontentFeatureList of", keys, mapcontent);
+                if (!keys) keys = Object.keys(contentfeatures);
                 
                 // Select features from layer with basefeatures only !! 
 
                 var obj, featurelist = [];
 
                 keys.forEach(function(lname) {
-                    obj = mapcontent[lname];
-                    // add features to featurelist if layer is "marked" or if only one layer exists   
+                    obj = contentfeatures[lname];
+                    // add features to featurelist if layer is "marked with 'usefeatures' " 
+                    // or if only one layer exists in contentfeatures  
                     if ((keys.length == 1) || obj.usefeatures) { // 
                         obj.features.forEach(function(item) {
                             featurelist.push(item);
@@ -118,7 +115,7 @@
                 });
 
                 this.featurelist = featurelist; // NOTIFIES  !!
-                // console.log("GOT mapcontentFeatureList :", layernames, featurelist);
+                // console.log("GOT contentFeaturesToList :", layernames, featurelist);
             }
 
         });
