@@ -74,34 +74,35 @@
 
 
             observers: [
-                'mapContentApply(contentbox.*)',
+                'mapContentApply(contentbox.*, "CONTENTBOX")',
             ],
-
 
 
             // rarely used 
             onMapSetup: function(map) {
                 // if (!map || !this.contentbox) return;
                 // console.log("FIRST prepare mapcontent from", this.contentbox);
-                this.mapContentApply(this.contentbox);
+                this.mapContentApply(this.contentbox, "NEW MAP");
             },
 
             // refresh contentbox on changed basemap
             styleChanged: function(mbid) {
 
-                this.mapContentApply(this.contentbox);
+                this.mapContentApply(this.contentbox, "STYLE " + mbid);
             },
 
             /**
              * Create/Replaces all mb-Layers 
              * related to newly selected contentbox
              */
-            mapContentApply: function(contentbox) {
-                if (!this.map) return;
+            mapContentApply: function(contentbox, meta) {
+                if (!this.map) return; 
                 if (!contentbox || !Object.keys(contentbox).length) return;
-                if (contentbox.path == 'contentbox') contentbox = contentbox.value;
-                console.log("mapContentApply for ", contentbox); 
-                if (contentbox.mapped) return; 
+                // if (contentbox.path == 'contentbox') {
+                var cp = contentbox.path; // console.log("mapContentApply-1 ", contentbox, cp);
+                if (cp && (cp.indexOf('contentbox') >= 0)) { 
+                    contentbox = contentbox.base;
+                } 
 
                 // Verify weather (at least some) content is "well defined"
                 contentbox = this._mapContentVerify(contentbox);
@@ -114,7 +115,7 @@
                 this._contentbox = contentbox;   
 
                 // INSERT new content into map
-                this._mapContentCheckIn(contentbox); 
+                this._mapContentCheckIn(contentbox, meta); 
 
             },    
 
@@ -393,8 +394,8 @@
 
                 // create linear list of features 
                 // suitable for "menu-generation"
-                function getFeatures(layerData, layername, longtitle) {
-                    // console.log("getFeatures", layername, layerData);
+                function getFeatureList(layerData, layername, longtitle) {
+                    // console.log("getFeatureList", layername, layerData);
 
                     var flist = [],
                         fitem = {},
@@ -450,8 +451,7 @@
                         if (true) {
                             layerSource.setData(layerData);
                         }
-                    }
-                    // console.log("SRC", layername, layerData, layerSource);
+                    }  // console.log("SET SRC", layername, layerData, layerSource._data);
 
 
                     // 1.C. (Re)Create layer(s) 
@@ -482,17 +482,16 @@
                         mapLayer = map.getLayer(layername);
                     }
 
-                    // Check in ??? 
-                    if (mapLayer) {
-                        /*var features = map.querySourceFeatures(layername, {
-                            sourceLayer: 'original',
+                    // Check layer content  
+                    if (mapLayer) { 
+                    /*
+                        var features = map.querySourceFeatures(layername, {
                             filter: null
                         });
-                        if (features.length) {
-                            console.log("Loaded "+features.length + " features of layer [" + layername+ "]"); // , features, layerSource);
-                        }*/    
-                        return layerData; 
+                        console.log("Checked "+features.length + " features of layer [" + layername+ "]"); // , features, layerSource);
+                    */
                     }
+                    return layerData; 
 
                 }
                 //
@@ -514,7 +513,7 @@
                 function removeMapContent(layerObject) {
 
                     var contentTemplates = layerObject.templates;
-                    
+                    // console.log("removeMapContent contentTemplates", contentTemplates, layerObject); 
                     // deactivate related events 
 
                     // remove Layers
@@ -543,7 +542,7 @@
 
                 var mapcontent = {};
                 
-                var contentboxLayers = Object.keys(contentbox);   // console.log("Refreshing quickmap-layers", contentboxLayers);
+                var contentboxLayers = Object.keys(contentbox);   // console.log("Refreshing contentboxlayers", contentboxLayers, contentbox);
 
                 contentboxLayers.forEach(function(layername, j) {
 
@@ -556,16 +555,16 @@
                         var layerData = addMapContent(layername, layerObject);
                         var ids=[]; 
                         if (layerData) {   // Check/Get all source-features of the basic layer 
-                            contentfeatures = getFeatures(layerData, layername);
+                            contentfeatures = getFeatureList(layerData, layername);
                             console.log("CHECKED-"+flag+" ["+layername+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
                         }                        
 
                     }   else {        // REMOVE object (on demand)
                         removeMapContent(layerObject); 
                         console.log("CHECKED-"+flag+" [" + layername+"]"); 
-                    }
-
-                    // 
+                    } 
+                    
+                    // console.log("TOGGLEevents-"+flag +" [" + layername+"]", layerObject); 
                     toggleContentEvents(layerObject, flag) 
 
                     // Add layer-features to mapcontent
@@ -588,11 +587,10 @@
                 this._mapContentChecker(this._contentbox, "OUT") ;    
             },
             // Add/Insert layers according contentbox
-            _mapContentCheckIn: function(contentbox) { 
+            _mapContentCheckIn: function(contentbox, meta) { 
                 var mapcontent = this._mapContentChecker(contentbox, "IN") ;
-                console.log("DONE _mapContentCheckIN", mapcontent);
+                console.log("CHECKED-IN ("+meta+")", mapcontent);
                 this.contentfeatures = mapcontent;
-                // this.set("contentbox.mapped", mapcontent);
             },
 
             ready: function() {

@@ -54,6 +54,13 @@ along waypoint file loaded from url
                     notify: true
                     // observer: '_checkObject'
                 },
+                /**
+                 * Container for animation-data
+                 */
+                mapcontentbox: {
+                    type: Object,
+                    // observer: '_checkObject'
+                },
 
                 /**
                  * Container for animation-status-parameters
@@ -213,7 +220,7 @@ along waypoint file loaded from url
             observers: [
                 '_animationSetup(routedata, timer.timescale, map)', // creates _animationbox
                 '_animationMapSetup(map, _animationbox.*)',  // creates 'contentbox' for 
-                'routeFilterApply(contentbox.mapped)',
+                'routeFilterApply(mapcontentbox.*)',
                 'mapAlignChange(trackalignmap, _trackObj)',
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)',
@@ -550,10 +557,12 @@ along waypoint file loaded from url
              */ 
             routeFilterApply: function(filterkey) {
                 var timer = this.timer;
-                if (!timer || !timer.routes) return;
-                console.log("routeFilterApply: Start with ", "type=" + typeof filterkey, filterkey); 
-                if (!filterkey) return;  
-                var routeid, routeFilter, srcFeatures, timerEntry, visibleid;
+                if (!timer || !timer.routes || !filterkey) return;
+                var dataName = "routes",
+                    routesLayer = this.map.getLayer(dataName);
+                if (!routesLayer) return; 
+
+                var routeid, routeFilter, timerEntry, msg;
 
                 // A. Eval filterkey-cases and reset timer 
 
@@ -565,23 +574,27 @@ along waypoint file loaded from url
                     return; 
 
                 } else if (typeof filterkey == "object") {
-                    
-                    // A. Try to guess the id of "berst suitable" route 
-                    //    from all routes contained in actual mapport 
-                    if (filterkey['routes'] && this.map.getLayer('routes')) {
-                        var features = this.map.querySourceFeatures('routes');
-                        console.log("features of routes-layer in actual map-port", features); 
+                    var mapcontentbox = filterkey.value; // Polymer!!
+                    var routesContent = mapcontentbox[dataName];
+                    console.log("'routeFilterApply' ON Object", mapcontentbox); 
+
+                    if (routesContent && routesLayer) {
+                        // A. Try to guess the id of "suitable" route 
+                        //    from all routes contained in actual mapport 
+                        // var features = this.map.queryRenderedFeatures(
+                        var features = this.map.querySourceFeatures(dataName); // , { filter: null}); 
+                        console.log("features of ", routesLayer," in actual map-port", features); 
                         if (features.length) { 
                             routeid = features[0].id;  
-                            console.log("selected route from mapport", routeid); 
+                            msg = "Select-Route from MAP port"
                         }     
                     }    
                     
                     // B. Get the id of first route in contentbox-srcdata
                     if (!routeid) {
-                        var allfeatures  = this.contentbox["routes"].srcdata.features; 
+                        var allfeatures = this.contentbox[dataName].srcdata.features; 
                         routeid = allfeatures[0].properties.id; 
-                        console.log("selected route from RAW sources", routeid); 
+                        msg = "Select-Route from RAW data"
                     }
 
                 } else if (filterkey) {
@@ -590,20 +603,22 @@ along waypoint file loaded from url
 
                 // 
                 if (routeid) {
-                    console.log("_animationMap: Setup with route-feature", routeid); 
+                    console.log(msg+":", routeid); 
+
                     timerEntry = timer.routes[routeid];
                     this.trackTimerRefresh(timerEntry);
-                }
 
-                // B. SPATIAL ZOOM and Filter-Definition
-                if (!timerEntry) { // 
+                    // B. SPATIAL ZOOM and Visibility-Filter of tracks
+                    this.trackRoutesZoomTo(null, routeid);
+                    this.trackFilterApply(routeid);
+
+                    routeFilter = this._idFilterCreate(routeid);
+                    console.log("_animationMap: Setup for route-feature", routeid, routeFilter); 
+                } else {
+                    //if (!timerEntry) { // 
                     this.trackRoutesZoomTo();
                     this.trackFilterApply("");
                     routeFilter = this._idFilterCreate("all");
-                } else {
-                    this.trackRoutesZoomTo(null, routeid);
-                    this.trackFilterApply(routeid);
-                    routeFilter = this._idFilterCreate(routeid);
                 }
 
                 // C. Apply routeFilter 
@@ -616,12 +631,12 @@ along waypoint file loaded from url
                 // console.log("Setup animation for ["+ routeid+"], VON " + this.logTime(timer.start, "h"), "BIS " + this.logTime(timer.stop, "h")); 
                 // console.log("with filter, timer:", timerEntry, timer ); 
 
-                srcFeatures = this._animationMapRefresh(null, null,  routeFilter);
+                var srcFeatures = this._animationMapRefresh(null, null,  routeFilter);
                 // console.log("srcFeatures filtered for:" + routeid, srcFeatures, this.timer);
 
                 // D. TEMPORAL Location at START of selected routes
                 if (srcFeatures.routes) {   //console.log("running the FIRST animation-step");
-                    this.trackStepAction(1);
+                    this.trackStepAction(1); 
                 }
             },
 
@@ -822,6 +837,7 @@ along waypoint file loaded from url
                     }
 
                 } else {
+
                     if (this._counter) {
                         var trackObjs = [];
                         if (this.map) {
