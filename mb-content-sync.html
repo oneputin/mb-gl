@@ -31,18 +31,7 @@
                 // !! grouped by layer !!
                 contentfeatures: {
                     type: Object,
-                    value: {},
-                    notify: true
-                },
-
-                // OUT: feature selected by map-events defined for layers of contentbox 
-                logselected : {
-                    type: Object,
-                    notify: true
-                },
-                // OUT: feature selected by map-events defined for layers of contentbox 
-                routeselected : {
-                    type: Object,
+                    // value: {},
                     notify: true
                 },
 
@@ -52,10 +41,10 @@
                     // observer: 'checkoutSelected'
                 },
 
-
                 // IN: new contentbox to be 
                 contentbox: {
-                    type: Object
+                    type: Object,
+                    notify: true
                 },
                 /**
                  *  IN: map-object triggers content-draw when available first time 
@@ -71,10 +60,10 @@
                     observer: 'styleChanged'
                 },
 
-                // Old content 
+                // Cached (Old) content 
                 _contentbox: {
                     type: Object
-                },
+                }
             },
 
             behaviors: [
@@ -111,7 +100,8 @@
                 if (!this.map) return;
                 if (!contentbox || !Object.keys(contentbox).length) return;
                 if (contentbox.path == 'contentbox') contentbox = contentbox.value;
-                // console.log("mapContentApply REFRESHING from ", contentbox); 
+                console.log("mapContentApply for ", contentbox); 
+                if (contentbox.mapped) return; 
 
                 // Verify weather (at least some) content is "well defined"
                 contentbox = this._mapContentVerify(contentbox);
@@ -125,6 +115,7 @@
 
                 // INSERT new content into map
                 this._mapContentCheckIn(contentbox); 
+
             },    
 
 
@@ -588,9 +579,7 @@
 
                 }.bind(this));
 
-                // console.log("DONE _mapContentCheck" + flag, mapcontent);
-                this.contentfeatures = mapcontent;
-
+                return mapcontent; 
             },
 
             // Remove previous Content-layers
@@ -600,7 +589,10 @@
             },
             // Add/Insert layers according contentbox
             _mapContentCheckIn: function(contentbox) { 
-                this._mapContentChecker(contentbox, "IN") ;    
+                var mapcontent = this._mapContentChecker(contentbox, "IN") ;
+                console.log("DONE _mapContentCheckIN", mapcontent);
+                this.contentfeatures = mapcontent;
+                // this.set("contentbox.mapped", mapcontent);
             },
 
             ready: function() {

@@ -15,10 +15,10 @@
     Mbb.ContentBehavior = {
 
         properties: {
-            featureselected: {
+            /* featureselected: {
                 type: Object,
                 notify : true
-            }
+            }*/
         },    
 
         behaviors: [
@@ -41,7 +41,9 @@
 
 
             } else { // SIMPLE GeometryZoom 
-                if (f.feature) f = f.feature;
+                if (f.feature) {
+                    f = f.feature;
+                }
                 selectObj = this.setFeatureBounds([f], this.map);
             }    
 

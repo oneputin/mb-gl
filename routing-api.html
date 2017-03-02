@@ -213,6 +213,7 @@ along waypoint file loaded from url
             observers: [
                 '_animationSetup(routedata, timer.timescale, map)', // creates _animationbox
                 '_animationMapSetup(map, _animationbox.*)',  // creates 'contentbox' for 
+                'routeFilterApply(contentbox.mapped)',
                 'mapAlignChange(trackalignmap, _trackObj)',
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)',
@@ -239,8 +240,8 @@ along waypoint file loaded from url
                     this.set("timer.start", props.start);
                     this.set("timer.stop", props.stop);
                     
-                    // B. Trigger "routeFilterApply" on map 
-                    this.routeid = props.id; // triggers 
+                    // B. Triggers "routeFilterApply" for routeid on the map 
+                    this.routeid = props.id; 
                 }   
             },
 
@@ -364,45 +365,40 @@ along waypoint file loaded from url
 
                     contentbox["routes"]["usefeatures"] = true; 
 
-                    // 2. Setup Map-Events to query track-features on "mouseover" ( or show info-popup etc)  
+                    // 2. Setup Map-Events ("mouseover")
+                    //  - to query track-features 
+                    //  - or show info-popup etc  
 
                     Object.keys(contentbox).forEach(function(lname){
                         contentbox[lname]["events"] = {};
                     })
 
                     var mapevents = mba._animationMapEvents(map); 
+
                     if (mapevents)  {
                         contentbox["routes"]["events"] = mapevents; 
                     }
-
-                    // 3. (Re)Start-action(s) 
-
-                    mba._counter = 1;
-
-                    // Primary Zoom/Start 
-                    var allfeatures  = contentbox["routes"].srcdata.features, 
-                        startid = allfeatures[0].properties.id; 
-
-                    console.log("_animationMapSetup at start", allfeatures, startid); 
-                    if (0) {    // to ALL features after Setup
-                        mba.trackRoutesZoomTo(allfeatures);
-                        mba._animationMapRefresh(mba.timer["start"], "FIRST START");
-
-                    } else if (this.routeid) {    // to LAST selected feature
-
-                        this.routeFilterApply(this.routeid); 
-
-                    } else {    // to FIRST feature
-                    
-                        this.routeFilterApply(startid); 
-                        // mba.trackRoutesZoomTo(allfeatures.slice(0,1));
-                    }
-
-                    // 4. Triggers the STANDARD addlayer-action off a quickmap-content ( in <mb-content-features>)
                     // console.log("contentbox", contentbox); 
+
+                    // 4. Triggers the STANDARD add(refresh)layer-action off a contentbox 
+                    //    (in <mb-content-sync>)
 
                     mba.contentbox = contentbox;
                     //*************************
+
+                    // 3. (Re)Start- and StartZoom-action(s) 
+
+                    mba._counter = 1;
+
+                    if (0) {    // zoom to ALL features after Setup
+                        mba.trackRoutesZoomTo();
+                        mba._animationMapRefresh(mba.timer["start"], "FIRST START");
+
+                    } else {    // to FIRST feature, if no feature found in bbox
+                        // console.log("_animationMapSetup START with", contentbox) ;
+                        // this.routeFilterApply(contentbox); // "visible", startid); 
+                    }
+
 
                 }, debounceTime);
             },
@@ -547,25 +543,59 @@ along waypoint file loaded from url
             /*_idFilterCreate: function(routeids) {
             },*/
 
-            // Reset the app for a given routeid  
-            routeFilterApply: function(routeid) {
-                var routeFilter, srcFeatures, timerEntry,
-                    timer = this.timer;
+
+            /**
+             * SETUP the app for a given filterkey  
+             * 
+             */ 
+            routeFilterApply: function(filterkey) {
+                var timer = this.timer;
                 if (!timer || !timer.routes) return;
+                console.log("routeFilterApply: Start with ", "type=" + typeof filterkey, filterkey); 
+                if (!filterkey) return;  
+                var routeid, routeFilter, srcFeatures, timerEntry, visibleid;
 
-                // A. Eval routeid-cases and reset timer 
+                // A. Eval filterkey-cases and reset timer 
 
-                if (routeid == "all") {
+                if (filterkey == "all") {
                     this.trackTimerRefresh();
-                } else if (routeid == "clear") {
+
+                } else if (filterkey == "clear") {
                     console.log("NOT implemented: CLEAR all features"); 
                     return; 
-                } else {
+
+                } else if (typeof filterkey == "object") {
+                    
+                    // A. Try to guess the id of "berst suitable" route 
+                    //    from all routes contained in actual mapport 
+                    if (filterkey['routes'] && this.map.getLayer('routes')) {
+                        var features = this.map.querySourceFeatures('routes');
+                        console.log("features of routes-layer in actual map-port", features); 
+                        if (features.length) { 
+                            routeid = features[0].id;  
+                            console.log("selected route from mapport", routeid); 
+                        }     
+                    }    
+                    
+                    // B. Get the id of first route in contentbox-srcdata
+                    if (!routeid) {
+                        var allfeatures  = this.contentbox["routes"].srcdata.features; 
+                        routeid = allfeatures[0].properties.id; 
+                        console.log("selected route from RAW sources", routeid); 
+                    }
+
+                } else if (filterkey) {
+                    routeid = filterkey;
+                } 
+
+                // 
+                if (routeid) {
+                    console.log("_animationMap: Setup with route-feature", routeid); 
                     timerEntry = timer.routes[routeid];
                     this.trackTimerRefresh(timerEntry);
                 }
 
-                // B. SPATIAL ZOOM and Query
+                // B. SPATIAL ZOOM and Filter-Definition
                 if (!timerEntry) { // 
                     this.trackRoutesZoomTo();
                     this.trackFilterApply("");
@@ -576,22 +606,21 @@ along waypoint file loaded from url
                     routeFilter = this._idFilterCreate(routeid);
                 }
 
-                // routeFilter (if any) is stored in timer-object
+                // C. Apply routeFilter 
+                //    and store/replace in timer-object
                 if (!routeFilter) {
                     delete timer.filter;
                 } else {
                     timer.filter = routeFilter;
                 }   
-                console.log("Setup animation for ["+ routeid+"], VON " + this.logTime(timer.start, "h"), "BIS " + this.logTime(timer.stop, "h")); 
+                // console.log("Setup animation for ["+ routeid+"], VON " + this.logTime(timer.start, "h"), "BIS " + this.logTime(timer.stop, "h")); 
                 // console.log("with filter, timer:", timerEntry, timer ); 
 
-                // 
                 srcFeatures = this._animationMapRefresh(null, null,  routeFilter);
                 // console.log("srcFeatures filtered for:" + routeid, srcFeatures, this.timer);
 
-                // C. TEMPORAL Location at START of selected routes
-                if (srcFeatures.routes) {
-                    //console.log("running FIRST animation-step");
+                // D. TEMPORAL Location at START of selected routes
+                if (srcFeatures.routes) {   //console.log("running the FIRST animation-step");
                     this.trackStepAction(1);
                 }
             },
@@ -2200,6 +2229,7 @@ along waypoint file loaded from url
 
                 var srcFeatures = mba.syncFilterApply(syncFilter); // ,trackids);
                 //console.log("REFRESH: srcFeatures with", routeFilter, srcFeatures);
+
                 return srcFeatures;
             },
 
@@ -2269,6 +2299,7 @@ along waypoint file loaded from url
                     }
                 });
 
+
                 // 3. Update the "related" mapLayers
 
                 var srcKeys = Object.keys(srcFeatures);
@@ -2284,6 +2315,7 @@ along waypoint file loaded from url
                         }
                     })
                 } 
+
                 return srcFeatures;
             },
 

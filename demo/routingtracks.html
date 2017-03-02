@@ -253,9 +253,9 @@
             <!-- SYNC contentfeatures from contentbox -->
             <!-- checked="[[logmode]]" --> 
             <mb-content-sync 
-                contentbox="[[contentbox]]" 
                 map = "[[map]]" 
                 mbid = "[[mbid]]" 
+                contentbox="{{contentbox}}" 
                 contentfeatures="{{contentfeatures}}"
                 featureselected="{{datasetitem}}">
             </mb-content-sync>
@@ -266,6 +266,7 @@
             <mb-content-features 
                 map="[[map]]" 
                 featurelist="{{dataset}}"
+                featureselected="[[datasetitem]]"
                 contentfeatures="[[contentfeatures]]"> 
             </mb-content-features>
 
