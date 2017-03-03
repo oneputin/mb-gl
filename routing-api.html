@@ -220,7 +220,7 @@ along waypoint file loaded from url
             observers: [
                 '_animationSetup(routedata, timer.timescale, map)', // creates _animationbox
                 '_animationMapSetup(map, _animationbox.*)',  // creates 'contentbox' for 
-                'routeFilterApply(mapcontentbox.*)',
+                'routeFilterOnLoad(mapcontentbox.*)',
                 'mapAlignChange(trackalignmap, _trackObj)',
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)',
@@ -234,6 +234,65 @@ along waypoint file loaded from url
             ready: function() {
                 mba = this;  // console.log("mba is set!", mba); 
             }, 
+
+            // 
+            routeFilterOnLoad : function(rawbox) {  //console.log("RAW contentbox", rawbox);
+                // Check applicability
+                var cbox = rawbox.value; // Polymer
+                var scope = this, 
+                    dataName = 'routes',
+                    routesContent = cbox[dataName],
+                    routesLayer = map.getLayer(dataName);
+                if (!routesLayer || !routesContent) return; 
+                //console.log("USE contentbox", cbox); // , map); // return; 
+
+                function guessFeature(features) {
+                    var fbest =  features[0]; 
+                    if (features.length > 1) { // console.log("SELECTED from ", features);
+                        var t, tmax = fbest.properties.stop - fbest.properties.start;
+                        features.forEach(function(f){
+                            t = f.properties.stop - f.properties.start;
+                            if (t > tmax) {
+                                fbest = f;
+                                tmax = t;
+                            }
+                        })
+                        // routeid = ...  
+                    } // console.log("SELECTED feature:", fbest);  
+                    return fbest.properties.id; // routeid;
+                }
+
+                /**
+                 * 
+                 */
+                function loadListener(e){ // console.log("loadListener", e);
+                    if (e.sourceId == dataName) {
+                        var features = map.querySourceFeatures(dataName); // , { filter: null}); 
+                        console.log(features.length+" features of [", dataName,"] in actual map-port"); // , features); 
+                        if (features.length) { 
+                            var routeid = guessFeature(features);
+                            if (routeid) loadFilterApply(routeid);
+                        }    
+                    }
+                }
+                /**
+                 *  
+                 */ 
+                function loadFilterApply(routeid){
+                    //console.log("Select-Route from MAP port", routeid);
+                    // Set routeFilter for loadRoute
+                    scope.routeFilterApply(routeid);
+                    // Stop loadListener
+                    map.off("data", loadListener);                       
+                }
+
+                // Start loadListener
+                map.on("data", loadListener);
+                // Stop loadListener after 1 sec (spätestens)
+                setTimeout(function () { console.log("closed without id");
+                    loadFilterApply();
+                }, 1000);
+            },
 
             // Derive and notify id and timer-interval of selectzed route/track  
             routeseletedApply: function(routeselected){
@@ -557,12 +616,11 @@ along waypoint file loaded from url
              */ 
             routeFilterApply: function(filterkey) {
                 var timer = this.timer;
-                if (!timer || !timer.routes || !filterkey) return;
-                var dataName = "routes",
-                    routesLayer = this.map.getLayer(dataName);
-                if (!routesLayer) return; 
+                if (!timer || !timer.routes) return;
+                var dataName = "routes";
+                if (!map.getLayer(dataName)) return;
 
-                var routeid, routeFilter, timerEntry, msg;
+                var routeid, routeFilter, timerEntry, msg = "Apply route";
 
                 // A. Eval filterkey-cases and reset timer 
 
@@ -573,32 +631,17 @@ along waypoint file loaded from url
                     console.log("NOT implemented: CLEAR all features"); 
                     return; 
 
-                } else if (typeof filterkey == "object") {
-                    var mapcontentbox = filterkey.value; // Polymer!!
-                    var routesContent = mapcontentbox[dataName];
-                    console.log("'routeFilterApply' ON Object", mapcontentbox); 
-
-                    if (routesContent && routesLayer) {
-                        // A. Try to guess the id of "suitable" route 
-                        //    from all routes contained in actual mapport 
-                        // var features = this.map.queryRenderedFeatures(
-                        var features = this.map.querySourceFeatures(dataName); // , { filter: null}); 
-                        console.log("features of ", routesLayer," in actual map-port", features); 
-                        if (features.length) { 
-                            routeid = features[0].id;  
-                            msg = "Select-Route from MAP port"
-                        }     
-                    }    
-                    
-                    // B. Get the id of first route in contentbox-srcdata
-                    if (!routeid) {
-                        var allfeatures = this.contentbox[dataName].srcdata.features; 
-                        routeid = allfeatures[0].properties.id; 
-                        msg = "Select-Route from RAW data"
-                    }
-
                 } else if (filterkey) {
+
                     routeid = filterkey;
+                
+                } else {
+                    // B. Get the id of first route in contentbox-srcdata
+                    msg = "Get a Route from RAW src";
+                    var allfeatures = this.contentbox[dataName].srcdata.features; 
+                    if (allfeatures.length) {
+                        routeid = allfeatures[0].properties.id; 
+                    }
                 } 
 
                 // 
@@ -2083,6 +2126,7 @@ along waypoint file loaded from url
                 // console.log("DEBUG", mapTime, routeFilter, syncflag);
                 var stopDelay = 2000; // time to let last situation "visible" before reset 
 
+                // 
                 function checkNextRoutes (mapTime, routeFilter) {
                     //  STOP animation, if no further track-Start is pendig 
                     var nextTime = mba.getNextStart(mapTime);
@@ -2107,10 +2151,8 @@ along waypoint file loaded from url
                     } 
 
                     var msgTime = mba.logTime(mapTime, "h"),
-                        msg = "STOPPED. No data after: " + msgTime; console.log(msg, trackObjs);
-
+                        msg = "STOPPED. No data after: " + msgTime; // console.log(msg, trackObjs);
                     mba.popupOnMap(msg);
-
                 }
 
                 // TIME filter: applied, on every maptime ??

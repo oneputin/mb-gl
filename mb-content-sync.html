@@ -57,7 +57,7 @@
                 // IN: id of mb-mapstyle (basemap) triggers content-redraw when changed
                 mbid: {
                     type: String,
-                    observer: 'styleChanged'
+                    observer: 'onStyleChanged'
                 },
 
                 // Cached (Old) content 
@@ -86,8 +86,7 @@
             },
 
             // refresh contentbox on changed basemap
-            styleChanged: function(mbid) {
-
+            onStyleChanged: function(mbid) {
                 this.mapContentApply(this.contentbox, "STYLE " + mbid);
             },
 
@@ -116,7 +115,6 @@
 
                 // INSERT new content into map
                 this._mapContentCheckIn(contentbox, meta); 
-
             },    
 
 
