@@ -242,7 +242,8 @@ along waypoint file loaded from url
                 var scope = this, 
                     dataName = 'routes',
                     routesContent = cbox[dataName],
-                    routesLayer = map.getLayer(dataName);
+                    routesLayer = map.getLayer(dataName),
+                    isloadfilter = false;
                 if (!routesLayer || !routesContent) return; 
                 //console.log("USE contentbox", cbox); // , map); // return; 
 
@@ -283,14 +284,18 @@ along waypoint file loaded from url
                     // Set routeFilter for loadRoute
                     scope.routeFilterApply(routeid);
                     // Stop loadListener
-                    map.off("data", loadListener);                       
+                    map.off("data", loadListener); 
+                    isloadfilter = true;                      
                 }
 
                 // Start loadListener
                 map.on("data", loadListener);
                 // Stop loadListener after 1 sec (spätestens)
-                setTimeout(function () { console.log("closed without id");
-                    loadFilterApply();
+                setTimeout(function () { 
+                    if (!isloadfilter) {
+                        console.log("loadfilter not found on map!");
+                        loadFilterApply();
+                    }
                 }, 1000);
             },
 
