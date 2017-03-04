@@ -91,7 +91,7 @@ along waypoint file loaded from url
                  */
                 routeid: {
                     type: String,
-                    observer: 'routeFilterApply'
+                    observer: 'routeActivate'
                 },
 
                 // 
@@ -220,7 +220,7 @@ along waypoint file loaded from url
             observers: [
                 '_animationSetup(routedata, timer.timescale, map)', // creates _animationbox
                 '_animationMapSetup(map, _animationbox.*)',  // creates 'contentbox' for 
-                'routeFilterOnLoad(mapcontentbox.*)',
+                'routeActivateOnLoad(mapcontentbox.*)',
                 'mapAlignChange(trackalignmap, _trackObj)',
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)',
@@ -236,65 +236,81 @@ along waypoint file loaded from url
             }, 
 
             // 
-            routeFilterOnLoad : function(rawbox) {  //console.log("RAW contentbox", rawbox);
+            routeActivateOnLoad : function(rawbox) {  //console.log("RAW contentbox", rawbox);
                 // Check applicability
-                var cbox = rawbox.value; // Polymer
-                var scope = this, 
-                    dataName = 'routes',
+                var dataName = 'routes',
+                    cbox = rawbox.value, // Polymer !! 
                     routesContent = cbox[dataName],
                     routesLayer = map.getLayer(dataName),
                     isloadfilter = false;
                 if (!routesLayer || !routesContent) return; 
                 //console.log("USE contentbox", cbox); // , map); // return; 
 
-                function guessFeature(features) {
-                    var fbest =  features[0]; 
-                    if (features.length > 1) { // console.log("SELECTED from ", features);
-                        var t, tmax = fbest.properties.stop - fbest.properties.start;
-                        features.forEach(function(f){
-                            t = f.properties.stop - f.properties.start;
-                            if (t > tmax) {
-                                fbest = f;
-                                tmax = t;
-                            }
-                        })
-                        // routeid = ...  
-                    } // console.log("SELECTED feature:", fbest);  
-                    return fbest.properties.id; // routeid;
+                var scope = this; 
+
+                /**
+                 *  F1: prefer route with londer traveltime
+                 *  (modify to use as "map"-function for sorting the features-array) 
+                 */
+                function compareTrackTime(route, r) {
+                    var tmax = route.properties.stop - route.properties.start,
+                        t = r.properties.stop - r.properties.start;
+                    if (t > tmax) {
+                        route = r;
+                    }
+                    return route; 
+                }
+                /**
+                 *  F2: prefer routes with both "visible" route-endpoints 
+                 */
+                function checkEndpoints(route, r) {
+                    // if (???) route = r;
+                    var bbox = map.getBounds(); console.log(bbox, route, r); 
+
+                    return route; 
                 }
 
                 /**
-                 * 
+                 * load-event-action
                  */
-                function loadListener(e){ // console.log("loadListener", e);
+                function listenRoutesOnLoad(e){ // console.log("listenRoutesOnLoad", e);
                     if (e.sourceId == dataName) {
                         var features = map.querySourceFeatures(dataName); // , { filter: null}); 
                         console.log(features.length+" features of [", dataName,"] in actual map-port"); // , features); 
-                        if (features.length) { 
-                            var routeid = guessFeature(features);
-                            if (routeid) loadFilterApply(routeid);
-                        }    
+                        if (features.length) {
+                            var route = features[0];
+                            features.forEach(function(r){
+                                route = compareTrackTime(r, route)
+                                route = checkEndpoints(r,route); 
+                            });
+                            routeActivate(route);
+                        }
                     }
                 }
                 /**
                  *  
                  */ 
-                function loadFilterApply(routeid){
+                function routeActivate(route){
+                    var routeid; 
+                    if (route) routeid = route.properties.id; 
                     //console.log("Select-Route from MAP port", routeid);
-                    // Set routeFilter for loadRoute
-                    scope.routeFilterApply(routeid);
-                    // Stop loadListener
-                    map.off("data", loadListener); 
+
+                    // Activate selected route
+                    scope.routeActivate(routeid);
+
+                    // Stop listener
+                    map.off("data", listenRoutesOnLoad); 
                     isloadfilter = true;                      
                 }
 
                 // Start loadListener
-                map.on("data", loadListener);
-                // Stop loadListener after 1 sec (spätestens)
+                map.on("data", listenRoutesOnLoad);
+
+                // Stop loadListener after 1 sec at the latest
                 setTimeout(function () { 
                     if (!isloadfilter) {
                         console.log("loadfilter not found on map!");
-                        loadFilterApply();
+                        routeActivate(); // 
                     }
                 }, 1000);
             },
@@ -311,7 +327,7 @@ along waypoint file loaded from url
                     this.set("timer.start", props.start);
                     this.set("timer.stop", props.stop);
                     
-                    // B. Triggers "routeFilterApply" for routeid on the map 
+                    // B. Triggers "routeActivate" for routeid on the map 
                     this.routeid = props.id; 
                 }   
             },
@@ -467,7 +483,7 @@ along waypoint file loaded from url
 
                     } else {    // to FIRST feature, if no feature found in bbox
                         // console.log("_animationMapSetup START with", contentbox) ;
-                        // this.routeFilterApply(contentbox); // "visible", startid); 
+                        // this.routeActivate(contentbox); // "visible", startid); 
                     }
 
 
@@ -617,9 +633,9 @@ along waypoint file loaded from url
 
             /**
              * SETUP the app for a given filterkey  
-             * 
+             * ( key = routeid or specific ctrl)
              */ 
-            routeFilterApply: function(filterkey) {
+            routeActivate: function(filterkey) {
                 var timer = this.timer;
                 if (!timer || !timer.routes) return;
                 var dataName = "routes";
@@ -636,11 +652,11 @@ along waypoint file loaded from url
                     console.log("NOT implemented: CLEAR all features"); 
                     return; 
 
-                } else if (filterkey) {
+                } else if (filterkey) { // DEFAULT case : routeid is given 
 
                     routeid = filterkey;
                 
-                } else {
+                } else {    // Default-reserve if no key !! 
                     // B. Get the id of first route in contentbox-srcdata
                     msg = "Get a Route from RAW src";
                     var allfeatures = this.contentbox[dataName].srcdata.features; 
@@ -661,16 +677,18 @@ along waypoint file loaded from url
                     this.trackFilterApply(routeid);
 
                     routeFilter = this._idFilterCreate(routeid);
-                    console.log("_animationMap: Setup for route-feature", routeid, routeFilter); 
+
                 } else {
                     //if (!timerEntry) { // 
                     this.trackRoutesZoomTo();
                     this.trackFilterApply("");
+
                     routeFilter = this._idFilterCreate("all");
-                }
+                }   console.log("routeActivate: Setup route(s) ["+routeid+"]", routeFilter); 
 
                 // C. Apply routeFilter 
-                //    and store/replace in timer-object
+
+                // C1. Store/replace in timer-object
                 if (!routeFilter) {
                     delete timer.filter;
                 } else {
@@ -679,11 +697,12 @@ along waypoint file loaded from url
                 // console.log("Setup animation for ["+ routeid+"], VON " + this.logTime(timer.start, "h"), "BIS " + this.logTime(timer.stop, "h")); 
                 // console.log("with filter, timer:", timerEntry, timer ); 
 
-                var srcFeatures = this._animationMapRefresh(null, null,  routeFilter);
-                // console.log("srcFeatures filtered for:" + routeid, srcFeatures, this.timer);
+                // C2. Activate animationFeatures 
+                var animationFeatures = this._animationMapRefresh(null, null,  routeFilter);
+                // console.log("animationFeatures filtered for:" + routeid, srcFeatures, this.timer);
 
                 // D. TEMPORAL Location at START of selected routes
-                if (srcFeatures.routes) {   //console.log("running the FIRST animation-step");
+                if (animationFeatures.routes) {   //console.log("running the FIRST animation-step");
                     this.trackStepAction(1); 
                 }
             },
