@@ -220,7 +220,7 @@ along waypoint file loaded from url
             observers: [
                 '_animationSetup(routedata, timer.timescale, map)', // creates _animationbox
                 '_animationMapSetup(map, _animationbox.*)',  // creates 'contentbox' for 
-                'routeActivateOnLoad(mapcontentbox.*)',
+                'onRoutesLoad(mapcontentbox.*)',
                 'mapAlignChange(trackalignmap, _trackObj)',
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)',
@@ -235,82 +235,113 @@ along waypoint file loaded from url
                 mba = this;  // console.log("mba is set!", mba); 
             }, 
 
-            // 
-            routeActivateOnLoad : function(rawbox) {  //console.log("RAW contentbox", rawbox);
+            // Specific app-sync-trigger after new routes are loded
+            onRoutesLoad : function(rawbox){
                 // Check applicability
                 var dataName = 'routes',
-                    cbox = rawbox.value, // Polymer !! 
+                    scope = this;
+
+                var cbox = rawbox.value, // Polymer !! 
                     routesContent = cbox[dataName],
-                    routesLayer = map.getLayer(dataName),
-                    isloadfilter = false;
+                    routesLayer = map.getLayer(dataName);
                 if (!routesLayer || !routesContent) return; 
                 //console.log("USE contentbox", cbox); // , map); // return; 
 
-                var scope = this; 
+                function preAction(features){
 
-                /**
-                 *  F1: prefer route with londer traveltime
-                 *  (modify to use as "map"-function for sorting the features-array) 
-                 */
-                function compareTrackTime(route, r) {
-                    var tmax = route.properties.stop - route.properties.start,
-                        t = r.properties.stop - r.properties.start;
-                    if (t > tmax) {
-                        route = r;
-                    }
-                    return route; 
-                }
-                /**
-                 *  F2: prefer routes with both "visible" route-endpoints 
-                 */
-                function checkEndpoints(route, r) {
-                    // if (???) route = r;
-                    var bbox = map.getBounds(); console.log(bbox, route, r); 
-
-                    return route; 
-                }
-
-                /**
-                 * load-event-action
-                 */
-                function listenRoutesOnLoad(e){ // console.log("listenRoutesOnLoad", e);
-                    if (e.sourceId == dataName) {
-                        var features = map.querySourceFeatures(dataName); // , { filter: null}); 
-                        console.log(features.length+" features of [", dataName,"] in actual map-port"); // , features); 
-                        if (features.length) {
-                            var route = features[0];
-                            features.forEach(function(r){
-                                route = compareTrackTime(r, route)
-                                route = checkEndpoints(r,route); 
-                            });
-                            routeActivate(route);
+                    function compareTrackTime(route, r) {
+                        var tmax = route.properties.stop - route.properties.start,
+                            t = r.properties.stop - r.properties.start;
+                        if (t > tmax) {
+                            route = r;
                         }
+                        return route; 
                     }
-                }
-                /**
-                 *  
-                 */ 
-                function routeActivate(route){
+                    function checkEndpoints(r) {
+                        var bbox = map.getBounds();  
+                        var rnodes = JSON.parse(r.properties.nodes); 
+                        var p0 = turf.point(rnodes[0].coords),
+                            pn  = turf.point(rnodes[rnodes.length - 1].coords);
+                            poly = turf.polygon([[
+                                bbox.getSouthWest().toArray(), 
+                                bbox.getNorthWest().toArray(), 
+                                bbox.getNorthEast().toArray(), 
+                                bbox.getSouthEast().toArray(), 
+                                bbox.getSouthWest().toArray()
+                            ]]); // console.log(r.properties.id, p0, pn, poly);
+                        // console.log(turf.inside(p0, poly),turf.inside(pn, poly));
+                        return turf.inside(p0, poly) && turf.inside(pn, poly);
+                    }
+
+                    // 1. Extracts features compeletely within bbox (if any)
+                    var ff = [];
+                    features.forEach(function(f){
+                        if (checkEndpoints(f))  ff.push(f); 
+                    });
+                    if (!ff.length) ff = features; //console.log(ff);
+
+                    // 2. Selects feature with longest track-time
+                    var route = ff[0];
+                    ff.forEach(function(f){
+                        route = compareTrackTime(f, route);
+                    });
+
+                    return route; 
+                }     
+
+                function reAction(route){
                     var routeid; 
                     if (route) routeid = route.properties.id; 
                     //console.log("Select-Route from MAP port", routeid);
-
                     // Activate selected route
                     scope.routeActivate(routeid);
-
-                    // Stop listener
-                    map.off("data", listenRoutesOnLoad); 
-                    isloadfilter = true;                      
                 }
 
-                // Start loadListener
-                map.on("data", listenRoutesOnLoad);
+                this.onFeatureLoad(dataName, preAction, reAction);
 
-                // Stop loadListener after 1 sec at the latest
+            },
+
+            /**
+             *  Generic shell triggering an appAction requiring userdata (vector features)
+             *  after these features are successfully loaded into map for actual map-tiles
+             *  name: 
+             *  preAction
+             *  reAction: 
+             */ 
+            onFeatureLoad : function(dataName, preAction, reAction) {  //console.log("RAW contentbox", rawbox);
+
+                var reacted = false;
+
+                /**
+                 * load-event-action 
+                 * checks loaded tiles for features of source 
+                 */
+                function onFeatureLoad(e){ // console.log("onFeatureLoad", e);
+                    if (e.sourceId == dataName) {
+                        var features = map.querySourceFeatures(dataName);  
+                        // console.log(features.length+" features of [", dataName,"] in actual map-port"); // , features); 
+                        if (features.length) {
+
+                            var status = preAction(features);
+
+                            reAction(status); 
+
+                            // STOP listener on success
+                            map.off("data", onFeatureLoad); 
+                            reacted = true;                      
+                        }
+                    }
+                }
+
+                // START Listener
+                map.on("data", onFeatureLoad);
+
+                // Pending Listener 
                 setTimeout(function () { 
-                    if (!isloadfilter) {
-                        console.log("loadfilter not found on map!");
-                        routeActivate(); // 
+                    if (!reacted) { // console.log("NO featurs on map TILES!");
+                        // STOP Listener after max pending time (Fi. 1 sec) 
+                        reAction(); // default "empty" reaction 
+                        map.off("data", onFeatureLoad); 
                     }
                 }, 1000);
             },
@@ -1543,7 +1574,7 @@ along waypoint file loaded from url
                     data.nodes = trackpoints;
                     n2 = trackpoints.length;
                     if (n2 != n1) {
-                        console.log("trackData filtered", n1, n2); // , metadataset.device); 
+                        // console.log("trackData filtered", n1, n2); // , metadataset.device); 
                     }
                     return data;
                 }
