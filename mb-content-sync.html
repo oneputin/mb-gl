@@ -5,10 +5,9 @@
 
 <!--
     `mb-content-sync`
-    Refresh presentation of mapcontent 
-    - after contentbox changed  
-    or 
-    - after mapstyle background changed 
+    Refresh mb-presentation contentbox 
+    - after contentbox-items changed  
+    - after mapstyle background changed : mbid
 
     @demo demo/routingtracks.html 
 -->
@@ -31,13 +30,13 @@
                 // !! grouped by layer !!
                 contentfeatures: {
                     type: Object,
-                    // value: {},
                     notify: true
                 },
 
                 // OUT: feature selected by map-events defined for layers of contentbox 
                 featureselected : {
-                    type: Object
+                    type: Object,
+                    notify: true
                     // observer: 'checkoutSelected'
                 },
 

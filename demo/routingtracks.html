@@ -204,6 +204,7 @@
                 <routing-api 
                     map="[[map]]" 
                     metadataset="[[metadataset]]"
+
                     routedata=[[routedata]] 
 
                     contentbox="{{contentbox}}"               
@@ -212,8 +213,7 @@
                     timer="{{timer}}"
                     trackctrl="{{trackctrl}}" 
 
-                    routeselected="[[datasetitem]]" 
-                    syncid=[[syncid]] 
+                    routeselected="{{datasetitem}}" 
 
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]">
@@ -228,7 +228,6 @@
             </template>
 
             <!-- C. DATAFLOW INTERFACE -->
-
             <mb-content-browser 
                 indexurl="[[indexurl]]" 
                 metadatasetslabel="[[metadatasetslabel]]" 
@@ -250,7 +249,6 @@
 
             </mb-content-browser>
             <!-- selectprop="id"--> 
-            <!-- selectvalue="{{syncid}}"--> 
 
             <!-- SYNC contentfeatures from contentbox -->
             <!-- checked="[[logmode]]" --> 
@@ -263,13 +261,12 @@
             </mb-content-sync>
 
             <!-- DIALOG ctrl <mb-map> <mb-content-browser> -->
-            <!-- featureselected="[[datasetitem]]" -->
             <!-- featureapplied="{{selector}}"> -->
             <mb-content-features 
                 map="[[map]]" 
-                featurelist="{{dataset}}"
-                featureselected="[[datasetitem]]"
-                contentfeatures="[[contentfeatures]]"> 
+                contentfeatures="[[contentfeatures]]" 
+                featureselected="{{datasetitem}}"
+                featurelist="{{dataset}}">
             </mb-content-features>
 
         </div>
@@ -288,7 +285,7 @@
     scope.basedataurl = ""; // list of available datasets
     scope.metadataset = {}; // metadata of selected dataset
 
-    scope.metadatasetslabel="TrackData Index"
+    scope.metadatasetslabel="TrackLogs Index"
     scope.dataset = []; // collection 
     scope.datasetitem = {}; // track/route-object
 

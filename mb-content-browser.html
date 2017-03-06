@@ -52,8 +52,8 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                     id="menu1"
                     class="metadata"
                     menulabel="[[metadatasetslabel]]"
-                    menudata="[[metadatasets]]"
-                    selectvalue="{{metadataset}}">
+                    menuitems="[[metadatasets]]"
+                    selectitem="{{metadataset}}">
                 </dynamic-menu>
             </div>
             
@@ -61,10 +61,10 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
             <div class="flexchild">
                 <dynamic-menu
                     id="menu2"
-                    menudata="[[dataset]]"
+                    allandnone="true"
                     menulabel="[[datasetlabel]]"
-                    selectenhance="true"
-                    selectvalue="{{selectvalue}}">
+                    menuitems="[[dataset]]"
+                    selectitem="{{selectvalue}}">
                 </dynamic-menu>
             </div>
         </div>
@@ -123,12 +123,6 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
 
                 // LEVEL 3
                 // Management of dataselection
-
-                // Flag ctrls adding all/clear items to the items of menu2
-                selectenhance: {
-                    type: String,
-                    value: 1
-                },
 
                 // property of dataset-objects to return as selectvalue
                 // if null - entire object will be returned

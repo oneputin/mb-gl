@@ -70,7 +70,7 @@ Interface for import of tracking data
                 // IN
                 logmode: {
                     type: Boolean,
-                    observer: 'dataUsageChanged'
+                    observer: 'setTrackUse'
                 },
 
                 _trackdata: {
@@ -109,7 +109,7 @@ Interface for import of tracking data
             ],
 
             attached: function() {
-                this.dataUsageChanged();
+                this.setTrackUse();
                 // console.log("target attached");
             },
 
@@ -123,12 +123,12 @@ Interface for import of tracking data
 
             // APP/GUI-elemente anpassen, 
             // die sich bei verschiedenartiger Nutzung derselben Grunddatan unterscheiden  
-            dataUsageChanged : function(logmode) {
+            setTrackUse : function(logmode) {
                 if (logmode == null) logmode = this.logmode; 
                 if (logmode) {
-                    this.datasetlabel="Raw Tracks"
+                    this.datasetlabel="Static Logs"
                 } else {
-                    this.datasetlabel="Track Routes"
+                    this.datasetlabel="Animated Logs"
                 }
             },
 

@@ -32,7 +32,7 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
             }
         </style>
         
-        <template is="dom-if" if="{{menudata}}">
+        <template is="dom-if" if="{{menuitems}}">
             <paper-dropdown-menu class="dataitems" label="{{menulabel}}">
                 <paper-listbox id="listbox" class="dropdown-content" on-iron-items-changed="_menuChanged" on-iron-select="_menuSelected" attr-for-selected="select">
                     <template is="dom-repeat" items="{{_selectset}}">
@@ -53,17 +53,22 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
 
             properties: {
 
-                // INPUT: menudata used to create menu
-                menudata: {
+                // INPUT: items used to create menu
+                menuitems: {
                     type: Array,
                     notify: true
                 },
 
-                // INPUT(opt): property of menudata-objects to return as selectvalue
+                // IN/OUT: of menu-selection returned !!
+                selectitem: {
+                    type: Object,
+                    notify: true
+                },
+
+                // INPUT(opt): property of menuitems to return as selectvalue
                 // if null - entire object will be returned
                 selectprop: {
-                    type: String,
-                    value: ""
+                    type: String
                 },
 
                 // INPUT(opt): Label of menu
@@ -72,7 +77,7 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                     value: "Menuitems"
                 },
                 // INPUT(opt): FLAG ctrls adding all/clear items to the items of menu2
-                selectenhance: {
+                allandnone: {
                     type: String,
                     value: 0
                 },
@@ -88,19 +93,13 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                     observer: '_refreshSelectedItem'
                 },
 
-                // OUTPUT: of menu-selection returned !!
-                selectvalue: {
-                    type: Object,
-                    notify: true
-                },
-
                 _lastid: String
 
             },
 
             observers: [
-                '_updateMenu(menudata)',
-                '_syncSelection(selectvalue.id)'
+                '_updateMenu(menuitems)',
+                '_syncSelection(selectitem.id)'
             ],
 
             /**
@@ -144,21 +143,21 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                             i = i + 1;
                         });
                         
-                        if (this.selectenhance) { 
+                        if (this.allandnone) { 
                             menudata = enhanceMenu(menudata);
                         } 
                         this._selectset = menudata;
 
                     } else { // NO menu but return of SELECTRESULT
                         this._selectset = null; // menu not required
-                        this.selectvalue = preselectitem;                    
+                        this.selectitem = preselectitem;                    
                     }
 
                     this._selectindex = preselectindex;
 
                 } else {
                     this._selectset = null;
-                    this.selectvalue = null;
+                    this.selectitem = null;
                 }
                 // console.log("_updateMenu. selected, _selectset", selected, this._selectset);
             },
@@ -207,7 +206,7 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
             _menuSelected: function(e) {
                 var selected = e.detail.item.select; // an object of processed menudata
                 if (this.selectprop) selected = selected[this.selectprop]; // a property of selected object
-                this.selectvalue = selected;
+                this.selectitem = selected;
             }
 
         })

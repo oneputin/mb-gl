@@ -97,7 +97,8 @@ along waypoint file loaded from url
                 // 
                 routeselected: {
                     type: Object,
-                    observer: 'routeseletedApply'
+                    observer: 'routeseletedApply',
+                    notify: true
                 },
 
                 /**
@@ -247,6 +248,7 @@ along waypoint file loaded from url
                 if (!routesLayer || !routesContent) return; 
                 //console.log("USE contentbox", cbox); // , map); // return; 
 
+                // Detect "desired" route in map-Context
                 function preAction(features){
 
                     function compareTrackTime(route, r) {
@@ -289,12 +291,13 @@ along waypoint file loaded from url
                     return route; 
                 }     
 
+                // Activate selected route in app
                 function reAction(route){
-                    var routeid; 
-                    if (route) routeid = route.properties.id; 
-                    //console.log("Select-Route from MAP port", routeid);
-                    // Activate selected route
-                    scope.routeActivate(routeid);
+                    scope.routeseletedApply(route);
+
+                    // var routeid; 
+                    // if (route) routeid = route.properties.id; 
+                    // scope.routeActivate(routeid);
                 }
 
                 this.onFeatureLoad(dataName, preAction, reAction);
@@ -348,19 +351,23 @@ along waypoint file loaded from url
 
             // Derive and notify id and timer-interval of selectzed route/track  
             routeseletedApply: function(routeselected){
-                // console.log("RRR routeselected", routeselected.feature); // TraceSource ???
-                var props;
-                if (routeselected.feature) { // trigger rebuild of routing-ctrl 
-                    props = routeselected.feature.properties;  console.log("props of selectedRoute:" + this.routeid, props);
-                    if (!props.start && !props.stop) return;  
+                console.log("START routeselectedApply", routeselected); // TraceSource ???
+
+                if (!routeselected) return; 
+                if (routeselected.feature) routeselected = routeselected.feature;
                     
-                    // A. Trigger timer-ctrl-sync
-                    this.set("timer.start", props.start);
-                    this.set("timer.stop", props.stop);
-                    
-                    // B. Triggers "routeActivate" for routeid on the map 
-                    this.routeid = props.id; 
-                }   
+                // trigger rebuild of routing-ctrl 
+                var props = routeselected.properties;  
+                if (!props.start && !props.stop) return;
+
+                console.log("PROPS routeselectedApply:", props);
+                
+                // A. Trigger timer-ctrl-sync
+                this.set("timer.start", props.start);
+                this.set("timer.stop", props.stop);
+                
+                // B. Triggers "routeActivate" for routeid on the map 
+                this.routeid = props.id; 
             },
 
             // Prepare all map- and animationdata 
@@ -705,6 +712,7 @@ along waypoint file loaded from url
 
                     // B. SPATIAL ZOOM and Visibility-Filter of tracks
                     this.trackRoutesZoomTo(null, routeid);
+
                     this.trackFilterApply(routeid);
 
                     routeFilter = this._idFilterCreate(routeid);
