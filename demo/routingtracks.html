@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-    <title>routing-api demo</title>
+    <title>routing-tracks demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
@@ -178,7 +178,7 @@
             </template>
 
             <!--<mb-info-drag carddata="[[trackdata]]">
-                                </mb-info-drag>-->
+                </mb-info-drag>-->
 
         </mb-map>
 
@@ -264,9 +264,9 @@
             <!-- featureapplied="{{selector}}"> -->
             <mb-content-features 
                 map="[[map]]" 
-                contentfeatures="[[contentfeatures]]" 
-                featureselected="{{datasetitem}}"
-                featurelist="{{dataset}}">
+                contentfeatures = "[[contentfeatures]]" 
+                featureselected = "{{datasetitem}}"
+                mapfeatures = "{{dataset}}">
             </mb-content-features>
 
         </div>
@@ -285,7 +285,7 @@
     scope.basedataurl = ""; // list of available datasets
     scope.metadataset = {}; // metadata of selected dataset
 
-    scope.metadatasetslabel="TrackLogs Index"
+    scope.metadatasetslabel="Logbook List"
     scope.dataset = []; // collection 
     scope.datasetitem = {}; // track/route-object
 

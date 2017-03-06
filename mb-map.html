@@ -3,7 +3,8 @@
 
 <link rel="import" href="mb-api.html">
 <link rel="import" href="mb-map-behavior.html">
-<!--<link rel="import" href="mb-distance.html"> -->
+
+
 <!--
 `mb-map`
 wraps a map created with mapbox-gl-api.  
@@ -211,8 +212,11 @@ the map-ctrls can be placed as map-overlay or anywhere else
              */
             installmap: function() {
                 // console.log("MAP installs using:", this.mapctrl);
-                // console.log("apikey= " + this.mapapikey);
-
+                // console.log("apikey= " + this.mapapikey, typeof mapboxgl, mapboxgl);
+                if (typeof mapboxgl == "undefined") {
+                    console.log("cannot install map!"); 
+                    return; 
+                }
                 var that = this;
 
                 mapboxgl.accessToken = this.mapapikey;

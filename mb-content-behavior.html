@@ -33,7 +33,7 @@
                 fprops = f.properties; 
             if (!fprops) return ; 
 
-            if (fprops && fprops.coordTimes)  {  // SPEC-CASE : Tracks 
+            if (fprops && fprops.coordTimes && map)  {  // SPEC-CASE : Tracks 
 
                 selectObj = this.tracksHilite(features, layerid);
 
@@ -54,7 +54,6 @@
         // by HILITE-TRACE + "commented" end-nodes  
         //   - zooms to the feature
         //   - show start/stop based on "id-Filter"	
-
         tracksHilite: function(features, layerid) {
             // by now for 1 feature onyl
             // var map = this.map; 

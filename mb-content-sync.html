@@ -94,7 +94,6 @@
              * related to newly selected contentbox
              */
             mapContentApply: function(contentbox, meta) {
-                if (!this.map) return; 
                 if (!contentbox || !Object.keys(contentbox).length) return;
                 // if (contentbox.path == 'contentbox') {
                 var cp = contentbox.path; // console.log("mapContentApply-1 ", contentbox, cp);
@@ -433,6 +432,7 @@
 
                     var layerData = layerObject.srcdata;
                     if (!layerData) return ; 
+                    if (!map) return layerData; 
 
                     var layerSource = map.getSource(layername),
                         mapLayer = map.getLayer(layername);
@@ -494,9 +494,13 @@
                 //
                 function toggleContentEvents(layerObject, flag){
 
-                    var eventset = layerObject.events,
-                        events = Object.keys(eventset);
-                    
+                    var eventset = layerObject.events;
+                    var events = Object.keys(eventset);
+                        if (!map) {
+                        // console.log("break. cannot toogle mb-events", events) 
+                        return; 
+                    }
+
                     events.forEach(function(ev){
                         if (flag=="IN") {
                             map.on(ev, eventset[ev])
@@ -508,6 +512,7 @@
                 }
                 // 
                 function removeMapContent(layerObject) {
+                    if (!map) return ;
 
                     var contentTemplates = layerObject.templates;
                     // console.log("removeMapContent contentTemplates", contentTemplates, layerObject); 
@@ -553,12 +558,12 @@
                         var ids=[]; 
                         if (layerData) {   // Check/Get all source-features of the basic layer 
                             contentfeatures = getFeatureList(layerData, layername);
-                            console.log("CHECKED-"+flag+" ["+layername+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
+                            // console.log("CHECKED-"+flag+" ["+layername+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
                         }                        
 
                     }   else {        // REMOVE object (on demand)
                         removeMapContent(layerObject); 
-                        console.log("CHECKED-"+flag+" [" + layername+"]"); 
+                        // console.log("CHECKED-"+flag+" [" + layername+"]", layerObject); 
                     } 
                     
                     // console.log("TOGGLEevents-"+flag +" [" + layername+"]", layerObject); 
@@ -581,13 +586,17 @@
             // Remove previous Content-layers
             _mapContentCheckOut: function() { 
                 // if (!this._contentbox || !Object.keys(this._contentbox).length) return; 
-                this._mapContentChecker(this._contentbox, "OUT") ;    
+                var oldcontent = this._mapContentChecker(this._contentbox, "OUT") ;    
+                if (oldcontent)  console.log("MAP-OUT-features", oldcontent);
             },
+
             // Add/Insert layers according contentbox
             _mapContentCheckIn: function(contentbox, meta) { 
                 var mapcontent = this._mapContentChecker(contentbox, "IN") ;
-                console.log("CHECKED-IN ("+meta+")", mapcontent);
-                this.contentfeatures = mapcontent;
+                if (mapcontent)  {
+                    console.log("MAP-IN-features", mapcontent, meta);
+                    this.contentfeatures = mapcontent;
+                }    
             },
 
             ready: function() {
