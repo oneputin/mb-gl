@@ -29,9 +29,9 @@ Optional: create quick-preview-data
     </style>
 
     <kml-json 
-        url="[[xmlurl]]" 
-        query="[[xmlquery]]" 
-        geojson="{{rawdata}}">
+        url="[[_xmlurl]]" 
+        query="[[_xmlquery]]" 
+        geojson="{{_rawdata}}">
     </kml-json>
 
 </template>
@@ -46,28 +46,9 @@ Optional: create quick-preview-data
                 type: Object,
             },
 
-            xmlurl: {
-                type: String
-            },
-
-            // Query to be applied in kml-json 
-            xmlquery: {
-                type: Object,
-                value: {
-                    "tags": "Track",
-                    "structure": "doc"
-                }
-            },
-
             logmode: {
                 type: Boolean,
                 value: false
-            },
-
-            rawdata: {
-                type: Object,
-                value: {}
-                //observer: 'deriveTracks'
             },
 
             trackdata : {
@@ -75,18 +56,24 @@ Optional: create quick-preview-data
                 notify: true
             },
 
-            // can be processed in "quickViewer"
-            rawtracks: {
-                type: Object,
-                notify: true
+            _xmlurl: {
+                type: String
             },
 
-            // to be processed in "trackAnimation"
-            routedata: {
-                type: Array,
-                value: [],
-                notify: true
-            }
+            // Query to be applied in kml-json 
+            _xmlquery: {
+                type: Object,
+                value: {
+                    "tags": "Track",
+                    "structure": "doc"
+                }
+            },
+
+            // json from document-IF
+            _rawdata: {
+                type: Object,
+                value: {}
+            },
 
         },
 
@@ -96,15 +83,15 @@ Optional: create quick-preview-data
         ],
 
         observers: [
-            'triggerQuery(srcmeta.*)',
-            'deriveTracks(rawdata, srcmeta, logmode)'
+            '_triggerQuery(srcmeta.*)',
+            '_createTrackData(_rawdata, srcmeta, logmode)'
         ],
 
         attached: function() {
             // console.log("target attached");
         },
 
-        triggerQuery: function(srcmeta) { // trigger new dataquery !!
+        _triggerQuery: function(srcmeta) { // trigger new dataquery !!
             if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
             if (srcmeta.type != "gpx") {
                 this.rawdata = null;
@@ -112,17 +99,17 @@ Optional: create quick-preview-data
             }  
             console.log("gpx-Query (meta)",srcmeta) ;
             // set parameters for data-fetch with <kml-json>
-            if (srcmeta.xmlquery) this.xmlquery = srcmeta.xmlquery;
-            this.xmlurl = srcmeta.url; // !! TRIGGER !!
+            if (srcmeta.xmlquery) this._xmlquery = srcmeta.xmlquery;
+            this._xmlurl = srcmeta.url; // !! TRIGGER !!
         },
         
         // Convert raw gpx-json-data into 
-        deriveTracks: function(rawdata, srcmeta, logmode) {
+        _createTrackData: function(rawdata, srcmeta, logmode) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
             // console.log("GPX-data, raw tracks", rawdata);
 
             // 1. Simplify list of "simple" tracks 
-            var rawtracks = this.getRawTracks(rawdata);
+            var rawtracks = this._getRawData(rawdata);
             // console.log("GPX-data, mode, flat tracks", rawtracks);
 
             // 2. 
@@ -130,7 +117,6 @@ Optional: create quick-preview-data
                 // console.log("prepare quickmap of ", rawtracks);  
                 var rawtracks = this.createTrackLogs(rawtracks, srcmeta);
                 if (rawtracks) {  console.log("RAW trackdata (gpx)", rawtracks);
-                    // this.rawtracks = rawtracks;
                     this.trackdata = rawtracks;
                 }    
 
@@ -145,15 +131,15 @@ Optional: create quick-preview-data
         },
 
         // Derive "raw tracks" from GPX, KML 
-        getRawTracks: function(rawdata) {
+        _getRawData: function(rawdata) {
             if (!rawdata) return; 
-            // console.log("getRawTracks: rawdata=", rawdata);
+            // console.log("_getRawData: rawdata=", rawdata);
 
             var scope = this;
             var trackdata , mapboxlayer;
 
             // Split multiLineTracks into tracksegments 
-            // that are addressable by "own" start-time 
+            // that can be identified by "own" start-time 
             function jsonTrackSimplify(rawdata) {
 
                 var segmentFeatures = [],

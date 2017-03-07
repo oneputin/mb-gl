@@ -33,8 +33,8 @@
                 fprops = f.properties; 
             if (!fprops) return ; 
 
-            if (fprops && fprops.coordTimes && map)  {  // SPEC-CASE : Tracks 
-
+            if (fprops && fprops.coordTimes && map)  {  // SPEC-CASE : trackLogs 
+                // temporarily enhance theme 'layerid' by HILITE-presentation
                 selectObj = this.tracksHilite(features, layerid);
 
             } else if (false)  {  // SPEC-CASE : Other 
@@ -44,7 +44,7 @@
                 if (f.feature) {
                     f = f.feature;
                 }
-                selectObj = this.setFeatureBounds([f], this.map);
+                selectObj = this.setFeatureBounds([f]);
             }    
 
             return selectObj; 
@@ -63,8 +63,9 @@
             // this.debounce("track", function(){
             var trackFeature = features[0]; 
             
-            // Create trackEndMarkers
-            function setTrackNodes(layerid, trackInfo) {
+            // MB-Function for trackContent: 
+            // 1. Create trackEndMarkers-layer
+            function showTrackNodes(layerid, trackInfo) {
                 // layer of nodes symbols with text in HALO
                 var hilayerid = layerid + "-nodes",
                     hilayer = map.getLayer(hilayerid);
@@ -74,7 +75,7 @@
                     toicon = "harbor";
 
                 var fromnode = trackInfo.fromnode.slice(0,2),
-                    tonode = trackInfo.tonode.slice(0,2),
+                    tonode   = trackInfo.tonode.slice(0,2),
                     fromtime = trackInfo.von,
                     totime = trackInfo.bis,
                     nodedata = { // for nodes-source = 2 points
@@ -110,8 +111,8 @@
                 }    
             } 
 
-            // HILITE the TRACE of the track (Filtering-Layer)
-            function setTrackLine(layerid, trackInfo) {
+            // 2. HILITE the TRACE of the track (Filtering-Layer)
+            function showTrackLine(layerid, trackInfo) {
                 // 
                 var hilayerid = layerid + "-trace", // ?
                     hilayer = map.getLayer(hilayerid),  
@@ -126,10 +127,10 @@
             var trackInfo = this.trackGetInfo(trackFeature, layerid);  // console.log("Selected track(s)", trackInfo);  
 
             // APPLY start- and stop-nodes of track
-            setTrackNodes(layerid, trackInfo); 
+            showTrackNodes(layerid, trackInfo); 
 
             // APPLY trace-overlay (gestrichelt) on track
-            setTrackLine(layerid, trackInfo); 
+            showTrackLine(layerid, trackInfo); 
 
             // Triggersignal to enable ZOOM & SYNC with sibling elements (fi. with menues )
             if (trackInfo.id)  {
@@ -185,7 +186,7 @@
                 });
             }
             
-            // Get typical track time parameters 
+            // Get time parameters from trackLog 
             if (trackInfo.coordTimes) { 
 
                 var trackTimes = trackInfo.coordTimes; // console.log("trackTimes", typeof trackTimes, trackTimes);

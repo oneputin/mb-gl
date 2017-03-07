@@ -6,11 +6,15 @@
 
 <!--
 `tracks-load`
+
 Interface for import of tracking data 
-    -- from handheld gps-devices of different formats
-    -- into different formats
-        'log-format' 
-        'routedata-template' (dataformat required by routing-api-api)
+- from gps-locations of different formats
+    raw handheld
+    tabular handheld export
+    tabular database export (vendee)
+- into different app-formats
+    'log-format' 
+    'trackdata-template' (dataformat required by routing-api-api)
 
 @demo demo/routingtracks.html 
 -->
@@ -31,8 +35,6 @@ Interface for import of tracking data
     </style>
 
     <!-- IF's to alternatively formatted srces -->
-    <!-- routedata = "{{routedata}}"
-        rawtracks="{{logdata}}"> -->
     <tracks-from-pnts 
         srcmeta="[[srcmetad]]"        
         logmode="[[logmode]]"
@@ -56,9 +58,15 @@ Interface for import of tracking data
 
             properties: {
 
-                datasetlabel: {
-                    type: String,
-                    notify : true
+                // OUT as traceContent
+                logdata: {
+                    type: Object,
+                    notify: true
+                },
+                // OUT as routeContent 
+                routedata: {
+                    type: Object,
+                    notify: true
                 },
 
                 // IN: metadata of srcdata to be processes
@@ -67,25 +75,20 @@ Interface for import of tracking data
                     type: Object
                 },
 
+                datasetlabel: {
+                    type: String,
+                    notify : true
+                },
+
                 // IN
                 logmode: {
                     type: Boolean,
-                    observer: 'setTrackUse'
+                    observer: 'uxManager'
                 },
 
+                // Internally from different formats 
                 _trackdata: {
                     type: Object
-                },
-
-                // OUT: 
-                routedata: {
-                    type: Object,
-                    notify: true
-                },
-                // OUT 
-                logdata: {
-                    type: Object,
-                    notify: true
                 },
 
                 /*
@@ -100,30 +103,29 @@ Interface for import of tracking data
             },
 
             behaviors: [
-                Mbb.MapBehavior,
             ],
 
             observers: [
-                'checkoutTrackData(_trackdata)',
-                'requestDispatcher(metadataset.*, logmode)'
+                'requestManager(metadataset.*, logmode)',
+                'responseManager(_trackdata)',
             ],
 
             attached: function() {
-                this.setTrackUse();
+                this.uxManager();
                 // console.log("target attached");
             },
 
             // 
-            checkoutTrackData : function(trackdata) {
+            responseManager : function(trackdata) {
                 // console.log("checkOUT TrackData:", this.logmode,  trackdata); 
-                //console.log("checkoutTrackData: META", this.logmode, this.metadataset); 
-                if (this.logmode) this.logdata = trackdata;
-                else  this.routedata = trackdata
+                //console.log("responseManager: META", this.logmode, this.metadataset); 
+                if (this.logmode)   this.logdata = trackdata;
+                else                this.routedata = trackdata
             },
 
             // APP/GUI-elemente anpassen, 
             // die sich bei verschiedenartiger Nutzung derselben Grunddatan unterscheiden  
-            setTrackUse : function(logmode) {
+            uxManager : function(logmode) {
                 if (logmode == null) logmode = this.logmode; 
                 if (logmode) {
                     this.datasetlabel="Static Logs"
@@ -139,7 +141,7 @@ Interface for import of tracking data
 
             // Evaluate RoutingSource-Object to trigger import of trackdata
             // from different data-types 
-            requestDispatcher: function(metadataset) {
+            requestManager: function(metadataset) {
                 if (metadataset.path == 'metadataset') metadataset = metadataset.value;
                 // console.log("metadataset. RAW=", metadataset);
 
