@@ -4,26 +4,25 @@
 <link rel="import" href="mb-app-behavior.html">
 
 <!--
-    `mb-content-map`
-    Refresh mb-presentation contentbox 
-    - after contentbox-items changed  
-    - after mapstyle background changed : mbid
+`mb-content-manager`
+Refresh mb-contentbox features
+- after contentbox-items changed  
+- after map component is available
+- after mapstyle (background) changed : mbid
 
-    @demo demo/routingtracks.html 
+@demo demo/routingtracks.html 
 -->
 
-<dom-module id="mb-content-map">
+<dom-module id="mb-content-manager">
 
     <template>
-
         <style>
         </style>
-
     </template>
 
     <script>
         Polymer({
-            is: 'mb-content-map',
+            is: 'mb-content-manager',
 
             properties: {
                 // OUT: features of (all) contentbox-layers loaded
@@ -33,14 +32,20 @@
                     notify: true
                 },
 
-                // OUT: feature selected by map-events defined for layers of contentbox 
+                // OUT: (linear) List of (basic) mapcontent-features from 1(optionally more) layer(s)
+                // fi. to be used for external selection
+                featuresused: {
+                    type: Array,
+                    notify: true
+                },
+
+                // After selection by map-events defined on layers of contentbox 
                 featureselected : {
                     type: Object,
                     notify: true
-                    // observer: 'checkoutSelected'
                 },
 
-                // IN: new contentbox to be 
+                // IN new contentbox to be 
                 contentbox: {
                     type: Object,
                     notify: true
@@ -73,56 +78,65 @@
 
 
             observers: [
-                'mapContentApply(contentbox.*, "CONTENTBOX")',
+                'mbContentApply(contentbox.*, "CONTENTBOX")',
+                'contentFeaturesToList(contentfeatures.*)'
             ],
 
+
+            ready: function() {
+                // console.log("READY: mb-content-manager");
+            },
 
             // rarely used 
             onMapSetup: function(map) {
                 // if (!map || !this.contentbox) return;
                 // console.log("FIRST prepare mapcontent from", this.contentbox);
-                this.mapContentApply(this.contentbox, "NEW MAP");
+                this.mbContentApply(this.contentbox, "NEW MAP");
             },
 
             // refresh contentbox on changed basemap
             onStyleChanged: function(mbid) {
-                this.mapContentApply(this.contentbox, "STYLE " + mbid);
+                this.mbContentApply(this.contentbox, "STYLE " + mbid);
             },
 
             /**
-             * Create/Replaces all mb-Layers 
+             * Create/Update all mbContent items 
              * related to newly selected contentbox
              */
-            mapContentApply: function(contentbox, meta) {
+            mbContentApply: function(contentbox, meta) {
                 if (!contentbox || !Object.keys(contentbox).length) return;
                 // if (contentbox.path == 'contentbox') {
-                var cp = contentbox.path; // console.log("mapContentApply-1 ", contentbox, cp);
+                var cp = contentbox.path; // console.log("mbContentApply-1 ", contentbox, cp);
                 if (cp && (cp.indexOf('contentbox') >= 0)) { 
                     contentbox = contentbox.base;
                 } 
 
                 // Verify weather (at least some) content is "well defined"
-                contentbox = this._mapContentVerify(contentbox);
+                if (map) contentbox = this._mbContentVerify(contentbox);
+
                 if (!contentbox || !Object.keys(contentbox).length)  return; 
 
-                // REMOVE all old content (this._contentbox) from actual map 
-                this._mapContentCheckOut();
+                // REMOVE all old content (this._contentbox) 
+                // from app (from actual map) if new is prepared 
+                this._mbContentCheckOut();
 
                 // Memorize push back as 
                 this._contentbox = contentbox;   
 
                 // INSERT new content into map
-                this._mapContentCheckIn(contentbox, meta); 
+                let checkedcontent = this._mbContentCheckIn(contentbox, meta); 
+
+                this.contentfeatures = checkedcontent;
+                // **********************************
             },    
 
-
             // Make contentbox "complete"  
-            _mapContentVerify: function(contentbox) {    
+            _mbContentVerify: function(contentbox) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
 
-                var scope = this, map = scope.map;
+                var scope = this; // , map = scope.map;
 
-                var verifiedBox = {}, layerObject ;
+                var verifiedContent = {}, layerObject ;
                 
                 // Add temporary paint-properties 
                 // for easy identification of features (line-width, random colors)
@@ -214,10 +228,9 @@
                         });
                         if (!features || !features.length) return;  
                         
-                        // Necessary to SYNC with content-browser    
+                        // Necessary to SYNC with content-browser after selection in map   
                         scope.featureselected = scope.featuresSelect(features, layerid);
-                        // scope.syncid = 
-                        // ******************
+
                     }
 
                     function hiliter(e) {
@@ -228,7 +241,7 @@
                         featureSelect(e, layername);
                     }
 
-
+                    // 
                     var eventset = {
                         "mousemove" : hiliter,
                         "click" : selector
@@ -237,7 +250,7 @@
                     return eventset;
                 }
 
-                // Create (multiple) layer-objects 
+                // Create (multiple) themeLayers 
                 // used to comfortably interact with datalayer in mapbox  
                 function getContentTemplates(layerObject) {
                     // Compile templates of mb-layer-objects (without data)
@@ -312,10 +325,12 @@
                         return lhilite;
                     }
 
-                    var layerTemplates = [],
-                        basicTemplate = layerObject['layer'],
+                    var basicTemplate = layerObject['layer'],
                         bgTemplate = layerObject['bglayer'],
                         selectTemplates = layerObject['selectlayer'];
+
+                    // Compile collection of     
+                    var layerTemplates = [];
 
                     if (basicTemplate) layerTemplates.push(basicTemplate);
 
@@ -324,16 +339,17 @@
                         layerTemplates.splice(0, 0, bgTemplate); // !!! 
                     }
 
-                    // HILITE Layer(s) for selected feature(s)
+                    // Specify some HILITE Layer(s) for selected feature(s)
                     if (selectTemplates && selectTemplates.length) {
-                        // Vordefinierte HILITE layers 
+                        // A. Vordefinierte HILITE layers 
+
                         layerObject['selectlayer'].forEach(function(l) {
                             layerTemplates.push(l);
                         });
 
                     } else if (basicTemplate && layerObject.raw) { 
-                        // "Standardisierte" HILITE-Layers für basic 'layer' 
-                        // wenn andere nicht vordefiniert waren 
+                        // B. "Standardisierte" HILITE-Layers des basic 'layer' 
+                        //    wenn keine speziellen vordefiniert waren 
                         
                         // Layer that occurs during "mouse-hover"
                         let hoverTemplate = createHiliteLayer(basicTemplate, "hover");
@@ -343,8 +359,9 @@
                         let selectTemplate = createHiliteLayer(basicTemplate, "select");
                         if (selectTemplate) layerTemplates.push(selectTemplate);
 
-                        // additional NODE-hilite for LINES
-                        if (true) {
+                        var isLine = true; 
+                        if (isLine) {
+                            // additional commented NODES at LINE-ends
                             let nodeTemplate = createHiliteLayer(basicTemplate, "nodes");
                             if (nodeTemplate) layerTemplates.push(nodeTemplate);
                         }  
@@ -370,23 +387,25 @@
                         layerObject.templates = getContentTemplates(layerObject);
                     }    
 
+
                     if (!layerObject.events) { 
                         layerObject.events = rawEvents(layername);
                     }
 
-                    verifiedBox[layername] = layerObject;
+                    verifiedContent[layername] = layerObject;
                 })
-                // console.log("NEW contentBox", verifiedBox);  
-                return verifiedBox; 
+                // console.log("NEW contentBox", verifiedContent);  
+                return verifiedContent; 
             },
 
+
             // Insert all layers of contentbox 
-            _mapContentChecker: function(contentbox, flag) {    
+            _mbContentChecker: function(contentbox, flag) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
                 if (!flag) flag = "IN";
 
-                var scope = this,
-                    map = scope.map;
+                var scope = this;
+                // var map = scope.map;
 
                 // create linear list of features 
                 // suitable for "menu-generation"
@@ -432,7 +451,6 @@
 
                     var layerData = layerObject.srcdata;
                     if (!layerData) return ; 
-                    if (!map) return layerData; 
 
                     var layerSource = map.getSource(layername),
                         mapLayer = map.getLayer(layername);
@@ -444,14 +462,13 @@
                             "data": layerData
                         });
                         layerSource = map.getSource(layername);
+
                     } else {              // 1.B  Update data of existing mapSource  
-                        if (true) {
-                            layerSource.setData(layerData);
-                        }
+                       layerSource.setData(layerData);
                     }  // console.log("SET SRC", layername, layerData, layerSource._data);
 
 
-                    // 1.C. (Re)Create layer(s) 
+                    // 1.C. (Re)Create all layer(s) of same srcdata 
                     if (!mapLayer) {
                         // console.log("layerTemplates for " + layername, layerTemplates, layerSource);
                         
@@ -491,15 +508,12 @@
                     return layerData; 
 
                 }
+
                 //
                 function toggleContentEvents(layerObject, flag){
 
                     var eventset = layerObject.events;
                     var events = Object.keys(eventset);
-                        if (!map) {
-                        // console.log("break. cannot toogle mb-events", events) 
-                        return; 
-                    }
 
                     events.forEach(function(ev){
                         if (flag=="IN") {
@@ -554,20 +568,26 @@
 
                     // Option 
                     if (flag == "IN") { // ADD/REFRESH a contentbox object 
-                        var layerData = addMapContent(layername, layerObject);
-                        var ids=[]; 
+
+                        var layerData = layerObject.srcdata;
+
+                        if (map)  {
+                            layerData = addMapContent(layername, layerObject);
+                        } 
+
                         if (layerData) {   // Check/Get all source-features of the basic layer 
                             contentfeatures = getFeatureList(layerData, layername);
                             // console.log("CHECKED-"+flag+" ["+layername+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
                         }                        
 
                     }   else {        // REMOVE object (on demand)
-                        removeMapContent(layerObject); 
+
+                        if (map) removeMapContent(layerObject); 
                         // console.log("CHECKED-"+flag+" [" + layername+"]", layerObject); 
                     } 
                     
                     // console.log("TOGGLEevents-"+flag +" [" + layername+"]", layerObject); 
-                    toggleContentEvents(layerObject, flag) 
+                    if (map) toggleContentEvents(layerObject, flag) 
 
                     // Add layer-features to mapcontent
                     if (contentfeatures.length) {
@@ -584,24 +604,51 @@
             },
 
             // Remove previous Content-layers
-            _mapContentCheckOut: function() { 
+            _mbContentCheckOut: function() { 
                 // if (!this._contentbox || !Object.keys(this._contentbox).length) return; 
-                var oldcontent = this._mapContentChecker(this._contentbox, "OUT") ;    
+                var oldcontent = this._mbContentChecker(this._contentbox, "OUT") ;    
                 if (oldcontent)  console.log("MAP-OUT-features", oldcontent);
             },
 
             // Add/Insert layers according contentbox
-            _mapContentCheckIn: function(contentbox, meta) { 
-                var mapcontent = this._mapContentChecker(contentbox, "IN") ;
+            _mbContentCheckIn: function(contentbox, meta) { 
+                var mapcontent = this._mbContentChecker(contentbox, "IN") ;
                 if (mapcontent)  {
                     console.log("MAP-IN-features", mapcontent, meta);
-                    this.contentfeatures = mapcontent;
+                    return mapcontent; 
                 }    
             },
 
-            ready: function() {
-                // console.log("READY: mb-content-map");
-            }
+
+            /**
+             * Create a linear LIST(array) of all features  
+             * of the mapcontent-layer (marked with flag 'usefeatures' if more layers) 
+             * and supply as notify-parameter 'featuresused'
+             */
+            contentFeaturesToList: function(contentfeatures, keys) {
+                if (contentfeatures.path == 'contentfeatures') contentfeatures = contentfeatures.value;
+                if (!contentfeatures || !Object.keys(contentfeatures).length) return;
+                
+                if (!keys) keys = Object.keys(contentfeatures);
+                
+                // Select features from layer with basefeatures only !! 
+
+                var obj, featuresused = [];
+
+                keys.forEach(function(lname) {
+                    obj = contentfeatures[lname];
+                    // add features to featuresused if layer is "marked with 'usefeatures' " 
+                    // or if only one layer exists in contentfeatures  
+                    if ((keys.length == 1) || obj.usefeatures) { // 
+                        obj.features.forEach(function(item) {
+                            featuresused.push(item);
+                        })
+                    } 
+                });
+
+                this.featuresused = featuresused; // NOTIFIES  !!
+                // console.log("GOT contentFeaturesToList :", layernames, featuresused);
+            },
 
         })
     </script>

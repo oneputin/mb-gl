@@ -96,7 +96,7 @@ Optional: create quick-preview-data
                 this.rawdata = null;
                 return;
             }  
-            console.log("gpx-Query (meta)",srcmeta) ;
+            // console.log("gpx-Query (meta)",srcmeta) ;
             // set parameters for data-fetch with <kml-json>
             if (srcmeta.xmlquery) this._xmlquery = srcmeta.xmlquery;
             this._xmlurl = srcmeta.url; // !! TRIGGER !!
@@ -132,7 +132,7 @@ Optional: create quick-preview-data
         // Derive "raw tracks" from GPX, KML 
         _getRawData: function(rawdata) {
             if (!rawdata) return; 
-            console.log("_getRawData: rawdata=", rawdata);
+            // console.log("_getRawData: rawdata=", rawdata);
 
             var scope = this;
             var trackdata , mapboxlayer;

@@ -27,7 +27,7 @@
     
         // Shell for diverse select-functions  
         featuresSelect: function(features, layerid) {
-            // console.log("FS in "+ layerid, features); 
+            // console.log("F's in "+ layerid, features); 
             var selectObj,
                 f = features[0], 
                 fprops = f.properties; 
@@ -35,7 +35,7 @@
 
             if (fprops && fprops.coordTimes && map)  {  // SPEC-CASE : trackLogs 
                 // temporarily enhance theme 'layerid' by HILITE-presentation
-                selectObj = this.tracksHilite(features, layerid);
+                selectObj = this.tracksHilite(features, layerid); 
 
             } else if (false)  {  // SPEC-CASE : Other 
 

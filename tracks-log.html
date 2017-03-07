@@ -1,0 +1,128 @@
+<link rel="import" href="../polymer/polymer.html">
+
+
+<link rel="import" href="mb-map-behavior.html">
+<link rel="import" href="mb-content-behavior.html">
+<link rel="import" href="mb-app-behavior.html">
+<link rel="import" href="dynamic-menu.html">
+
+<!--
+`tracks-log`
+generic handles for selected features 
+
+@demo demo/routingtracks.html 
+-->
+
+<dom-module id="tracks-log">
+
+    <template>
+
+        <style>
+        </style>
+    
+        <div id="textcontent"> 
+            <h3>Elevations on track  [[track]] </h3> 
+            <pre>{{log}}</pre>
+        </div>
+
+        <dynamic-menu 
+            id="zlog"
+            class="metadata"
+            menulabel="z-track"
+            menuitems="[[zitems]]"
+            selectitem="{{zitem}}">
+        </dynamic-menu>
+
+    </template>
+
+    <script>
+        
+        Polymer({
+            is: 'tracks-log',
+
+            properties: {
+
+                metadata: {
+                    type: Object
+                },
+
+                trackdata: {
+                    type: Object,
+                    notify: true,
+                    observer: 'checkoutFeature'
+                },
+                log: {
+                    type: String
+                },
+                zitems : {
+                    type: Array
+                },
+                zitem: {
+                    type: Object,
+                    observer: 'toString' 
+                }
+            },
+
+            behaviors: [
+                Mbb.AppBehavior,
+                Mbb.ContentBehavior,
+                Mbb.MapBehavior
+            ],                
+
+            observers: [
+            ],
+
+            ready: function() {
+            },
+
+            /**
+             * Select/Hilite a feature on the map  (fi. zoomTo)
+             * @param      {object}  f       { mapbox-jeature }
+             */
+            checkoutFeature: function(f) { 
+                if (!f.feature) return;    
+                
+                // A. generic map-select
+                var selObj = this.featuresSelect([f.feature], f.layer);
+                //console.log("Selected Feature: " + f.id , f, selObj);
+                //console.log("Metadata of: " + f.layer , this.metadata);
+
+                // B. Create a text-log
+                var pp = f.feature.properties;   // console.log("Props of Selected F.", pp);
+                var log = "["+f.id +"] in { "+ f.layer+" }"; 
+                this.track = log; 
+
+                this.createElevTrack(pp); 
+            },
+
+            // 
+            createElevTrack: function(pp){
+
+                var zitems = [], zitem,
+                    times = pp["coordTimes"],
+                    elevs = pp["coordZ"];
+
+                // var sp = ":" + "&nbsp;" + "&nbsp;";
+                var sp = "_:__" ;
+
+                times.forEach(function(t, j){
+                    let zeit = t.split("T")[1]; 
+                    zitem = {
+                        "id" : j,
+                        "title" : zeit + sp + elevs[j] + "[m]",
+                        "time" : t
+                    }
+                    zitems.push(zitem);
+                })
+
+                this.zitems = zitems; 
+            },   
+
+            toString : function(obj) {
+                this.log = JSON.stringify(obj);
+            }
+
+
+        });
+    </script>
+</dom-module>

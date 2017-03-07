@@ -25,8 +25,8 @@
 
     <!-- generic components for app-content-ctrl -->
     <link rel="import" href="../mb-content-browser.html"> 
-    <link rel="import" href="../mb-content-map.html">
-    <link rel="import" href="../mb-content-features.html">
+    <link rel="import" href="../mb-content-manager.html">
+    <link rel="import" href="../mb-content-select.html">
 
     <!-- generic animation components -->
     <link rel="import" href="../routing-api.html">
@@ -36,12 +36,14 @@
     <!-- specific animation components for some datasources -->
     <link rel="import" href="../tracks-info.html">
     <link rel="import" href="../tracks-load.html">
+    <link rel="import" href="../tracks-log.html">
     
     <style is="custom-style">
         .container {
             @apply(--layout-horizontal);
             /*align-items: flex-start;*/
         }
+        
         .content_area {
             width: 800px;
             height: 670px;
@@ -188,15 +190,15 @@
                         </mb-info-drag>-->
 
                 </mb-map>
-                
+
             </template>    
 
             <template is="dom-if" if="{{!mapstyle}}">
 
-                <div id="textcontent"> 
-                    <h3>Log of selected track</h3> 
-                    <pre>{{featurelog}}</pre>
-                </div>
+                <tracks-log
+                    trackdata="[[datasetitem]]"
+                    metadata="[[metadataset]]">
+                </tracks-log>    
 
             </template>    
         </div>
@@ -268,23 +270,22 @@
 
             <!-- SYNC contentfeatures from contentbox -->
             <!-- checked="[[logmode]]" --> 
-            <mb-content-map 
+            <mb-content-manager 
                 map = "[[map]]" 
                 mbid = "[[mbid]]" 
                 contentbox="{{contentbox}}" 
                 contentfeatures="{{contentfeatures}}"
+                featuresused = "{{dataset}}"
                 featureselected="{{datasetitem}}">
-            </mb-content-map>
+            </mb-content-manager>
 
             <!-- DIALOG ctrl <mb-map> <mb-content-browser> -->
             <!-- featureapplied="{{selector}}"> -->
-            <mb-content-features 
-                map="[[map]]" 
-                contentfeatures = "[[contentfeatures]]" 
+            <mb-content-select 
+                metadataset = "[[metadataset]]" 
                 featureselected = "{{datasetitem}}"
-                featurelog="{{featurelog}}" 
-                featuresused = "{{dataset}}">
-            </mb-content-features>
+                featurelog = "{{featurelog}}"> 
+            </mb-content-select>
 
         </div>
 

@@ -1,0 +1,85 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="mb-map-behavior.html">
+<link rel="import" href="mb-content-behavior.html">
+<link rel="import" href="mb-app-behavior.html">
+
+<!--
+`mb-content-select`
+generic handles for selected features 
+
+@demo demo/routingtracks.html 
+-->
+
+<dom-module id="mb-content-select">
+
+    <template>
+
+        <style>
+        </style>
+
+    </template>
+
+    <script>
+        
+        Polymer({
+            is: 'mb-content-select',
+
+            properties: {
+
+                map: {
+                    type: Object,
+                },
+                
+                metadataset: {
+                    type: Object
+                },
+
+                // IN/OUT: bidirectional sync-property
+                featureselected: {
+                    type: Object,
+                    notify: true,
+                    observer: 'checkoutFeature'
+                },
+
+                // Auxiliary debug-text derived from selected feature 
+                featurelog: {
+                    type: String,
+                    value: "",
+                    notify: true
+                }
+
+            },
+
+            behaviors: [
+                Mbb.AppBehavior,
+                Mbb.ContentBehavior,
+                Mbb.MapBehavior
+            ],                
+
+            observers: [
+            ],
+
+            ready: function() {
+                // console.log("READY: mb-content-select");
+            },
+
+            /**
+             * Select/Hilite a feature on the map  (fi. zoomTo)
+             * @param      {object}  f       { mapbox-jeature }
+             */
+            checkoutFeature: function(f) { 
+                if (!f.feature) return;    
+                
+                // A. generic map-select
+                var selObj = this.featuresSelect([f.feature], f.layer);
+                //console.log("Selected Feature: " + f.id , f, selObj);
+                //console.log("Metadata of: " + f.layer , this.metadataset);
+                // B. Create a text-log
+                var pp = f.feature.properties;   // console.log("Props of Selected F.", pp);
+                var log = "["+f.id +"] in logbook: "+ f.layer; 
+
+            }
+
+        });
+    </script>
+</dom-module>
