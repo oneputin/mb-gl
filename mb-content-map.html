@@ -4,7 +4,7 @@
 <link rel="import" href="mb-app-behavior.html">
 
 <!--
-    `mb-content-sync`
+    `mb-content-map`
     Refresh mb-presentation contentbox 
     - after contentbox-items changed  
     - after mapstyle background changed : mbid
@@ -12,7 +12,7 @@
     @demo demo/routingtracks.html 
 -->
 
-<dom-module id="mb-content-sync">
+<dom-module id="mb-content-map">
 
     <template>
 
@@ -23,7 +23,7 @@
 
     <script>
         Polymer({
-            is: 'mb-content-sync',
+            is: 'mb-content-map',
 
             properties: {
                 // OUT: features of (all) contentbox-layers loaded
@@ -600,7 +600,7 @@
             },
 
             ready: function() {
-                // console.log("READY: mb-content-sync");
+                // console.log("READY: mb-content-map");
             }
 
         })

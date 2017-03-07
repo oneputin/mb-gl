@@ -47,7 +47,7 @@
 
                 // OUT: (linear) List of (basic) mapcontent-features from 1(optionally more) layer(s)
                 // fi. to be used for external selection
-                mapfeatures: {
+                featuresused: {
                     type: Array,
                     notify: true
                 },
@@ -57,6 +57,13 @@
                     type: Object,
                     notify: true,
                     observer: 'checkoutFeature'
+                },
+
+                // Auxiliary debug-prop 
+                featurelog: {
+                    type: String,
+                    value: "",
+                    notify: true
                 }
 
             },
@@ -84,14 +91,22 @@
              */
             checkoutFeature: function(f) { 
                 if (!f.feature) return;    
-                // console.log("Selected Track: " + f.id , f);
+                
+                console.log("Selected Track: " + f.id , f);
+                // 
                 this.featuresSelect([f.feature], f.layer);
+
+                // Create a text-log
+                var pp = f.feature.properties; console.log("pp", pp);
+                var log = "["+f.id +"] in logbook: "+ f.layer; 
+                // var log = JSON.parse(pp); 
+                this.featurelog = log; 
             },
 
             /**
              * Create a linear LIST(array) of all features  
-             * of mapcontent-layers marked with flag 'usefeatures' 
-             * and supply as notify-parameter 'mapfeatures'
+             * of the mapcontent-layer (marked with flag 'usefeatures' if more layers) 
+             * and supply as notify-parameter 'featuresused'
              */
             contentFeaturesToList: function(contentfeatures, keys) {
                 if (contentfeatures.path == 'contentfeatures') contentfeatures = contentfeatures.value;
@@ -101,21 +116,21 @@
                 
                 // Select features from layer with basefeatures only !! 
 
-                var obj, mapfeatures = [];
+                var obj, featuresused = [];
 
                 keys.forEach(function(lname) {
                     obj = contentfeatures[lname];
-                    // add features to mapfeatures if layer is "marked with 'usefeatures' " 
+                    // add features to featuresused if layer is "marked with 'usefeatures' " 
                     // or if only one layer exists in contentfeatures  
                     if ((keys.length == 1) || obj.usefeatures) { // 
                         obj.features.forEach(function(item) {
-                            mapfeatures.push(item);
+                            featuresused.push(item);
                         })
                     } 
                 });
 
-                this.mapfeatures = mapfeatures; // NOTIFIES  !!
-                // console.log("GOT contentFeaturesToList :", layernames, mapfeatures);
+                this.featuresused = featuresused; // NOTIFIES  !!
+                // console.log("GOT contentFeaturesToList :", layernames, featuresused);
             }
 
         });

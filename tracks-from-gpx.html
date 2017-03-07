@@ -88,7 +88,6 @@ Optional: create quick-preview-data
         ],
 
         attached: function() {
-            // console.log("target attached");
         },
 
         _triggerQuery: function(srcmeta) { // trigger new dataquery !!
@@ -106,7 +105,7 @@ Optional: create quick-preview-data
         // Convert raw gpx-json-data into 
         _createTrackData: function(rawdata, srcmeta, logmode) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
-            // console.log("GPX-data, raw tracks", rawdata);
+            // console.log("GPX-data, raw tracks", rawdata); 
 
             // 1. Simplify list of "simple" tracks 
             var rawtracks = this._getRawData(rawdata);
@@ -133,10 +132,13 @@ Optional: create quick-preview-data
         // Derive "raw tracks" from GPX, KML 
         _getRawData: function(rawdata) {
             if (!rawdata) return; 
-            // console.log("_getRawData: rawdata=", rawdata);
+            console.log("_getRawData: rawdata=", rawdata);
 
             var scope = this;
             var trackdata , mapboxlayer;
+            
+            // enable processing of different input structures
+            if (rawdata.features) rawdata = rawdata.features; 
 
             // Split multiLineTracks into tracksegments 
             // that can be identified by "own" start-time 
@@ -145,7 +147,7 @@ Optional: create quick-preview-data
                 var segmentFeatures = [],
                     starttime;
 
-                rawdata.features.forEach(function(f, i) {
+                rawdata.forEach(function(f, i) {
 
                     coordinates = f.geometry.coordinates;
 

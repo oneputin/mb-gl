@@ -25,7 +25,7 @@
 
     <!-- generic components for app-content-ctrl -->
     <link rel="import" href="../mb-content-browser.html"> 
-    <link rel="import" href="../mb-content-sync.html">
+    <link rel="import" href="../mb-content-map.html">
     <link rel="import" href="../mb-content-features.html">
 
     <!-- generic animation components -->
@@ -42,7 +42,11 @@
             @apply(--layout-horizontal);
             /*align-items: flex-start;*/
         }
-        
+        .content_area {
+            width: 800px;
+            height: 670px;
+        }
+
         mb-map {
             /*width: 55%;*/
             width: 800px;
@@ -120,67 +124,82 @@
 <template is="dom-bind" id="app">
 
     <div class="container">
-        <!-- LEFT block: Map -->
+        <!-- LEFT block: CONTENT (Map, diagram, list) -->
 
-        <mb-map 
-            map="{{map}}" 
-            mapapikey="[[mbkey]]" 
-            mapstyle="[[mapstyle]]" 
-            mbid="{{mbid}}" 
-            cbox="{{cbox}}" 
-            zoom="{{zoom}}" 
-            mapctrl="[[mapctrl]]">
-            
-            <mb-styles 
-                styleset ="[[morestyles]]"
-                checked = "[[styleselectshow]]"
-                selectable = "{{styleselectable}}"
-                mapstyle = "{{mapstyle}}"> 
-            </mb-styles>
+        <div class="content_area">
 
-            <!-- TOOL to measure user-generated lines -->
-            <mb-distance 
-                map="{{map}}" 
-                distance="{{distance}}" 
-                checked="[[mapmeasureshow]]">
-            </mb-distance>
+            <template is="dom-if" if="{{mapstyle}}">
 
-            <mb-location-log 
-                map="{{map}}" 
-                lnglat="{{lnglat}}" 
-                checked="[[locationlogshow]]">
-            </mb-location-log>
-
-            <!-- not implemented 
-            <tracks-info 
-                metadataset = "[[metadataset]]" 
-                trackinfo = "[[trackinfo]]" 
-                trackdata = "{{trackdata}}">
-            </tracks-info>
-            -->
-
-            <template is="dom-if" if="{{userouting}}">
-                
-                <div class="ctrls-in-map">
-                    <!-- ctrl of animation-progress  -->
-                    <routing-ctrl 
-                        trackctrl="{{trackctrl}}"
-                        timer="{{timer}}">
-                    </routing-ctrl>
-
-                    <!-- ctrl of map-orientation -->
-                    <mb-orientation-ctrl 
-                        trackmap="{{trackmap}}">
-                    </mb-orientation-ctrl>
+                <mb-map 
+                    map="{{map}}" 
+                    mapapikey="[[mbkey]]" 
+                    mapstyle="[[mapstyle]]" 
+                    mbid="{{mbid}}" 
+                    cbox="{{cbox}}" 
+                    zoom="{{zoom}}" 
+                    mapctrl="[[mapctrl]]">
                     
+                    <mb-styles 
+                        styleset ="[[morestyles]]"
+                        checked = "[[styleselectshow]]"
+                        selectable = "{{styleselectable}}"
+                        mapstyle = "{{mapstyle}}"> 
+                    </mb-styles>
+
+                    <!-- TOOL to measure user-generated lines -->
+                    <mb-distance 
+                        distance="{{distance}}" 
+                        map="[[map]]" 
+                        checked="[[mapmeasureshow]]">
+                    </mb-distance>
+
+                    <mb-location-log 
+                        lnglat="{{lnglat}}" 
+                        map="[[map]]" 
+                        checked="[[locationlogshow]]">
+                    </mb-location-log>
+
+                    <!-- not implemented 
+                    <tracks-info 
+                        metadataset = "[[metadataset]]" 
+                        trackinfo = "[[trackinfo]]" 
+                        trackdata = "{{trackdata}}">
+                    </tracks-info>
+                    -->
+
+                    <template is="dom-if" if="{{userouting}}">
+                        
+                        <div class="ctrls-in-map">
+                            <!-- ctrl of animation-progress  -->
+                            <routing-ctrl 
+                                trackctrl="{{trackctrl}}"
+                                timer="{{timer}}">
+                            </routing-ctrl>
+
+                            <!-- ctrl of map-orientation -->
+                            <mb-orientation-ctrl 
+                                trackmap="{{trackmap}}">
+                            </mb-orientation-ctrl>
+                            
+                        </div>
+                    </template>
+
+                    <!--<mb-info-drag carddata="[[trackdata]]">
+                        </mb-info-drag>-->
+
+                </mb-map>
+                
+            </template>    
+
+            <template is="dom-if" if="{{!mapstyle}}">
+
+                <div id="textcontent"> 
+                    <h3>Log of selected track</h3> 
+                    <pre>{{featurelog}}</pre>
                 </div>
 
-            </template>
-
-            <!--<mb-info-drag carddata="[[trackdata]]">
-                </mb-info-drag>-->
-
-        </mb-map>
+            </template>    
+        </div>
 
         <!-- RIGHT Block: several external app-controls -->
 
@@ -228,20 +247,17 @@
             </template>
 
             <!-- C. DATAFLOW INTERFACE -->
+            <!-- datasetlabel="[[datasetlabel]]" -->
             <mb-content-browser 
                 indexurl="[[indexurl]]" 
                 metadatasetslabel="[[metadatasetslabel]]" 
                 metadataset="{{metadataset}}"
 
-                datasetlabel="[[datasetlabel]]"
                 dataset="[[dataset]]" 
                 selectvalue="{{datasetitem}}"> 
 
                 <tracks-load 
-                    metadataset = "[[metadataset]]" 
-                    basedataurl = "[[basedataurl]]" 
-                    datasetlabel = "{{datasetlabel}}" 
-
+                    tracksetmeta = "{{metadataset}}" 
                     logmode = "[[logmode]]" 
                     logdata = "{{contentbox}}" 
                     routedata = "{{routedata}}"> 
@@ -252,13 +268,13 @@
 
             <!-- SYNC contentfeatures from contentbox -->
             <!-- checked="[[logmode]]" --> 
-            <mb-content-sync 
+            <mb-content-map 
                 map = "[[map]]" 
                 mbid = "[[mbid]]" 
                 contentbox="{{contentbox}}" 
                 contentfeatures="{{contentfeatures}}"
                 featureselected="{{datasetitem}}">
-            </mb-content-sync>
+            </mb-content-map>
 
             <!-- DIALOG ctrl <mb-map> <mb-content-browser> -->
             <!-- featureapplied="{{selector}}"> -->
@@ -266,10 +282,12 @@
                 map="[[map]]" 
                 contentfeatures = "[[contentfeatures]]" 
                 featureselected = "{{datasetitem}}"
-                mapfeatures = "{{dataset}}">
+                featurelog="{{featurelog}}" 
+                featuresused = "{{dataset}}">
             </mb-content-features>
 
         </div>
+
     </div>
 </template>
 
@@ -277,7 +295,7 @@
     var scope = document.querySelector('#app');
 
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-    scope.mapstyle = 'mapbox://styles/mapbox/light-v9' 
+    scope.mapstyle = ''; // mapbox://styles/mapbox/light-v9' 
     scope.morestyles = "demo-styles.json";
 
     // Data-INIT
@@ -285,7 +303,7 @@
     scope.basedataurl = ""; // list of available datasets
     scope.metadataset = {}; // metadata of selected dataset
 
-    scope.metadatasetslabel="Logbook List"
+    scope.metadatasetslabel="Trackbooks"
     scope.dataset = []; // collection 
     scope.datasetitem = {}; // track/route-object
 

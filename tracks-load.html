@@ -7,14 +7,14 @@
 <!--
 `tracks-load`
 
-Interface for import of tracking data 
-- from gps-locations of different formats
-    raw handheld
-    tabular handheld export
-    tabular database export (vendee)
+component loads tracking data 
+- from location sets of different formats
+    - raw handheld (gps as gpx)
+    - tabular handheld export (gps as csv)
+    - tabular database export (vendee-tables)
 - into different app-formats
-    'log-format' 
-    'trackdata-template' (dataformat required by routing-api-api)
+    - 'log-formats' (map-lines, z-diagram, listing) 
+    - 'trackdata-templates' (as required by routing-api)
 
 @demo demo/routingtracks.html 
 -->
@@ -58,119 +58,125 @@ Interface for import of tracking data
 
             properties: {
 
-                // OUT as traceContent
+                // OUT-tracks as static logs
                 logdata: {
                     type: Object,
                     notify: true
                 },
-                // OUT as routeContent 
+
+                // OUT-tracks as animatable content 
                 routedata: {
                     type: Object,
                     notify: true
                 },
 
-                // IN: metadata of srcdata to be processes
-                //    (passed to srcmetax or srcmetad)
-                metadataset: {
-                    type: Object
+                /** metadata describing trackdata to load
+                 *  
+                 */
+                tracksetmeta: {
+                    type: Object,
+                    notify: true
                 },
 
-                datasetlabel: {
-                    type: String,
-                    notify : true
-                },
-
-                // IN
+                /** toggles preprocessing and out-format of rawdata
+                 * - true: log-trace
+                 * - false: animatable track
+                 */
                 logmode: {
                     type: Boolean,
-                    observer: 'uxManager'
+                    value: true
                 },
 
-                // Internally from different formats 
+                // raw data imported from different  
                 _trackdata: {
                     type: Object
                 },
 
-                /*
-                xmlurl: {
-                    type: String
-                },
-
-                xmlquery: {
-                    type: Object
-                }
-                */
             },
 
             behaviors: [
             ],
 
             observers: [
-                'requestManager(metadataset.*, logmode)',
-                'responseManager(_trackdata)',
+                '_requestManager(tracksetmeta.*, logmode)',
+                '_responseManager(_trackdata)'
             ],
 
             attached: function() {
-                this.uxManager();
-                // console.log("target attached");
+                // this._uxManager();
             },
 
-            // 
-            responseManager : function(trackdata) {
-                // console.log("checkOUT TrackData:", this.logmode,  trackdata); 
-                //console.log("responseManager: META", this.logmode, this.metadataset); 
-                if (this.logmode)   this.logdata = trackdata;
-                else                this.routedata = trackdata
-            },
 
-            // APP/GUI-elemente anpassen, 
-            // die sich bei verschiedenartiger Nutzung derselben Grunddatan unterscheiden  
-            uxManager : function(logmode) {
-                if (logmode == null) logmode = this.logmode; 
-                if (logmode) {
-                    this.datasetlabel="Static Logs"
-                } else {
-                    this.datasetlabel="Animated Logs"
-                }
-            },
+            /** Prepares import of trackdata
+             *  from alternative low-level import-components (evaluates metadata)  
+             */
+            _requestManager: function(tracksetmeta, logmode) {
+                if (tracksetmeta.path == 'tracksetmeta') tracksetmeta = tracksetmeta.value;
+                // console.log("tracksetmeta. RAW=", tracksetmeta);
 
-            clearSourceUsage : function() {
-                this.routedata = [];
-                var srcTitle = this.srcmeta.title;
-            },
-
-            // Evaluate RoutingSource-Object to trigger import of trackdata
-            // from different data-types 
-            requestManager: function(metadataset) {
-                if (metadataset.path == 'metadataset') metadataset = metadataset.value;
-                // console.log("metadataset. RAW=", metadataset);
-
-                var srcurl = metadataset.url,
-                    srctype = metadataset.type,
-                    srctitle = metadataset.title;
+                var srcurl = tracksetmeta.url,      // 
+                    srctype = tracksetmeta.type,    // 
+                    srctitle = tracksetmeta.title;  // 
 
                 // Check some url - conditions ???
                 if (!srcurl) return;
 
                 if (this.srcmeta && (srcurl != this.srcmeta.url)) {
-                    this.clearSourceUsage();  // 
+                    this.routedata = [];
+                    this.logdata = [];
+                    srctitle = this.srcmeta.title;
                 } 
 
+                // Extend metadata with Query/Format - parameters
                 if ((srctype == "kml") || (srctype == "gpx")) {
+
                     srctype = "xml"; 
-                    // ALWAYS
-                    metadataset.xmlquery = {
-                        "tags": "Track",
-                        "structure": "doc"
-                    };
-                    if (metadataset.query) {  // OPTIONAL
-                        metadataset.xmlquery = Object.assign(metadataset.xmlquery, metadataset.query); 
+                    tracksetmeta.xmlquery = {};
+                   
+                    if (srctype == "gpx") {
+                        // ALWAYS extract only tracks (neither waypoints or routes)
+                        tracksetmeta.xmlquery = {
+                            "tags": "Track",
+                            "structure": "doc"
+                        };                    
+                    } 
+
+                    // OPTIONAL: JOIN with user-defined query-expressions  
+                    if (tracksetmeta.query) {  
+                        tracksetmeta.xmlquery = Object.assign(tracksetmeta.xmlquery, tracksetmeta.query); 
                     } 
                 }
-                // console.log("metadataset. AFTER", metadataset);
-                this.srcmeta = metadataset;
-                if (srctype=="xml")  this.srcmetax = metadataset;
-                else                 this.srcmetad = metadataset;
+
+                // console.log("tracksetmeta. AFTER", tracksetmeta);
+                this.srcmeta = tracksetmeta;
+ 
+                // trigger one of alternative import-elements
+                if (srctype=="xml")  this.srcmetax = tracksetmeta;
+                else                 this.srcmetad = tracksetmeta;
+
+                let datasetlabel="Animated Logs";
+                if (logmode)  datasetlabel="Static Logs";
+                tracksetmeta['datasetlabel'] = datasetlabel;
+            },
+
+            /** Return loaded tracks into alternative  
+             *  Output-parameters 
+             */    
+            _responseManager : function(trackdata) {
+                // console.log("checkOUT TrackData:", this.logmode,  trackdata); 
+                //console.log("_responseManager: META", this.logmode, this.tracksetmeta); 
+                if (this.logmode)   this.logdata = trackdata;
+                else                this.routedata = trackdata
+            },
+
+            /** APP/GUI-elemente anpassen, 
+             *  die sich bei verschiedenartiger Nutzung derselben Grunddatan unterscheiden  
+             */
+            _uxManager : function(logmode) {
+                let datasetlabel="Animated Logs";
+                if (logmode == null) logmode = this.logmode; 
+                if (logmode)  datasetlabel="Static Logs";
+                this.tracksetmeta['datasetlabel'] = datasetlabel;
             },
 
         });
