@@ -298,7 +298,7 @@
     var scope = document.querySelector('#app');
 
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-    scope.mapstyle = null; // mapbox://styles/mapbox/light-v9' 
+    scope.mapstyle = 'mapbox://styles/mapbox/light-v9';
     scope.morestyles = "demo-styles.json";
 
     // Data-INIT
@@ -322,7 +322,6 @@
     scope.waypointmode = false;
     
     // Animation- INIT
-    // console.log("scope.tracelength", scope.tracelength, scope.utcTime(scope.tracelength));
     scope.trackalignmap; // 
     scope.timer = {}; //
     scope.starttimer = {  // parameters used if not defined otherwise in metadata

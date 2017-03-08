@@ -46,7 +46,7 @@
 
         // derive comparable/calculable times
         // from dates of type "2016.12.11,16.00" or "2016.12.16,16:00"
-        utcTime: function(t, lonlat, unit) {
+        utcTime: function(t, unit, lonlat) {
             // !! for parser the MONTH must be numbered 0 .. 11 !!
             var tlocal;
             if (typeof t == "string") {
@@ -82,13 +82,13 @@
             }
 
             var tg = tlocal,
-                tunit = tg;
+                t_unit = tg;
 
-            if (unit == "h") tunit = tg / (1000 * 3600);
-            else if (unit == "s") tunit = tg / 1000;
-            else tunit = tg; // [ms]
+            if (unit == "h") t_unit = tg / (1000 * 3600);
+            else if (unit == "s") t_unit = tg / 1000;
+            else t_unit = tg; // [ms]
 
-            return tunit;
+            return t_unit;
         },
 
         /**

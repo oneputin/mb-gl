@@ -771,7 +771,7 @@ along waypoint file loaded from url
 
                 if (this.timer.tracelength) {
                     if (typeof this.timer.tracelength == "string") {
-                        var tl = this.utcTime(this.timer.tracelength, null, "s"),
+                        var tl = this.utcTime(this.timer.tracelength, "s"),
                             nn = Math.round(tl / this.timer.frametime);
                         // console.log("trackTimerStart", this.timer, tl, nn);
                         this.timer.tracelength = nn;
@@ -829,9 +829,9 @@ along waypoint file loaded from url
                     if (stops.length) wpstop = stops[stops.length - 1];
 
                     if (wpstart && wpstop) {
-                        routestart = this.utcTime(wpstart.ab, wpstart.coords, "h");
+                        routestart = this.utcTime(wpstart.ab, "h", wpstart.coords, "h");
                         routestop = wpstop.an ? wpstop.an : wpstop.ab;
-                        routestop = this.utcTime(routestop, wpstop.coords, "h");
+                        routestop = this.utcTime(routestop, "h", wpstop.coords);
                     }
 
                     this.timer.routes[id] = {
@@ -1518,8 +1518,8 @@ along waypoint file loaded from url
                                 // console.log("routeNodes:" + p, wp, nextNode);
                                 // A. Check 
                                 if (nextNode.an && wp.ab) {
-                                    let dep = that.utcTime(wp.ab, wp.coords, "s"),
-                                        arv = that.utcTime(nextNode.an, nextNode.coords, "s");
+                                    let dep = that.utcTime(wp.ab, "s", wp.coords),
+                                        arv = that.utcTime(nextNode.an, "s", nextNode.coords);
                                     legTimeSec = (arv - dep);
                                 } else {
                                     legTimeSec = wp.stopover;
@@ -1621,15 +1621,15 @@ along waypoint file loaded from url
                             // console.log("waypoints:" + p, wp, nextNode);
                             // Calculate the distance in kilometers between waypoints
                             var leg = new LegSource([wp.coords, nextNode.coords]),
-                                legDistance = 0.1; 
-                                // legDistance = turf.lineDistance(leg, 'kilometers');
+                                legDistance = turf.lineDistance(leg, 'kilometers');
+                                // legDistance = 0.1; 
 
                             // legDistance = Math.round(legDistance);
 
                             // Calculate a mean leg-speed between wp's with ab/an times
                             if (nextNode.an && wp.ab) {
-                                let dep = that.utcTime(wp.ab, wp.coords, "h"),
-                                    arv = that.utcTime(nextNode.an, nextNode.coords, "h");
+                                let dep = that.utcTime(wp.ab, "h", wp.coords),
+                                    arv = that.utcTime(nextNode.an, "h", nextNode.coords);
                                 legSpeed = legDistance / (arv - dep);
                                 nextNode.arv = arv;
                             } else if (nextNode.speed) {
@@ -1640,8 +1640,8 @@ along waypoint file loaded from url
 
                             // Calculate arv and dep at "stopover"
                             if (nextNode.an && nextNode.ab) {
-                                let arv = that.utcTime(nextNode.an, nextNode.coords, "h"),
-                                    dep = that.utcTime(nextNode.ab, nextNode.coords, "h");
+                                let arv = that.utcTime(nextNode.an, "h", nextNode.coords),
+                                    dep = that.utcTime(nextNode.ab, "h", nextNode.coords);
                                 legStopSec = (dep - arv) * 3600;
                                 nextNode.arv = arv;
                                 nextNode.dep = dep;
@@ -1678,9 +1678,9 @@ along waypoint file loaded from url
 
                             for (let i = 0; i < legStepCount; i++) {
                                 let dist = i * (legDistance / legStepCount);
-                                // let position = turf.along(leg, dist, 'kilometers');
-                                // let pos = position.geometry.coordinates; 
-                                let pos = [1,2]; 
+                                let position = turf.along(leg, dist, 'kilometers');
+                                let pos = position.geometry.coordinates; 
+                                // let pos = [1,2]; 
                                 legPositions.push(pos);
                             }
 

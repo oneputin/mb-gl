@@ -70,7 +70,8 @@
                 var hilayerid = layerid + "-nodes",
                     hilayer = map.getLayer(hilayerid);
                 if (!hilayer) return; 
-                
+                console.log(layerid, hilayer, trackInfo);                 
+
                 var fromicon = "toilet"; // "monument",
                     toicon = "harbor";
 
@@ -124,7 +125,8 @@
                 map.setFilter(hilayerid, hifilter);
             } 
 
-            var trackInfo = this.trackGetInfo(trackFeature, layerid);  // console.log("Selected track(s)", trackInfo);  
+            var trackInfo = this.trackSrcGetInfo(trackFeature, layerid);   
+            if (!trackInfo) return;  console.log("Selected track(s)", trackInfo); 
 
             // APPLY start- and stop-nodes of track
             showTrackNodes(layerid, trackInfo); 
@@ -138,22 +140,22 @@
                 // this.featureselected = trackInfo;
             }    
 
-            // ZOOM to complete track
-            map.fitBounds(trackInfo.bbox, {
-                padding: 40
-            });
-
-            // Prepare info-popup after mapFit
+            // PREPARE info-popup after mapFit
             map.once('moveend', function() {
                 this.popupOnMap(trackInfo.html);
             }.bind(this));
         
+            // ZOOM to complete track 
+            map.fitBounds(trackInfo.bbox.bounds, {
+                padding: 40
+            });
+
             // }, 100);     
             return trackInfo; 
         },
 
         // Get Info about "complete track", not only features in actually "visible" tile(s)
-        trackGetInfo: function(aLine, layerid) {
+        trackSrcGetInfo: function(aLine, layerid) {
             if (!this.map) return; 
             
             var scope = this,
@@ -168,7 +170,7 @@
                 trackInfo.keyvalue = keys[1];  
                 trackInfo.id = keys[1];
 
-                var trackLayer = map.getLayer(layerid),
+                var trackLayer  = map.getLayer(layerid),
                     trackSource = map.getSource(trackLayer.source),
                     srcFeatures = trackSource._data.features;
 
@@ -196,8 +198,8 @@
                 var n = trackTimes.length, // equal to number of coords
                     tvon = scope.trackTime(trackTimes[0]);
                     tbis = scope.trackTime(trackTimes[n - 1])
-                    von = scope.utcTime(tvon, null, "h"),
-                    bis = scope.utcTime(tbis, null, "h"),
+                    von = scope.utcTime(tvon, "h"),
+                    bis = scope.utcTime(tbis, "h"),
                     dt = bis - von;
                 // console.log(trackTimes[0],trackTimes[n-1], tvon, tbis, von,bis,dt);
 
