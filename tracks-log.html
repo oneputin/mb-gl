@@ -173,34 +173,35 @@ presentation of track-properties (= selected feature)
                 })
                 this.zitems = zitems; 
 
-
+                // Create Chart 
                 scope.chartoptions = {
                     "title": "Track Elevations",
                     "width": 800,
                     "height": 500,
                     "legend": "none"
                 };   
-
-                var utc0;
+                var t0, utc0, h0;
                 times.forEach(function(t, j){
                     let utc = scope.utcTime(scope.trackTime(t), "h"); 
-                    if (j==0) utc0 = utc; 
+                    if (j == 0) {
+                        t0 = t,
+                        utc0 = Math.floor(utc);
+                        h0 = scope.logTime(utc, "h", "h");
+                    } 
                     zitem = [
-                        utc-utc0,
+                        utc - utc0 + h0,
                         elevs[j]                        
                     ]
                     zdata.push(zitem);
                 })
                 this.zdata = zdata; 
-
+                // console.log("startzeit", t0, h0, utc0);
             },   
 
             toString : function(obj) {
-                var str = JSON.stringify(obj); console.log("obj2string", str); 
+                var str = JSON.stringify(obj); // console.log("obj2string", str); 
                 this.log = str; 
             }
-
-
         });
     </script>
 </dom-module>
