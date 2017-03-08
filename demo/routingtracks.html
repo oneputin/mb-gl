@@ -131,7 +131,6 @@
         <div class="content_area">
 
             <template is="dom-if" if="{{mapstyle}}">
-
                 <mb-map 
                     map="{{map}}" 
                     mapapikey="[[mbkey]]" 
@@ -142,23 +141,23 @@
                     mapctrl="[[mapctrl]]">
                     
                     <mb-styles 
-                        styleset ="[[morestyles]]"
                         checked = "[[styleselectshow]]"
+                        styleset ="[[morestyles]]"
                         selectable = "{{styleselectable}}"
                         mapstyle = "{{mapstyle}}"> 
                     </mb-styles>
 
                     <!-- TOOL to measure user-generated lines -->
                     <mb-distance 
+                        checked="[[mapmeasureshow]]"
                         distance="{{distance}}" 
-                        map="[[map]]" 
-                        checked="[[mapmeasureshow]]">
+                        map="[[map]]"> 
                     </mb-distance>
 
                     <mb-location-log 
+                        checked="[[locationlogshow]]"
                         lnglat="{{lnglat}}" 
-                        map="[[map]]" 
-                        checked="[[locationlogshow]]">
+                        map="[[map]]"> 
                     </mb-location-log>
 
                     <!-- not implemented 
@@ -190,17 +189,17 @@
                         </mb-info-drag>-->
 
                 </mb-map>
-
             </template>    
+
+            <tracks-log
+                checked="[[elevationshow]]"
+                trackdata="[[datasetitem]]"
+                metadata="[[metadataset]]">
+            </tracks-log>    
 
             <template is="dom-if" if="{{!mapstyle}}">
-
-                <tracks-log
-                    trackdata="[[datasetitem]]"
-                    metadata="[[metadataset]]">
-                </tracks-log>    
-
             </template>    
+
         </div>
 
         <!-- RIGHT Block: several external app-controls -->
@@ -210,10 +209,11 @@
             <div id="radios">
                 <template is="dom-if" if="{{mapstyle}}">
                     <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
+                    <paper-radio-button checked="{{mapmeasureshow}}">Map Measure</paper-radio-button>
                     <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
-                    <paper-radio-button checked="{{mapmeasureshow}}">Measure</paper-radio-button>
-                    <paper-radio-button checked="{{waypointmode}}">Show Waypoints</paper-radio-button>
+                    <!--<paper-radio-button checked="{{waypointshow}}">Show Waypoints</paper-radio-button>-->
                 </template>    
+                <paper-radio-button checked="{{elevationshow}}">Eleveation Log</paper-radio-button>
                 <paper-radio-button class="preview red" checked="{{logmode}}">CheckSources</paper-radio-button>
             </div>
 

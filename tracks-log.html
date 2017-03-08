@@ -8,7 +8,17 @@
 
 <!--
 `tracks-log`
-generic handles for selected features 
+presentation of track-properties (= selected feature) 
+
+## Properties of *raw* data 
+### elevation-log
+- dropdown-menu of z-coords
+- z(t)-line-chart (t as unix-h) 
+
+### speed-log
+- v(t)-line-chart
+
+## Properties of *derived* data
 
 @demo demo/routingtracks.html 
 -->
@@ -18,12 +28,13 @@ generic handles for selected features
     <template>
 
         <style>
+            dynamic-menu, .log {
+               background-color: var(--paper-yellow-500);
+            }
+
         </style>
     
-        <div id="textcontent"> 
-            <h3>Elevations on track  [[track]] </h3> 
-            <pre>{{log}}</pre>
-        </div>
+        <h3 class="log" >Elevations on track  [[track]] </h3> 
 
         <dynamic-menu 
             id="zlog"
@@ -32,6 +43,10 @@ generic handles for selected features
             menuitems="[[zitems]]"
             selectitem="{{zitem}}">
         </dynamic-menu>
+
+        <div id="textcontent"> 
+            <pre>{{log}}</pre>
+        </div>
 
     </template>
 
@@ -60,6 +75,12 @@ generic handles for selected features
                 zitem: {
                     type: Object,
                     observer: 'toString' 
+                },
+
+                checked: {
+                    type: Boolean,
+                    value: true,
+                    observer: "toggleElement"
                 }
             },
 
@@ -74,6 +95,14 @@ generic handles for selected features
 
             ready: function() {
             },
+
+            toggleElement: function(checked) {
+                if (checked) {
+                    this.style.display = "block";
+                } else {
+                    this.style.display = "none";
+                }
+            },    
 
             /**
              * Select/Hilite a feature on the map  (fi. zoomTo)
