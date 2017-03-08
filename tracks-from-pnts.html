@@ -267,7 +267,7 @@ Optional: create quick-preview-data
             var routes = {},
                 // routedata = [],
                 tp, trackpoints;
-            var t, dt, dx, dt_std, dx_std, v, dv_std,
+            var t, dt, dx, dt_std, dx_std, v, dv_std, z,
                 vprev = 0;
 
             if (tablemode.indexOf("vomue1") >= 0) 
@@ -286,18 +286,20 @@ Optional: create quick-preview-data
             var dts = [],
                 dxs = [],
                 dvs = [];
-
+                zz  = [];
             rawdata.forEach(function(tp, j) {
 
                 if (tablemode == "vomue1") {
                     dt = tp["Leg Time"].split(":");
                     dx = tp["Leg Length"].split(" ");
                     v = tp["Leg Speed"].split(" ");
+                    z = tp["Altitude"].split(" ");
                 }
                 if (tablemode == "vomue2") {
                     dt = tp["dt"].split(":");
                     dx = tp["dx"].split(" ");
                     v = tp["v"].split(" ");
+                    z = tp["z"].split(" ");
                 }
                 // console.log(dt,dx,v);
                 // unit 
@@ -309,6 +311,7 @@ Optional: create quick-preview-data
                 dts.push(dt);
                 dxs.push(dx);
                 dvs.push(dv);
+                zz.push(z[0]);
             });
 
             if (dts.length) {
@@ -360,6 +363,7 @@ Optional: create quick-preview-data
                 Object.keys(tp).forEach(function(k) {
 
                     if (tablemode == "vomue1") {
+                      
                         if (k == "Position") {
 
                             coords = handheldCoords(tp[k]);
@@ -371,19 +375,26 @@ Optional: create quick-preview-data
                             tpx["ab"] = time;
                             tpx["an"] = time; // 
 
+                        } else if (k == "Altitude") {
+
+                            tpx["z"] = tp[k];
+
                         } else {
                             tpx[k] = tp[k];
                         }
                     }
 
                     if (tablemode == "vomue2") {
+                      
                         if (k == "coords") {
                             coords = handheldCoords(tp[k]);
                             tpx["coords"] = coords;
+                      
                         } else if (k == "Date") {
                             time = handheldTime(tp[k]);
                             tpx["ab"] = time;
                             tpx["an"] = time; // 
+
                         } else {
                             tpx[k] = tp[k];
                         }
@@ -629,10 +640,12 @@ Optional: create quick-preview-data
                     if (!starttime) starttime = id; 
                     var coords = [],
                         coordTimes = [],
-                        nodes = trackdata[id];
+                        coordZ = [],
+                        nodes = trackdata[id];  // console.log("nodes", nodes);
 
                     nodes.forEach(function(node){
                         coords.push(node.coords);
+                        coordZ.push(node.z);
                         if (node.ab) coordTimes.push(node.ab);
                         else coordTimes.push(node.an);
                     })
@@ -641,7 +654,8 @@ Optional: create quick-preview-data
                             id: id,
                             color: scope.getRandomColor(),
                             time: id, // nodes[0].ab
-                            coordTimes: coordTimes
+                            coordTimes: coordTimes,
+                            coordZ: coordZ
                         };
 
                     var trace = new TraceSource(coords, id, properties);

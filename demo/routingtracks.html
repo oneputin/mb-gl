@@ -208,11 +208,13 @@
         <div class="ctrls_out">
             <!-- element with [n] visible features -->
             <div id="radios">
-                <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
-                <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
-                <paper-radio-button checked="{{mapmeasureshow}}">Measure</paper-radio-button>
+                <template is="dom-if" if="{{mapstyle}}">
+                    <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
+                    <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
+                    <paper-radio-button checked="{{mapmeasureshow}}">Measure</paper-radio-button>
+                    <paper-radio-button checked="{{waypointmode}}">Show Waypoints</paper-radio-button>
+                </template>    
                 <paper-radio-button class="preview red" checked="{{logmode}}">CheckSources</paper-radio-button>
-                <paper-radio-button checked="{{waypointmode}}">Show Waypoints</paper-radio-button>
             </div>
 
             <!-- B. Routing APIs -->
@@ -296,7 +298,7 @@
     var scope = document.querySelector('#app');
 
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
-    scope.mapstyle = ''; // mapbox://styles/mapbox/light-v9' 
+    scope.mapstyle = null; // mapbox://styles/mapbox/light-v9' 
     scope.morestyles = "demo-styles.json";
 
     // Data-INIT

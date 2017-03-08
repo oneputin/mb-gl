@@ -145,22 +145,24 @@ Optional: create quick-preview-data
             function jsonTrackSimplify(rawdata) {
 
                 var segmentFeatures = [],
+                    coordinates, tracktimes, coordZ, 
                     starttime;
 
                 rawdata.forEach(function(f, i) {
-
                     coordinates = f.geometry.coordinates;
-
                     tracktimes = f.properties.coordTimes;
+                    coordz = f.properties.coordZ;
+                    // console.log(i, f, coordinates, tracktimes, coordz); 
 
                     type = f.geometry.type;
-
                     if (type == "MultiLineString") {
 
                         coordinates.forEach(function(coords, j) {
 
-                            var cc = JSON.parse(JSON.stringify(coords)); // .slice(0);
-                            var tt = JSON.parse(JSON.stringify(tracktimes[j])); // .slice(0);
+                            var cc = JSON.parse(JSON.stringify(coords)); 
+                            // property-arrays are structured identical to coords-array (same j)
+                            var tt = JSON.parse(JSON.stringify(tracktimes[j])); 
+                            var cz = JSON.parse(JSON.stringify(coordz[j]));  
 
                             if (!starttime) starttime = tt[0];
 
@@ -172,6 +174,7 @@ Optional: create quick-preview-data
                                 },
                                 "properties": {
                                     "coordTimes": tt,
+                                    "coordZ": cz,
                                     "name": tt[0],
                                     "time": tt[0],
                                     "color": scope.getRandomColor()
