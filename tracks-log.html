@@ -36,10 +36,13 @@ presentation of track-properties (= selected feature)
                 height: 400px;
                 width: 100%;
             }
+            #metaxa {
+                color: blue;
+            }
 
         </style>
     
-        <h3 class="log" >Elevations on track  [[track]] </h3> 
+        <h3 class="log" >Elevations on track  <span id="meta">[[track]]</span> </h3> 
 
         <google-chart
             id="zlog"
@@ -143,19 +146,26 @@ presentation of track-properties (= selected feature)
                 // B. Create a text-log
                 var pp = f.feature.properties;   // console.log("Props of Selected F.", pp);
                 
-                var log = "["+f.id +"] in { "+ f.layer+" }"; 
-                this.track = log; 
+                var log = "<a href=''>["+f.id +"]</a> in <a href=''>{ "+ f.layer+" }</a>"; 
+                // this.track = log; 
+                this.$.meta.innerHTML = log;
 
                 this.createElevTrack(pp); 
             },
 
             // 
             createElevTrack: function(pp){
-                var scope = this;
-                var zitems = [], zitem, zdata = [],
+                var scope = this,
                     times = pp["coordTimes"],
                     elevs = pp["coordZ"];
+                if (!times || !elevs) {
+                    console.log("No elevation track for f", pp); 
+                    this.zitems = [];
+                    this.zdata = [];
+                    return;
+                } 
 
+                var zitems = [], zitem, zdata = [];
                 // var sp = ":" + "&nbsp;" + "&nbsp;";
                 var sp = String.fromCharCode(160),
                     delim = sp + sp +sp ;

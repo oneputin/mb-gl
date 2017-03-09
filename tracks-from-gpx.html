@@ -98,7 +98,9 @@ Optional: create quick-preview-data
             }  
             // console.log("gpx-Query (meta)",srcmeta) ;
             // set parameters for data-fetch with <kml-json>
-            if (srcmeta.xmlquery) this._xmlquery = srcmeta.xmlquery;
+            if (srcmeta.xmlquery && Object.keys(srcmeta.xmlquery).length) {
+                Object.assign(this._xmlquery, srcmeta.xmlquery);
+            }
             this._xmlurl = srcmeta.url; // !! TRIGGER !!
         },
         

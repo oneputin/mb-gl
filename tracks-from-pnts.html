@@ -264,11 +264,9 @@ Optional: create quick-preview-data
                 return Math.sqrt(result / len);
             };
 
-            var routes = {},
-                // routedata = [],
-                tp, trackpoints;
-            var t, dt, dx, dt_std, dx_std, v, dv_std, z,
-                vprev = 0;
+            var tracks = {}, track, tp, trackpoints;
+            var t, dt, dx, dt_std, dx_std, z, zz=[],
+                vv=[], v, dv_std, vprev = 0;
 
             if (tablemode.indexOf("vomue1") >= 0) 
                 tablemode = "vomue1";
@@ -308,10 +306,13 @@ Optional: create quick-preview-data
                 dv = parseFloat(v[0]) - vprev; // dv = is always km/h
                 vprev = parseFloat(v[0]);
                 // console.log("dv=" + dv, v);
+                
                 dts.push(dt);
                 dxs.push(dx);
                 dvs.push(dv);
-                zz.push(z[0]);
+
+                //vv.push(v[0]);
+                //zz.push(z[0]);
             });
 
             if (dts.length) {
@@ -324,8 +325,9 @@ Optional: create quick-preview-data
             }
 
             // Step2 : Abschnittsweise zuordnen untersch. ids  
-
+            //         durch Vergleich von einzelnen dt,dx mit std's
             var trackid = 1;
+
             rawdata.forEach(function(tp, j) {
 
                 if (tablemode == "vomue1") {
@@ -346,16 +348,18 @@ Optional: create quick-preview-data
 
                 // Neues segment (id), 
                 // wenn TEST-parameter "zu groß" sind h
-                if ((dt > dt_std) || (dx > dx_std)) 
+                if ((dt > dt_std) || (dx > dx_std)) {
                     trackid = trackid + 1;
+                }
 
                 // Zuordnen der ID    
                 tp.id = trackid;
 
             });
 
+
             // B. G R O U P  all TP-records 
-            //    into track-objects by TP-id 
+            //    into "tracks"  by  TP-id 
 
             rawdata.forEach(function(tp, j) {
                 var tpx = {};
@@ -379,7 +383,8 @@ Optional: create quick-preview-data
 
                             tpx["z"] = tp[k];
 
-                        } else {
+                        } else { 
+
                             tpx[k] = tp[k];
                         }
                     }
@@ -405,24 +410,30 @@ Optional: create quick-preview-data
                 if (!tpx.coords) {
                     console.log("TP-record without coords", tp);
                 } else {
+                    // console.log("tpx", tpx); 
+
+                    // make data "numeric" (removing unit)
+                    tpx["z"] = tpx["z"] ? parseFloat(tpx["z"].split(" ")[0]) : 0;
+                    tpx["v"] = tpx["v"] ? parseFloat(tpx["v"].split(" ")[0]) : 0;
+
                     // Distribute the trackpoints into "separable" tracks
                     // (if wpts are pre-grouped by track-id)  
                     if (tp.id) {
                         id = tp.id;
-                        route = routes[id];
-                        if (!route) {
-                            route = [];
-                            routes[id] = route;
+                        track = tracks[id];
+                        if (!track) {
+                            track = [];
+                            tracks[id] = track;
                         }
                     } else {
-                        route = routes["raw"];
-                        if (!route) {
-                            route = [];
-                            routes["raw"] = route;
+                        track = tracks["raw"];
+                        if (!track) {
+                            track = [];
+                            tracks["raw"] = track;
                         }
                     }
                     // console.log(tpx);
-                    route.push(tpx);
+                    track.push(tpx);
                 }
             }.bind(this));
 
@@ -431,9 +442,9 @@ Optional: create quick-preview-data
 
             var alltracks = {}, trackpoints, trackid;
 
-            Object.keys(routes).forEach(function(id) {
+            Object.keys(tracks).forEach(function(id) {
                 
-                trackpoints = routes[id];
+                trackpoints = tracks[id];
 
                 trackpoints.sort(function(wp1, wp2) {
                     return this.utcTime(wp1.ab) - this.utcTime(wp2.ab);
@@ -450,8 +461,8 @@ Optional: create quick-preview-data
             // D. Option: Filtern "zu kurzer" tracks 
             //            (length < minTrackLength)
 
-            var tracks = {} ;
             if (minTrackLength) {
+                tracks = {} ;
                 Object.keys(alltracks).forEach(function(trackid) {
                     if (alltracks[trackid].length >= minTrackLength)
                         tracks[trackid] = alltracks[trackid];
@@ -641,13 +652,19 @@ Optional: create quick-preview-data
                     var coords = [],
                         coordTimes = [],
                         coordZ = [],
+                        coordV = [],
                         nodes = trackdata[id];  // console.log("nodes", nodes);
 
                     nodes.forEach(function(node){
                         coords.push(node.coords);
                         coordZ.push(node.z);
-                        if (node.ab) coordTimes.push(node.ab);
-                        else coordTimes.push(node.an);
+                        coordV.push(node.v);
+                        // coordTime-heuristic 
+                        if (node.ab) {
+                            coordTimes.push(node.ab);
+                        } else {
+                            coordTimes.push(node.an);
+                        }    
                     })
 
                     var properties = {
@@ -655,7 +672,8 @@ Optional: create quick-preview-data
                             color: scope.getRandomColor(),
                             time: id, // nodes[0].ab
                             coordTimes: coordTimes,
-                            coordZ: coordZ
+                            coordZ: coordZ,
+                            coordV: coordV
                         };
 
                     var trace = new TraceSource(coords, id, properties);
