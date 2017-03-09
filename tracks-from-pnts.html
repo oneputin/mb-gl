@@ -657,8 +657,8 @@ Optional: create quick-preview-data
 
                     nodes.forEach(function(node){
                         coords.push(node.coords);
-                        coordZ.push(node.z);
-                        coordV.push(node.v);
+                        if (node.z) coordZ.push(node.z);
+                        if (node.v) coordV.push(node.v);
                         // coordTime-heuristic 
                         if (node.ab) {
                             coordTimes.push(node.ab);

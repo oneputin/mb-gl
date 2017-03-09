@@ -103,31 +103,39 @@ Refresh mb-contentbox features
              * Create/Update all mbContent items 
              * related to newly selected contentbox
              */
-            mbContentApply: function(contentbox, meta) {
+            mbContentApply: function(contentbox, reason) {
                 if (!contentbox || !Object.keys(contentbox).length) return;
                 // if (contentbox.path == 'contentbox') {
-                var cp = contentbox.path; // console.log("mbContentApply-1 ", contentbox, cp);
-                if (cp && (cp.indexOf('contentbox') >= 0)) { 
-                    contentbox = contentbox.base;
-                } 
+                this.debounce("apply", function(){
 
-                // Verify weather (at least some) content is "well defined"
-                if (map) contentbox = this._mbContentVerify(contentbox);
+                    // 
+                    var cp = contentbox.path; // console.log("mbContentApply-1 ", contentbox, cp);
+                    if (cp && (cp.indexOf('contentbox') >= 0)) { 
+                        contentbox = contentbox.base;
+                    } 
 
-                if (!contentbox || !Object.keys(contentbox).length)  return; 
+                    // Verify weather (at least some) content is "well defined"
+                    if (map) contentbox = this._mbContentVerify(contentbox);
 
-                // REMOVE all old content (this._contentbox) 
-                // from app (from actual map) if new is prepared 
-                this._mbContentCheckOut();
+                    if (!contentbox || !Object.keys(contentbox).length)  {
+                        console.log("NO content to apply for", reason);
+                        return; 
+                    }
+                    console.log("Apply content for", reason, contentbox);
 
-                // Memorize push back as 
-                this._contentbox = contentbox;   
+                    // REMOVE all old content (this._contentbox) 
+                    // from app (from actual map) if new is prepared 
+                    this._mbContentCheckOut();
 
-                // INSERT new content into map
-                let checkedcontent = this._mbContentCheckIn(contentbox, meta); 
+                    // Memorize push back as 
+                    this._contentbox = contentbox;   
 
-                this.contentfeatures = checkedcontent;
-                // **********************************
+                    // INSERT new content into map
+                    let checkedcontent = this._mbContentCheckIn(contentbox, reason); 
+
+                    this.contentfeatures = checkedcontent;
+                    // **********************************
+                }, 100);        
             },    
 
             // Make contentbox "complete"  
@@ -612,10 +620,10 @@ Refresh mb-contentbox features
             },
 
             // Add/Insert layers according contentbox
-            _mbContentCheckIn: function(contentbox, meta) { 
+            _mbContentCheckIn: function(contentbox, reason) { 
                 var mapcontent = this._mbContentChecker(contentbox, "IN") ;
                 if (mapcontent)  {
-                    console.log("MAP-IN-features", mapcontent, meta);
+                    console.log("MAP-IN-features", mapcontent, reason);
                     return mapcontent; 
                 }    
             },

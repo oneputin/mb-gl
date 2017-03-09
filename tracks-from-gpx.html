@@ -60,8 +60,12 @@ Optional: create quick-preview-data
                 type: String
             },
 
-            // Query to be applied in kml-json 
             _xmlquery: {
+                type: Object,
+                value: {}
+            },
+            // Query to be applied in kml-json 
+            _basequery: {
                 type: Object,
                 value: {
                     "tags": "Track",
@@ -71,8 +75,7 @@ Optional: create quick-preview-data
 
             // json from document-IF
             _rawdata: {
-                type: Object,
-                value: {}
+                type: Object
             },
 
         },
@@ -95,12 +98,16 @@ Optional: create quick-preview-data
             if (srcmeta.type != "gpx") {
                 this.rawdata = null;
                 return;
-            }  
-            // console.log("gpx-Query (meta)",srcmeta) ;
-            // set parameters for data-fetch with <kml-json>
+            }  // console.log("gpx-Query (meta)",srcmeta) ;
+            
+            // Join the xmlquery from basic and variable query-items
+            var xmlquery = {};
+            Object.assign(xmlquery, this._basequery); 
             if (srcmeta.xmlquery && Object.keys(srcmeta.xmlquery).length) {
-                Object.assign(this._xmlquery, srcmeta.xmlquery);
-            }
+                Object.assign(xmlquery, srcmeta.xmlquery);
+            } // console.log("_triggerLog", srcmeta, xmlquery);
+            // Trigger action 
+            this._xmlquery = xmlquery; 
             this._xmlurl = srcmeta.url; // !! TRIGGER !!
         },
         
@@ -118,18 +125,21 @@ Optional: create quick-preview-data
                 if (logmode) { // derive features for mb-visualization of rawTracks
                     // console.log("prepare quickmap of ", rawtracks);  
                     var rawtracks = this.createTrackLogs(rawtracks, srcmeta);
-                    if (rawtracks) {  console.log("RAW trackdata (gpx)", rawtracks);
+                    if (rawtracks) {  console.log("RAW track-data (gpx)", rawtracks);
                         this.trackdata = rawtracks;
                     }    
 
                 } else {   // derive structures for mb-based animation of 'suitable' tracks
                     // console.log("prepare routedata", rawtracks);  
                     var trackroutes = this.createTrackRoutes(rawtracks); // .features);
-                    if (trackroutes.length) {  console.log("RAW routedata (gpx)",  trackroutes);
+                    if (trackroutes.length) {  console.log("RAW route-data (gpx)",  trackroutes);
                         // this.routedata = trackroutes;
                         this.trackdata = trackroutes;
                     }    
                 }    
+                // ** !! ** 
+                this._rawdata = null; 
+
             }, 200);      
         },
 

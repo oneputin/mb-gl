@@ -35,6 +35,7 @@
 
     <!-- specific animation components for some datasources -->
     <link rel="import" href="../tracks-info.html">
+    <link rel="import" href="../tracks-api.html">
     <link rel="import" href="../tracks-load.html">
     <link rel="import" href="../tracks-log.html">
     
@@ -191,13 +192,12 @@
                 </mb-map>
             </template>    
 
-            <tracks-log
-                checked="[[elevationshow]]"
-                trackdata="[[datasetitem]]"
-                metadata="[[metadataset]]">
-            </tracks-log>    
-
             <template is="dom-if" if="{{!mapstyle}}">
+                <tracks-log
+                    checked="[[elevationshow]]"
+                    metadata="[[metadataset]]"
+                    trackdata="[[datasetitem]]">
+                </tracks-log>    
             </template>    
 
         </div>
@@ -212,14 +212,13 @@
                     <paper-radio-button checked="{{mapmeasureshow}}">Map Measure</paper-radio-button>
                     <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
                     <!--<paper-radio-button checked="{{waypointshow}}">Show Waypoints</paper-radio-button>-->
+                    <paper-radio-button class="preview red" checked="{{logmode}}">CheckSources</paper-radio-button>
                 </template>    
                 <paper-radio-button checked="{{elevationshow}}">Eleveation Log</paper-radio-button>
-                <paper-radio-button class="preview red" checked="{{logmode}}">CheckSources</paper-radio-button>
             </div>
 
             <!-- B. Routing APIs -->
 
-            <!-- routedata="{{routedata}}" --> 
             <!-- rawdata="{{rawdata}}" --> 
 
             <template is="dom-if" if="{{userouting}}">
@@ -228,7 +227,7 @@
                     map="[[map]]" 
                     metadataset="[[metadataset]]"
 
-                    routedata=[[routedata]] 
+                    routedata=[[routecontent]] 
 
                     contentbox="{{contentbox}}"               
                     mapcontentbox="[[contentfeatures]]"
@@ -263,9 +262,15 @@
                 <tracks-load 
                     tracksetmeta = "{{metadataset}}" 
                     logmode = "[[logmode]]" 
-                    logdata = "{{contentbox}}" 
-                    routedata = "{{routedata}}"> 
+                    rawcontent = "{{rawcontent}}" 
+                    routecontent = "{{routecontent}}"> 
                 </tracks-load>
+
+                <tracks-api 
+                    metadata = "[[metadataset]]" 
+                    rawcontent = "[[rawcontent]]" 
+                    contentbox = "{{contentbox}}"> 
+                </tracks-api>
 
             </mb-content-browser>
             <!-- selectprop="id"--> 
@@ -342,17 +347,19 @@
         
         // Switch "visibility" of elements related with routing-api- and routing-gui  
         function toggleRouting(radio) {
-            if (!radio.checked)  scope.userouting = true;
-            else  scope.userouting = false;
+            if (!radio) scope.userouting = false;
+            else if (!radio.checked)  scope.userouting = true;
+            else scope.userouting = false;
         }
 
         var r1 = document.querySelector("paper-radio-button.preview");
-        toggleRouting(r1); 
-        
-        // Inverse Toggling of RoutingFlag  
-        r1.addEventListener("change", function(){  // console.log("R1-CHANGED", this.checked)
-            toggleRouting(this); 
-        });
+        if (r1) {
+            toggleRouting(r1); 
+            // Inverse Toggling of RoutingFlag  
+            r1.addEventListener("change", function(){  // console.log("R1-CHANGED", this.checked)
+                toggleRouting(this); 
+            });
+        }
     });
 
     /*

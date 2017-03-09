@@ -1,0 +1,68 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`tracks-api`
+creates anf follow animated routes 
+along waypoint file loaded from url
+
+@demo demo/routingtracks.html 
+-->
+<dom-module id="tracks-api">
+
+    <template>
+
+    </template>
+
+    <script>
+        // Global referencing thi element in animation and geschachtelten functions
+        var mba;
+
+        Polymer({
+            is: 'tracks-api',
+
+            properties: {
+                /**
+                 * Container with metadata of primary dataset 
+                 */
+                metadata: {
+                    type: Object,
+                    value: {}
+                },
+
+                /**
+                 * Container for animation-data
+                 */
+                contentbox: {
+                    type: Object,
+                    notify: true
+                },
+
+                /**
+                 * Container for raw track
+                 */
+                rawcontent: {
+                    type: Object,
+                    // observer: '_checkObject'
+                },
+
+            },
+
+            behaviors: [
+            ],
+
+            observers: [
+                'transfer(rawcontent.*)' // , metadata)'
+            ],
+
+            ready: function() {
+            }, 
+
+            transfer: function(rawcontent) { // , metadata) {
+                rawcontent = rawcontent.value; 
+                if (!rawcontent || !Object.keys(rawcontent).length) return; 
+                // console.log("SETUP contentbox from raw tracks.", rawcontent); 
+                this.contentbox = rawcontent;
+            }
+        });
+    </script>
+</dom-module>       

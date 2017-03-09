@@ -42,7 +42,7 @@ presentation of track-properties (= selected feature)
 
         </style>
     
-        <h3 class="log" >Elevations on track  <span id="meta">[[track]]</span> </h3> 
+        <h3 class="log" >Properties of track  <span id="meta">[[track]]</span> </h3> 
 
         <google-chart
             id="zlog"
@@ -158,12 +158,13 @@ presentation of track-properties (= selected feature)
                 var scope = this,
                     times = pp["coordTimes"],
                     elevs = pp["coordZ"];
-                if (!times || !elevs) {
-                    console.log("No elevation track for f", pp); 
+                
+                if (!times || !elevs || !times.length || !elevs.length) {
+                    console.log("No elevation track for track", pp); 
                     this.zitems = [];
                     this.zdata = [];
                     return;
-                } 
+                } // console.log(times, elevs); 
 
                 var zitems = [], zitem, zdata = [];
                 // var sp = ":" + "&nbsp;" + "&nbsp;";
@@ -184,7 +185,7 @@ presentation of track-properties (= selected feature)
 
                 // Create Chart 
                 scope.chartoptions = {
-                    "title": "Track Elevations",
+                    "title": "Track Elevations [m NN]",
                     "width": 800,
                     "height": 500,
                     "legend": "none"

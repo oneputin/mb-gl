@@ -58,14 +58,14 @@ component loads tracking data
 
             properties: {
 
-                // OUT-tracks as static logs
-                logdata: {
+                // OUT-tracks as static log conternt
+                rawcontent: {
                     type: Object,
                     notify: true
                 },
 
                 // OUT-tracks as animatable content 
-                routedata: {
+                routecontent: {
                     type: Object,
                     notify: true
                 },
@@ -74,8 +74,8 @@ component loads tracking data
                  *  
                  */
                 tracksetmeta: {
-                    type: Object,
-                    notify: true
+                    type: Object
+                    // notify: true
                 },
 
                 /** toggles preprocessing and out-format of rawdata
@@ -122,8 +122,8 @@ component loads tracking data
                 if (!srcurl) return;
 
                 if (this.srcmeta && (srcurl != this.srcmeta.url)) {
-                    this.routedata = [];
-                    this.logdata = [];
+                    //this.routecontent = [];
+                    //this.rawcontent = [];
                     srctitle = this.srcmeta.title;
                 } 
 
@@ -156,6 +156,7 @@ component loads tracking data
 
                 let datasetlabel="Animated Logs";
                 if (logmode)  datasetlabel="Static Logs";
+
                 tracksetmeta['datasetlabel'] = datasetlabel;
             },
 
@@ -164,9 +165,12 @@ component loads tracking data
              */    
             _responseManager : function(trackdata) {
                 // console.log("checkOUT TrackData:", this.logmode,  trackdata); 
-                //console.log("_responseManager: META", this.logmode, this.tracksetmeta); 
-                if (this.logmode)   this.logdata = trackdata;
-                else                this.routedata = trackdata
+                // console.log("_responseManager:", this.logmode, this.tracksetmeta, trackdata); 
+                if (this.logmode)   {
+                    this.rawcontent = trackdata;
+                } else {
+                    this.routecontent = trackdata
+                }
             },
 
             /** APP/GUI-elemente anpassen, 
