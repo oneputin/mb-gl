@@ -111,15 +111,15 @@
          * 
          */
         logTime: function(ms1970, unit, sep) {
-            if (!sep) sep = "";
             if (unit == "h") ms1970 = ms1970 * 3600 * 1000;
-            var logtime = new Date(ms1970),
-                D = logtime.getDate(),
+            var logtime = new Date(ms1970);
+            // console.log("logTime",ms1970,logtime);
+            if (!sep) return logtime;
+
+            var D = logtime.getDate(),
                 M = logtime.getMonth() + 1,
                 h = logtime.getHours(),
                 m = logtime.getMinutes();
-            //console.log("logTimes",ms1970,logtime,D,M,h,m);
-            //return 8; 
              
             switch (sep) {
                 case 'D':
@@ -136,13 +136,16 @@
                     break;
                 default:
                     // return string
-                    D = D < 10 ? "0" + D : D;
-                    M = M < 10 ? "0" + M : M;
-                    h = h < 10 ? "0" + h : h;
-                    m = m < 10 ? "0" + m : m;
-                    var logdate = D + "." + M;
-                    logtime = h + ":" + m;
-                    if (sep) logtime = logdate + sep + logtime;
+                    if (sep) {
+                        D = D < 10 ? "0" + D : D;
+                        M = M < 10 ? "0" + M : M;
+                        h = h < 10 ? "0" + h : h;
+                        m = m < 10 ? "0" + m : m;
+                        var logdate = D + "." + M,
+                            daytime = h + ":" + m;
+                        if (sep=="t") logtime = daytime;
+                        else logtime = logdate + sep + daytime;
+                    }
             }
 
             return logtime;

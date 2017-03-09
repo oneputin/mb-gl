@@ -46,17 +46,17 @@ presentation of track-properties (= selected feature)
             type="line"
             selection="{{selected}}"
             options='{{chartoptions}}'
-            cols='[{"label": "Time", "type": "number"},{"label": "Elev", "type": "number"}]'
+            cols='[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
             rows='[[zdata]]'>
         </google-chart>
 
-        <dynamic-menu 
+        <!--<dynamic-menu 
             id="zmenu"
             class="metadata"
             menulabel="z-track"
             menuitems="[[zitems]]"
             selectitem="{{zitem}}">
-        </dynamic-menu>
+        </dynamic-menu>-->
 
         <div id="textcontent"> 
             <pre>{{log}}</pre>
@@ -152,8 +152,7 @@ presentation of track-properties (= selected feature)
             // 
             createElevTrack: function(pp){
                 var scope = this;
-                var zitems = [], zitem, zdata = [];
-
+                var zitems = [], zitem, zdata = [],
                     times = pp["coordTimes"],
                     elevs = pp["coordZ"];
 
@@ -180,22 +179,17 @@ presentation of track-properties (= selected feature)
                     "height": 500,
                     "legend": "none"
                 };   
-                var t0, utc0, h0;
+
+                // create data with argument in datetime-format
                 times.forEach(function(t, j){
-                    let utc = scope.utcTime(scope.trackTime(t), "h"); 
-                    if (j == 0) {
-                        t0 = t,
-                        utc0 = Math.floor(utc);
-                        h0 = scope.logTime(utc, "h", "h");
-                    } 
+                    let utc1970 = scope.utcTime(scope.trackTime(t)); 
                     zitem = [
-                        utc - utc0 + h0,
+                        new Date(utc1970),
                         elevs[j]                        
                     ]
                     zdata.push(zitem);
                 })
                 this.zdata = zdata; 
-                // console.log("startzeit", t0, h0, utc0);
             },   
 
             toString : function(obj) {
