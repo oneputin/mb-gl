@@ -83,7 +83,8 @@ along waypoint file loaded from url
                  * IN: raw data of all routes to be animated
                  */
                 routedata: {
-                    type: Object
+                    type: Object,
+
                 },
                 
                 /**
@@ -219,7 +220,7 @@ along waypoint file loaded from url
             ],
 
             observers: [
-                '_animationSetup(routedata, timer.timescale)', //, map)', // creates _animationbox
+                '_animationSetup(routedata, metadataset)', //, map)', // creates _animationbox
                 '_animationMapSetup(map, _animationbox.*)',  // creates 'contentbox' for 
                 'onRoutesLoad(mapcontentbox.*)',
                 'mapAlignChange(trackalignmap, _trackObj)',
@@ -243,7 +244,7 @@ along waypoint file loaded from url
                 var dataName = 'routes',
                     routesContent = contentbox[dataName];
                 if (!routesContent) return; 
-                console.log("USE content "+dataname+" of contentbox", contentbox);  
+                // console.log("USE content "+dataName+" of contentbox", contentbox);  
                 
                 var scope = this;
 
@@ -355,8 +356,9 @@ along waypoint file loaded from url
 
             // Derive and notify id and timer-interval of selectzed route/track  
             routeseletedApply: function(routeselected){
-                console.log("START. routeselectedApply", routeselected); // TraceSource ???
+                console.log("START. routeselectedApply", routeselected, this.routedata); // TraceSource ???
                 if (!routeselected) return;
+                if (!this.routedata) return;
 
                 var id = routeselected.id;  
                 if (routeselected.feature) {
@@ -384,28 +386,32 @@ along waypoint file loaded from url
             //  - if routedata changed
             //  - if basic timescale of animation changed
             // _animationSetup: function(routedata, map) {
-            _animationSetup: function(routedata, timescale) { // , map) {
-                // console.log("ROUTESET rawdata:", routedata, timescale, map);
-                // var timescale; 
-                if (!routedata || !routedata[0] || !routedata[0].nodes) return;
+            _animationSetup: function(routedata, metadata, timer) { 
+                console.log("_animationSetup routedata:", routedata, metadata, timer);
+                if (!routedata || !routedata.length || !routedata[0].nodes) return;
+                var scope = this,
+                    map = this.map; 
 
                 // RESET CTRL and 
                 this.ctrlflag = false;
                 // Remove existing mapThemes(&sources), that are named like the new ones 
-                if (map)  this.trackFeaturesReset(map);
+                if (map)  {
+                    this.trackFeaturesReset(map);
+                }
 
-                // A. Setup Timer for animation 
+                // A. Setup TIMER for animation 
+                if (!timer) timer = metadata.timer; 
+                this.trackTimerSetup(routedata, timer); //  , timescale);
 
-                this.trackTimerSetup(routedata, timescale);
+                console.log("ROUTESET TIMER ", this.timer);  // routedata,  return; 
 
-                console.log("ROUTESET timer from", routedata, this.timer);  // return; 
+                // B. SETUP MAP for animation 
 
                 this._animationBoxSetup(routedata); 
 
                 // Trigger SETUP of 
                 this._counter = 0;
                 // this._counter = 1; // 0;
-
             },
 
             // Create a contentBox with SpaceTime-objects: ROUTEs- and TRACEs-, TRACKs-content
@@ -462,7 +468,8 @@ along waypoint file loaded from url
                 // B. Setup contentBox for animation-Objects
 
                 // routes and traces
-                contentbox = this.animationRoutesSetup(routedata, timer, metadata);  console.log("created contentbox from  route-data", routedata, contentbox);
+                contentbox = this.animationRoutesSetup(routedata, timer, metadata);  
+                console.log("basic contentbox from  route-data", routedata, contentbox);
                 // track(point)s
                 contentbox['tracks'] = this.animationTrackerSetup(routedata, timer, metadata);
 
@@ -756,28 +763,32 @@ along waypoint file loaded from url
              * @param      {Number}  timescale  The timescale of animation
              * @return     {Object}  Collection of timeCtrls
              */
-            trackTimerSetup: function(routedata, timescale) {
+            trackTimerSetup: function(routedata, timer, timescale) {
 
                 // A.2 **** Get Frametime ****
                 // Bsp: frametime: 6 s fuer scale = 360 und fps=60 !!
                 // Animationszeit 1s=6*60s=6min, 10s=1h Echtzeit 
+                if (!timer) timer = {};  
+                timescale = timescale ? timescale : timer.timescalestart; 
+                timescale = timescale ? timescale : timer.timescalemax; 
+                
+                var fpsstart = timer.fpsstart ? timer.fpsstart : timer.fpsmax; 
+                fpsstart = fpsstart ? fpsstart : 60; 
 
-                var fpsmax = this.timer.fpsmax ? this.timer.fpsmax : 60; 
+                console.log("calc frame-time", timescale, fpsstart); 
+                timer.frametime = timescale / fpsstart; 
 
-                this.timer.frametime = timescale / fpsmax; 
 
+                // B. Express tracelength-time as number of animation steps
 
-                // B. Convert tracelength from time to number of animation steps
-
-                if (this.timer.tracelength) {
-                    if (typeof this.timer.tracelength == "string") {
-                        var tl = this.utcTime(this.timer.tracelength, "s"),
-                            nn = Math.round(tl / this.timer.frametime);
+                if (timer.tracelength) {
+                    if (typeof timer.tracelength == "string") {
+                        var tl = this.utcTime(timer.tracelength, "s"),
+                            nn = Math.round(tl / timer.frametime);
                         // console.log("trackTimerStart", this.timer, tl, nn);
-                        this.timer.tracelength = nn;
+                        timer.tracelength = nn;
                     }
                 }
-
 
                 // C.1 Assemble start&stop 
                 //      for all waypoint-times 
@@ -803,17 +814,15 @@ along waypoint file loaded from url
                             "stops": stops
                         }; // [starts, stops, passes];
                     }
-
                 }.bind(this));
-                // console.log("trackTimerSetup. wptimes=", wptimer); // return;
 
                 // C.2 Assemble start&stop times for timer 
                 //   - per route 
                 //   ( - and for overall animation period )
                 // var start, stop;
 
-                this.timer.routes = {};
-                this.timer.traces = {};
+                timer.routes = {};
+                timer.traces = {};
 
                 Object.keys(wptimer).forEach(function(id) {
 
@@ -834,16 +843,15 @@ along waypoint file loaded from url
                         routestop = this.utcTime(routestop, "h", wpstop.coords);
                     }
 
-                    this.timer.routes[id] = {
+                    timer.routes[id] = {
                         "id": id,
                         "start": routestart,
                         "stop": routestop,
                     };
 
                     if (routestart) {
-                        this.timer.routes[id]["date"] = this.logTime(routestart, "h", "/");
+                        timer.routes[id]["date"] = this.logTime(routestart, "h", "/");
                     }    
-
                     //if (!start || (routestart < start)) start = routestart;
                     //if (!stop || (routestop > stop)) stop = routestop;
 
@@ -855,17 +863,18 @@ along waypoint file loaded from url
                 //   
                 var startTimes = [],
                     stopTimes = [],
-                    routes = this.timer.routes;
+                    routes = timer.routes;
                 for (let key in routes) {
                     startTimes.push(routes[key]["start"]);
                     stopTimes.push(routes[key]["stop"]);
                 }
                 startTimes.sort();
                 stopTimes.sort();
-                this.timer["starts"] = startTimes;
-                this.timer["stops"] = stopTimes;
+                timer["starts"] = startTimes;
+                timer["stops"] = stopTimes;
 
                 // E. // Setup timer for complete routeset 
+                this.timer = timer; 
                 this.trackTimerRefresh(); // Setup timer for 
             },
 

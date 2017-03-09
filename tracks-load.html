@@ -58,13 +58,13 @@ component loads tracking data
 
             properties: {
 
-                // OUT-tracks as static log conternt
+                // OUT: TRACKS as static log conternt
                 rawcontent: {
                     type: Object,
                     notify: true
                 },
 
-                // OUT-tracks as animatable content 
+                // OUT: Tracks as animatable content 
                 routecontent: {
                     type: Object,
                     notify: true
@@ -110,67 +110,74 @@ component loads tracking data
             /** Prepares import of trackdata
              *  from alternative low-level import-components (evaluates metadata)  
              */
-            _requestManager: function(tracksetmeta, logmode) {
-                if (tracksetmeta.path == 'tracksetmeta') tracksetmeta = tracksetmeta.value;
-                // console.log("tracksetmeta. RAW=", tracksetmeta);
+            _requestManager: function(srcmeta, logmode) {
+                if (srcmeta.path == 'tracksetmeta') srcmeta = srcmeta.value;
+                console.log("tracksetmeta. RAW=", srcmeta, logmode);
 
-                var srcurl = tracksetmeta.url,      // 
-                    srctype = tracksetmeta.type,    // 
-                    srctitle = tracksetmeta.title;  // 
+                var srcurl = srcmeta.url,      // 
+                    srctype = srcmeta.type,    // 
+                    srctitle = srcmeta.title;  // 
 
                 // Check some url - conditions ???
-                if (!srcurl) return;
+                if (!srcurl) {
+                    return;
+                } 
 
-                if (this.srcmeta && (srcurl != this.srcmeta.url)) {
+                if (this.tracksetmeta && (srcurl != this.tracksetmeta.url)) {
                     //this.routecontent = [];
                     //this.rawcontent = [];
-                    srctitle = this.srcmeta.title;
+                    srctitle = this.tracksetmeta.title;
                 } 
 
                 // Extend metadata with Query/Format - parameters
                 if ((srctype == "kml") || (srctype == "gpx")) {
 
                     srctype = "xml"; 
-                    tracksetmeta.xmlquery = {};
+                    srcmeta.xmlquery = {};
                    
                     if (srctype == "gpx") {
                         // ALWAYS extract only tracks (neither waypoints or routes)
-                        tracksetmeta.xmlquery = {
+                        srcmeta.xmlquery = {
                             "tags": "Track",
                             "structure": "doc"
                         };                    
                     } 
 
                     // OPTIONAL: JOIN with user-defined query-expressions  
-                    if (tracksetmeta.query) {  
-                        tracksetmeta.xmlquery = Object.assign(tracksetmeta.xmlquery, tracksetmeta.query); 
+                    if (srcmeta.query) {  
+                        srcmeta.xmlquery = Object.assign(srcmeta.xmlquery, srcmeta.query);
+                        console.log(srcmeta);  
                     } 
                 }
 
-                // console.log("tracksetmeta. AFTER", tracksetmeta);
-                this.srcmeta = tracksetmeta;
+                console.log("tracksetmeta. AFTER", srcmeta);
+                // this.tracksetmeta = srcmeta;
  
                 // trigger one of alternative import-elements
-                if (srctype=="xml")  this.srcmetax = tracksetmeta;
-                else                 this.srcmetad = tracksetmeta;
+                if (srctype == "xml")  this.srcmetax = srcmeta;
+                else                   this.srcmetad = srcmeta;
 
                 let datasetlabel="Animated Logs";
+
                 if (logmode)  datasetlabel="Static Logs";
 
-                tracksetmeta['datasetlabel'] = datasetlabel;
+                srcmeta['datasetlabel'] = datasetlabel;
             },
 
             /** Return loaded tracks into alternative  
              *  Output-parameters 
              */    
             _responseManager : function(trackdata) {
+                if (!trackdata) return; 
                 // console.log("checkOUT TrackData:", this.logmode,  trackdata); 
-                // console.log("_responseManager:", this.logmode, this.tracksetmeta, trackdata); 
                 if (this.logmode)   {
+                    //console.log("_responseManager rawContent:", trackdata); 
                     this.rawcontent = trackdata;
                 } else {
+                    //console.log("_responseManager routeContent:", trackdata); 
                     this.routecontent = trackdata
                 }
+                this._trackdata = null;
             },
 
             /** APP/GUI-elemente anpassen, 

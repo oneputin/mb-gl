@@ -70,7 +70,7 @@
                 var hilayerid = layerid + "-nodes",
                     hilayer = map.getLayer(hilayerid);
                 if (!hilayer) return; 
-                console.log(layerid, hilayer, trackInfo);                 
+                // console.log("NODES of "+ layerid, hilayer, trackInfo);                 
 
                 var fromicon = "toilet"; // "monument",
                     toicon = "harbor";
@@ -116,17 +116,19 @@
             function showTrackLine(layerid, trackInfo) {
                 // 
                 var hilayerid = layerid + "-trace", // ?
-                    hilayer = map.getLayer(hilayerid),  
-                    keyname = trackInfo.keyname,
+                    hilayer = map.getLayer(hilayerid);  
+
+                var keyname = trackInfo.keyname,
                     hifilter = ["==", keyname, trackInfo[keyname]];
+
                 if (!hilayer) return ;
 
-                // console.log("set trace-filter in " + hilayerid, hifilter, hilayer); 
+                console.log("TRACE-filter of " + hilayerid, hifilter, hilayer); 
                 map.setFilter(hilayerid, hifilter);
             } 
 
             var trackInfo = this.trackSrcGetInfo(trackFeature, layerid);   
-            if (!trackInfo) return;  console.log("Selected track(s)", trackInfo); 
+            if (!trackInfo) return;  // console.log("Selected track(s)", trackInfo); 
 
             // APPLY start- and stop-nodes of track
             showTrackNodes(layerid, trackInfo); 
@@ -156,12 +158,12 @@
 
         // Get Info about "complete track", not only features in actually "visible" tile(s)
         trackSrcGetInfo: function(aLine, layerid) {
-            if (!this.map) return; 
+            if (!map) return; 
+            //if (!this.map) return; // not declared in behavior !! 
+            //var map = this.map;
             
             var scope = this,
-                map = this.map;
-
-            var trackInfo = aLine.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
+                trackInfo = aLine.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
 
             // Get SOURCE-properties for identified feature !!!
             var keys = this.guessFeatureKeys(aLine); 
@@ -201,12 +203,12 @@
                     von = scope.utcTime(tvon, "h"),
                     bis = scope.utcTime(tbis, "h"),
                     dt = bis - von;
-                // console.log(trackTimes[0],trackTimes[n-1], tvon, tbis, von,bis,dt);
+                // console.log(trackTimes[0],trackTimes[n-1], tvon, tbis, von, bis, dt);
 
                 trackInfo.duration = scope.deltaT(dt);
                 trackInfo.count = n;
-                trackInfo.von = scope.logTime(von, "h");
-                trackInfo.bis = scope.logTime(bis, "h");
+                trackInfo.von = scope.logTime(von, "h", "t");
+                trackInfo.bis = scope.logTime(bis, "h", "t");
             }
 
             // compile basic parameters as HTML 

@@ -25,6 +25,14 @@ Refresh mb-contentbox features
             is: 'mb-content-manager',
 
             properties: {
+                /**
+                 *  IN: map-object tries to trigger content-draw when available first time 
+                 */
+                map: {
+                    type: Object,
+                    observer: "onMapSetup"
+                },
+
                 // OUT: features of (all) contentbox-layers loaded
                 // !! grouped by layer !!
                 contentfeatures: {
@@ -49,13 +57,6 @@ Refresh mb-contentbox features
                 contentbox: {
                     type: Object,
                     notify: true
-                },
-                /**
-                 *  IN: map-object triggers content-draw when available first time 
-                 */
-                map: {
-                    type: Object,
-                    observer: "onMapSetup"
                 },
 
                 // IN: id of mb-mapstyle (basemap) triggers content-redraw when changed
@@ -103,25 +104,28 @@ Refresh mb-contentbox features
              * Create/Update all mbContent items 
              * related to newly selected contentbox
              */
-            mbContentApply: function(contentbox, reason) {
+            mbContentApply: function(contentbox, reason) { console.log("ContentApply for reason=", reason); 
                 if (!contentbox || !Object.keys(contentbox).length) return;
+
+                var scope = this,
+                    map = scope.map; 
                 // if (contentbox.path == 'contentbox') {
                 this.debounce("apply", function(){
-
                     // 
                     var cp = contentbox.path; // console.log("mbContentApply-1 ", contentbox, cp);
                     if (cp && (cp.indexOf('contentbox') >= 0)) { 
                         contentbox = contentbox.base;
                     } 
 
-                    // Verify weather (at least some) content is "well defined"
-                    if (map) contentbox = this._mbContentVerify(contentbox);
+                    // Verify weather (at least some) new content is "well defined"
+                    if (map) {
+                        contentbox = this._mbContentVerify(contentbox, map);
+                    }
 
                     if (!contentbox || !Object.keys(contentbox).length)  {
                         console.log("NO content to apply for", reason);
                         return; 
                     }
-                    console.log("Apply content for", reason, contentbox);
 
                     // REMOVE all old content (this._contentbox) 
                     // from app (from actual map) if new is prepared 
@@ -131,6 +135,7 @@ Refresh mb-contentbox features
                     this._contentbox = contentbox;   
 
                     // INSERT new content into map
+                    console.log("Apply content for reason", reason, contentbox);
                     let checkedcontent = this._mbContentCheckIn(contentbox, reason); 
 
                     this.contentfeatures = checkedcontent;
@@ -139,10 +144,11 @@ Refresh mb-contentbox features
             },    
 
             // Make contentbox "complete"  
-            _mbContentVerify: function(contentbox) {    
+            _mbContentVerify: function(contentbox, map) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
 
-                var scope = this; // , map = scope.map;
+                var scope = this;
+                //  map = scope.map;
 
                 var verifiedContent = {}, layerObject ;
                 
@@ -408,12 +414,13 @@ Refresh mb-contentbox features
 
 
             // Insert all layers of contentbox 
-            _mbContentChecker: function(contentbox, flag) {    
+            _mbContentChecker: function(contentbox, flag, map) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
                 if (!flag) flag = "IN";
 
                 var scope = this;
-                // var map = scope.map;
+                //var map = scope.map;
+                //if (!map) return; 
 
                 // create linear list of features 
                 // suitable for "menu-generation"
@@ -456,40 +463,45 @@ Refresh mb-contentbox features
                 }
                 // 
                 function addMapContent(layername, layerObject){
-
                     var layerData = layerObject.srcdata;
                     if (!layerData) return ; 
 
                     var layerSource = map.getSource(layername),
-                        mapLayer = map.getLayer(layername);
+                        mapLayer = map.getLayer(layername); // reference layer
+
+                    layerData.type = "FeatureCollection";
 
                     if (!layerSource) {   // 1.A. Add(create) mapSource 
-
+                        console.log("ADD source: "+layername, layerData);
                         map.addSource(layername, {
                             "type": "geojson",
                             "data": layerData
                         });
+
                         layerSource = map.getSource(layername);
 
-                    } else {              // 1.B  Update data of existing mapSource  
+                    } else {   
+                                   // 1.B  Update data of existing mapSource  
                        layerSource.setData(layerData);
-                    }  // console.log("SET SRC", layername, layerData, layerSource._data);
+                    }  console.log("SET SRC", layername, layerData, layerSource._data);
 
 
                     // 1.C. (Re)Create all layer(s) of same srcdata 
                     if (!mapLayer) {
-                        // console.log("layerTemplates for " + layername, layerTemplates, layerSource);
+                        console.log("ADD contentLayers for " + layername, layerObject);
                         
-                        var layerTemplates = layerObject.templates;
-                
-                        layerTemplates.forEach(function(template) {
+                        
+                        var contentLayers = layerObject.templates;
+                        
+                        contentLayers.forEach(function(template) {
 
                             if (!map.getLayer(template.id)) {
-                                // console.log("adding layer " + template.id, template);
-                                
-                                // console.log("Set placeholder-source !!", template.source); 
+
+                                // spezieller Sonderfall      
                                 if ((template.type == "symbol") && template.source) { 
-                                    if (!map.getSource(template.source)) {   
+                                    var mapHasSource = map.getSource(template.source);                                        
+                                    if (!mapHasSource) {   
+                                        console.log("Set placeholder-source for " + template.id, template.source); 
                                         map.addSource(template.source, {
                                             "type": "geojson",
                                             "data": { "type": "Point", "coordinates": [0, 0] }
@@ -514,7 +526,6 @@ Refresh mb-contentbox features
                     */
                     }
                     return layerData; 
-
                 }
 
                 //
@@ -534,29 +545,28 @@ Refresh mb-contentbox features
                 }
                 // 
                 function removeMapContent(layerObject) {
-                    if (!map) return ;
 
-                    var contentTemplates = layerObject.templates;
-                    // console.log("removeMapContent contentTemplates", contentTemplates, layerObject); 
+                    var contentLayers = layerObject.templates;
+                    // console.log("remove contentLayers of " + layerObject.layer.source, contentTemplates); // , layerObject); 
                     // deactivate related events 
 
-                    // remove Layers
-                    contentTemplates.forEach(function(template) {
+                    // remove templateLayers
+                    contentLayers.forEach(function(template) {
                         var qlayername = template.id,
                             qlayer = map.getLayer(qlayername);
 
-                        // console.log("remove qlayer", qlayername, qlayer) ;                        
                         if (qlayer) {
+                            // console.log("remove contentLayer", qlayername, qlayer) ;                        
                             map.removeLayer(qlayername);
                         }  
                    });  
 
                    // remove Sources
-                   contentTemplates.forEach(function(template) { 
+                   contentLayers.forEach(function(template) { 
                         var srcid = template.source,
                             qsrc = map.getSource(srcid);
-                        // console.log("remove qsource ", srcid, qsrc);
                         if (qsrc) {
+                            // console.log("remove contentSource ", srcid, qsrc);
                             map.removeSource(srcid);
                         }   
                     })    
@@ -566,9 +576,9 @@ Refresh mb-contentbox features
 
                 var mapcontent = {};
                 
-                var contentboxLayers = Object.keys(contentbox);   // console.log("Refreshing contentboxlayers", contentboxLayers, contentbox);
+                var contentboxKeys = Object.keys(contentbox);   // console.log("Refreshing contentboxlayers", contentboxLayers, contentbox);
 
-                contentboxLayers.forEach(function(layername, j) {
+                contentboxKeys.forEach(function(layername, j) {
 
                     var layerObject = contentbox[layername],
                         contentfeatures = [];
@@ -580,24 +590,27 @@ Refresh mb-contentbox features
                         var layerData = layerObject.srcdata;
 
                         if (map)  {
-                            console.log("MAP ADD content: "+layername, layerObject);
                             layerData = addMapContent(layername, layerObject);
+                            console.log("MAP ADDed content for " + layername, layerData); // , layerObject);
                         } 
 
                         if (layerData) {   // Check/Get all source-features of the basic layer 
                             contentfeatures = getFeatureList(layerData, layername);
-                            // console.log("CHECKED-"+flag+" ["+layername+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
+                            console.log("CHECKED-"+flag+" ["+layername+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
                         }                        
 
                     }   else {        // REMOVE object (on demand)
 
-                        if (map) removeMapContent(layerObject); 
-                        // console.log("CHECKED-"+flag+" [" + layername+"]", layerObject); 
+                        if (map) {
+                            console.log("CHECKED-"+flag+" [" + layername+"]", layerObject); 
+                            removeMapContent(layerObject); 
+                        }     
                     } 
                     
-                    // console.log("TOGGLEevents-"+flag +" [" + layername+"]", layerObject); 
-                    if (map) toggleContentEvents(layerObject, flag) 
-
+                    if (map) {
+                        console.log("TOGGLE Contentevents-"+flag +" [" + layername+"]", layerObject); 
+                        toggleContentEvents(layerObject, flag) 
+                    }    
                     // Add layer-features to mapcontent
                     if (contentfeatures.length) {
                         // console.log("contentfeatures of " + layername, contentfeatures);
@@ -615,15 +628,16 @@ Refresh mb-contentbox features
             // Remove previous Content-layers
             _mbContentCheckOut: function() { 
                 // if (!this._contentbox || !Object.keys(this._contentbox).length) return; 
-                var oldcontent = this._mbContentChecker(this._contentbox, "OUT") ;    
+                console.log("_mbContentCheckOut", this._contentbox); 
+                var oldcontent = this._mbContentChecker(this._contentbox, "OUT", map) ;    
                 if (oldcontent)  console.log("MAP-OUT-features", oldcontent);
             },
 
             // Add/Insert layers according contentbox
             _mbContentCheckIn: function(contentbox, reason) { 
-                var mapcontent = this._mbContentChecker(contentbox, "IN") ;
+                var mapcontent = this._mbContentChecker(contentbox, "IN", map) ;
                 if (mapcontent)  {
-                    console.log("MAP-IN-features", mapcontent, reason);
+                    console.log("MAP-IN-features for", reason, mapcontent);
                     return mapcontent; 
                 }    
             },

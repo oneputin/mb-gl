@@ -132,6 +132,7 @@ recieves or selects a style from menu
                 if (checked==null) checked = this.checked;
                 if (checked) {
                     if (this._styles &&  this._styles.length > 1) {
+                        console.log("showMe Styles", this._styles);
                         this.style.display = "block";
                     } else {
                         console.log("no styles available"); 

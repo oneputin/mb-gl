@@ -86,19 +86,19 @@ Optional: create quick-preview-data
         ],
 
         observers: [
-            '_triggerQuery(srcmeta.*)',
+            '_triggerQuery(srcmeta.*, logmode)',
             '_createTrackData(_rawdata, srcmeta, logmode)'
         ],
 
         attached: function() {
         },
 
-        _triggerQuery: function(srcmeta) { // trigger new dataquery !!
+        _triggerQuery: function(srcmeta, logmode) { // trigger new dataquery !!
             if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
             if (srcmeta.type != "gpx") {
                 this.rawdata = null;
                 return;
-            }  // console.log("gpx-Query (meta)",srcmeta) ;
+            }  
             
             // Join the xmlquery from basic and variable query-items
             var xmlquery = {};
@@ -106,6 +106,8 @@ Optional: create quick-preview-data
             if (srcmeta.xmlquery && Object.keys(srcmeta.xmlquery).length) {
                 Object.assign(xmlquery, srcmeta.xmlquery);
             } // console.log("_triggerLog", srcmeta, xmlquery);
+            console.log("gpx-Query (meta)",srcmeta, xmlquery,logmode) ;
+            
             // Trigger action 
             this._xmlquery = xmlquery; 
             this._xmlurl = srcmeta.url; // !! TRIGGER !!
@@ -113,7 +115,6 @@ Optional: create quick-preview-data
         
         // Convert raw gpx-json-data into 
         _createTrackData: function(rawdata, srcmeta, logmode) {
-            
             this.debounce("track", function() {
                 if (!rawdata || !Object.keys(rawdata).length) return; 
     
@@ -139,6 +140,7 @@ Optional: create quick-preview-data
                 }    
                 // ** !! ** 
                 this._rawdata = null; 
+                this._xmlurl = null;
 
             }, 200);      
         },
