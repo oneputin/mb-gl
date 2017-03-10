@@ -11,15 +11,16 @@
 <link rel="import" href="icons-svg.html">
 
 <!--
-`routing-ctrl`
-elements controling the time-parameters 
-of any animation behavior (fi. of track-objects)  
+`timer-ctrl`
+elements controling parameters of time-dependent processes
+
+fi. animation behavior (of track-objects)  
 
 some ctrls (back,forward...) and "slider" are "redundant and should be used exclusively 
 
 -->
 
-<dom-module id="routing-ctrl">
+<dom-module id="timer-ctrl">
 
     <template>
     
@@ -75,7 +76,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             
             <paper-icon-button id="speedup" icon="{{_icon_add}}" title="speedup" class="trans"></paper-icon-button>
             
-            <paper-slider id="slider" value="{{sliderval}}" immediate-value="{{slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler"></paper-slider>
+            <paper-slider id="slider" value="{{sliderval}}" immediate-value="{{_slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler"></paper-slider>
            
             <paper-material elevation="2" id="logtime" on-click="timerlog">{{logtime}}</paper-material>
 
@@ -85,14 +86,14 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
     <script>
         Polymer({
-            is: 'routing-ctrl',
+            is: 'timer-ctrl',
 
             properties: {
 
                 /**
                  * OUT: Communicates requested animation-ctrl-action to outside
                  */
-                trackctrl: {
+                timerctrl: {
                     type: Boolean,
                     value: false,
                     notify: true
@@ -125,11 +126,11 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 },
 
 
-                slidertime: {
+                _slidertime: {
                     type: Number
                 },
 
-                _trackctrl: {
+                _timerctrl: {
                     type: Boolean,
                     value: false
                 },
@@ -163,7 +164,6 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     value: true,
                     observer: 'toggleVisibility'
                 },*/
-
             },
 
             behaviors: [
@@ -184,7 +184,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             },
 
             observers: [
-                'syncCtrls(trackctrl)',
+                'syncCtrls(timerctrl)',
                 'syncSlider(timer.time)',
                 'resetSlider(timer.stop, timer.start)' 
             ],
@@ -195,14 +195,14 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             // 
             toggleCtrl: function() {
-                if ((this.trackctrl == true)||(this._trackctrl == true)) {
-                    this.trackctrl = false;
-                    this._trackctrl = false
-                } else if ((this.trackctrl == false)||(this._trackctrl == false)) {
-                    this.trackctrl = true;
-                    this._trackctrl = true
+                if ((this.timerctrl == true)||(this._timerctrl == true)) {
+                    this.timerctrl = false;
+                    this._timerctrl = false
+                } else if ((this.timerctrl == false)||(this._timerctrl == false)) {
+                    this.timerctrl = true;
+                    this._timerctrl = true
                 } 
-                // console.log("AFTER toggleCtrl ", this.trackctrl, this._trackctrl)
+                // console.log("AFTER toggleCtrl ", this.timerctrl, this._timerctrl)
             },
 
 
@@ -212,8 +212,8 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
              * @param      {number}  stoptime  The stoptime
              */
             resetSlider: function(stoptime, starttime) { // , stoptime) {
-                // console.log("RESET routing-ctrl for", starttime, stoptime, this.timer)
-                this.trackctrl = false;  
+                // console.log("RESET timer-ctrl for", starttime, stoptime, this.timer)
+                this.timerctrl = false;  
 
                 this.debounce("reset", function(){
                     if (!stoptime) return;
@@ -260,7 +260,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 var sliderval = tracktime - this.starttime; 
                 if ((sliderval < 0)||(sliderval > this.stop)) {
                     console.log("sliderval outside: ", tracktime, this.starttime, sliderval); 
-                    this.trackctrl = false; 
+                    this.timerctrl = false; 
                     sliderval = 0; 
                     // return;
                 }
@@ -282,43 +282,43 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
              */
             slideChangeHandler: function() {
 
-                var slidertime = this.slidertime;
+                var slidertime = this._slidertime;
                 if (this.sliderunit == "min") slidertime = slidertime / 60;
                 if (this.sliderunit == "sec") slidertime = slidertime / 3600;
 
                 var tracktime = this.starttime + slidertime;
 
                 // NOTIFY new time to routing-api 
-                this.trackctrl = tracktime;  
+                this.timerctrl = tracktime;  
                 // ************************
                 // B.2 Sync the tracktime in LogBox
                 var logtime = this.logTime(tracktime, "h", "<br>");
                 this.$.logtime.innerHTML = logtime;
 
                 // STOP animation, if it was running  
-                if (this._trackctrl)  {  // console.log("STOPPED at slidertime: " + this.slidertime + "["+this.sliderunit+"]", "tracktime: "+this.logTime(tracktime, "h"));
-                    this.trackctrl = false;  
-                    this._trackctrl = false; 
+                if (this._timerctrl)  {  // console.log("STOPPED at time: " + this._slidertime + "["+this.sliderunit+"]", "tracktime: "+this.logTime(tracktime, "h"));
+                    this.timerctrl = false;  
+                    this._timerctrl = false; 
                 }    
             },
 
             /**
-             * Sync ctrl-button-icons after remote "trackctrl"-change  
+             * Sync ctrl-button-icons after remote "timerctrl"-change  
              * ctrls must reflect the handling options during actual status 
              *
-             * @param      {string}  trackctrl  The trackctrl
+             * @param      {string}  timerctrl  The timerctrl
              * @param      {<type>}  trackmode  The trackmode
              */
-            syncCtrls: function(trackctrl, _trackctrl) {
-                // console.log("trackctrl", trackctrl, _trackctrl);    
+            syncCtrls: function(timerctrl, _timerctrl) {
+                // console.log("timerctrl", timerctrl, _timerctrl);    
 
-                if (trackctrl) {
+                if (timerctrl) {
 
-                    if (trackctrl == "reset") {
+                    if (timerctrl == "reset") {
                         // 
                         this._icon2 = "ctrl:play-arrow";
 
-                    } else if (trackctrl == true) {   // dedicated START-action  
+                    } else if (timerctrl == true) {   // dedicated START-action  
                         // 
                         this._icon2 = "ctrl:pause";
                         this.$.logtime.classList.add('running'); // console.log("this.$.logtime", this.$.logtime); 
@@ -356,7 +356,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
                 if (ctrl1) { // ReStart-Button-event
                     ctrl1.addEventListener('click', function() {
-                        this.trackctrl = "reset";
+                        this.timerctrl = "reset";
                     }.bind(this));
                 }
 

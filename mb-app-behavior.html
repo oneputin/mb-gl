@@ -36,12 +36,20 @@
         // Create readable time period h:min
         // from unixTime as [h]
         deltaT: function(t, fallback) {
+            //console.log("DELTAT", t)
             var h = Math.floor(t),
-                m = Math.round((t - h) * 60);
-            if (h > 0) h = h < 10 ? "0" + h + "h" : h + "h";
-            else h = "";
+                hh;
+            if (h > 0) {
+                hh = h < 10 ? "0" + h + "h" : h + "h";
+            } else {
+                hh = "";
+            }  
+
+            var m = Math.round((t - h) * 60);
             m = (m < 10) ? "0" + m : m;
-            return h || m ? h + m + "min" : fallback;
+            
+            var dt = hh || m ? hh + m + "min" : fallback; 
+            return dt;
         },
 
         // derive comparable/calculable times
@@ -135,14 +143,16 @@
                     logtime = m;
                     break;
                 default:
-                    // return string
-                    if (sep) {
+                    // Combined date/time strings
+                    if (sep) { 
                         D = D < 10 ? "0" + D : D;
                         M = M < 10 ? "0" + M : M;
                         h = h < 10 ? "0" + h : h;
                         m = m < 10 ? "0" + m : m;
+
                         var logdate = D + "." + M,
                             daytime = h + ":" + m;
+                        // 
                         if (sep=="t") logtime = daytime;
                         else logtime = logdate + sep + daytime;
                     }

@@ -112,7 +112,7 @@ component loads tracking data
              */
             _requestManager: function(srcmeta, logmode) {
                 if (srcmeta.path == 'tracksetmeta') srcmeta = srcmeta.value;
-                console.log("tracksetmeta. RAW=", srcmeta, logmode);
+                // console.log("tracksetmeta. RAW=", srcmeta, logmode);
 
                 var srcurl = srcmeta.url,      // 
                     srctype = srcmeta.type,    // 
@@ -146,21 +146,18 @@ component loads tracking data
                     // OPTIONAL: JOIN with user-defined query-expressions  
                     if (srcmeta.query) {  
                         srcmeta.xmlquery = Object.assign(srcmeta.xmlquery, srcmeta.query);
-                        console.log(srcmeta);  
                     } 
                 }
 
-                console.log("tracksetmeta. AFTER", srcmeta);
+                // console.log("tracksetmeta. AFTER", srcmeta);
                 // this.tracksetmeta = srcmeta;
  
                 // trigger one of alternative import-elements
                 if (srctype == "xml")  this.srcmetax = srcmeta;
                 else                   this.srcmetad = srcmeta;
 
-                let datasetlabel="Animated Logs";
-
-                if (logmode)  datasetlabel="Static Logs";
-
+                let datasetlabel="Animated Tracks";
+                if (logmode)  datasetlabel="Static TrackLogs";
                 srcmeta['datasetlabel'] = datasetlabel;
             },
 

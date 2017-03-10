@@ -30,8 +30,8 @@
 
     <!-- generic animation components -->
     <link rel="import" href="../routing-api.html">
-    <link rel="import" href="../routing-ctrl.html">
-    <link rel="import" href="../routing-ctrl-time.html">
+    <link rel="import" href="../timer-ctrl.html">
+    <link rel="import" href="../timer-setup.html">
 
     <!-- specific animation components for some datasources -->
     <link rel="import" href="../tracks-info.html">
@@ -73,7 +73,7 @@
             /*@apply(--layout-start);*/
         }
         
-        routing-ctrl {
+        timer-ctrl {
             @apply(--layout-flex);
         }
         
@@ -81,7 +81,7 @@
             /*@apply(--layout-flex);*/
         }
         
-        routing-ctrl-time {
+        timer-setup {
             display: none;
             border-style: solid;
             border-width: 1px;
@@ -140,7 +140,13 @@
                     cbox="{{cbox}}" 
                     zoom="{{zoom}}" 
                     mapctrl="[[mapctrl]]">
-                    
+
+                    <tracks-log
+                        checked="[[elevationshow]]"
+                        metadata="[[metadataset]]"
+                        trackdata="[[datasetitem]]">
+                    </tracks-log>    
+
                     <mb-styles 
                         checked = "[[styleselectshow]]"
                         styleset ="[[morestyles]]"
@@ -173,10 +179,10 @@
                         
                         <div class="ctrls-in-map">
                             <!-- ctrl of animation-progress  -->
-                            <routing-ctrl 
-                                trackctrl="{{trackctrl}}"
+                            <timer-ctrl 
+                                timerctrl="{{trackctrl}}"
                                 timer="{{timer}}">
-                            </routing-ctrl>
+                            </timer-ctrl>
 
                             <!-- ctrl of map-orientation -->
                             <mb-orientation-ctrl 
@@ -190,14 +196,7 @@
                         </mb-info-drag>-->
 
                 </mb-map>
-            </template>    
 
-            <template is="dom-if" if="{{!mapstyle}}">
-                <tracks-log
-                    checked="[[elevationshow]]"
-                    metadata="[[metadataset]]"
-                    trackdata="[[datasetitem]]">
-                </tracks-log>    
             </template>    
 
         </div>
@@ -214,7 +213,9 @@
                     <!--<paper-radio-button checked="{{waypointshow}}">Show Waypoints</paper-radio-button>-->
                     <paper-radio-button class="preview red" checked="{{logmode}}">CheckSources</paper-radio-button>
                 </template>    
-                <paper-radio-button checked="{{elevationshow}}">Eleveation Log</paper-radio-button>
+                <template is="dom-if" if="{{!userouting}}">
+                    <paper-radio-button checked="{{elevationshow}}">Elevation Log</paper-radio-button>
+                </template>    
             </div>
 
             <!-- B. Routing APIs -->
@@ -243,11 +244,11 @@
                     trackinfo="[[trackinfo]]">
                 </routing-api>
                 
-                <routing-ctrl-time  
+                <timer-setup  
                     starttimer="[[starttimer]]"
                     metadataset="[[metadataset]]"
                     timer="{{timer}}">
-                </routing-ctrl-time>
+                </timer-setup>
 
             </template>
 
@@ -259,7 +260,7 @@
                 metadataset="{{metadataset}}"
 
                 dataset="[[dataset]]" 
-                selectvalue="{{datasetitem}}"> 
+                selectitem="{{datasetitem}}"> 
 
                 <tracks-load 
                     tracksetmeta = "{{metadataset}}" 
@@ -404,7 +405,7 @@
             }     
             if (flag) {
                 // animation-progress-ctrl
-                el = document.createElement("routing-ctrl"), 
+                el = document.createElement("timer-ctrl"), 
                 el.setAttribute("timer", "{{timer}}");
                 el.setAttribute("trackctrl", "{{trackctrl}}");
                 parent.appendChild(el); 
@@ -417,7 +418,7 @@
                 scope.render(); 
             } else {
 
-                el = document.querySelector("routing-ctrl");
+                el = document.querySelector("timer-ctrl");
                 if (el && (el.parentNode == parent)) parent.removeChild(el);
 
                 el = document.querySelector("mb-orientation-ctrl");

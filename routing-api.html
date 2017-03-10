@@ -324,58 +324,62 @@ along waypoint file loaded from url
                  * load-event-action 
                  * checks loaded tiles for features of source 
                  */
-                function onFeatureLoad(e){ // console.log("onFeatureLoad", e);
+                function onFeatureLoaded(e){ // console.log("onFeatureLoad", e);
                     if (e.sourceId == dataName) {
+                        console.log("features of src ["+dataName+"] are loaded into actual map-port"); // , features); 
                         var features = map.querySourceFeatures(dataName);  
-                        // console.log(features.length+" features of [", dataName,"] in actual map-port"); // , features); 
+
                         if (features.length) {
+                            console.log(features.length+" features loaded"); // , features); 
 
                             var status = preAction(features);
 
                             reAction(status); 
 
                             // STOP listener on success
-                            map.off("data", onFeatureLoad); 
+                            map.off("data", onFeatureLoaded); 
                             reacted = true;                      
                         }
                     }
                 }
 
-                // START Listener
-                map.on("data", onFeatureLoad);
+                // START Listener to feature-loading
+                map.on("data", onFeatureLoaded);
 
                 // Pending Listener 
                 setTimeout(function () { 
                     if (!reacted) { // console.log("NO featurs on map TILES!");
                         // STOP Listener after max pending time (Fi. 1 sec) 
                         reAction(); // default "empty" reaction 
-                        map.off("data", onFeatureLoad); 
+                        map.off("data", onFeatureLoaded); 
                     }
                 }, 1000);
             },
 
             // Derive and notify id and timer-interval of selectzed route/track  
             routeseletedApply: function(routeselected){
-                console.log("START. routeselectedApply", routeselected, this.routedata); // TraceSource ???
-                if (!routeselected) return;
+                if (!routeselected || !routeselected.wait) return;
                 if (!this.routedata) return;
 
                 var id = routeselected.id;  
                 if (routeselected.feature) {
                     routeselected = routeselected.feature;
+                    if(!id) id = routeselected.id; 
                 }    
                     
                 var props = routeselected.properties;
-                if(!id) id = routeselected.id; 
-                if(!id) id = props.id; 
-                console.log("ID,PROPS: routeselectedApply:", id, props);
-                if (!id) return; 
+                if (props && !id) id = props.id; 
+                if (!id) {
+                    return;
+                }     
+                console.log("START. routeselectedApply, ", props, this.routedata); // TraceSource ???
 
                 // A. Triggers "routeActivate" for routeid on the map 
                 this.routeid = id; 
 
                 // B. Triggers timer-ctrl-sync
-                if (props.start || props.stop) {
+                if (props && (props.start || props.stop)) {
+                    console.log("ID,PROPS: routeselectedApply:", id, props);
                     this.set("timer.start", props.start);
                     this.set("timer.stop", props.stop);
                 }    
@@ -1043,16 +1047,15 @@ along waypoint file loaded from url
                 function generateCtrlMsg(counter) {    
                     
                     var mapTime = (mba.timer["start"]) + (counter * mba.timer.frametime / 3600),
-                        t_msg = mba.logTime(mapTime, "h"),
-                        s = mba.getNextStart(mapTime),
+                        nextStartTime = mba.getNextStart(mapTime),
                         msg;
 
-                    if (s) {
-                        let ds = s - mapTime,
-                            ds_msg = mba.deltaT(ds, "");
-                        msg = "Continue at: " + mba.logTime(s, "h") + "<hr>TTT: " + ds_msg;
+                    if (nextStartTime) {
+                        var dt = nextStartTime - mapTime;
+                        msg = "Continue at: " + mba.logTime(nextStartTime, "h", "t") 
+                        + "<hr>Time left: " + mba.deltaT(dt, "");
                     } else {
-                        msg = "IDLE: " + t_msg;
+                        msg = "IDLE: " + mba.logTime(mapTime, "h", "t");
                     }
                     mba.popupOnMap(msg);
                 }
@@ -1218,9 +1221,9 @@ along waypoint file loaded from url
                 mba.set('timer.time', mapTime);
                 // ****************************
 
-                // B. REFRESH the srcdata of those trackObjects (and/or trackTraces) 
+                // B. REFRESH the srcdata of animated objects (trackers and/or trackTraces) 
                 //    whose start and stop surround actual mapTime  
-                var tracks = mba.tracks; console.log("tracks", mapTime, tracks); 
+                var tracks = mba.tracks; // console.log("tracks", mapTime, tracks); 
                 var nn = tracks.features.length; 
 
                 for (j = 0; j < nn; j++) {
@@ -1234,7 +1237,7 @@ along waypoint file loaded from url
                         routeid = routeProps.id,
                         routeStartCounter = routeProps.startCounter;
 
-                    if (mapTime > routeProps.stop) {           // A. BREAK "what?" after end of this route 
+                    if (mapTime > routeProps.stop) {       // A. BREAK "what?" after end of this route 
 
                         if (routeStartCounter != null) {   // must be valid for 0 too
 

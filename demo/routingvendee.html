@@ -22,9 +22,9 @@ Demo to view ship-data animation
     <link rel="import" href="../mb-info-drag.html">
 
     <link rel="import" href="../routing-api.html">
-    <link rel="import" href="../routing-ctrl.html">
+    <link rel="import" href="../timer-ctrl.html">
     <link rel="import" href="../mb-orientation-ctrl.html">
-    <link rel="import" href="../routing-ctrl-time.html">
+    <link rel="import" href="../timer-setup.html">
 
     <link rel="import" href="../routing-vendee.html">
 
@@ -56,7 +56,7 @@ Demo to view ship-data animation
             width: 100%;
         }
         
-        routing-ctrl {
+        timer-ctrl {
             @apply(--layout-flex);
         }
         
@@ -81,7 +81,7 @@ Demo to view ship-data animation
               left: 30px;*/
         }
         
-        routing-ctrl-time {
+        timer-setup {
             display: none;
             border-style: solid;
             border-width: 1px;
@@ -113,10 +113,10 @@ Demo to view ship-data animation
                 
                 <div class="ctrls-in">
                     <!-- ctrl of animation and maporientation -->
-                    <routing-ctrl 
+                    <timer-ctrl 
                         timer="{{tracktimer}}"
-                        trackctrl="{{trackctrl}}">
-                    </routing-ctrl>
+                        timerctrl="{{trackctrl}}">
+                    </timer-ctrl>
                     <!--<mb-orientation-ctrl trackmode="{{trackmode}}">
                     </mb-orientation-ctrl>-->                    
                 </div>
@@ -158,10 +158,10 @@ Demo to view ship-data animation
                 </routing-api>
                 
                 <!-- Left -->
-                <routing-ctrl-time  
+                <timer-setup  
                     timescalemax="[[tracktimer.timescalemax]]" 
                     timer="{{tracktimer}}">
-                </routing-ctrl-time>
+                </timer-setup>
 
                 <mb-content-browser
                     dataset= "{{routeset}}"

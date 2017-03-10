@@ -21,8 +21,8 @@
     <link rel="import" href="../mb-info-drag.html">
 
     <link rel="import" href="../routing-api.html">
-    <link rel="import" href="../routing-ctrl.html">
-    <link rel="import" href="../routing-ctrl-time.html">
+    <link rel="import" href="../timer-ctrl.html">
+    <link rel="import" href="../timer-setup.html">
     <link rel="import" href="../mb-orientation-ctrl.html">
 
     <link rel="import" href="../../paper-styles/demo-pages.html">
@@ -47,13 +47,13 @@
             transform: translate(-50%, 0)
         }
         
-        routing-ctrl-mode {
+        timer-ctrl-mode {
             position: absolute;
             bottom: 10px;
             right: 10px;
         }
         
-        routing-ctrl {
+        timer-ctrl {
             position: absolute;
             bottom: 10px;
             left: 30px;
@@ -70,7 +70,7 @@
             left: 30px;
         }
         
-        routing-ctrl-time {
+        timer-setup {
             border-style: solid;
             border-width: 1px;
             padding: 10px;
@@ -100,10 +100,10 @@
                 lnglat="{{lnglat}}" 
                 mapctrl="[[mapctrl]]">
                 
-                <routing-ctrl 
+                <timer-ctrl 
                     timer="[[timer]]"
-                    trackctrl="{{trackctrl}}">
-                </routing-ctrl>
+                    timerctrl="{{trackctrl}}">
+                </timer-ctrl>
                 
                 <mb-orientation-ctrl trackmode="{{trackmode}}">
                 </mb-orientation-ctrl>
@@ -120,8 +120,8 @@
                     trackdata="{{trackdata}}">
                 </routing-api>
                 
-                <routing-ctrl-time timer="{{timer}}">
-                </routing-ctrl-time>
+                <timer-setup timer="{{timer}}">
+                </timer-setup>
                 
                 <mb-info-drag carddata="[[trackdata]]" >
                 </mb-info-drag>

@@ -7,8 +7,10 @@
 <link rel="import" href="mb-app-behavior.html">
 
 <!--
-`routing-ctrl-time`
-slider ctrls used to modify timescale-parameters of routing animations  
+`timer-setup`
+Setup/modify timescale-parameters 
+
+fi. for animations  
 - `timescalemax` ctrls general dimension of animation scale (should be passed in by app-shell)
 - `throttle` varies timescale in 10 equal steps, can be remote-controlled 'step'-wise 
 ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, fps, fpsmax     
@@ -16,7 +18,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
 @demo demo/routemap.html 
 -->
 
-<dom-module id="routing-ctrl-time">
+<dom-module id="timer-setup">
 
     <template>
     
@@ -70,6 +72,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
             <div>Active: [[scalestring]]</div>
             <paper-slider id="fpsctrl" value="{{fpsslidervalue}}" immediate-value="{{fpsslidervalue}}" on-immediate-value-change="fpsChangeHandler" on-value-change="fpsChangeHandler" min="1" max='[[fpsslidermax]]' step='1'></paper-slider>
 
+
             <div>TraceLength: [[tracescale]]</div>
             <paper-slider id="tracectrl" value="{{traceslidervalue}}" immediate-value="{{traceslidervalue}}" on-immediate-value-change="traceChangeHandler" on-value-change="traceChangeHandler" min="1" max='[[traceslidermax]]' step='1'></paper-slider>
 
@@ -81,7 +84,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
     <script>
         // on-change="fpsChange"
         Polymer({
-            is: 'routing-ctrl-time',
+            is: 'timer-setup',
 
             properties: {
 

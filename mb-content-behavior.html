@@ -161,15 +161,18 @@
             if (!map) return; 
             //if (!this.map) return; // not declared in behavior !! 
             //var map = this.map;
-            
-            var scope = this,
-                trackInfo = aLine.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
+            var scope = this;
 
             // Get SOURCE-properties for identified feature !!!
-            var keys = this.guessFeatureKeys(aLine); 
+            var trackInfo = aLine.properties; 
+                keys = this.guessFeatureKeys(aLine); 
+            // console.log("trackInfo", trackInfo, keys); 
+            
             if (keys) {
-                trackInfo.keyname = keys[0];  
+                
+                trackInfo.keyname  = keys[0];  
                 trackInfo.keyvalue = keys[1];  
+                
                 trackInfo.id = keys[1];
 
                 var trackLayer  = map.getLayer(layerid),

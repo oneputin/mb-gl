@@ -22,8 +22,8 @@
 
     <link rel="import" href="../routing-planes.html">
     <link rel="import" href="../routing-api.html">
-    <link rel="import" href="../routing-ctrl.html">
-    <link rel="import" href="../routing-ctrl-time.html">
+    <link rel="import" href="../timer-ctrl.html">
+    <link rel="import" href="../timer-setup.html">
 
 
     <style is="custom-style">
@@ -40,13 +40,13 @@
             height: 675px;
         }
         
-        routing-ctrl-mode {
+        timer-ctrl-mode {
             position: absolute;
             bottom: 10px;
             right: 10px;
         }
         
-        routing-ctrl {
+        timer-ctrl {
             position: absolute;
             bottom: 10px;
             left: 30px;
@@ -76,7 +76,7 @@
             top: 40px;
         }
         
-        routing-ctrl-time {
+        timer-setup {
             display: none;
             border-style: solid;
             border-width: 1px;
@@ -108,10 +108,10 @@
                     mapcontent="[[mapcontent]]">
                 </mb-content-select>
 
-                <routing-ctrl 
+                <timer-ctrl 
                     timer="{{timer}}"
-                    trackctrl="{{trackctrl}}">
-                </routing-ctrl>
+                    timerctrl="{{trackctrl}}">
+                </timer-ctrl>
 
                 <mb-orientation-ctrl 
                     trackmapmode="{{trackmapmode}}">
@@ -136,9 +136,9 @@
                     on-routedata-changed="logdata">
                 </routing-api>
                 
-                <routing-ctrl-time 
+                <timer-setup 
                     timer="{{timer}}">
-                </routing-ctrl-time>
+                </timer-setup>
 
                 <!-- app-specific IF between generic IN/OUT (routedata/trackdata) and routedata -->
                 <routing-planes 

@@ -66,15 +66,14 @@
 
 
         // Get Info about "complete track", not only features in actually "visible" tile(s)
-        guessFeatureKeys: function(feature, idNames) {
+        guessFeatureKeys: function(feature, keyNames) {
             // Heuristik to identify suitable filter-key  
+            if (!feature) return; 
+            if (!keyNames) keyNames = ["id", "name", "key", "time"];
 
-            if (!idNames) idNames = ["id", "name", "key", "time"];
-            var keyname; 
-
-            var fInfo = feature.properties; // console.log("trackInfo", trackInfo, srcFeatures); 
-            
-            idNames.some(function(nom) {
+            var fInfo = feature.properties, // console.log("trackInfo", trackInfo, srcFeatures); 
+                keyname
+            keyNames.some(function(nom) {
                 if (fInfo[nom]) {
                     keyname = nom;
                     return true;

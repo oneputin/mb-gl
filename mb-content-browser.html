@@ -64,7 +64,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                     allandnone="true"
                     menulabel="[[datasetlabel]]"
                     menuitems="[[dataset]]"
-                    selectitem="{{selectvalue}}">
+                    selectitem="{{selectitem}}">
                 </dynamic-menu>
             </div>
         </div>
@@ -124,14 +124,14 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                 // LEVEL 3
                 // Management of dataselection
 
-                // property of dataset-objects to return as selectvalue
+                // property of dataset-objects to return as selectitem
                 // if null - entire object will be returned
                 // ....
                 // 
 
                 // - as RESULT of menu-selection is NOTIFIED !!
                 // - as import from outside is SYNCED into MENU  
-                selectvalue: {
+                selectitem: {
                     type: Object,
                     notify: true,
                     observer: '_checkObject'
@@ -157,7 +157,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
 
             _checkObject: function(obj) {
                 let log = obj.id; // JSON.parse(obj); 
-                // console.log("CheckObject:",log, obj);
+                // console.log("SelectItem, id=", log, obj);
             },
 
             _updateBrowser: function(meta){

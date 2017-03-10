@@ -34,7 +34,10 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
         
         <template is="dom-if" if="{{menuitems}}">
             <paper-dropdown-menu class="dataitems" label="{{menulabel}}">
-                <paper-listbox id="listbox" class="dropdown-content" on-iron-items-changed="_menuChanged" on-iron-select="_menuSelected" attr-for-selected="select">
+                <paper-listbox id="listbox" class="dropdown-content" 
+                    on-iron-items-changed="_menuChanged" 
+                    on-iron-select="_menuSelected" 
+                    attr-for-selected="select">
                     <template is="dom-repeat" items="{{_selectset}}">
                         <paper-item select="{{item}}" id="{{item.id}}">
                             {{item.title}}
@@ -59,6 +62,12 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                     notify: true
                 },
 
+                // INPUT(opt): Label of menu
+                menulabel : {
+                    type: String,
+                    value: "Menuitems"
+                },
+
                 // IN/OUT: of menu-selection returned !!
                 selectitem: {
                     type: Object,
@@ -71,11 +80,7 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                     type: String
                 },
 
-                // INPUT(opt): Label of menu
-                menulabel : {
-                    type: String,
-                    value: "Menuitems"
-                },
+
                 // INPUT(opt): FLAG ctrls adding all/clear items to the items of menu2
                 allandnone: {
                     type: String,
@@ -163,25 +168,29 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
             },
 
             // 
-            _syncSelection: function(selectvalueid) {
+            _syncSelection: function(selectitemid) {
                 // use debounce to avoid "doubling" if event from different sources
                 this.debounce("sync", function(){
-                    if (this._selectset && (selectvalueid != this._lastid)) {
-                        // console.log("sync for id= [" + selectvalueid+"]", "lastid was [" + this._lastid + "]"); // return; 
+                    // console.log("TRY SYNC with", selectitemid, this._selectset); 
+                    if (this._selectset && selectitemid && (selectitemid != this._lastid)) {
+                        // console.log("sync within", this._selectset , "lastid was [" + this._lastid + "]"); // return; 
                         var index,
                             listbox = this.$$("paper-listbox"); // may be NOT located if hidden by "dom-if"
+                            // listbox = this.$.listbox; // may be NOT located if hidden by "dom-if"
                         
                         this._selectset.some(function(item, i){
-                            if (item.id == selectvalueid) {
+                            if (item.id == selectitemid) {
                                 index = i;
                                 return true;  
                             }
                         });
+                        // console.log("set item at position", index , "in listbox", listbox); 
 
-                        if (index && listbox) {
-                            // console.log("set menu at index ["+index+"] of id=", selectvalueid); // , this._selectset); 
+                        if ((index != null) && listbox) {
+                            // console.log("SET menu at index ["+index+"] with id=", selectitemid); // , this._selectset); 
                             listbox.selectIndex(index);
-                            this._lastid = selectvalueid;
+                            // 
+                            this._lastid = selectitemid;
                         }    
                     }
                 }, 100);    

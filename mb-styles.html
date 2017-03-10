@@ -24,7 +24,7 @@ recieves or selects a style from menu
 
                 font: 0.8em Courier, Lucida;
                 background-color: rgba(255,64,129,0.8); /*#ff4081*/
-                color: white;                    
+                color: white;   
             }
         </style>
 
@@ -36,10 +36,10 @@ recieves or selects a style from menu
         </iron-ajax>
 
         <dynamic-menu
-            menudata="{{_styles}}"
+            menuitems="{{_styles}}"
             menulabel="MapStyles"
             selectprop="id"
-            selectvalue="{{_styleid}}">
+            selectitem="{{_styleid}}">
         </dynamic-menu>
 
     </template>
@@ -132,10 +132,10 @@ recieves or selects a style from menu
                 if (checked==null) checked = this.checked;
                 if (checked) {
                     if (this._styles &&  this._styles.length > 1) {
-                        console.log("showMe Styles", this._styles);
+                        // console.log("showMe Styles", this._styles);
                         this.style.display = "block";
                     } else {
-                        console.log("no styles available"); 
+                        console.log("NO further styles available"); 
                     }    
                 } else {
                     this.style.display = "none";
