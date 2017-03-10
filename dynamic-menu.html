@@ -167,16 +167,15 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                 // console.log("_updateMenu. selected, _selectset", selected, this._selectset);
             },
 
-            // 
+            // Translate external selection into index of meun-item 
             _syncSelection: function(selectitemid) {
                 // use debounce to avoid "doubling" if event from different sources
-                this.debounce("sync", function(){
+                this.debounce(
+                    "sync", function(){
                     // console.log("TRY SYNC with", selectitemid, this._selectset); 
                     if (this._selectset && selectitemid && (selectitemid != this._lastid)) {
                         // console.log("sync within", this._selectset , "lastid was [" + this._lastid + "]"); // return; 
-                        var index,
-                            listbox = this.$$("paper-listbox"); // may be NOT located if hidden by "dom-if"
-                            // listbox = this.$.listbox; // may be NOT located if hidden by "dom-if"
+                        var index;
                         
                         this._selectset.some(function(item, i){
                             if (item.id == selectitemid) {
@@ -184,23 +183,21 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                                 return true;  
                             }
                         });
-                        // console.log("set item at position", index , "in listbox", listbox); 
-
-                        if ((index != null) && listbox) {
-                            // console.log("SET menu at index ["+index+"] with id=", selectitemid); // , this._selectset); 
-                            listbox.selectIndex(index);
-                            // 
+                        if (index != null) {
                             this._lastid = selectitemid;
-                        }    
+                            this._selectindex = index; // triggers '_refreshSelectedItem'
+                        }
                     }
-                }, 100);    
+                }, 200);    
             },
 
             // 
             _refreshSelectedItem: function(selectindex) {
-                var listbox = this.$$("paper-listbox"); // NOT located if hidden by "dom-if"
-                // console.log("selectindex of ["+ this.menulabel+ "]", selectindex, listbox); 
-                // if (listbox) listbox.selectIndex(selectindex);
+                var listbox = this.$$("paper-listbox"); 
+                if (listbox) {
+                    // console.log("activate menu-item at position", selectindex , "in listbox", listbox); 
+                    listbox.selectIndex(selectindex);
+                }    
             },
 
             // AFTER modifiction of menu-items
