@@ -1,4 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="mb-map-behavior.html">
+<link rel="import" href="mb-app-behavior.html">
+<link rel="import" href="mb-content-behavior.html">
 
 <!--
 `tracks-api`
@@ -45,16 +48,29 @@ along waypoint file loaded from url
                     // observer: '_checkObject'
                 },
 
+                trackselected: {
+                    type: Object,
+                    observer: 'processTrack'
+                },
+
+                eventfunctions: {
+                    type: Object,
+                    notify: true
+                }
+
             },
 
             behaviors: [
+                Mbb.AppBehavior,
+                Mbb.MapBehavior
             ],
 
             observers: [
-                'transfer(rawcontent.*)' // , metadata)'
+                'transfer(rawcontent.*)', // , metadata)'
             ],
 
             ready: function() {
+                this.setEventFunctions(); // initialize map-events
             }, 
 
             transfer: function(rawcontent) { // , metadata) {
@@ -62,7 +78,269 @@ along waypoint file loaded from url
                 if (!rawcontent || !Object.keys(rawcontent).length) return; 
                 // console.log("SETUP contentbox from raw tracks.", rawcontent); 
                 this.contentbox = rawcontent;
+
+            },
+
+            setEventFunctions: function(){
+
+                var eventfunctions = {};
+                // Generic HILITE-function based on "id-Filter"	
+
+                eventfunctions["hilite"] = 
+                    function featureHilite(e, layerid, scope) {
+
+                        if (!map.getLayer(layerid)) return;
+                        if (!map.getLayer(layerid + "-hover")) return;
+
+                        // 
+                        var hilayerid, hifilter;
+
+                        var features = map.queryRenderedFeatures(e.point, {
+                            layers: [layerid]
+                        });
+
+                        // CHANGE cursor temporarily
+                        map.getCanvas().style.cursor = (features.length) ? 'pointer' : ''; // crosshair';
+
+                        if (features.length) {  // Apply HILITE-FILTER  
+                            
+                            var fkeys = scope.guessFeatureKeys(features[0]); 
+                            // scope.popupOnMap(trackInfo.html);
+
+                            if (!fkeys) {
+
+                                console.log("HILITING in " + layerid + ":", features[0]);
+                            
+                            } else {    // Filtering the HOVER-Layer
+                                
+                                hifilter = ["==", fkeys[0], fkeys[1]] ; // trackInfo[keyname]];
+                                // console.log("hi " + layerid + ":", trackInfo.length+" km");
+
+                                hilayerid = layerid + "-hover";
+                            
+                                map.setFilter(hilayerid, hifilter);
+                            }
+
+                        } else {  // remove HILITE filter 
+                            
+                            map.setFilter(layerid + "-hover", ["==", "name", ""]);
+                        }
+                    };
+
+                // Feature-Select 
+                //   supplies info-object of selected feature 
+                eventfunctions["select"] = 
+                    function featureSelect(e, layerid, scope) {
+                        // console.log("featureSelect in ", layerid); 
+
+                        if (!map.getLayer(layerid)) return;
+                        // if (!map.getLayer(layerid + "-select")) return;
+
+                        var features = map.queryRenderedFeatures(e.point, {
+                            layers: [layerid]
+                        });
+
+                        if (!features || !features.length) return;   console.log("featuresSelected", features); 
+
+                        // SYNC with content-browser after selection in map   
+                        scope.featureselected = scope.tileFeatureContent(features, layerid);
+
+                    };
+
+                //     
+                this.eventfunctions = eventfunctions; 
+            },
+
+            // (Basic) Action(s) to run after track is selected
+            // further actions may run in separate elements
+            processTrack: function(f) { 
+                console.log("touching TRACK:", f); 
+                if (!f || !f.feature ) return;    
+                
+                var flayer = f.layer,
+                    feature = f.feature,
+                    fprops = feature.properties,
+                    selectObj; 
+
+                console.log("processing TRACK:", feature, flayer); 
+
+                if (fprops.coordTimes && map)  {  // SPEC-CASE : trackLogs 
+
+                    selectObj = this.tracksHilite(flayer, [feature]); 
+
+                } else {
+                    
+                    selectObj = this.setFeatureBounds([feature]);
+                }     
+
+                console.log("processedTrack", selectObj); 
+            },    
+
+            // Special "permanent" HILITE of selected tracks
+            // by HILITE-TRACE + "commented" end-nodes  
+            //   - zooms to the feature
+            //   - show start/stop based on "id-Filter"	
+
+            tracksHilite: function(layerid, tiledata) {
+                // by now for 1 feature only
+                // var map = this.map; 
+
+                // MB-Function for trackContent: 
+                // 1. Create trackEndMarkers-layer
+                function showTrackNodes(layerid, trackInfo) {
+                    // layer of nodes symbols with text in HALO
+                    var hilayerid = layerid + "-nodes",
+                        hilayer = map.getLayer(hilayerid);
+
+                    if (!hilayer) return; 
+                    // console.log("NODES of "+ layerid, hilayer, trackInfo);                 
+
+                    var fromicon = "toilet"; // "monument",
+                        toicon = "harbor";
+
+                    var fromnode = trackInfo.fromnode.slice(0,2),
+                        tonode   = trackInfo.tonode.slice(0,2),
+                        fromtime = trackInfo.von,
+                        totime = trackInfo.bis,
+                        nodedata = { // for nodes-source = 2 points
+                            "type": "FeatureCollection",
+                            "features": [{
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "Point",
+                                    "coordinates": fromnode
+                                },
+                                "properties": {
+                                    "title": fromtime,
+                                    "icon": fromicon
+                                }
+                            }, {
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "Point",
+                                    "coordinates": tonode
+                                },
+                                "properties": {
+                                    "title": totime,
+                                    "icon": toicon
+                                }
+                            }]
+                        } ;
+
+                    // map.addSource(layerid, node);    
+                    var src = map.getSource(hilayerid); 
+                    if (src)  {
+                        // console.log("set nodes-data into ", hilayerid, nodedata, src); 
+                        src.setData(nodedata);                     
+                    }    
+                } 
+
+                // 2. HILITE the TRACE of the track (Filtering-Layer)
+                function showTrackLine(layerid, trackInfo) {
+                    // 
+                    var hilayerid = layerid + "-trace", // ?
+                        hilayer = map.getLayer(hilayerid);  
+
+                    var keyname = trackInfo.keyname,
+                        hifilter = ["==", keyname, trackInfo[keyname]];
+
+                    if (!hilayer) return ;
+
+                    console.log("TRACE-filter of " + hilayerid, hifilter, hilayer); 
+                    map.setFilter(hilayerid, hifilter);
+                } 
+
+                if (!tiledata) return;  
+
+                this.debounce("hilite", function() {
+
+                    var tileInfo; 
+     
+                    if (Array.isArray(tiledata)) { // List of map-features
+                        tileInfo = this.tileFeatureContent(tiledata[0], layerid); // map-behavior   
+                    } else {    // preprocessed info-object 
+                        tileInfo = tiledata;
+                    }
+                    
+                    var trackInfo =  this.trackFeatureContent(tileInfo);
+
+                    if (!trackInfo) return;  console.log("HILITE track(s)INFO", trackInfo); 
+
+                    // APPLY start- and stop-nodes of track
+                    showTrackNodes(layerid, trackInfo); 
+
+                    // APPLY trace-overlay (gestrichelt) on track
+                    showTrackLine(layerid, trackInfo); 
+
+                    // Triggersignal to enable ZOOM & SYNC with sibling elements (fi. with menues )
+                    if (trackInfo.id)  {
+                        // console.log("tracksHilite: featureselected", trackInfo) ; 
+                        // this.featureselected = trackInfo;
+                    }    
+
+                    // StartZoom with ZoomEnd-Action
+
+                    // Define action to run AFTER startZoom (info-popup)
+                    map.once('moveend', function() {
+                        this.popupOnMap(trackInfo.html);
+                    }.bind(this));
+                
+                    // Start ZOOM to "complete track"" 
+                    if (trackInfo.bbox) {
+                        map.fitBounds(trackInfo.bbox.bounds, {
+                            padding: 40
+                        });
+                    } 
+                    
+                    return trackInfo; 
+                }, 100);    	
+            },
+
+            // Get app-specific Info about the "complete json-feature", 
+            // the selected json-tile belongs to
+
+            trackFeatureContent: function(trackInfo) {
+                var scope = this;    
+                // C. APP-SPECIFIC: derive line-specific props
+
+                if (trackInfo.srcfeature) {
+                    trackInfo.coords = trackInfo.srcfeature.geometry.coordinates; // **!!!** 
+                    trackInfo.fromnode = trackInfo.coords[0];
+                    trackInfo.tonode = trackInfo.coords[trackInfo.coords.length - 1];
+                    trackInfo.bbox = this.setFeatureBounds([trackInfo.srcfeature]);
+                    trackInfo.length = this.deltaL(trackInfo.srcfeature);
+                }
+
+                // D. SPECIFIC: derive tracklog-specific time-parameters 
+                if (trackInfo.coordTimes) { 
+
+                    var trackTimes = trackInfo.coordTimes; // console.log("trackTimes", typeof trackTimes, trackTimes);
+                    if (typeof trackTimes == "string") trackTimes = JSON.parse(trackTimes);
+                    // console.log(trackInfo, trackTimes);
+                    
+                    var n = trackTimes.length, // equal to number of coords
+                        tvon = scope.trackTime(trackTimes[0]);
+                        tbis = scope.trackTime(trackTimes[n - 1])
+                        von = scope.utcTime(tvon, "h"),
+                        bis = scope.utcTime(tbis, "h"),
+                        dt = bis - von;
+                    // console.log(trackTimes[0],trackTimes[n-1], tvon, tbis, von, bis, dt);
+
+                    trackInfo.duration = scope.deltaT(dt);
+                    trackInfo.count = n;
+                    trackInfo.von = scope.logTime(von, "h", "t");
+                    trackInfo.bis = scope.logTime(bis, "h", "t");
+                }
+
+                // E. SPECIFIC: compile some parameters as HTML 
+                trackInfo.html = trackInfo.time +
+                    "<br>Length: " + trackInfo.length +
+                    "<br>Duration: " + trackInfo.duration +
+                    "<br>TP's: " + trackInfo.count;
+
+                return trackInfo;
             }
+
         });
     </script>
 </dom-module>       

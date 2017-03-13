@@ -26,7 +26,7 @@
     <!-- generic components for app-content-ctrl -->
     <link rel="import" href="../mb-content-browser.html"> 
     <link rel="import" href="../mb-content-manager.html">
-    <link rel="import" href="../mb-content-select.html">
+    <!--<link rel="import" href="../mb-content-select.html">-->
 
     <!-- generic animation components -->
     <link rel="import" href="../routing-api.html">
@@ -141,10 +141,11 @@
                     zoom="{{zoom}}" 
                     mapctrl="[[mapctrl]]">
 
+                    <!-- placed here to overlay the map -->
                     <tracks-log
                         checked="[[elevationshow]]"
                         metadata="[[metadataset]]"
-                        trackdata="[[datasetitem]]">
+                        trackselected="[[datasetitem]]">
                     </tracks-log>    
 
                     <mb-styles 
@@ -224,8 +225,15 @@
 
             <template is="dom-if" if="{{userouting}}">
 
+                <timer-setup  
+                    timer="{{timer}}"
+                    starttimer="[[starttimer]]"
+                    metadataset="[[metadataset]]">
+                </timer-setup>
+
                 <routing-api 
                     map="[[map]]" 
+
                     metadataset="[[metadataset]]"
 
                     routedata=[[routecontent]] 
@@ -244,13 +252,19 @@
                     trackinfo="[[trackinfo]]">
                 </routing-api>
                 
-                <timer-setup  
-                    starttimer="[[starttimer]]"
-                    metadataset="[[metadataset]]"
-                    timer="{{timer}}">
-                </timer-setup>
-
             </template>
+
+            <template is="dom-if" if="{{!userouting}}">
+
+                <tracks-api 
+                    metadata = "[[metadataset]]" 
+                    rawcontent = "[[rawcontent]]" 
+                    contentbox = "{{contentbox}}" 
+                    eventfunctions = "{{eventfunctions}}"
+                    trackselected="[[datasetitem]]">
+                </tracks-api>
+
+            </template>    
 
             <!-- C. DATAFLOW INTERFACE -->
             <!-- datasetlabel="[[datasetlabel]]" -->
@@ -269,12 +283,6 @@
                     routecontent = "{{routecontent}}"> 
                 </tracks-load>
 
-                <tracks-api 
-                    metadata = "[[metadataset]]" 
-                    rawcontent = "[[rawcontent]]" 
-                    contentbox = "{{contentbox}}"> 
-                </tracks-api>
-
             </mb-content-browser>
             <!-- selectprop="id"--> 
 
@@ -284,6 +292,7 @@
                 map = "[[map]]" 
                 mbid = "[[mbid]]" 
                 contentbox="{{contentbox}}" 
+                eventfunctions = "[[eventfunctions]]"
                 contentfeatures="{{contentfeatures}}"
                 featuresused = "{{dataset}}"
                 featureselected="{{datasetitem}}">
@@ -291,11 +300,11 @@
 
             <!-- DIALOG ctrl <mb-map> <mb-content-browser> -->
             <!-- featureapplied="{{selector}}"> -->
-            <mb-content-select 
+            <!--<mb-content-select 
                 metadataset = "[[metadataset]]" 
                 featureselected = "{{datasetitem}}"
                 featurelog = "{{featurelog}}"> 
-            </mb-content-select>
+            </mb-content-select>-->
 
         </div>
 

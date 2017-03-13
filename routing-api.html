@@ -769,21 +769,26 @@ along waypoint file loaded from url
              */
             trackTimerSetup: function(routedata, timer, timescale) {
 
-                // A.2 **** Get Frametime ****
+                // A.**** Get Frametime ****
                 // Bsp: frametime: 6 s fuer scale = 360 und fps=60 !!
                 // Animationszeit 1s=6*60s=6min, 10s=1h Echtzeit 
-                if (!timer) timer = {};  
+                if (!timer) {
+
+                    return ;
+                }   
+
+                // Option: using parameters from outside timer     
                 timescale = timescale ? timescale : timer.timescalestart; 
                 timescale = timescale ? timescale : timer.timescalemax; 
                 
                 var fpsstart = timer.fpsstart ? timer.fpsstart : timer.fpsmax; 
-                fpsstart = fpsstart ? fpsstart : 60; 
+                fpsstart = fpsstart ? fpsstart : 60;  // DEFAULT
 
-                console.log("calc frame-time", timescale, fpsstart); 
                 timer.frametime = timescale / fpsstart; 
+                console.log("FRAMETIME="+ timer.frametime, "from scale,fps", timescale, fpsstart); 
 
 
-                // B. Express tracelength-time as number of animation steps
+                // B. Express "tracelength"-time as number of animation steps
 
                 if (timer.tracelength) {
                     if (typeof timer.tracelength == "string") {
@@ -794,9 +799,8 @@ along waypoint file loaded from url
                     }
                 }
 
-                // C.1 Assemble start&stop 
-                //      for all waypoint-times 
-                //      of every route 
+                // C.1 Assemble  start&stop for all waypoint-times 
+                //   of every route 
 
                 var wptimer = {};
 
@@ -820,9 +824,10 @@ along waypoint file loaded from url
                     }
                 }.bind(this));
 
-                // C.2 Assemble start&stop times for timer 
-                //   - per route 
-                //   ( - and for overall animation period )
+
+                // C.2 Assemble start&stop times  
+                //  - per route (and) 
+                //  - for overall animation period
                 // var start, stop;
 
                 timer.routes = {};
@@ -856,6 +861,7 @@ along waypoint file loaded from url
                     if (routestart) {
                         timer.routes[id]["date"] = this.logTime(routestart, "h", "/");
                     }    
+
                     //if (!start || (routestart < start)) start = routestart;
                     //if (!stop || (routestop > stop)) stop = routestop;
 
@@ -1619,6 +1625,7 @@ along waypoint file loaded from url
                     // console.log("Initialize route from", data, timer, props);
 
                     var srcCollection = {};
+
 
                     // A. Create route-object consisting of 1-n legs
 

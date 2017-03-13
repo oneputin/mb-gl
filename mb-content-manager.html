@@ -1,6 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="mb-map-behavior.html">
-<link rel="import" href="mb-content-behavior.html">
+<!--<link rel="import" href="mb-content-behavior.html">-->
 <link rel="import" href="mb-app-behavior.html">
 
 <!--
@@ -59,6 +59,11 @@ Refresh mb-contentbox features
                     notify: true
                 },
 
+                // IN: events added to "content"
+                eventfunctions : {
+                    type : Object 
+                },
+
                 // IN: id of mb-mapstyle (basemap) triggers content-redraw when changed
                 mbid: {
                     type: String,
@@ -73,7 +78,6 @@ Refresh mb-contentbox features
 
             behaviors: [
                 Mbb.AppBehavior,
-                Mbb.ContentBehavior,
                 Mbb.MapBehavior
             ],
 
@@ -104,7 +108,7 @@ Refresh mb-contentbox features
              * Create/Update all mbContent items 
              * related to newly selected contentbox
              */
-            mbContentApply: function(contentbox, reason) { // console.log("ContentApply for reason=", reason); 
+            mbContentApply: function(contentbox, reason) { console.log("mbContentApply for reason=", reason, contentbox); 
                 if (!contentbox || !Object.keys(contentbox).length) return;
 
                 var scope = this,
@@ -119,7 +123,10 @@ Refresh mb-contentbox features
 
                     // Verify weather (at least some) new content is "well defined"
                     if (map) {
-                        contentbox = this._mbContentVerify(contentbox, map);
+                        // 
+                        var mapevents = this.eventfunctions;
+
+                        contentbox = this._mbContentVerify(contentbox, map, mapevents);
                     }
 
                     if (!contentbox || !Object.keys(contentbox).length)  {
@@ -144,7 +151,7 @@ Refresh mb-contentbox features
             },    
 
             // Make contentbox "complete"  
-            _mbContentVerify: function(contentbox, map) {    
+            _mbContentVerify: function(contentbox, map, mapevents) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
 
                 var scope = this;
@@ -152,6 +159,20 @@ Refresh mb-contentbox features
 
                 var verifiedContent = {}, layerObject ;
                 
+                var featureHilite = mapevents.hilite, 
+                    featureSelect = mapevents.select; 
+
+                if (!featureHilite) {
+                    featureHilite = function(e, layerid){
+                        // console.log("HILITE", e,layerid)
+                    }
+                }
+                if (!featureSelect) {
+                    featureSelect = function(e, layerid){
+                        console.log("SELECT", e, layerid)
+                    }
+                }
+
                 // Add temporary paint-properties 
                 // for easy identification of features (line-width, random colors)
                 function rawBeautify(layerObject) {
@@ -186,73 +207,13 @@ Refresh mb-contentbox features
                 // 
                 function rawEvents(layername) {
 
-                    // Generic HILITE-function based on "id-Filter"	
-                    function featureHilite(e, layerid) {
-
-                        if (!map.getLayer(layerid)) return;
-                        if (!map.getLayer(layerid + "-hover")) return;
-
-                        // 
-                        var hilayerid, hifilter;
-
-                        var features = map.queryRenderedFeatures(e.point, {
-                            layers: [layerid]
-                        });
-
-                        // CHANGE cursor temporarily
-                        map.getCanvas().style.cursor = (features.length) ? 'pointer' : ''; // crosshair';
-
-                        if (features.length) {  // Apply HILITE-FILTER  
-                            
-                            var fkeys = scope.guessFeatureKeys(features[0]); 
-                            // scope.popupOnMap(trackInfo.html);
-
-                            if (!fkeys) {
-
-                                console.log("HILITING in " + layerid + ":", features[0]);
-                            
-                            } else {    // Filtering the HOVER-Layer
-                                
-                                hifilter = ["==", fkeys[0], fkeys[1]] ; // trackInfo[keyname]];
-                                // console.log("hi " + layerid + ":", trackInfo.length+" km");
-
-                                hilayerid = layerid + "-hover";
-                            
-                                map.setFilter(hilayerid, hifilter);
-                            }
-
-                        } else {  // remove HILITE filter 
-                            
-                            map.setFilter(layerid + "-hover", ["==", "name", ""]);
-                        
-                        }
-
-                    }
-                    // Feature-Select 
-                    //   supplies info-object of selected feature 
-                    //   generated by any external function       
-                    function featureSelect(e, layerid) {
-                        // console.log("featureSelect in ", layerid); 
-
-                        if (!map.getLayer(layerid)) return;
-                        // if (!map.getLayer(layerid + "-select")) return;
-
-                        var features = map.queryRenderedFeatures(e.point, {
-                            layers: [layerid]
-                        });
-                        if (!features || !features.length) return;  
-                        
-                        // Necessary to SYNC with content-browser after selection in map   
-                        scope.featureselected = scope.featuresSelect(features, layerid);
-
-                    }
 
                     function hiliter(e) {
-                        featureHilite(e, layername);
+                        featureHilite(e, layername, scope);
                     }
 
                     function selector(e) {
-                        featureSelect(e, layername);
+                        featureSelect(e, layername, scope);
                     }
 
                     // 
@@ -530,9 +491,11 @@ Refresh mb-contentbox features
                 function toggleContentEvents(layerObject, flag){
 
                     var eventset = layerObject.events;
-                    var events = Object.keys(eventset);
+                    if (!eventset) return;  
 
-                    events.forEach(function(ev){
+                    // var events = ;
+
+                    Object.keys(eventset).forEach(function(ev){
                         if (flag=="IN") {
                             map.on(ev, eventset[ev])
                         } else {

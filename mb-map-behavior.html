@@ -65,6 +65,56 @@
         },    
 
 
+        // Get the geometry of sourceFeature "below" a tile-feature
+        getSourceFeature:  function (tileFeature, layerid) {
+
+            var srcLayer = map.getLayer(layerid),
+                srcInfo = {}, keyname, keyvalue ; 
+
+            if (srcLayer) {
+
+                var keys = this.guessFeatureKeys(tileFeature);
+                if (keys.length) {
+                    keyname  = keys[0];  
+                    keyvalue = keys[1];  
+                }
+
+                var theSource = map.getSource(srcLayer.source),
+                    srcFeatures = theSource._data.features;
+                // console.log("DEBUG", tileFeature, keys, srcFeatures);
+
+                srcFeatures.some(function(f){
+                    if (f.properties[keyname] == keyvalue) {   // console.log("DETECTED", f);
+                        srcInfo.srcfeature = f;
+                        srcInfo.keyname  = keyname;  
+                        srcInfo.keyvalue = keyvalue;  
+                        srcInfo.id = keyvalue;
+                        return true;
+
+                    }
+                });
+            }
+            return srcInfo; 
+        }, 
+
+
+        tileFeatureContent: function(tileFeature, layerid) {
+            if (!map) return; 
+            //if (!this.map) return; // not declared in behavior !! 
+
+            // A. GENERIC: Get SOURCE-properties for identified feature !!!
+            var tileInfo = this.objectClone(tileFeature.properties);
+
+            // B. GENERIC: SOURCE FEATURE (untiled)
+            var srcInfo = this.getSourceFeature(tileFeature, layerid);  // console.log("srcInfo", srcInfo);  
+
+            Object.keys(srcInfo).forEach(function(k){
+                tileInfo[k] = srcInfo[k];
+            }) 
+
+            return tileInfo;
+        },     
+
         // Get Info about "complete track", not only features in actually "visible" tile(s)
         guessFeatureKeys: function(feature, keyNames) {
             // Heuristik to identify suitable filter-key  

@@ -156,8 +156,11 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
             },
 
             _checkObject: function(obj) {
-                let log = obj.id; // JSON.parse(obj); 
-                // console.log("SelectItem, id=", log, obj);
+                if (!obj) {
+                    return; 
+                }
+                // let log = JSON.parse(obj); 
+                console.log("SelectItem, id=" + obj.id, obj);
             },
 
             _updateBrowser: function(meta){

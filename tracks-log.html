@@ -2,7 +2,6 @@
 
 <link rel="import" href="../google-chart/google-chart.html">
 <link rel="import" href="mb-map-behavior.html">
-<link rel="import" href="mb-content-behavior.html">
 <link rel="import" href="mb-app-behavior.html">
 <link rel="import" href="dynamic-menu.html">
 
@@ -95,7 +94,7 @@ presentation of track-properties (= selected feature)
                     type: Object
                 },
 
-                trackdata: {
+                trackselected: {
                     type: Object,
                     notify: true,
                     observer: 'checkoutFeature'
@@ -127,7 +126,6 @@ presentation of track-properties (= selected feature)
 
             behaviors: [
                 Mbb.AppBehavior,
-                Mbb.ContentBehavior,
                 Mbb.MapBehavior
             ],                
 
@@ -150,12 +148,12 @@ presentation of track-properties (= selected feature)
              * @param      {object}  f       { mapbox-jeature }
              */
             checkoutFeature: function(f) { 
-                if (!f.feature) return;    
-                // console.log("Selecting Feature: " + f.id , f);
+                if (!f || !f.feature) return;    
+                console.log("Checkout Feature to LOG: " + f.id , f);
                 
                 // A. generic map-select
-                var selObj = this.featuresSelect([f.feature], f.layer);
-                // console.log("Selected Feature: " + f.id , f, selObj);
+                // var selObj = this.featuresSelect([f.feature], f.layer);
+                //console.log("Selected Feature: " + f.id , f, selObj);
                 //console.log("Metadata of: " + f.layer , this.metadata);
 
                 // B. Create a text-log
@@ -165,25 +163,24 @@ presentation of track-properties (= selected feature)
                 // this.track = log; 
                 this.$.meta.innerHTML = log;
 
-                this.createElevTrack(pp); 
+                this.refreshElevChart(pp); 
             },
 
-            // 
-            createElevTrack: function(pp){
+            // Refresh parameters of chart-element <google-chart>
+            refreshElevChart: function(pp){
                 var scope = this,
                     times = pp["coordTimes"],
                     elevs = pp["coordZ"];
                 
                 if (!times || !elevs || !times.length || !elevs.length) {
-                    console.log("No elevation track for track", pp); 
+                    console.log("No elevation data for track-chart", pp); 
                     this.zitems = [];
                     this.zdata = [];
                     return;
                 } // console.log(times, elevs); 
 
                 var zitems = [], zitem, zdata = [];
-                // var sp = ":" + "&nbsp;" + "&nbsp;";
-                var sp = String.fromCharCode(160),
+                var sp = String.fromCharCode(160), // &nbsp;
                     delim = sp + sp +sp ;
 
                 times.forEach(function(t, j){

@@ -8,11 +8,11 @@
 
 <!--
 `timer-setup`
-Setup/modify timescale-parameters 
-
-fi. for animations  
-- `timescalemax` ctrls general dimension of animation scale (should be passed in by app-shell)
-- `throttle` varies timescale in 10 equal steps, can be remote-controlled 'step'-wise 
+Setup/modify timescale-parameters  fi. for animations  
+- `timescalemax` ctrls "basic scale" of time variation (should be passed in by app-shell) 
+used to create the animation dataset from raw data 
+- `throttle` varies basic-timescale, introducing additional delays after execution of every time-step,    
+can be remote-controlled 'step'-wise  
 ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, fps, fpsmax     
 
 @demo demo/routemap.html 
@@ -65,12 +65,12 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
             <h3>Animation scales (1 minute)</h3>
             <div>Max: [[maxscalestring]]</div>
             <div class="slider">
-                <paper-slider id="scalectrl" class="scale" value="{{scaleslidervalue}}" on-change="scaleChangeHandler" min="1" max='10'></paper-slider>
+                <paper-slider id="scaleslider" class="scale" value="{{scaleslidervalue}}" on-change="scaleChangeHandler" min="1" max='10'></paper-slider>
             </div>
 
             <!--<div>Active: [[fpsslidervalue]][%]</div>-->
             <div>Active: [[scalestring]]</div>
-            <paper-slider id="fpsctrl" value="{{fpsslidervalue}}" immediate-value="{{fpsslidervalue}}" on-immediate-value-change="fpsChangeHandler" on-value-change="fpsChangeHandler" min="1" max='[[fpsslidermax]]' step='1'></paper-slider>
+            <paper-slider id="fpsslider" value="{{fpsslidervalue}}" immediate-value="{{fpsslidervalue}}" on-immediate-value-change="fpsChangeHandler" on-value-change="fpsChangeHandler" min="1" max='[[fpsslidermax]]' step='1'></paper-slider>
 
 
             <div>TraceLength: [[tracescale]]</div>
@@ -89,18 +89,26 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
             properties: {
 
                 /**
-                 * Max timescale foreseen for hosting app   
-                 */
-                timescalemax: {
-                    type: Number
-                },
-
-                /**
-                 * collection of timer-ctrl-properties
+                 * collection of timer-properties usable to ctrl 
                  */
                 timer: {
                     type: Object,
                     notify: true
+                },
+
+                /**
+                 * IN: max fps-slider-value (decides about "slider-granularity") 
+                 */
+                fpsslidermax: {
+                    type: Number,
+                    value: 12
+                },
+
+                /**
+                 * Max timescale foreseen for hosting app   
+                 */
+                timescalemax: {
+                    type: Number
                 },
 
                 metadataset : {
@@ -134,14 +142,6 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                     type: Number
                 },
 
-                /**
-                 * IN: max fps-slider-value, decides about slider-granularity 
-                 */
-                fpsslidermax: {
-                    type: Number,
-                    value: 12
-                }
-
             },
 
             behaviors: [
@@ -152,26 +152,27 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                 'applyTimer(_timescale, _fps)',
                 'setThrottle(timer.ctrl)',
                 '_setupTimeCtrls(timer.timescalemax)',
-                '_setupTimer(metadataset.timer, starttimer)'
+                '_setupTimer(starttimer, metadataset.timer)'
             ],
 
             ready: function(){
                 var metadataset = {}; 
                 // if (this.metadataset && this.metadataset.timer) metadataset = this.metadataset;
-                this._setupTimer(this.metadataset.timer, this.starttimer);
+                this._setupTimer(this.starttimer, this.metadataset.timer);
                 // this._setupTimeCtrls(this.timer.timescalemax);
             },
 
-            _setupTimer: function(metadatatimer, starttimer) {
-                console.log("_setupTimer: metadatatimer",  metadatatimer, starttimer);
-                // A. Setup basic animation-parameters          
-                //    from Primary Timer-Setup from context in app-shell and/or from metadata
+            // BASIC setup for every geo-dataset with a time-variability 
+            _setupTimer: function(starttimer, metadatatimer) {
+                // from Timer-Setup in app-shell-context  and/or  from metadata
 
                 this.debounce('setup', function() {
+                    console.log("_setupTimer: BASIC from",  metadatatimer, starttimer);
                     
                     this.timer = {}
 
                     var timer = {};
+
                     if (starttimer && Object.keys(starttimer).length) {
                         timer = this.objectClone(starttimer);
                     }    
@@ -179,12 +180,52 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                     if (metadatatimer && Object.keys(metadatatimer).length) {
                         timer = Object.assign({}, timer, metadatatimer);
                     } 
+
                     this.timer = this.objectClone(timer);  console.log("SETUP timer as:", timer);
 
                     this._setupTimeCtrls(this.timer.timescalemax);
+
                 }, 200);      
 
             },    
+
+            /**
+             * Setup the Ctrl-actions (start/stop, restart, fps-slider) 
+             *
+             */
+            _setupTimeCtrls: function(timescalemax) {
+
+                if (!timescalemax) return; 
+                this.debounce('setupctrls', function() {
+                    // A. Initial timescale
+                    // 
+                    if (!this.timer.timescalestart) {
+                        this.timer.timescalestart = timescalemax; // was / 2; 
+                    }    
+                    // this._resetTimeScale(timescalemax, this.timer.timescalestart);
+
+                    this.scalemin = timescalemax / 10;
+
+                    this.scaleslidervalue = 10 * this.timer.timescalestart / timescalemax;
+
+                    this._timescale = this.scalemin * this.scaleslidervalue;
+
+                    // B. Initial value of fps-throttle 
+                    //    NO throttle fps = 60
+
+                    if (!this.timer.fpsstart) {
+                        this.timer.fpsstart = this._fpsmax; //  / 2;
+                    }
+
+                    this.fpsslidervalue = this.timer.fpsstart / this._fpsmax * this.fpsslidermax;
+                    
+                    this._fps = this._fpsmax * this.fpsslidervalue / this.fpsslidermax; //console.log("fps", fps)
+
+                    console.log("_setupTimeCtrls-FINISHED from ", this._timescale, this._fps ); 
+                }, 200);     
+            },
+
+
 
             /**
              * Processes remotecontrol events for scale-throttle
@@ -193,7 +234,7 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
              */
             setThrottle: function(ctrl) {
                 if (!ctrl) return;
-                var throttle = this.$.fpsctrl;
+                var throttle = this.$.fpsslider;
                 if (ctrl == "up") {
                     throttle.increment();
                 }
@@ -214,9 +255,6 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
 
                 this.debounce('apply', function() {
 
-                    this.maxscalestring = this._formatscale(timescale);
-                    this.scalestring = this._formatscale(timescale * fps / this._fpsmax);
-
                     if (!this.timer) {
                         this.timer = {};
                         this.set('timer.timescalemax', this.timescalemax);
@@ -225,17 +263,13 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
 
                     this.set('timer.timescale', timescale);
                     this.set('timer.fps', fps);
+                    console.log("TIMER REFRESHED", this.timer);
 
-                    // console.log("REFRESHED timer", this.timer, this.maxscalestring, this.scalestring);
+                    this.maxscalestring = this._formatscale(timescale);
+                    this.scalestring = this._formatscale(timescale * fps / this._fpsmax);
+                    console.log("Time-Scales (max, actual):", this.maxscalestring, this.scalestring);
                 }, 100);
 
-            },
-
-            /**
-             * Event-handler of throttle-slider 
-             */
-            traceChangeHandler: function() {
-                if (!this.traceslidervalue) return;
             },
 
             /**
@@ -259,39 +293,13 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
                 this._timescale = this.scalemin * this.scaleslidervalue; // console.log("new timescale", this.timescale);
             },
 
-
             /**
-             * Setup the Ctrl-actions (start/stop, restart, fps-slider) 
-             *
+             * Event-handler of Duration-slider 
              */
-            _setupTimeCtrls: function(timescalemax) {
-                // A. timescale
-                if (!timescalemax) return; 
-
-                if (!this.timer.timescalestart) {
-                    this.timer.timescalestart = timescalemax; // was / 2; 
-                }    
-                // this._resetTimeScale(timescalemax, this.timer.timescalestart);
-
-                this.scalemin = timescalemax / 10;
-
-                this.scaleslidervalue = 10 * this.timer.timescalestart / timescalemax;
-
-                this._timescale = this.scalemin * this.scaleslidervalue;
-
-                // B. fps
-
-                if (!this.timer.fpsstart) {
-                    this.timer.fpsstart = this._fpsmax; //  / 2;
-                }
-
-                this.fpsslidervalue = this.timer.fpsstart / this._fpsmax * this.fpsslidermax;
-                
-                this._fps = this._fpsmax * this.fpsslidervalue / this.fpsslidermax; //console.log("fps", fps)
-
-                console.log("_setupTimeCtrls-finished", this._timescale, this._fps ); 
-
+            traceChangeHandler: function() {
+                if (!this.traceslidervalue) return;
             },
+
 
 
             /**
