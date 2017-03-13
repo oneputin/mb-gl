@@ -488,20 +488,23 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     this.map.setLayoutProperty(this.slidectrl.id, 'visibility', 'visible');
                
                 } else {
+                    var slidedata = this.slidedata,
+                        n = slidedata.features.length;
+
+
                     // A. deactivate service-trigger
                     this.serviceflag = false;
-                    // C. 
 
-                    // var bb = this.slidebox; // console.log("fitToSlide", bb);
-                    var slidedata = this.slidedata,
-                        n = slidedata.features.length,
-                        index = this.slideindex;
+                    // B. 
+                    var index = this.slideindex;
                     if (index == undefined) index = n - 1;  
 
+                    // C. 
                     var slide = slidedata.features[index],  
                         bb = this.getBoundingBox([slide]);
                     this.map.fitBounds(bb);
                     
+                    // D. 
                     index = index - 1 < 0 ? n - 1 : index - 1 ; 
                     this.slideindex = index; 
 

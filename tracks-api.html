@@ -1,7 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="mb-map-behavior.html">
 <link rel="import" href="mb-app-behavior.html">
-<link rel="import" href="mb-content-behavior.html">
 
 <!--
 `tracks-api`
@@ -53,7 +52,7 @@ along waypoint file loaded from url
                     observer: 'processTrack'
                 },
 
-                eventfunctions: {
+                mapevents: {
                     type: Object,
                     notify: true
                 }
@@ -78,21 +77,17 @@ along waypoint file loaded from url
                 if (!rawcontent || !Object.keys(rawcontent).length) return; 
                 // console.log("SETUP contentbox from raw tracks.", rawcontent); 
                 this.contentbox = rawcontent;
-
             },
 
             setEventFunctions: function(){
-
-                var eventfunctions = {};
+                var mapevents = {};
                 // Generic HILITE-function based on "id-Filter"	
 
-                eventfunctions["hilite"] = 
+                mapevents["hilite"] = 
                     function featureHilite(e, layerid, scope) {
-
                         if (!map.getLayer(layerid)) return;
                         if (!map.getLayer(layerid + "-hover")) return;
 
-                        // 
                         var hilayerid, hifilter;
 
                         var features = map.queryRenderedFeatures(e.point, {
@@ -103,9 +98,8 @@ along waypoint file loaded from url
                         map.getCanvas().style.cursor = (features.length) ? 'pointer' : ''; // crosshair';
 
                         if (features.length) {  // Apply HILITE-FILTER  
-                            
+
                             var fkeys = scope.guessFeatureKeys(features[0]); 
-                            // scope.popupOnMap(trackInfo.html);
 
                             if (!fkeys) {
 
@@ -121,15 +115,14 @@ along waypoint file loaded from url
                                 map.setFilter(hilayerid, hifilter);
                             }
 
-                        } else {  // remove HILITE filter 
-                            
+                        } else {  // remove HILITE filter                             
                             map.setFilter(layerid + "-hover", ["==", "name", ""]);
                         }
                     };
 
                 // Feature-Select 
                 //   supplies info-object of selected feature 
-                eventfunctions["select"] = 
+                mapevents["select"] = 
                     function featureSelect(e, layerid, scope) {
                         // console.log("featureSelect in ", layerid); 
 
@@ -139,20 +132,20 @@ along waypoint file loaded from url
                         var features = map.queryRenderedFeatures(e.point, {
                             layers: [layerid]
                         });
-                        if (!features || !features.length) return;   console.log("featuresSelected", features); 
+                        if (!features || !features.length) return;  
+                        // console.log("featuresSelected", features); 
 
                         // SYNC with content-browser after selection in map   
-                        scope.featureselected = scope.tileFeatureContent(features[0], layerid);
+                        var fcontent = scope.tileFeatureContent(features[0], layerid); // console.log("selectcontent", fcontent);
+                        scope.featureselected = fcontent;
                     };
-
                 //     
-                this.eventfunctions = eventfunctions; 
+                this.mapevents = mapevents; 
             },
 
             // (Basic) Action(s) to run after track is selected
             // further actions may run in separate elements
             processTrack: function(f) { 
-                console.log("touching TRACK:", f); 
                 if (!f || !f.feature ) return;    
                 
                 var flayer = f.layer,
@@ -160,7 +153,7 @@ along waypoint file loaded from url
                     fprops = feature.properties,
                     selectObj; 
 
-                console.log("processing TRACK:", feature, flayer); 
+                // console.log("processing TRACK:", feature, flayer); 
 
                 if (fprops.coordTimes && map)  {  // SPEC-CASE : trackLogs 
 
@@ -171,7 +164,7 @@ along waypoint file loaded from url
                     selectObj = this.setFeatureBounds([feature]);
                 }     
 
-                console.log("processedTrack", selectObj); 
+                // console.log("processedTrack", selectObj); 
             },    
 
             // Special "permanent" HILITE of selected tracks
@@ -182,8 +175,10 @@ along waypoint file loaded from url
             tracksHilite: function(layerid, tiledata) {
                 // by now for 1 feature only
                 // var map = this.map; 
+                var scope = this;
 
                 // MB-Function for trackContent: 
+
                 // 1. Create trackEndMarkers-layer
                 function showTrackNodes(layerid, trackInfo) {
                     // layer of nodes symbols with text in HALO
@@ -262,7 +257,7 @@ along waypoint file loaded from url
                     
                     var trackInfo =  this.trackFeatureContent(tileInfo);
 
-                    if (!trackInfo) return;  console.log("HILITE track(s)INFO", trackInfo); 
+                    if (!trackInfo) return;  
 
                     // APPLY start- and stop-nodes of track
                     showTrackNodes(layerid, trackInfo); 
@@ -270,17 +265,17 @@ along waypoint file loaded from url
                     // APPLY trace-overlay (gestrichelt) on track
                     showTrackLine(layerid, trackInfo); 
 
-                    // Triggersignal to enable ZOOM & SYNC with sibling elements (fi. with menues )
-                    if (trackInfo.id)  {
-                        // console.log("tracksHilite: featureselected", trackInfo) ; 
-                        // this.featureselected = trackInfo;
+                    // Refresh Triggersignal to enable ZOOM & SYNC with sibling elements (fi. with menues )
+                    if (trackInfo.html)  {
+                        // console.log("HILITE track(s)INFO", trackInfo); 
+                        // scope.popupOnMap(trackInfo);
                     }    
 
                     // StartZoom with ZoomEnd-Action
 
                     // Define action to run AFTER startZoom (info-popup)
                     map.once('moveend', function() {
-                        this.popupOnMap(trackInfo.html);
+                        this.popupOnMap(trackInfo);
                     }.bind(this));
                 
                     // Start ZOOM to "complete track"" 
@@ -289,7 +284,6 @@ along waypoint file loaded from url
                             padding: 40
                         });
                     } 
-                    
                     return trackInfo; 
                 }, 100);    	
             },

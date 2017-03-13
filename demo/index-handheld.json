@@ -15,12 +15,29 @@
         "symbol": "toilet-11"
     },
     {
+        "title": "log-2010",
+        "key": "2010",
+        "type": "gpx",
+        "url": "http://iimaps.de/data/gps/kamerun/gpx/Current.gpx",
+        "query": {
+            "geometry": "Track",
+            "time": "2010"
+        },
+        "device": {
+            "name": "foretrex",
+            "user" : "wgp",
+            "dop" : 10
+        },
+        "symbol": "toilet-11"
+    },
+    {
         "title": "jana-horn",
         "key": "horn",
         "type": "gpx",
         "url": "http://iimaps.de/data/gps/kamerun/gpx/Current.gpx",
         "query": {
-            "geometry": "Track"
+            "geometry": "Track",
+            "time": "2011"
         },
         "device": {
             "name": "foretrex",

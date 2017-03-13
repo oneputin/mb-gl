@@ -138,10 +138,10 @@
         // of an app-specific mapbox-popup 
         // default: html at map-center  
         popupOnMap: function(popupcontent) {
-            if (!this.map) return;
+            // if (!this.map) return;
             // console.log("popupcontent",popupcontent);
-            var html, lnglat, openflag,
-                map = this.map; // popup = this.popup;
+            var html, lnglat, bbox, openflag;
+            // map = this.map; // popup = this.popup;
 
             // Prepare a "" Info-Popup
             // to be closed on x-mark
@@ -155,6 +155,7 @@
             if (typeof popupcontent == "object") {
                 html = popupcontent.html;
                 lnglat = popupcontent.lnglat;
+                bbox = popupcontent.bbox;
                 openflag = popupcontent.open;
             } else if (popupcontent) {  // String
                 html = popupcontent;
@@ -165,7 +166,13 @@
             }
 
             // Refresh popup contet and location
-            if (!lnglat) lnglat = map.getCenter();
+            if (!lnglat) {
+                if (bbox) { // console.log("bbox", bbox);
+                    lnglat = bbox.bounds.getCenter();
+                } else { // console.log("map.getCenter", map.getCenter);
+                    lnglat = map.getCenter();
+                }
+            }
 
             if (!this.popup.isOpen()) this.popup.addTo(map);
 

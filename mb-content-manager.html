@@ -1,6 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="mb-map-behavior.html">
-<!--<link rel="import" href="mb-content-behavior.html">-->
 <link rel="import" href="mb-app-behavior.html">
 
 <!--
@@ -60,7 +59,7 @@ Refresh mb-contentbox features
                 },
 
                 // IN: events added to "content"
-                eventfunctions : {
+                mapevents : {
                     type : Object 
                 },
 
@@ -124,7 +123,7 @@ Refresh mb-contentbox features
                     // Verify weather (at least some) new content is "well defined"
                     if (map) {
                         // 
-                        var mapevents = this.eventfunctions;
+                        var mapevents = this.mapevents;
 
                         contentbox = this._mbContentVerify(contentbox, map, mapevents);
                     }
@@ -162,6 +161,7 @@ Refresh mb-contentbox features
                 var featureHilite = mapevents.hilite, 
                     featureSelect = mapevents.select; 
 
+                // Fallback-functions
                 if (!featureHilite) {
                     featureHilite = function(e, layerid){
                         // console.log("HILITE", e,layerid)
@@ -204,9 +204,8 @@ Refresh mb-contentbox features
                     return layerObject.layer;
                 }
 
-                // 
+                // Apply prepared 
                 function rawEvents(layername) {
-
 
                     function hiliter(e) {
                         featureHilite(e, layername, scope);
@@ -450,7 +449,7 @@ Refresh mb-contentbox features
                     var mapLayer = map.getLayer(layername); // reference layer
 
                     if (!mapLayer && layerObject.templates) {
-                        console.log("ADD contentLayers for " + layername, layerObject);
+                        // console.log("ADD contentLayers for " + layername, layerObject);
                         
                         layerObject.templates.forEach(function(template) {
 
