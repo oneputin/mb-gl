@@ -139,12 +139,10 @@ along waypoint file loaded from url
                         var features = map.queryRenderedFeatures(e.point, {
                             layers: [layerid]
                         });
-
                         if (!features || !features.length) return;   console.log("featuresSelected", features); 
 
                         // SYNC with content-browser after selection in map   
-                        scope.featureselected = scope.tileFeatureContent(features, layerid);
-
+                        scope.featureselected = scope.tileFeatureContent(features[0], layerid);
                     };
 
                 //     
