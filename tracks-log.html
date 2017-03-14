@@ -97,7 +97,7 @@ presentation of track-properties (= selected feature)
                 trackselected: {
                     type: Object,
                     notify: true,
-                    observer: 'checkoutFeature'
+                    observer: 'checkoutTrack'
                 },
 
                 log: {
@@ -147,7 +147,7 @@ presentation of track-properties (= selected feature)
              * Select/Hilite a feature on the map  (fi. zoomTo)
              * @param      {object}  f       { mapbox-jeature }
              */
-            checkoutFeature: function(f) { 
+            checkoutTrack: function(f) { 
                 if (!f || !f.feature) return;    
                 // console.log("Checkout Feature to LOG: " + f.id , f);
                 
@@ -173,7 +173,7 @@ presentation of track-properties (= selected feature)
                     elevs = pp["coordZ"];
                 
                 if (!times || !elevs || !times.length || !elevs.length) {
-                    console.log("No elevation data for track-chart", pp); 
+                    console.log("No data for elevetion-chart in ", pp); 
                     this.zitems = [];
                     this.zdata = [];
                     return;

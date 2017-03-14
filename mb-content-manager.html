@@ -459,7 +459,7 @@ Refresh mb-contentbox features
                                 if ((template.type == "symbol") && template.source) { 
                                     var mapHasSource = map.getSource(template.source);                                        
                                     if (!mapHasSource) {   
-                                        console.log("+PLACEHOLDER-source for " + template.id, template.source); 
+                                        // console.log("+PLACEHOLDER-source for " + template.id, template.source); 
                                         map.addSource(template.source, {
                                             "type": "geojson",
                                             "data": { "type": "Point", "coordinates": [0, 0] }
