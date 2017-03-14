@@ -177,11 +177,11 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
 
             _updateDataset: function(dataset){
                 dataset = dataset.value; 
-                console.log("_updateDataset", dataset); 
+                // console.log("_updateDataset", dataset); 
                 var meta = this.datasetmeta;
                 
                 function readableItem(title) {
-                    var newtitle = title.replace("-","_"); console.log(title, newtitle); 
+                    var newtitle = title.replace(/-/g,""); // console.log("COMPARE",title, newtitle); 
                     return newtitle;
                 }
 
@@ -213,7 +213,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                         this._dataset = null; 
                     }
                 } else this._dataset = null;
-                console.log("_updateDataset as _dataset", this._dataset);
+                // console.log("_updateDataset as _dataset", this._dataset);
             }
 
         })

@@ -603,7 +603,7 @@ along waypoint file loaded from url
                     if (mba.trackctrl == true) {
                         mba.trackctrl = false;
                         mba._trackctrl = true;
-                        console.log("PAUSED data-animation"); // , mba.trackctrl, mba._trackctrl);
+                        //console.log("PAUSED data-animation"); // , mba.trackctrl, mba._trackctrl);
                     }
                     //}, 200);
                 } else {
@@ -614,7 +614,7 @@ along waypoint file loaded from url
                             // Resume animation, if it was stopped by PAUSER temporarily (_trackCtrl = true)  
                             mba.trackctrl = true;
                             mba._trackctrl = false;
-                            console.log("RESUMED data-animation");
+                            // console.log("RESUMED data-animation");
                         }
                     }, 100);
                 }
@@ -1114,9 +1114,9 @@ along waypoint file loaded from url
                 // at animationstep 'counter'  
                 //  - passed as parameter directly  or   
                 //  - recalculated from 'mapTime' 
-
+                var trackname = "tracks";
                 // Themes to be updated during animation 
-                var trackThemes = ['tracks']; // ['tracks', 'traces']
+                var trackThemes = [trackname]; // ['tracks', 'traces']
 
                 var timer = mba.timer,
                     map = mba.map;
@@ -1193,7 +1193,7 @@ along waypoint file loaded from url
                             bearing: trackBearing
                         });
 
-                        map.setLayoutProperty('tracks-select', 'icon-rotate', 0);
+                        map.setLayoutProperty(trackname+'-select', 'icon-rotate', 0);
 
                     } else {
                         // REFRESH trackdata to trigger INFO-element(-popup) 
@@ -1205,7 +1205,7 @@ along waypoint file loaded from url
                             "trackobj": trackObj
                         }
 
-                        map.setLayoutProperty('tracks-select', 'icon-rotate', trackBearing);
+                        map.setLayoutProperty(trackname+'-select', 'icon-rotate', trackBearing);
                     }
 
                     // optional specAction if selectedObj "arrived"  
@@ -1280,7 +1280,6 @@ along waypoint file loaded from url
                         // Find the legLocation of animation-counter 
                         var legLocation = getLegLocation(counter, route) ; 
 
-                        
                         // Update dynamic features according to its location on the route
                         if (legLocation) {
 
@@ -2213,6 +2212,7 @@ along waypoint file loaded from url
             //   - primarely at "mapTime" (FIRST) 
             //   - or for (combined with) "routeFilter" (SECOND) 
             _animationMapRefresh: function(mapTime, syncflag, routeFilter) {
+                
                 var stopDelay = 2000, // time to let last situation "visible" before reset 
                     trackname = "tracks",
                     tracklayer = map.getLayer(trackname); 
@@ -2225,6 +2225,7 @@ along waypoint file loaded from url
                     var trackContent = mba._animationbox[trackname]; 
 
                     mba.trackctrl = false;
+
                     mba.trackalignmap = false;
                     // trackFilter = null; 
 

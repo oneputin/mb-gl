@@ -182,9 +182,9 @@ the map-ctrls can be placed as map-overlay or anywhere else
             },
 
             changeMapStyle: function(mapstyle){
-                if (this.map) {  // console.log("CHANGE mapstyle", mapstyle);
+                if (map) {  // console.log("CHANGE mapstyle", mapstyle);
                     map.on('data', this.onStyleChange);
-                    this.map.setStyle(mapstyle);
+                    map.setStyle(mapstyle);
                 }    
             },
 
@@ -259,7 +259,7 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
                     if (!mapstyleurl) {
                         return;
-                    }   return;   
+                    }   // return;   
 
                     // Compare style of mb-map-api with style-ctrl-parameters (id and url) of map-element
                     // - inform app about id of actual api-mapstyle
