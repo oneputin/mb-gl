@@ -198,10 +198,12 @@ along waypoint file loaded from url
                     type: Object,
                     value: {}
                 },
+
                 routes : {
                     type: Object,
                     value: {}
                 },
+                
                 traces: {
                     type: Object,
                     value: {}
@@ -546,7 +548,6 @@ along waypoint file loaded from url
                         // console.log("_animationMapSetup START with", contentbox) ;
                         this.routeActivate(contentbox); // "visible", startid); 
                     }
-
 
                 }, debounceTime);
             },
@@ -2473,7 +2474,7 @@ along waypoint file loaded from url
             trackRoutesZoomTo: function(routeFeatures, routeid, filter, msg) {
                 if (!msg) msg = "Route-Feature-Zoom.";
                
-                var bboxFilter = null; 
+                var bboxFilter = null, routeContent; 
 
                 if (!routeFeatures) {
 
@@ -2487,7 +2488,9 @@ along waypoint file loaded from url
     
                     if (routeid) {
                         bboxFilter = ["in", "routeid", routeid];
-                        routeFeatures = this._trackRouteGetSrcFeatures(routeid);
+                        routeContent = this._animationbox.routes,
+                        routeFeatures = this.getSourceIdFeature(routeid, routeContent);
+                        // routeFeatures = this._trackRouteGetSrcFeatures(routeid, contentlayer);
                     }   // console.log("ZWI of "+ routeid, bboxFilter, routeFeatures);
 
                     // B. Zoom to features in actual viewframe
@@ -2509,10 +2512,8 @@ along waypoint file loaded from url
                 
             },
 
-            /**
+            /*
              *  ??? 
-             *
-             */
             _trackRouteGetSrcFeatures: function(routeid) {
                 var routesrc = this._animationbox.routes.srcdata,
                     rrall = [];
@@ -2536,6 +2537,7 @@ along waypoint file loaded from url
                 // console.log("_trackRouteGetSrcFeatures. queried raw routeData for id=" + routeid, rr);
                 return rr;
             },
+            */
 
             // Generic function to filter on contentSrcFeatures
             _contentGetSrcFeatures: function(boxcontent, query) {
@@ -2691,11 +2693,11 @@ along waypoint file loaded from url
                 this.trackObjHilite(features[0]); 
             },    
 
-            // SET global ctrl-variables 
+            // Show global mapPopup 
             trackObjHilite: function(feature) {
                 // Update GLOBAL objects
                 mba._trackObj = feature;
-                mba._trackId = mba._trackObj.properties.id;
+                mba._trackId = feature.properties.id;
 
                 // temporary debug function 
                 function toHtml(obj, title) {

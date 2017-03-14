@@ -41,7 +41,7 @@ Refresh mb-contentbox features
 
                 // OUT: (linear) List of (basic) mapcontent-features from 1(optionally more) layer(s)
                 // fi. to be used for external selection
-                featuresused: {
+                dataset: {
                     type: Array,
                     notify: true
                 },
@@ -83,7 +83,7 @@ Refresh mb-contentbox features
 
             observers: [
                 'mbContentApply(contentbox.*, "CONTENTBOX")',
-                'contentFeaturesToList(contentfeatures.*)'
+                'contentToDataset(contentfeatures.*)'
             ],
 
 
@@ -605,31 +605,35 @@ Refresh mb-contentbox features
             /**
              * Create a linear LIST(array) of all features  
              * of the mapcontent-layer (marked with flag 'usefeatures' if more layers) 
-             * and supply as notify-parameter 'featuresused'
+             * and supply as notify-parameter 'dataset'
              */
-            contentFeaturesToList: function(contentfeatures, keys) {
+            contentToDataset: function(contentfeatures, keys) {
                 if (contentfeatures.path == 'contentfeatures') contentfeatures = contentfeatures.value;
                 if (!contentfeatures || !Object.keys(contentfeatures).length) return;
                 
                 if (!keys) keys = Object.keys(contentfeatures);
+                console.log("START contentToDataset :", keys, contentfeatures);
                 
                 // Select features from layer with basefeatures only !! 
 
-                var obj, featuresused = [];
+                var obj, usedkeys=[], dataset = [];
 
                 keys.forEach(function(lname) {
                     obj = contentfeatures[lname];
-                    // add features to featuresused if layer is "marked with 'usefeatures' " 
-                    // or if only one layer exists in contentfeatures  
-                    if ((keys.length == 1) || obj.usefeatures) { // 
+                    // add features to dataset 
+                    //  - if layer is "marked with 'usefeatures' "  or
+                    //  - if only one layer exists in contentfeatures  
+                    if ((keys.length == 1) || obj.usefeatures) { //
+                        usedkeys.push(lname); 
                         obj.features.forEach(function(item) {
-                            featuresused.push(item);
+                            dataset.push(item);
                         })
                     } 
                 });
 
-                this.featuresused = featuresused; // NOTIFIES  !!
-                // console.log("GOT contentFeaturesToList :", layernames, featuresused);
+                this.dataset = [];
+                this.dataset = dataset; // NOTIFIES  !!
+                console.log("OK contentToDataset :", usedkeys, dataset);
             },
 
         })

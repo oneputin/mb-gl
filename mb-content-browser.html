@@ -63,7 +63,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                     id="menu2"
                     allandnone="true"
                     menulabel="[[datasetlabel]]"
-                    menuitems="[[dataset]]"
+                    menuitems="[[_dataset]]"
                     selectitem="{{selectitem}}">
                 </dynamic-menu>
             </div>
@@ -111,8 +111,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
 
                 // dataset used to create menu2 
                 dataset: {
-                    type: Array,
-                    notify: true
+                    type: Array   //, notify: true
                 },
 
                 datasetlabel : {
@@ -140,7 +139,8 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
             },
 
             observers: [
-                '_updateBrowser(metadataset.*)'
+                '_updateMeta(metadataset.*)',
+                '_updateDataset(dataset.*)'      
             ],
 
             /**
@@ -163,7 +163,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                 // console.log("SelectItem, id=" + obj.id, obj);
             },
 
-            _updateBrowser: function(meta){
+            _updateMeta: function(meta){
                 // SWITCH into WAIT mode of submenu
                 this.dataset = [{
                     title: "please wait"
@@ -173,6 +173,47 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                 if (meta["datasetlabel"]) {
                     this.datasetlabel = meta["datasetlabel"];
                 } 
+            },
+
+            _updateDataset: function(dataset){
+                dataset = dataset.value; 
+                console.log("_updateDataset", dataset); 
+                var meta = this.datasetmeta;
+                
+                function readableItem(title) {
+                    var newtitle = title.replace("-","_"); console.log(title, newtitle); 
+                    return newtitle;
+                }
+
+                function enhanceMenu(dataset, enhance) {
+                    var dset = [];
+                    dataset.forEach(function(d) {
+                        if (!d.title) d.title = d.id;
+                        d.title = readableItem(d.title); 
+                        dset.push(d);
+                    })
+                    if (enhance) {
+                        dset.push({
+                            id: "all",
+                            title: "Select all"
+                        });
+                        dset.push({
+                            id: "clear",
+                            title: "Clear all"
+                        });
+                    }
+                    return dset; 
+                };
+
+                if (dataset && dataset.length) {
+                    if (dataset.length > 1) {
+                        console.log("multiplicity"); 
+                        this._dataset = enhanceMenu(dataset, this.selectenhance);
+                    } else {
+                        this._dataset = null; 
+                    }
+                } else this._dataset = null;
+                console.log("_updateDataset as _dataset", this._dataset);
             }
 
         })

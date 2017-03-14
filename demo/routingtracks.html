@@ -248,7 +248,6 @@
                     trackctrl="{{trackctrl}}" 
 
                     routeselected="{{datasetitem}}" 
-
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]">
                 </routing-api>
@@ -268,7 +267,6 @@
             </template>    
 
             <!-- C. DATAFLOW INTERFACE -->
-            <!-- datasetlabel="[[datasetlabel]]" -->
             <mb-content-browser 
                 indexurl="[[indexurl]]" 
                 metadatasetslabel="[[metadatasetslabel]]" 
@@ -295,7 +293,7 @@
                 contentbox="{{contentbox}}" 
                 mapevents = "[[mapevents]]"
                 contentfeatures="{{contentfeatures}}"
-                featuresused = "{{dataset}}"
+                dataset = "{{dataset}}"
                 featureselected="{{datasetitem}}">
             </mb-content-manager>
 

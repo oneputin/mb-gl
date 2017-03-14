@@ -149,16 +149,17 @@ component loads tracking data
                     } 
                 }
 
+                // 
+                let datasetlabel="Animated Tracks";
+                if (logmode)  datasetlabel="Static TrackLogs";
+                srcmeta['datasetlabel'] = datasetlabel;
+ 
                 // console.log("tracksetmeta. AFTER", srcmeta);
                 // this.tracksetmeta = srcmeta;
- 
                 // trigger one of alternative import-elements
                 if (srctype == "xml")  this.srcmetax = srcmeta;
                 else                   this.srcmetad = srcmeta;
 
-                let datasetlabel="Animated Tracks";
-                if (logmode)  datasetlabel="Static TrackLogs";
-                srcmeta['datasetlabel'] = datasetlabel;
             },
 
             /** Return loaded tracks into alternative  
