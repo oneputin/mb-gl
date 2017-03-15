@@ -671,12 +671,12 @@ along waypoint file loaded from url
                 return layerObj;
             },
 
-            /*_idFilterCreate: function(routeids) {
+            /*_timerFilterCreate: function(routeids) {
             },*/
 
 
             /**
-             * SETUP the app for a given filterkey  
+             * SETUP the app for a given route (or specialAction filterkey)  
              * ( key = routeid or specific ctrl)
              */ 
             routeActivate: function(filterkey) {
@@ -688,7 +688,7 @@ along waypoint file loaded from url
 
                 // if (!map.getLayer(dataName)) return;
 
-                var routeid, routeFilter, timerEntry, msg = "Apply route";
+                var routeid, timerFilter, timerEntry, msg = "Apply route";
 
                 // A. Eval filterkey-cases  
 
@@ -721,37 +721,43 @@ along waypoint file loaded from url
                     }
                 } 
 
-                // 
+                // B. SPATIAL and TEMPORAL ZOOM 
+                //    + create Visibility-Filter of tracks
+
                 if (routeid) {
 
-                    // console.log(msg+":", routeid); 
-
+                    // B.1 Refresh app-timer (triggers sync with related elements, fi. timer-ctrl) 
                     timerEntry = timer.routes[routeid];
                     this.trackTimerRefresh(timerEntry);
 
-                    // B. SPATIAL ZOOM and Visibility-Filter of tracks
+                    // B.2 Zoom to "original/complete" route-geometry
                     this.trackRoutesZoomTo(null, routeid);
 
+                    // B.3 Filter all trackpoint-related map-layers 
                     this.trackFilterApply(routeid);
 
-                    routeFilter = this._idFilterCreate(routeid);
+                    // B.4 Prepare syncFilter
+                    timerFilter = this._timerFilterCreate(routeid);
+
+                    console.log("ROUTE Activate", routeid, filterkey, timerEntry, timerFilter); 
 
                 } else {
-                    //if (!timerEntry) { // 
+
                     this.trackRoutesZoomTo();
 
                     this.trackFilterApply("");
 
-                    routeFilter = this._idFilterCreate("all");
-                }   // console.log("routeActivate: Setup route(s) ["+routeid+"]", routeFilter); 
+                    timerFilter = this._timerFilterCreate("all");
+                }   // console.log("routeActivate: Setup route(s) ["+routeid+"]", timerFilter); 
 
-                // C. Apply routeFilter 
+                // C. Apply timerFilter 
 
-                // C1. Store/replace in timer-object
-                if (!routeFilter) {
+                // C1. Store/replace syncFilter in timer-object
+
+                if (!timerFilter) {
                     delete timer.filter;
                 } else {
-                    timer.filter = routeFilter;
+                    timer.filter = timerFilter;
                 }   
                 // console.log("Setup animation for ["+ routeid+"], VON " + this.logTime(timer.start, "h"), "BIS " + this.logTime(timer.stop, "h")); 
                 // console.log("with filter, timer:", timerEntry, timer ); 
@@ -760,7 +766,7 @@ along waypoint file loaded from url
         
                 if (map) {
 
-                    var animationFeatures = this._animationMapRefresh(null, null,  routeFilter);
+                    var animationFeatures = this._animationMapRefresh(null, null,  timerFilter);
 
                     // TEMPORAL Location at START of selected routes
                     if (animationFeatures.routes) {   //console.log("running the FIRST animation-step");
@@ -2244,6 +2250,7 @@ along waypoint file loaded from url
                         msg = "STOPPED. No data after: " + msgTime; // console.log(msg, trackObjs);
                     mba.popupOnMap(msg);
                 }
+
                 // TIME filter: applied, on every maptime ??
                 function applyTrackFilter(mapTime, routeFilter, flag) {
                     if (!flag) flag = "noflag";
@@ -2280,11 +2287,13 @@ along waypoint file loaded from url
                     if (tracklayer) {
 
                         trackContent = mba._animationbox[trackname]; 
+
                         // A.2 Query the trackObj - src-Features 
                         if (trackContent) {  // console.log("trackContent",trackContent);
                             trackObjs = mba._contentGetSrcFeatures(trackContent, {
                                 filter: trackFilter
                             });
+                        
                         } else {  //  (? present at actual mapextent ?) 
                             trackObjs = this.map.querySourceFeatures(trackname, {
                                 filter: trackFilter
@@ -2375,17 +2384,17 @@ along waypoint file loaded from url
                 //console.log("REFRESH: ids of trackFeatures", trackids);
 
                 // 4. 
-                var syncFilter = mba._idFilterCreate(trackids);
+                var timerFilter = mba._timerFilterCreate(trackids);
                 // console.log("syncFilter", syncFilter);
 
-                var srcFeatures = mba.syncFilterApply(syncFilter); // ,trackids);
+                var srcFeatures = mba._timerFilterSync(timerFilter); // ,trackids);
                 //console.log("REFRESH: srcFeatures with", routeFilter, srcFeatures);
 
                 return srcFeatures;
             },
 
             // Create an idFilter for idname (routeid) with 'routeids'
-            _idFilterCreate: function(routeids, idname) {
+            _timerFilterCreate: function(routeids, idname) {
                 if (!idname) idname = "routeid";
 
                 var idFilter = ["in", idname];
@@ -2418,7 +2427,7 @@ along waypoint file loaded from url
             },
 
             // SYNC animationLayers "related" with tracker of active route
-            syncFilterApply: function(syncFilter) { // , boxflag) {
+            _timerFilterSync: function(syncFilter) { // , boxflag) {
                 // Filter  mapFeatures "related"  to animating trackers (identified by routeid-property) 
                 // or none 
                 // or all 
@@ -2457,7 +2466,7 @@ along waypoint file loaded from url
                 
                 if (srcKeys.length) {
                     
-                    // console.log("syncFilterApply with ["+syncFilter+"]", srcFeatures); 
+                    // console.log("_timerFilterSync with ["+syncFilter+"]", srcFeatures); 
 
                     srcNames.forEach(function(sname) {
                         if (mba.map.getLayer(sname)) {
@@ -2473,6 +2482,8 @@ along waypoint file loaded from url
             // Zoom to bbox of all raw route-nodes (waypoints, trackpoints) 
             // 
             trackRoutesZoomTo: function(routeFeatures, routeid, filter, msg) {
+                console.log("trackRoutesZoomTo. DEBUG", routeFeatures, routeid, filter, msg); 
+
                 if (!msg) msg = "Route-Feature-Zoom.";
                
                 var bboxFilter = null, routeContent; 
@@ -2508,9 +2519,8 @@ along waypoint file loaded from url
                     return;
                 }   
                
-                var ffbounds = mba.setFeatureBounds(routeFeatures, mba.map);
+                var ffbounds = mba.setFeatureBounds(routeFeatures);
                 // console.log(msg, ffbounds, routeFeatures); // .getCoordinates());
-                
             },
 
             /*

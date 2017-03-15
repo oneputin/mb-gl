@@ -107,24 +107,25 @@ Refresh mb-contentbox features
              * Create/Update all mbContent items 
              * related to newly selected contentbox
              */
-            mbContentApply: function(contentbox, reason) { console.log("mbContentApply for reason=", reason, contentbox); 
+            mbContentApply: function(contentbox, reason) { // console.log("mbContentApply. For ", reason, contentbox); 
                 if (!contentbox || !Object.keys(contentbox).length) return;
 
                 var scope = this,
                     map = scope.map; 
                 // if (contentbox.path == 'contentbox') {
                 this.debounce("apply", function(){
-                    // 
-                    var cp = contentbox.path; // console.log("mbContentApply-1 ", contentbox, cp);
+                    
+                    // POLYMER-feature 
+                    var cp = contentbox.path; 
                     if (cp && (cp.indexOf('contentbox') >= 0)) { 
                         contentbox = contentbox.base;
                     } 
 
-                    // Verify weather (at least some) new content is "well defined"
+                    // Verify contentbox
+                    // Check weather new content(at least some) is "well defined"
                     if (map) {
                         // 
                         var mapevents = this.mapevents;
-
                         contentbox = this._mbContentVerify(contentbox, map, mapevents);
                     }
 
@@ -133,19 +134,18 @@ Refresh mb-contentbox features
                         return; 
                     }
 
-                    // REMOVE all old content (this._contentbox) 
-                    // from app (from actual map) if new is prepared 
+                    // REMOVE actual contentbox (this._contentbox) 
+                    // from from actual map 
                     this._mbContentCheckOut();
 
-                    // Memorize push back as 
+                    // Memorize new contentbox 
                     this._contentbox = contentbox;   
 
-                    // INSERT new content into map
-                    // console.log("Apply content for reason", reason, contentbox);
-                    let checkedcontent = this._mbContentCheckIn(contentbox, reason); 
+                    // INSERT new contentbox into map
+                    let contentfeatures = this._mbContentCheckIn(contentbox, reason); 
 
-                    this.contentfeatures = checkedcontent;
-                    // **********************************
+                    this.contentfeatures = contentfeatures;
+                    // ************************************
                 }, 100);        
             },    
 
@@ -587,7 +587,7 @@ Refresh mb-contentbox features
 
             // Remove previous Content-layers
             _mbContentCheckOut: function() { 
-                if (this._contentbox) console.log("MAP-OUT-features", this._contentbox); 
+                if (this._contentbox) console.log("MAP-OUT-usercontent", this._contentbox); 
                 var oldcontent = this._mbContentChecker(this._contentbox, "OUT", map) ;    
                 // if (oldcontent)  console.log("MAP-OUT-features", oldcontent);
             },
@@ -596,7 +596,7 @@ Refresh mb-contentbox features
             _mbContentCheckIn: function(contentbox, reason) { 
                 var mapcontent = this._mbContentChecker(contentbox, "IN", map) ;
                 if (mapcontent)  {
-                    console.log("MAP-IN-features for", reason, mapcontent);
+                    console.log("MAP-IN-usercontent for", reason, contentbox, mapcontent);
                     return mapcontent; 
                 }    
             },
@@ -610,30 +610,31 @@ Refresh mb-contentbox features
             contentToDataset: function(contentfeatures, keys) {
                 if (contentfeatures.path == 'contentfeatures') contentfeatures = contentfeatures.value;
                 if (!contentfeatures || !Object.keys(contentfeatures).length) return;
-                
                 if (!keys) keys = Object.keys(contentfeatures);
-                console.log("START contentToDataset :", keys, contentfeatures);
                 
                 // Select features from layer with basefeatures only !! 
 
-                var obj, usedkeys=[], dataset = [];
+                var obj, usedkey, dataset = [];
 
-                keys.forEach(function(lname) {
+                keys.some(function(lname) {
                     obj = contentfeatures[lname];
                     // add features to dataset 
                     //  - if layer is "marked with 'usefeatures' "  or
                     //  - if only one layer exists in contentfeatures  
                     if ((keys.length == 1) || obj.usefeatures) { //
-                        usedkeys.push(lname); 
+                        usedkey = lname; 
                         obj.features.forEach(function(item) {
                             dataset.push(item);
                         })
+                        return true;
                     } 
                 });
 
-                this.dataset = [];
-                this.dataset = dataset; // NOTIFIES  !!
-                console.log("OK contentToDataset :", usedkeys, dataset);
+                if (usedkey) {
+                    this.dataset = [];
+                    this.dataset = dataset; // NOTIFIES  !!
+                    console.log("GUI-IN dataset from content ["+usedkey+"]", dataset);
+                }
             },
 
         })

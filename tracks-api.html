@@ -49,7 +49,7 @@ along waypoint file loaded from url
 
                 trackselected: {
                     type: Object,
-                    observer: 'processTrack'
+                    observer: 'trackActivate'
                 },
 
                 mapevents: {
@@ -143,11 +143,11 @@ along waypoint file loaded from url
                 this.mapevents = mapevents; 
             },
 
-            // (Basic) Action(s) to run after track is selected
+            // (Basic) MAP-Action(s) to run after a trackContent is selected
             // further actions may run in separate elements
-            processTrack: function(f) { 
+            trackActivate: function(f) { 
                 if (!f || !f.feature ) return;    
-                
+
                 var flayer = f.layer,
                     feature = f.feature,
                     fprops = feature.properties,
@@ -156,14 +156,15 @@ along waypoint file loaded from url
                 // console.log("processing TRACK:", feature, flayer); 
 
                 if (fprops.coordTimes && map)  {  // SPEC-CASE : trackLogs 
+                    console.log("TRACK HILITE", f);
 
                     selectObj = this.tracksHilite(flayer, [feature]); 
 
                 } else {
+                    console.log("TRACK ZOOM", f);
                     
                     selectObj = this.setFeatureBounds([feature]);
                 }     
-
                 // console.log("processedTrack", selectObj); 
             },    
 
