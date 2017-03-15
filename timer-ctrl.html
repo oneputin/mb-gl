@@ -91,7 +91,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             properties: {
 
                 /**
-                 * OUT: Communicates requested animation-ctrl-action to outside
+                 * IN/OUT: Communicates requested animation-ctrl-action to outside
                  */
                 timerctrl: {
                     type: Boolean,
@@ -310,9 +310,8 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
              * @param      {string}  timerctrl  The timerctrl
              * @param      {<type>}  trackmode  The trackmode
              */
-            syncCtrls: function(timerctrl, _timerctrl) {
-                // console.log("timerctrl", timerctrl, _timerctrl);    
-
+            syncCtrls: function(timerctrl) { // , _timerctrl) {
+                console.log("timerctrl", timerctrl, this._timerctrl);    
                 if (timerctrl) {
 
                     if (timerctrl == "reset") {
@@ -322,9 +321,10 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     } else if (timerctrl == true) {   // dedicated START-action  
                         // 
                         this._icon2 = "ctrl:pause";
+                        
                         this.$.logtime.classList.add('running'); // console.log("this.$.logtime", this.$.logtime); 
                     
-                    } else {    // new time 
+                    } else {    // simply a new time 
                         // NO style change 
 
                     }
@@ -332,6 +332,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 } else {
                     
                     this._icon2 = "ctrl:play-arrow";
+                    
                     this.$.logtime.classList.remove('running');
                 }
             },
