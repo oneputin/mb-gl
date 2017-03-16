@@ -69,9 +69,14 @@
             *  ??? 
             *
             */
-        getSourceIdFeature: function(fid, contentlayer) {
+        getSourceIdFeature: function(idfilter, contentlayer) {
+            console.log("CHECK", idfilter, contentlayer);
             var contentsrc = contentlayer.srcdata,
+                contentid = contentlayer.id,
+                idname = idfilter.slice(1,2),
+                idvalue = idfilter.slice(2,3),
                 rrall = [];
+
             if (typeof contentsrc == "string") {
                 var contentsrcdata = map.getSource(contentsrc); console.log("layersrc:", contentsrc, contentsrcdata);
                 if (contentsrcdata) {
@@ -81,18 +86,30 @@
                 rrall = contentsrc.features;
             }
             
-            if (!fid || !rrall.length) {
-                console.log("NO Features queried for id=" + fid);
+            if (!idvalue || !rrall.length) {
+                console.log("NO Features queried for filter=" + idfilter, rrall);
                 return rrall;
             }   // console.log("routeSrces for [" +fid+ "] from 'contentbox'", contentbox, rrall); 
 
+            // A. 
             var rr = [];
+            console.log("content-applyFilter:", idname, idvalue, rrall);
+
             rrall.forEach(function(r) {
-                if (r.id == fid) {
+                if (r[idname] == idvalue) {
                     rr.push(r);
                 }
             });
-            // console.log("_trackRouteGetSrcFeatures. queried raw routeData for id=" + fid, rr);
+            console.log("queried raw routeData for filter=",idfilter, idname,idvalue,rr);
+    
+            // B. Zoom to features in actual viewframe
+            if (map && (!rr.length)) {
+                rr = map.querySourceFeatures(contentid, {
+                    filter: idfilter
+                });
+                console.log("mapbox-applyFilter:", idfilter, rr, rrall);
+            }
+            
             return rr;
         },
 

@@ -994,7 +994,7 @@ along waypoint file loaded from url
 
                 this._trackctrl = ctrlflag; 
 
-                console.log("trackCtrlAction for", trackctrl, ctrlflag); 
+                console.log("trackCtrlAction ["+trackctrl+"]:", ctrlflag); 
 
                 this.trackStepCtrl(ctrlflag);
                 // ******************************
@@ -1217,15 +1217,15 @@ along waypoint file loaded from url
                 } 
 
                 // Update routing-themes from new sources
-                function refreshTrackedSrcData(themes, data) {
+                function refreshTrackedSrcData(themes, modeldata) {
                     if (typeof themes == 'string') themes = [themes];
 
-                    var src, layerdata;
+                    var contentsrc, contentdata;
                     themes.forEach(function(theme){
-                        src = mba.map.getSource(theme);
-                        layerdata = data[theme];
-                        if (src && layerdata.features.length) {
-                            src.setData(layerdata);
+                        contentsrc = map.getSource(theme);
+                        contentdata = modeldata[theme];
+                        if (contentsrc && contentdata.features.length) {
+                            contentsrc.setData(contentdata);
                         }   
                     })
                 } 
@@ -1346,7 +1346,7 @@ along waypoint file loaded from url
                 // C. APPLY the updated sources of the animation-layers      
                 //    if trackers on one or more routes were updated          
                 if (located.length) {                    
-                    refreshTrackedSrcData(trackThemes);
+                    refreshTrackedSrcData(trackThemes, modeldata);
                 }
 
                 // D. If flag "mapMsg" was created  
@@ -2505,32 +2505,25 @@ along waypoint file loaded from url
 
                 if (!msg) msg = "Route-Feature-Zoom.";
                
-                var bboxFilter = null, routeContent; 
+                var idFilter = null, routeContent; 
 
                 if (!routeFeatures) {
 
                     // option: extract routeid from 'filter'-parameter
                     if (filter && !routeid) {
-                        bboxFilter = filter;
+                        idFilter = filter;
                         routeid = filter.slice(2, 3); // ???? 
+                    } else if (routeid) {
+                        idFilter = ["in", "routeid", routeid];
                     }
-                    // A. Zoom to a routes "Rawfeatures"
+
+                    // A. Select a route from "Rawfeatures"
                     // SPECIAL
-    
-                    if (routeid) {
-                        bboxFilter = ["in", "routeid", routeid];
+                    if (idFilter) {
                         routeContent = this._animationbox.routes,
-                        routeFeatures = this.getSourceIdFeature(routeid, routeContent);
+                        routeFeatures = this.getSourceIdFeature(idFilter, routeContent);
                         // routeFeatures = this._trackRouteGetSrcFeatures(routeid, contentlayer);
                     }   // console.log("ZWI of "+ routeid, bboxFilter, routeFeatures);
-
-                    // B. Zoom to features in actual viewframe
-                    if (map && (!routeFeatures || !routeFeatures.length)) {
-                        console.log(msg + " applyFilter:", bboxFilter);
-                        routeFeatures = this.map.querySourceFeatures("routes", {
-                            filter: bboxFilter
-                        });
-                    }
                 }
 
                 if (!routeFeatures || !routeFeatures.length) {

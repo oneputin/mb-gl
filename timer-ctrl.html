@@ -76,7 +76,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             
             <paper-icon-button id="speedup" icon="{{_icon_add}}" title="speedup" class="trans"></paper-icon-button>
             
-            <paper-slider id="slider" value="{{sliderval}}" immediate-value="{{_slidertime}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="slideChangeHandler"></paper-slider>
+            <paper-slider id="slider" value="{{sliderval}}" immediate-value="{{_sliderval}}" min="{{start}}" max='{{stop}}' on-immediate-value-change="timeSliderChanged"></paper-slider>
            
             <paper-material elevation="2" id="logtime" on-click="timerlog">{{logtime}}</paper-material>
 
@@ -102,7 +102,6 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 /**
                  * IN: - To reset ctrl-interval after changing timer.start and/or timer.stop 
                  *     - to sync slider with timer.time
-                 *
                  */
                 timer: {
                     type: Object
@@ -125,12 +124,11 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     type: Number
                 },
 
-
-                _slidertime: {
+                _sliderval: {
                     type: Number
                 },
 
-                _timerctrl: {
+                timerstatus: {
                     type: Boolean,
                     value: false
                 },
@@ -184,35 +182,33 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             },
 
             observers: [
-                'syncCtrls(timerctrl)',
-                'syncSlider(timer.time)',
-                'resetSlider(timer.stop, timer.start)' 
+                'syncCtrlIcons(timerctrl)',
+                'setSliderValue(timer.time)',
+                'setSliderBounds(timer.stop, timer.start)' 
             ],
 
             ready: function() {
-                this.setupAnimationCtrls();
+                this.setupTimerCtrls();
             },
 
             // 
-            toggleCtrl: function() {
-                // console.log("toogle timerCtrls ", this.timerctrl, this._timerctrl);  
-                if ((this.timerctrl == true)||(this._timerctrl == true)) {
+            toggleTimerCtrls: function() {
+                // console.log("Toogle ctrlFlags ", this.timerctrl, this.timerstatus);  
+                if ((this.timerctrl == true)||(this.timerstatus == true)) {
                     this.timerctrl = false;
-                    this._timerctrl = false
-                } else if ((this.timerctrl == false)||(this._timerctrl == false)) {
+                    this.timerstatus = false
+                } else if ((this.timerctrl == false)||(this.timerstatus == false)) {
                     this.timerctrl = true;
-                    this._timerctrl = true
+                    this.timerstatus = true
                 } 
-                // console.log("AFTER toggleCtrl ", this.timerctrl, this._timerctrl)
+                // console.log("Toggled CtrlFlags", this.timerctrl);
             },
 
 
             /**
-             * Initialize/Reset the (animation-)progress-slider for imported data
-             * 
              * @param      {number}  stoptime  The stoptime
              */
-            resetSlider: function(stoptime, starttime) { // , stoptime) {
+            setSliderBounds: function(stoptime, starttime) { // , stoptime) {
                 // console.log("RESET timer-ctrl for", starttime, stoptime, this.timer)
                 this.timerctrl = false;  
 
@@ -242,9 +238,9 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
                     console.log("Setup timeSlider for start-/stop-times ", starttime, stoptime, "SLIDERLENGTH = "+this.stop+"["+this.sliderunit+"]");
 
-                    this.syncSlider(starttime); 
+                    this.setSliderValue(starttime); 
 
-                    // this.slideChangeHandler(starttime); 
+                    // this.timeSliderChanged(starttime); 
 
                 }, 100);    
             },
@@ -254,11 +250,12 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
              *
              * @param      {number}  tracktime  The time from FIRST start of animation-app
              */
-            syncSlider: function(tracktime) {
+            setSliderValue: function(tracktime) {
                 if (!tracktime) return;
 
                 // A. Sync the slider with externally modified tracktime 
                 var sliderval = tracktime - this.starttime; 
+
                 if ((sliderval < 0)||(sliderval > this.stop)) {
                     console.log("sliderval outside: ", tracktime, this.starttime, sliderval); 
                     this.timerctrl = false; 
@@ -279,71 +276,66 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             },
 
             /**
-             * Communicate changes of slidertime triggered by useraction on slider 
-             */
-            slideChangeHandler: function() {
-
-                var slidertime = this._slidertime;
-                if (this.sliderunit == "min") slidertime = slidertime / 60;
-                if (this.sliderunit == "sec") slidertime = slidertime / 3600;
-
-                var tracktime = this.starttime + slidertime;
-
-                // NOTIFY new time to routing-api 
-                this.timerctrl = tracktime;  
-                // ************************
-                // B.2 Sync the tracktime in LogBox
-                var logtime = this.logTime(tracktime, "h", "<br>");
-                this.$.logtime.innerHTML = logtime;
-
-                // STOP animation, if it was running  
-                if (this._timerctrl)  {  // console.log("STOPPED at time: " + this._slidertime + "["+this.sliderunit+"]", "tracktime: "+this.logTime(tracktime, "h"));
-                    this.timerctrl = false;  
-                    this._timerctrl = false; 
-                }    
-            },
-
-            /**
              * Sync ctrl-button-icons after remote "timerctrl"-change  
              * ctrls must reflect the handling options during actual status 
              *
              * @param      {string}  timerctrl  The timerctrl
              * @param      {<type>}  trackmode  The trackmode
              */
-            syncCtrls: function(timerctrl) { // , _timerctrl) {
-                console.log("timerctrl", timerctrl, this._timerctrl);    
-                if (timerctrl) {
+            syncCtrlIcons: function(timerctrl) { 
+                //console.log("Sync ctrlIcon ["+timerctrl+"]");    
+                if (timerctrl == false) {
 
-                    if (timerctrl == "reset") {
-                        // 
-                        this._icon2 = "ctrl:play-arrow";
-
-                    } else if (timerctrl == true) {   // dedicated START-action  
-                        // 
-                        this._icon2 = "ctrl:pause";
-                        
-                        this.$.logtime.classList.add('running'); // console.log("this.$.logtime", this.$.logtime); 
-                    
-                    } else {    // simply a new time 
-                        // NO style change 
-
-                    }
-
-                } else {
-                    
                     this._icon2 = "ctrl:play-arrow";
-                    
                     this.$.logtime.classList.remove('running');
+
+                } else if (timerctrl == "reset") {
+                
+                    this._icon2 = "ctrl:play-arrow";
+
+                } else if (timerctrl == true) {   // dedicated START-action  
+                
+                    this._icon2 = "ctrl:pause";
+                    this.$.logtime.classList.add('running'); // console.log("this.$.logtime", this.$.logtime); 
+                    
+                } else {    // simply a new time 
+                            // NO style change 
                 }
             },
 
+            /**
+             * Communicate(Notify) changes of slidertime 
+             * triggered by useraction on slider 
+             */
+            timeSliderChanged: function() {
 
+                // Evaluate 
+                var slidertime = this._sliderval;
+                if (this.sliderunit == "min") slidertime = slidertime / 60;
+                if (this.sliderunit == "sec") slidertime = slidertime / 3600;
+                var tracktime = this.starttime + slidertime;
+                var logtime = this.logTime(tracktime, "h", "<br>");
+
+                // STOP animation, if it was running  
+                if (this.timerstatus)  {  // console.log("STOPPED at slidertime/tracktime: " + slidertime + "["+this.sliderunit+"]", "tracktime: "+this.logTime(tracktime, "h", "."););
+                    this.timerctrl = false;  
+                    this.timerstatus = false; 
+                }    
+
+                // NOTIFY new time (fi. to routing-api) 
+                this.timerctrl = tracktime;  
+                // ************************
+
+                // SYNC the tracktime in LogBox
+                this.$.logtime.innerHTML = logtime;
+
+            },
 
             /**
              * Setup the Ctrl-actions (start/stop, restart, time-slider) 
              * changing status-properties 
              */
-            setupAnimationCtrls: function() {
+            setupTimerCtrls: function() {
 
                 this.val = 1;
 
@@ -365,25 +357,25 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 if (ctrl2) {  
                     // Start/Stop-Button-event
                     ctrl2.addEventListener('click', function() {
-                        this.toggleCtrl();
+                        this.toggleTimerCtrls();
                     }.bind(this));
                 }
 
                 if (ctrl3a) {  // Used to externally Ctrl the animation frequency  
                     // Slowdown animation-frequency
                     ctrl3a.addEventListener('click', function() {
-                        this.set("timer.ctrl", "down"); // console.log("slowdown");
+                        this.set("timer.ctrl", "down"); console.log("slowdown");
                         //this.set("timer.ctrl", "none");
                     }.bind(this));
 
                     // Speedup animation-frequency
                     ctrl3b.addEventListener('click', function() {
-                        this.set("timer.ctrl", "up"); //console.log("speedup");
+                        this.set("timer.ctrl", "up"); console.log("speedup");
                         //this.set("timer.ctrl", "none");
                     }.bind(this));
                 }
 
-                // QuickKeyCtrls 
+                // Manipulate slider with QickKeys (arrow-keys, space) ???
                 document.body.addEventListener('keydown', function(e) {
                     if (e.which === 32) { // space
                         console.log("Toggle start/stop")
@@ -405,8 +397,6 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                         e.preventDefault();
                     }
                 }, true);
-
-
 
             }
 
