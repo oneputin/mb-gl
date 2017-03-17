@@ -66,56 +66,62 @@
 
 
         /**
-            *  ??? 
-            *
-            */
-        getSourceIdFeature: function(idfilter, contentlayer) {
-            console.log("CHECK", idfilter, contentlayer);
+         *  filter some srcdata from a contentbox-layer
+         *
+         */
+        filterContentSources: function(contentlayer, idfilter) {
             var contentsrc = contentlayer.srcdata,
-                contentid = contentlayer.id,
-                idname = idfilter.slice(1,2),
-                idvalue = idfilter.slice(2,3),
-                rrall = [];
+                rrall = [], rr = [];
+            // console.log("filterContentSources. CHECK filter, layer, src", idfilter, contentlayer, contentsrc);
 
-            if (typeof contentsrc == "string") {
-                var contentsrcdata = map.getSource(contentsrc); console.log("layersrc:", contentsrc, contentsrcdata);
+            if (map && (typeof contentsrc == "string")) {    // map-source
+                // 
+                var contentsrcdata = map.getSource(contentsrc);  console.log("layersrc:", contentsrc, contentsrcdata);
                 if (contentsrcdata) {
                     rrall = contentsrcdata.features;  
                 }    
-            } else {
+            } 
+            if (!rrall.length) {                                // content-source
                 rrall = contentsrc.features;
-            }
+                // console.log("1", rrall);                 
+            } 
             
-            if (!idvalue || !rrall.length) {
-                console.log("NO Features queried for filter=" + idfilter, rrall);
-                return rrall;
-            }   // console.log("routeSrces for [" +fid+ "] from 'contentbox'", contentbox, rrall); 
+            if ((idfilter.length > 2)  && rrall.length) {
+                // FIRST: try to get raw sources from contentlayer 
+                var idname = idfilter.slice(1,2)[0],
+                    idvalue = idfilter.slice(2,3)[0];               
 
-            // A. 
-            var rr = [];
-            console.log("content-applyFilter:", idname, idvalue, rrall);
+                rrall.forEach(function(r) {
+                    // console.log("2", r, idname, idvalue);                 
+                    if (r[idname] == idvalue) {
+                        rr.push(r);
+                    }
+                });
+            }
+            // console.log("3", rr, rrall);                 
 
-            rrall.forEach(function(r) {
-                if (r[idname] == idvalue) {
-                    rr.push(r);
-                }
-            });
-            console.log("queried raw routeData for filter=",idfilter, idname,idvalue,rr);
-    
-            // B. Zoom to features in actual viewframe
-            if (map && (!rr.length)) {
-                rr = map.querySourceFeatures(contentid, {
+            if ((!rr.length) && map &&  map.getSource(contentlayer.id)) {
+                // ALTERNATIVELY. Get sources from mapLayer 
+                rr = map.querySourceFeatures(contentlayer.id, {
                     filter: idfilter
                 });
-                console.log("mapbox-applyFilter:", idfilter, rr, rrall);
-            }
-            
+                console.log("FILTERED tiled featuresources:", idfilter, rr);
+            } else if (rr.length) {
+                // console.log("FILTERED raw srcdata ", idfilter, rr); // , rrall);
+            } else {
+                console.log("NO Features queried for filter=", idfilter);
+                rr = rrall;
+            }   // console.log("routeSrces for [" +fid+ "] from 'contentbox'", contentbox, rrall); 
+
             return rr;
         },
 
 
-        // Get the geometry of sourceFeature "below" a tile-feature
-        getSourceFeature:  function (tileFeature, layerid) {
+        /** Get info about sourceFeature "below" a tile-feature
+         *   - the geometry 
+         *   - the identification used 
+         */  
+        getSourceFeatureInfo:  function (layerid, tileFeature) {
 
             var srcLayer = map.getLayer(layerid),
                 srcInfo = {}, keyname, keyvalue ; 
@@ -130,7 +136,6 @@
 
                 var theSource = map.getSource(srcLayer.source),
                     srcFeatures = theSource._data.features;
-                // console.log("DEBUG", tileFeature, keys, srcFeatures);
 
                 srcFeatures.some(function(f){
                     if (f.properties[keyname] == keyvalue) {   // console.log("DETECTED", f);
@@ -139,29 +144,29 @@
                         srcInfo.keyvalue = keyvalue;  
                         srcInfo.id = keyvalue;
                         return true;
-
                     }
                 });
+                console.log("getSourceFeatureInfo of", tileFeature, srcInfo);
             }
             return srcInfo; 
         }, 
 
-
+        // Append srcInfo to (tile)Feature.properties
         tileFeatureContent: function(tileFeature, layerid) {
             if (!map) return; 
             //if (!this.map) return; // not declared in behavior !! 
 
             // A. GENERIC: Get SOURCE-properties for identified feature !!!
-            var tileInfo = this.objectClone(tileFeature.properties);
+            var tileFeatureProperties = this.objectClone(tileFeature.properties);
 
             // B. GENERIC: SOURCE FEATURE (untiled)
-            var srcInfo = this.getSourceFeature(tileFeature, layerid);  // console.log("srcInfo", srcInfo);  
+            var srcInfo = this.getSourceFeatureInfo(layerid, tileFeature);  // console.log("srcInfo", srcInfo);  
 
             Object.keys(srcInfo).forEach(function(k){
-                tileInfo[k] = srcInfo[k];
-            }) 
+                tileFeatureProperties[k] = srcInfo[k];
+            }); 
 
-            return tileInfo;
+            return tileFeatureProperties;
         },     
 
         // Get Info about "complete track", not only features in actually "visible" tile(s)
@@ -209,6 +214,7 @@
             } else if (popupcontent) {  // String
                 html = popupcontent;
             }
+
             if (!popupcontent || !html || (openflag == false) || this.trackmapmode) {
                 this.popup.remove();
                 return;
@@ -223,11 +229,13 @@
                 }
             }
 
+
             if (!this.popup.isOpen()) this.popup.addTo(map);
 
             this.popup
                 .setLngLat(lnglat)
                 .setHTML(html);
+
         },
 
         /**

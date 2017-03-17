@@ -143,7 +143,8 @@
 
                     <!-- placed here to overlay the map -->
                     <tracks-log
-                        checked="[[elevationshow]]"
+                        disable = "[[userouting]]"
+                        checked = "[[elevationshow]]"
                         metadata="[[metadataset]]"
                         trackselected="[[datasetitem]]">
                     </tracks-log>    
@@ -175,7 +176,6 @@
                         trackdata = "{{trackdata}}">
                     </tracks-info>
                     -->
-
                     <template is="dom-if" if="{{userouting}}">
                         
                         <div class="ctrls-in-map">
@@ -187,7 +187,7 @@
 
                             <!-- ctrl of map-orientation -->
                             <mb-orientation-ctrl 
-                                trackmap="{{trackmap}}">
+                                trackmap="[[trackalignmap]]">
                             </mb-orientation-ctrl>
                             
                         </div>
@@ -227,16 +227,11 @@
 
             <template is="dom-if" if="{{userouting}}">
 
-                <timer-setup  
-                    timer="{{timer}}"
-                    starttimer="[[starttimer]]"
-                    metadataset="[[metadataset]]">
-                </timer-setup>
-
                 <routing-api 
+                    disable = "[[!userouting]]"
                     map="[[map]]" 
-
                     timer="{{timer}}"
+
                     trackctrl="{{trackctrl}}" 
                     
                     metadataset="[[metadataset]]"
@@ -245,24 +240,26 @@
                     mapcontentbox="[[contentfeatures]]"
 
                     routeselected="{{datasetitem}}" 
-
                     trackdata="{{trackdata}}"
                     trackinfo="[[trackinfo]]">
                 </routing-api>
+
+                <timer-setup  
+                    timer="{{timer}}"
+                    starttimer="[[starttimer]]"
+                    metadataset="[[metadataset]]">
+                </timer-setup>
                 
             </template>
 
-            <template is="dom-if" if="{{!userouting}}">
-
-                <tracks-api 
-                    metadata = "[[metadataset]]" 
-                    rawcontent = "[[rawcontent]]" 
-                    contentbox = "{{contentbox}}" 
-                    mapevents = "{{mapevents}}"
-                    trackselected="[[datasetitem]]">
-                </tracks-api>
-
-            </template>    
+            <tracks-api 
+                disable = "[[userouting]]"
+                metadata = "[[metadataset]]" 
+                rawcontent = "[[rawcontent]]" 
+                contentbox = "{{contentbox}}" 
+                mapevents = "{{mapevents}}"
+                trackselected="[[datasetitem]]">
+            </tracks-api>
 
             <!-- C. DATAFLOW INTERFACE -->
             <mb-content-browser 

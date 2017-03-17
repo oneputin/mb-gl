@@ -23,6 +23,11 @@ along waypoint file loaded from url
             is: 'tracks-api',
 
             properties: {
+                // disable events originating 
+                // from multipurpose content-browser
+                disable : {
+                    type: Boolean
+                },    
                 /**
                  * Container with metadata of primary dataset 
                  */
@@ -73,6 +78,7 @@ along waypoint file loaded from url
             }, 
 
             transfer: function(rawcontent) { // , metadata) {
+                if (this.disable) return;   
                 rawcontent = rawcontent.value; 
                 if (!rawcontent || !Object.keys(rawcontent).length) return; 
                 // console.log("SETUP contentbox from raw tracks.", rawcontent); 
@@ -146,7 +152,9 @@ along waypoint file loaded from url
             // (Basic) MAP-Action(s) to run after a trackContent is selected
             // further actions may run in separate elements
             trackActivate: function(f) { 
-                if (!f || !f.feature ) return;    
+                if (!f || !f.feature ) return;   
+                if (this.disable) return;   
+                console.log("TRACK ACTIVATE", f, this.disable);
 
                 var flayer = f.layer,
                     feature = f.feature,
@@ -326,10 +334,12 @@ along waypoint file loaded from url
                 }
 
                 // E. SPECIFIC: compile some parameters as HTML 
-                trackInfo.html = trackInfo.time +
-                    "<br>Length: " + trackInfo.length +
-                    "<br>Duration: " + trackInfo.duration +
-                    "<br>TP's: " + trackInfo.count;
+                trackInfo.html = "Track LOG <hr>"
+                    + trackInfo.time
+                    + "<br>Length: " + trackInfo.length
+                    + "<br>Duration: " + trackInfo.duration
+                    + "<br>[ " + trackInfo.von +" to " + trackInfo.bis + "]"
+                    + "<br>TP's: " + trackInfo.count;
 
                 return trackInfo;
             }

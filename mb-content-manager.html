@@ -399,15 +399,20 @@ Refresh mb-contentbox features
                         // Typische Nachbearbeitung
                         if (typeof id == "string") {
                             title = id.replace("ACTIVE LOG:", "");
-                            id = id.replace(/-/g, "_");
                         } else if (id) {
                             title = id.toString(); 
                         } else {
                             title = "F-" + i; 
                         }
 
-                        if (longtitle) title = layername + "_" + title;
                         title = title.replace(/ /g, "");
+
+                        // Ensure identical id at different places
+                        id = title.replace(/-/g, "_"); // id.replace
+                        f.properties.name = id;
+                        f.properties.id = id;
+
+                        if (longtitle) title = layername + "_" + title;
 
                         fitem = {
                             "layer": layername,
@@ -415,10 +420,11 @@ Refresh mb-contentbox features
                             "title": title,
                             "feature": f
                         };
+                        
                         flist.push(fitem);
                         i = i + 1; 
                     })
-
+                    console.log("FLIST", flist); 
                     return flist;
                 }
                 // 

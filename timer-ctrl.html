@@ -128,6 +128,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     type: Number
                 },
 
+                // 
                 timerstatus: {
                     type: Boolean,
                     value: false
@@ -160,6 +161,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                 /*checked: {
                     type: Boolean,
                     value: true,
+
                     observer: 'toggleVisibility'
                 },*/
             },
@@ -182,7 +184,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
             },
 
             observers: [
-                'syncCtrlIcons(timerctrl)',
+                'syncTimerStatus(timerctrl)',
                 'setSliderValue(timer.time)',
                 'setSliderBounds(timer.stop, timer.start)' 
             ],
@@ -193,13 +195,11 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             // 
             toggleTimerCtrls: function() {
-                // console.log("Toogle ctrlFlags ", this.timerctrl, this.timerstatus);  
-                if ((this.timerctrl == true)||(this.timerstatus == true)) {
-                    this.timerctrl = false;
-                    this.timerstatus = false
-                } else if ((this.timerctrl == false)||(this.timerstatus == false)) {
-                    this.timerctrl = true;
-                    this.timerstatus = true
+                console.log("Toogle ctrlFlags (ctrl, status)", this.timerctrl, this.timerstatus);  
+                if ((this.timerctrl == true) || (this.timerstatus == true)) {
+                    this.setCtrlStatus(false);
+                } else if ((this.timerctrl == false) || (this.timerstatus == false)) {
+                    this.setCtrlStatus(true);
                 } 
                 // console.log("Toggled CtrlFlags", this.timerctrl);
             },
@@ -216,33 +216,37 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     if (!stoptime) return;
 
                     // 1. GUESSS and set the startTime
+                    
                     if (!starttime) starttime = this.starttime;
                     if (!starttime) {
                         this.starttime = 0;
                         starttime = 0;
                     } else {
                         this.starttime = starttime;
-                    }   
-
-                    // this.set("time.time", starttime); 
+                    }   // this.set("time.time", starttime); 
 
                     // 2. SET the Slider-Boundaries for "relative routeTime" in "sliderunits" 
-
+                    
                     this.start = 0; // 
-
                     // Setup the "relative"" stop-time
                     var deltat = stoptime - starttime;
                     if (this.sliderunit == "min")       deltat = deltat * 60;
                     else if (this.sliderunit == "sec")  deltat = deltat * 3600;
                     this.stop  = Math.ceil(deltat);
+                    console.log("SETUP TimerCtrl. start-/stop-times: ", starttime, stoptime, "DELTA-T = "+this.stop+"["+this.sliderunit+"]");
 
-                    console.log("Setup timeSlider for start-/stop-times ", starttime, stoptime, "SLIDERLENGTH = "+this.stop+"["+this.sliderunit+"]");
-
+                    // 3. INIT/Trigger App-SYNC 
                     this.setSliderValue(starttime); 
-
-                    // this.timeSliderChanged(starttime); 
+                    this.timerctrl = starttime;  
+                    this.timerctrl = false;  
 
                 }, 100);    
+            },
+
+            // 
+            setCtrlStatus: function(flag) {
+               this.timerctrl = flag;
+               this.timerstatus = flag
             },
 
             /**
@@ -282,22 +286,25 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
              * @param      {string}  timerctrl  The timerctrl
              * @param      {<type>}  trackmode  The trackmode
              */
-            syncCtrlIcons: function(timerctrl) { 
+            syncTimerStatus: function(timerctrl) { 
                 //console.log("Sync ctrlIcon ["+timerctrl+"]");    
+                
                 if (timerctrl == false) {
-
+                    this.timerstatus = false;
                     this._icon2 = "ctrl:play-arrow";
                     this.$.logtime.classList.remove('running');
 
                 } else if (timerctrl == "reset") {
                 
+                    this.timerstatus = false;
                     this._icon2 = "ctrl:play-arrow";
 
                 } else if (timerctrl == true) {   // dedicated START-action  
                 
+                    this.timerstatus = true;
                     this._icon2 = "ctrl:pause";
                     this.$.logtime.classList.add('running'); // console.log("this.$.logtime", this.$.logtime); 
-                    
+                   
                 } else {    // simply a new time 
                             // NO style change 
                 }
@@ -318,8 +325,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
                 // STOP animation, if it was running  
                 if (this.timerstatus)  {  // console.log("STOPPED at slidertime/tracktime: " + slidertime + "["+this.sliderunit+"]", "tracktime: "+this.logTime(tracktime, "h", "."););
-                    this.timerctrl = false;  
-                    this.timerstatus = false; 
+                    this.setCtrlStatus(false);
                 }    
 
                 // NOTIFY new time (fi. to routing-api) 
@@ -397,7 +403,6 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                         e.preventDefault();
                     }
                 }, true);
-
             }
 
         });

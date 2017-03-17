@@ -117,6 +117,10 @@ presentation of track-properties (= selected feature)
                     observer: 'toString' 
                 },
 
+                disable: {
+                    type: Boolean,
+                },
+
                 checked: {
                     type: Boolean,
                     value: true,
@@ -148,6 +152,7 @@ presentation of track-properties (= selected feature)
              * @param      {object}  f       { mapbox-jeature }
              */
             checkoutTrack: function(f) { 
+                if (this.disable) return; 
                 if (!f || !f.feature) return;    
                 // console.log("Checkout Feature to LOG: " + f.id , f);
                 

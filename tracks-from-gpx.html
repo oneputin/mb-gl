@@ -224,7 +224,7 @@ Optional: create quick-preview-data
         },
 
         // Derive mb-content to view RAW trackdata 
-        createTrackLogs: function(trackdata, srcmeta) {
+        createTrackLogs: function(rawdata, srcmeta) {
 
             var trackLogObject;
 
@@ -244,6 +244,7 @@ Optional: create quick-preview-data
                     "srcdata": srcdata,
                     "raw": 1
                 };
+
                 return quickmap; 
             };
 
@@ -251,7 +252,8 @@ Optional: create quick-preview-data
             // with "short as possible" id-entification of features 
             var title; //  = srcmeta.key;
             if (!title) title = srcmeta.title;
-            trackLogObject = trackLogCreate(trackdata, title); 
+            
+            trackLogObject = trackLogCreate(rawdata, title); 
             
             // SUPPLY quickmap to viewing element 
             return trackLogObject;
@@ -260,6 +262,7 @@ Optional: create quick-preview-data
         },
 
         // Derive mb-content usable by (gia-)animatation-api 
+        // id of features = "coord-time"
         createTrackRoutes: function(rawdata, minTrackLength) {
             if (!minTrackLength) minTrackLength=5; 
             var scope = this,
@@ -305,6 +308,7 @@ Optional: create quick-preview-data
                         if (coords.length > minTrackLength) {
 
                             tt = tracktimes[j];
+
                             id = tt[0];
 
                             trackpoints = extractPnts(coords, tt);
@@ -326,6 +330,7 @@ Optional: create quick-preview-data
 
                     id = r.properties.time;
                     title = r.properties.name;
+
                     if (!title) title = id;
                     title = title.replace("ACTIVE LOG:", "");
 
