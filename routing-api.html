@@ -231,10 +231,12 @@ along waypoint file loaded from url
                 }
             }, 
 
-            // Specific app-sync-trigger after new routes are loded
+            // Specific initialization-(sync-)trigger 
+            // after new routeset was loded
             onRoutesLoad : function(contentbox){
                 // Check applicability
                 contentbox = contentbox.value; // Polymer !! 
+
                 var dataName = 'routes',
                     routesContent = contentbox[dataName];
                 if (!routesContent) return; 
@@ -242,7 +244,7 @@ along waypoint file loaded from url
                 
                 var scope = this;
 
-                // Detect "desired" route in map-Context
+                // "Detect desired" route in map-Context
                 function preAction(features){
 
                     function compareTrackTime(route, r) {
@@ -292,6 +294,7 @@ along waypoint file loaded from url
 
                 // Activate selected route in app
                 function reAction(route){
+
                     scope.routeseletedApply(route);
 
                     // var routeid; 
@@ -372,7 +375,7 @@ along waypoint file loaded from url
                 // A. Triggers "routeActivate" for routeid on the map 
                 this.routeid = id; 
 
-                // B. Triggers timer-ctrl-sync
+                // B. Triggers timer-resetbounds
                 if (props && (props.start || props.stop)) {
                     // console.log("ID,PROPS: routeselectedApply:", id, props);
                     this.set("timer.start", props.start);
@@ -380,11 +383,12 @@ along waypoint file loaded from url
                 }    
             },
 
-            // Prepare all map- and animationdata 
-            // required to view animated tracks on the map 
-            //  - if routedata changed
-            //  - if basic timescale of animation changed
-            // _animationSetup: function(routedata, map) {
+            /** Prepare all map- and animationdata 
+             *  required to view animated tracks on the map 
+             *  - if routedata changed
+             *  - if basic timescale of animation changed
+             *  _animationSetup: function(routedata, map) {
+             */
             _animationSetup: function(routedata, metadata, timer) { 
                 if (!timer) timer = this.timer;
                 // console.log("_animationSetup routedata/metadata/timer:", routedata, metadata, timer);
