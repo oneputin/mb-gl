@@ -1,6 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../kml-json/kml-json.html">
-<!-- <link rel="import" href="mb-map-behavior.html"> -->
 <link rel="import" href="mb-app-behavior.html">
 
 <!--
@@ -115,27 +114,29 @@ Optional: create quick-preview-data
         _createTrackData: function(rawdata, srcmeta, logmode) {
             this.debounce("track", function() {
                 if (!rawdata || !Object.keys(rawdata).length) return; 
+                console.log("GPX-data, rawTracks", rawdata); // return;
     
                 // 1. Simplify list of "simple" tracks 
-                var rawtracks = this._getRawData(rawdata);
-                // console.log("GPX-data, mode, flat tracks", rawdata, rawtracks);
+                var rawTracks = this._getFlatTrackset(rawdata);
+                console.log("GPX-data, flatTracks", rawTracks); // return;
 
                 // 2. 
                 if (logmode) { // derive features for mb-visualization of rawTracks
-                    // console.log("prepare quickmap of ", rawtracks);  
-                    var rawtracks = this.createTrackLogs(rawtracks, srcmeta);
-                    if (rawtracks) {  console.log("RAW track-data (gpx)", rawtracks);
-                        this.trackdata = rawtracks;
+                    // console.log("prepare quickmap of ", rawTracks);  
+                    var trackLogs = this.createTrackLogs(rawTracks, srcmeta);
+                    if (trackLogs) {  console.log("RAW track-data (gpx)", trackLogs);
+                        this.trackdata = trackLogs;
                     }    
 
                 } else {   // derive structures for mb-based animation of 'suitable' tracks
-                    // console.log("prepare routedata", rawtracks);  
-                    var trackroutes = this.createTrackRoutes(rawtracks); // .features);
-                    if (trackroutes.length) {  console.log("RAW route-data (gpx)",  trackroutes);
-                        // this.routedata = trackroutes;
-                        this.trackdata = trackroutes;
+                    // console.log("prepare trackSet from", rawTracks);  
+                    var trackSet = this.createTrackSet(rawTracks, srcmeta.minlength); // .features);
+                    if (trackSet.length) {  console.log("RAW route-data (gpx)",  trackSet);
+                        // this.trackSet = trackSet;
+                        this.trackdata = trackSet;
                     }    
                 }    
+
                 // ** !! ** 
                 this._rawdata = null; 
                 this._xmlurl = null;
@@ -143,11 +144,20 @@ Optional: create quick-preview-data
             }, 200);      
         },
 
-        // Derive "raw tracks" from GPX, KML 
-        _getRawData: function(rawdata) {
+        // Derive "raw tracks" from geoJson originating from GPX, KML 
+        _getFlatTrackset: function(rawdata) {
             if (!rawdata) return; 
-            // console.log("_getRawData: rawdata=", rawdata);
+            // console.log("_getFlatTrackset: rawdata=", rawdata);
 
+            // get color in hex-format
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
             var scope = this;
             var trackdata , mapboxlayer;
             
@@ -163,18 +173,20 @@ Optional: create quick-preview-data
                     starttime;
 
                 rawdata.forEach(function(f, i) {
+
+                    // All property-arrays are structured identical
                     coordinates = f.geometry.coordinates;
                     tracktimes = f.properties.coordTimes;
                     coordz = f.properties.coordZ;
-                    // console.log(i, f, coordinates, tracktimes, coordz); 
+                    // console.log(f.geometry.type, i, f); // coordinates, tracktimes, coordz); 
 
                     type = f.geometry.type;
                     if (type == "MultiLineString") {
 
                         coordinates.forEach(function(coords, j) {
 
+                            // All property-arrays are structured identical to coords-array (same j)
                             var cc = JSON.parse(JSON.stringify(coords)); 
-                            // property-arrays are structured identical to coords-array (same j)
                             var tt = JSON.parse(JSON.stringify(tracktimes[j])); 
                             var cz = JSON.parse(JSON.stringify(coordz[j]));  
 
@@ -191,7 +203,7 @@ Optional: create quick-preview-data
                                     "coordZ": cz,
                                     "name": tt[0],
                                     "time": tt[0],
-                                    "color": scope.getRandomColor()
+                                    "color": getRandomColor()
                                 }
                             };
 
@@ -202,7 +214,7 @@ Optional: create quick-preview-data
 
                         if (!starttime) starttime = tracktimes[0];
 
-                        f.properties.color = scope.getRandomColor();
+                        f.properties.color = getRandomColor();
 
                         segmentFeatures.push(f);
                     }
@@ -223,54 +235,54 @@ Optional: create quick-preview-data
             return trackdata;
         },
 
-        // Derive mb-content to view RAW trackdata 
+        // Combine rawdata and metadata into contentObj 
+        // (with mb-preview-properties) 
         createTrackLogs: function(rawdata, srcmeta) {
+            // Create geojson-object for quickview of raw trackdata 
+            // with "short as possible" id-entification of features 
 
-            var trackLogObject;
+            function trackLogCreate(srcdata, title) {
+                
+                var logId = srcdata.time;
 
-            function trackLogCreate(srcdata, title, prefix) {
-
-                if (!title) title = srcdata.time;
-               
-                var mapid = title,
-                    quickmap = {};
-    
-                quickmap[mapid] = {
+                if(!logId) title;
+                if(!logId) logId = srcdata.id;
+                if(!logId) logId = srcdata.name;
+                
+                var trackLog = {};
+                trackLog[logId] = {
                     "layer": {
                         "type": "line",
-                        "id": mapid,
-                        "source": mapid
+                        "id": logId,
+                        "source": logId
                     },
                     "srcdata": srcdata,
                     "raw": 1
                 };
 
-                return quickmap; 
+                return trackLog; 
             };
 
-            // Create data for quickview of raw trackdata 
-            // with "short as possible" id-entification of features 
             var title; //  = srcmeta.key;
             if (!title) title = srcmeta.title;
             
-            trackLogObject = trackLogCreate(rawdata, title); 
+            var trackLogObject = trackLogCreate(rawdata, title); 
             
-            // SUPPLY quickmap to viewing element 
             return trackLogObject;
-            // if (trackLogObject) this.mapcontent = trackLogObject;
 
         },
 
-        // Derive mb-content usable by (gia-)animatation-api 
-        // id of features = "coord-time"
-        createTrackRoutes: function(rawdata, minTrackLength) {
-            if (!minTrackLength) minTrackLength=5; 
+        // Derive contentObj usable by animatation-api 
+        // !! id of features = "first coord-time"
+        createTrackSet: function(rawdata, minTrackLength) {
+            if (!minTrackLength) minTrackLength = 5; 
             var scope = this,
-                routedata = [],
+                trackSet = [],
                 trackpoints, tracktimes,
-                route, tt, coordinates,
+                track, tt, coordinates,
                 type, id, title;
 
+            // 
             function extractPnts(coords, tt) {
                 // tracktimes = r.properties.coordTimes;
                 var tp, trackpoints = [];
@@ -290,7 +302,7 @@ Optional: create quick-preview-data
 
                 return trackpoints;
             }
-
+            // 
             if (rawdata.features) rawdata = rawdata.features;
 
             rawdata.forEach(function(r, i) {
@@ -310,11 +322,12 @@ Optional: create quick-preview-data
                             tt = tracktimes[j];
 
                             id = tt[0];
+                            //*********
 
                             trackpoints = extractPnts(coords, tt);
                             // console.log(id, coords, trackpoints);
 
-                            route = {
+                            track = {
                                 "id": id,
                                 "title": id,
                                 "unitsystem": "metric",
@@ -322,17 +335,18 @@ Optional: create quick-preview-data
                                 "nodes": trackpoints
                             };
 
-                            routedata.push(route);
+                            trackSet.push(track);
                         }
                     })
 
                 } else { // other like LineString
 
                     id = r.properties.time;
-                    title = r.properties.name;
+                    // ********************
 
+                    title = r.properties.name;
+                    if (!title) title = r.properties.id;
                     if (!title) title = id;
-                    title = title.replace("ACTIVE LOG:", "");
 
                     if (coordinates.length > minTrackLength) {
 
@@ -346,13 +360,13 @@ Optional: create quick-preview-data
                             "nodes": trackpoints
                         };
 
-                        routedata.push(route);
+                        trackSet.push(route);
                     }
                 }
 
             })
 
-            return routedata;
+            return trackSet;
         }
 
     });

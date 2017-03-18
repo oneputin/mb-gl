@@ -2,7 +2,7 @@
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <link rel="import" href="routing-classes.html">
-<link rel="import" href="mb-app-behavior.html">
+<!--<link rel="import" href="mb-app-behavior.html">-->
 <link rel="import" href="mb-map-behavior.html">
 
 <!--
@@ -91,7 +91,7 @@ Optional: create quick-preview-data
         },
 
         behaviors: [
-            Mbb.AppBehavior,
+            // Mbb.AppBehavior,
             Mbb.MapBehavior
         ],
 
@@ -636,6 +636,16 @@ Optional: create quick-preview-data
         trackLogCreate: function(trackdata, srcmeta) {
             // console.log("CREATEPREVIEW", trackdata, srcmeta ); 
 
+            // get color in hex-format
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
             var scope = this;
             var prefix = ""; // tracks";
             var title = srcmeta.key;
@@ -669,11 +679,11 @@ Optional: create quick-preview-data
 
                     var properties = {
                             id: id,
-                            color: scope.getRandomColor(),
                             time: id, // nodes[0].ab
                             coordTimes: coordTimes,
                             coordZ: coordZ,
-                            coordV: coordV
+                            coordV: coordV,
+                            color: getRandomColor()
                         };
 
                     var trace = new TraceSource(coords, id, properties);

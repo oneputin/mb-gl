@@ -394,24 +394,27 @@ Refresh mb-contentbox features
 
                     layerData.features.forEach(function(f) {
                         id = f.id;
-                        if (typeof id == "undefined") id = f.properties.name;
                         if (typeof id == "undefined") id = f.properties.time;
+                        if (typeof id == "undefined") id = f.properties.name;
+
                         // Typische Nachbearbeitung
                         if (typeof id == "string") {
-                            title = id.replace("ACTIVE LOG:", "");
+                            id = id.replace("ACTIVE LOG:", "");
                         } else if (id) {
-                            title = id.toString(); 
+                            id = id.toString(); 
                         } else {
-                            title = "F-" + i; 
+                            id = "F-" + i; 
                         }
 
-                        title = title.replace(/ /g, "");
-
                         // Ensure identical id at different places
-                        id = title.replace(/-/g, "_"); // id.replace
+                        
+                        id = id.trim().replace(/ /g, ".");
+                        id = id.replace(/-/g, "_");
+
                         f.properties.name = id;
                         f.properties.id = id;
-
+                        
+                        title = id;
                         if (longtitle) title = layername + "_" + title;
 
                         fitem = {
@@ -423,8 +426,7 @@ Refresh mb-contentbox features
                         
                         flist.push(fitem);
                         i = i + 1; 
-                    })
-                    console.log("FLIST", flist); 
+                    })  // console.log("FLIST", flist); 
                     return flist;
                 }
                 // 
@@ -472,7 +474,6 @@ Refresh mb-contentbox features
                                         });
                                     }    
                                 }
-
                                 map.addLayer(template);
                             }
                         });
