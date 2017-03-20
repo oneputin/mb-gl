@@ -167,13 +167,15 @@ component loads tracking data
              */    
             _responseManager : function(trackdata) {
                 if (!trackdata) return; 
-                // console.log("checkOUT TrackData:", this.logmode,  trackdata); 
+                console.log("checkOUT TrackData:", this.logmode,  trackdata); 
                 if (this.logmode)   {
                     //console.log("_responseManager rawContent:", trackdata); 
                     this.rawcontent = trackdata;
+                    this.routecontent = {};
                 } else {
                     //console.log("_responseManager routeContent:", trackdata); 
                     this.routecontent = trackdata
+                    this.rawcontent = {}; 
                 }
                 this._trackdata = null;
             },

@@ -1,6 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../kml-json/kml-json.html">
-<link rel="import" href="mb-app-behavior.html">
+<link rel="import" href="tracks-behavior.html">
 
 <!--
 `tracks-from-gpx`
@@ -79,7 +79,7 @@ Optional: create quick-preview-data
         },
 
         behaviors: [
-            Mbb.AppBehavior
+            Mbb.TracksBehavior
         ],
 
         observers: [
@@ -114,11 +114,11 @@ Optional: create quick-preview-data
         _createTrackData: function(rawdata, srcmeta, logmode) {
             this.debounce("track", function() {
                 if (!rawdata || !Object.keys(rawdata).length) return; 
-                console.log("GPX-data, rawTracks", rawdata); // return;
+                //console.log("GPX-data, rawTracks", rawdata); // return;
     
                 // 1. Simplify list of "simple" tracks 
                 var rawTracks = this._getFlatTrackset(rawdata);
-                console.log("GPX-data, flatTracks", rawTracks); // return;
+                //console.log("GPX-data, flatTracks", rawTracks); // return;
 
                 // 2. 
                 if (logmode) { // derive features for mb-visualization of rawTracks
@@ -343,7 +343,8 @@ Optional: create quick-preview-data
 
                     id = r.properties.time;
                     // ********************
-
+                    id = id.replace(/-/g, "_");
+                    
                     title = r.properties.name;
                     if (!title) title = r.properties.id;
                     if (!title) title = id;
