@@ -65,7 +65,7 @@ Optional: create quick-preview-data
             /**
              * Flags required format of track-output
              */
-            logmode: {
+            routemode: {
                 type: Boolean,
                 value: false
             },
@@ -97,7 +97,7 @@ Optional: create quick-preview-data
 
         observers: [
             '_triggerQuery(srcmeta.*)',
-            '_createTrackData(_rawdata, srcmeta, logmode, _masterdata)'
+            '_createTrackData(_rawdata, srcmeta, routemode, _masterdata)'
         ],
 
         attached: function() {
@@ -134,7 +134,7 @@ Optional: create quick-preview-data
         
         // Common SHELL for processing variants of pntdata 
         // Vomue, vendee 
-        _createTrackData: function(rawdata, srcmeta, logmode, masterdata) {
+        _createTrackData: function(rawdata, srcmeta, routemode, masterdata) {
             if (!rawdata || !Object.keys(rawdata).length) return; 
             // console.log(srcmeta, "RAW-data:", rawdata, "MASTER-data", masterdata); // return; 
 
@@ -155,7 +155,8 @@ Optional: create quick-preview-data
 
                 if (tablemode.indexOf("vomue") > 0) {            
 
-                    if (!logmode) minTrackLength = srcmeta.minTrackLength;
+                    if (routemode) minTrackLength = srcmeta.minTrackLength;
+                    
                     rawtracks = this.rawTracksDevice(rawdata, tablemode, minTrackLength);  // console.log("Raw GPSTracks. ", rawtracks); 
             
                 } else if (tablemode.indexOf("vendee") > 0) {    
@@ -168,22 +169,22 @@ Optional: create quick-preview-data
                 if (!rawtracks) {
                     console.log("BREAK. Selected dataset cannot be analysed!!", srcmeta);
                     return;
-                }      
+                }   // console.log("TRACK Logs (from TPs):", this.rawtracks);  
+                    
 
                 // 3. Create DERIVATES  of rawTracks 
 
-                if (logmode) {   // 3.1 derive features for mb-visualization of rawTracks
-
-                    this.trackdata = this.trackLogCreate(rawtracks, srcmeta);
-                    
-                    // console.log("TRACK Logs (from TPs):", this.rawtracks);  
-                    
-                } else {    // 3.2 derive structures for mb-based animation of 'suitable' tracks
+                if (routemode) {  // 3.1 derive structures for mb-based animation of 'suitable' tracks
 
                     var trackdata = this.trackDataCreate(rawtracks, masterdata, srcmeta); 
                     if (trackdata) {    // console.log("RAW TRACK data (from TPs) :", routedata);  
                         this.trackdata = trackdata;
                     } 
+
+                } else {          // 3.2 derive features for mb-visualization of rawTracks
+
+                    this.trackdata = this.trackLogCreate(rawtracks, srcmeta);                   
+
                 }
             }, 500); 
 

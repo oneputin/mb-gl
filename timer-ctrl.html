@@ -195,7 +195,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
 
             // 
             toggleTimerCtrls: function() {
-                console.log("Toogle ctrlFlags (ctrl, status)", this.timerctrl, this.timerstatus);  
+                // console.log("Toogle ctrlFlags (ctrl, status)", this.timerctrl, this.timerstatus);  
                 if ((this.timerctrl == true) || (this.timerstatus == true)) {
                     this.setCtrlStatus(false);
                 } else if ((this.timerctrl == false) || (this.timerstatus == false)) {
@@ -233,7 +233,7 @@ some ctrls (back,forward...) and "slider" are "redundant and should be used excl
                     if (this.sliderunit == "min")       deltat = deltat * 60;
                     else if (this.sliderunit == "sec")  deltat = deltat * 3600;
                     this.stop  = Math.ceil(deltat);
-                    console.log("SETUP TimerCtrl. start-/stop-times: ", starttime, stoptime, "DELTA-T = "+this.stop+"["+this.sliderunit+"]");
+                    // console.log("SETUP TimerCtrl. start-/stop-times: ", starttime, stoptime, "DELTA-T = "+this.stop+"["+this.sliderunit+"]");
 
                     // 3. INIT/Trigger App-SYNC 
                     this.setSliderValue(starttime); 

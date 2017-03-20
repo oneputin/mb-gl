@@ -12,7 +12,7 @@ component loads tracking data
     - raw handheld (gps as gpx)
     - tabular handheld export (gps as csv)
     - tabular database export (vendee-tables)
-- into different app-formats
+- into different app-formats, = F(routemode)
     - 'log-formats' (map-lines, z-diagram, listing) 
     - 'trackdata-templates' (as required by routing-api)
 
@@ -37,13 +37,13 @@ component loads tracking data
     <!-- IF's to alternatively formatted srces -->
     <tracks-from-pnts 
         srcmeta="[[srcmetad]]"        
-        logmode="[[logmode]]"
+        routemode="[[routemode]]"
         trackdata="{{_trackdata}}">
     </tracks-from-pnts>    
 
     <tracks-from-gpx 
         srcmeta="[[srcmetax]]"
-        logmode="[[logmode]]"
+        routemode="[[routemode]]"
         trackdata="{{_trackdata}}">
     </tracks-from-gpx>    
 
@@ -59,32 +59,21 @@ component loads tracking data
             properties: {
 
                 // OUT: TRACKS as static log conternt
-                rawcontent: {
+                trackdata: {
                     type: Object,
                     notify: true
                 },
 
-                // OUT: Tracks as animatable content 
-                routecontent: {
-                    type: Object,
-                    notify: true
+                routemode: {
+                    type: Boolean
                 },
 
                 /** metadata describing trackdata to load
                  *  
                  */
                 tracksetmeta: {
-                    type: Object
-                    // notify: true
-                },
-
-                /** toggles preprocessing and out-format of rawdata
-                 * - true: log-trace
-                 * - false: animatable track
-                 */
-                logmode: {
-                    type: Boolean,
-                    value: true
+                    type: Object,
+                    notify: true
                 },
 
                 // raw data imported from different  
@@ -98,7 +87,7 @@ component loads tracking data
             ],
 
             observers: [
-                '_requestManager(tracksetmeta.*, logmode)',
+                '_requestManager(tracksetmeta.*, routemode)',
                 '_responseManager(_trackdata)'
             ],
 
@@ -108,58 +97,54 @@ component loads tracking data
 
 
             /** Prepares import of trackdata
-             *  from alternative low-level import-components (evaluates metadata)  
+             *  - from alternative low-level import-components (evaluates metadata)  
+             *  - with structures dependent on routemode
              */
-            _requestManager: function(srcmeta, logmode) {
-                if (srcmeta.path == 'tracksetmeta') srcmeta = srcmeta.value;
-                // console.log("tracksetmeta. RAW=", srcmeta, logmode);
+            _requestManager: function(srcmeta, routemode) {
+                this.debounce("request", function() {  //console.log(srcmeta, routemode);
+                    if (srcmeta.path == 'tracksetmeta') srcmeta = srcmeta.value;
 
-                var srcurl = srcmeta.url,      // 
-                    srctype = srcmeta.type,    // 
-                    srctitle = srcmeta.title;  // 
+                    var srcurl = srcmeta.url,      // 
+                        srctype = srcmeta.type,    // 
+                        srctitle = srcmeta.title;  // 
 
-                // Check some url - conditions ???
-                if (!srcurl) {
-                    return;
-                } 
-
-                if (this.tracksetmeta && (srcurl != this.tracksetmeta.url)) {
-                    //this.routecontent = [];
-                    //this.rawcontent = [];
-                    srctitle = this.tracksetmeta.title;
-                } 
-
-                // Extend metadata with Query/Format - parameters
-                if ((srctype == "kml") || (srctype == "gpx")) {
-
-                    srctype = "xml"; 
-                    srcmeta.xmlquery = {};
-                   
-                    if (srctype == "gpx") {
-                        // ALWAYS extract only tracks (neither waypoints or routes)
-                        srcmeta.xmlquery = {
-                            "tags": "Track",
-                            "structure": "doc"
-                        };                    
+                    // Check some url - conditions ???
+                    if (!srcurl) {
+                        return;
                     } 
 
-                    // OPTIONAL: JOIN with user-defined query-expressions  
-                    if (srcmeta.query) {  
-                        srcmeta.xmlquery = Object.assign(srcmeta.xmlquery, srcmeta.query);
+                    if (this.tracksetmeta && (srcurl != this.tracksetmeta.url)) {
+                        //this.routecontent = [];
+                        //this.trackdata = [];
+                        srctitle = this.tracksetmeta.title;
                     } 
-                }
 
-                // 
-                let datasetlabel="Animated Tracks";
-                if (logmode)  datasetlabel="Static TrackLogs";
-                srcmeta['datasetlabel'] = datasetlabel;
- 
-                // console.log("tracksetmeta. AFTER", srcmeta);
-                // this.tracksetmeta = srcmeta;
-                // trigger one of alternative import-elements
-                if (srctype == "xml")  this.srcmetax = srcmeta;
-                else                   this.srcmetad = srcmeta;
+                    // Extend metadata with Query/Format - parameters
+                    if ((srctype == "kml") || (srctype == "gpx")) {
 
+                        srctype = "xml"; 
+                        srcmeta.xmlquery = {};
+                    
+                        if (srctype == "gpx") {
+                            // ALWAYS extract only tracks (neither waypoints or routes)
+                            srcmeta.xmlquery = {
+                                "tags": "Track",
+                                "structure": "doc"
+                            };                    
+                        } 
+
+                        // OPTIONAL: JOIN with user-defined query-expressions  
+                        if (srcmeta.query) {  
+                            srcmeta.xmlquery = Object.assign(srcmeta.xmlquery, srcmeta.query);
+                        } 
+                    }
+
+                    // console.log("tracksetmeta. AFTER", srcmeta);
+                    // this.tracksetmeta = srcmeta;
+                    // trigger one of alternative import-elements
+                    if (srctype == "xml")  this.srcmetax = srcmeta;
+                    else                   this.srcmetad = srcmeta;
+                }, 100);     
             },
 
             /** Return loaded tracks into alternative  
@@ -167,28 +152,11 @@ component loads tracking data
              */    
             _responseManager : function(trackdata) {
                 if (!trackdata) return; 
-                console.log("checkOUT TrackData:", this.logmode,  trackdata); 
-                if (this.logmode)   {
-                    //console.log("_responseManager rawContent:", trackdata); 
-                    this.rawcontent = trackdata;
-                    this.routecontent = {};
-                } else {
-                    //console.log("_responseManager routeContent:", trackdata); 
-                    this.routecontent = trackdata
-                    this.rawcontent = {}; 
-                }
+                console.log("CHECKOUT TrackData:", trackdata); 
+                this.trackdata = trackdata;
                 this._trackdata = null;
             },
 
-            /** APP/GUI-elemente anpassen, 
-             *  die sich bei verschiedenartiger Nutzung derselben Grunddatan unterscheiden  
-             */
-            _uxManager : function(logmode) {
-                let datasetlabel="Animated Logs";
-                if (logmode == null) logmode = this.logmode; 
-                if (logmode)  datasetlabel="Static Logs";
-                this.tracksetmeta['datasetlabel'] = datasetlabel;
-            },
 
         });
     </script>

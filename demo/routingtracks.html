@@ -229,18 +229,19 @@
 
                 <routing-api 
                     disable = "[[!userouting]]"
-                    routedata = "[[routecontent]]" 
                     map = "[[map]]" 
                     timer = "{{timer}}"
+                    trackctrl = "{{trackctrl}}"      
 
-                    trackctrl = "{{trackctrl}}"                     
-                    metadataset = "[[metadataset]]"
+                    routedata = "[[trackdata]]" 
+
+                    metadataset = "{{metadataset}}"
                     contentbox = "{{contentbox}}"               
-                    mapcontentbox = "[[contentfeatures]]"
+                    mapcontent = "[[mapcontent]]"
 
-                    routeselected="{{datasetitem}}" 
-                    trackdata="{{trackdata}}"
-                    trackinfo="[[trackinfo]]">
+                    routeselected ="{{datasetitem}}"> 
+                    <!--trackdata = "{{trackdata}}"
+                    trackinfo = "[[trackinfo]]">-->
                 </routing-api>
 
                 <timer-setup  
@@ -253,11 +254,11 @@
 
             <tracks-api 
                 disable = "[[userouting]]"
-                metadata = "[[metadataset]]" 
-                rawcontent = "[[rawcontent]]" 
+                rawcontent = "[[trackdata]]" 
+                metadata = "{{metadataset}}" 
                 contentbox = "{{contentbox}}" 
                 mapevents = "{{mapevents}}"
-                trackselected="[[datasetitem]]">
+                trackselected = "{{datasetitem}}">
             </tracks-api>
 
             <!-- C. DATAFLOW INTERFACE -->
@@ -270,23 +271,23 @@
                 selectitem="{{datasetitem}}"> 
 
                 <tracks-load 
+                    routemode = "[[!logmode]]"
                     tracksetmeta = "{{metadataset}}" 
-                    logmode = "[[logmode]]" 
-                    rawcontent = "{{rawcontent}}" 
-                    routecontent = "{{routecontent}}"> 
+                    trackdata = "{{trackdata}}"> 
+                    <!--routecontent = "{{routecontent}}">--> 
                 </tracks-load>
 
             </mb-content-browser>
             <!-- selectprop="id"--> 
 
-            <!-- SYNC contentfeatures from contentbox -->
+            <!-- SYNC mapcontent from contentbox -->
             <!-- checked="[[logmode]]" --> 
             <mb-content-manager 
                 map = "[[map]]" 
                 mbid = "[[mbid]]" 
                 contentbox="{{contentbox}}" 
                 mapevents = "[[mapevents]]"
-                contentfeatures="{{contentfeatures}}"
+                mapcontent = "{{mapcontent}}"
                 dataset = "{{dataset}}"
                 featureselected="{{datasetitem}}">
             </mb-content-manager>

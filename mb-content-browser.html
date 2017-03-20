@@ -155,12 +155,13 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                 this.metadatasets = datasetmetas;  
             },
 
+            /**
+             *
+             */
             _checkObject: function(obj) {
-                if (!obj) {
-                    return; 
-                }
-                // let log = JSON.parse(obj); 
-                // console.log("SelectItem, id=" + obj.id, obj);
+                if (!obj)  return; 
+                //if (typeof obj == "string") obj = JSON.parse(obj); 
+                //console.log("SelectItem, id=" + obj.id, obj);
             },
 
             // refresh menu of metadata

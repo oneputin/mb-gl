@@ -33,8 +33,11 @@ along waypoint file loaded from url
                  */
                 metadata: {
                     type: Object,
-                    value: {}
+                    value: {},
+                    notify: true
                 },
+
+                datasetlabel: "Static TrackLogs",
 
                 /**
                  * Container for animation-data
@@ -54,7 +57,8 @@ along waypoint file loaded from url
 
                 trackselected: {
                     type: Object,
-                    observer: 'trackActivate'
+                    observer: 'trackActivate',
+                    notify: true
                 },
 
                 mapevents: {
@@ -81,16 +85,41 @@ along waypoint file loaded from url
                 if (this.disable) return;   
                 rawcontent = rawcontent.value; 
                 if (!rawcontent || !Object.keys(rawcontent).length) return; 
-                // console.log("SETUP contentbox from raw tracks.", rawcontent); 
+                console.log("SETUP contentbox from raw tracks.", rawcontent); 
+                this.set("metadata.datasetlabel",  this.datasetlabel);
+
                 this.contentbox = rawcontent;
             },
 
             setEventFunctions: function(){
                 var mapevents = {};
-                // Generic HILITE-function based on "id-Filter"	
+                var apiscope = this;
 
+                // Get content of tilefeature selected	
+                function srcFeatureContent(tileFeature, layerid, eventscope) {
+                    var tilecontent = eventscope.tileFeatureContent(tileFeature, layerid, "src"),
+                        selectid = tilecontent.id.replace(/-/g,'_'),
+                        allcontent = apiscope.contentbox[layerid].srcdata.features,
+                        srccontent; 
+                    // console.log("map-selected content", selectid, tilecontent, allcontent);
+                    allcontent.some(function(f){
+                        // console.log(f.properties.id==selectid); 
+                        if (f.properties.id == selectid) {
+                            srccontent = {
+                                layer: layerid,
+                                id : selectid,
+                                feature : f
+                            }    
+                            return false;
+                        }
+                    });
+                    return srccontent;
+                }
+
+                // Generic HILITE-function based on "id-Filter"	
                 mapevents["hilite"] = 
                     function featureHilite(e, layerid, scope) {
+                        // console.log("featureHilite in ", layerid, e.point); 
                         if (!map.getLayer(layerid)) return;
                         if (!map.getLayer(layerid + "-hover")) return;
 
@@ -121,7 +150,7 @@ along waypoint file loaded from url
                                 map.setFilter(hilayerid, hifilter);
                             }
 
-                        } else {  // remove HILITE filter                             
+                        } else {                // remove HILITE decoration
                             map.setFilter(layerid + "-hover", ["==", "name", ""]);
                         }
                     };
@@ -129,21 +158,25 @@ along waypoint file loaded from url
                 // Feature-Select 
                 //   supplies info-object of selected feature 
                 mapevents["select"] = 
-                    function featureSelect(e, layerid, scope) {
-                        // console.log("featureSelect in ", layerid); 
+
+                    function featureSelect(e, layerid, eventscope) {
+                        // console.log("featureSelect in ", layerid, e.point); 
 
                         if (!map.getLayer(layerid)) return;
                         // if (!map.getLayer(layerid + "-select")) return;
 
                         var features = map.queryRenderedFeatures(e.point, {
                             layers: [layerid]
-                        });
+                        }); // console.log("featureSelect. tiles", features); 
                         if (!features || !features.length) return;  
-                        // console.log("featuresSelected", features); 
 
                         // SYNC with content-browser after selection in map   
-                        var fcontent = scope.tileFeatureContent(features[0], layerid); // console.log("selectcontent", fcontent);
-                        scope.featureselected = fcontent;
+                        
+                        var srcContent = srcFeatureContent(features[0], layerid, eventscope); 
+                        if (srcContent) {
+                            // console.log("featureSelect. content", srcContent);
+                            apiscope.trackselected = srcContent; // features[0];
+                        }    
                     };
                 //     
                 this.mapevents = mapevents; 
@@ -152,25 +185,21 @@ along waypoint file loaded from url
             // (Basic) MAP-Action(s) to run after a trackContent is selected
             // further actions may run in separate elements
             trackActivate: function(f) { 
-                if (!f || !f.feature ) return;   
-                if (this.disable) return;   
-                console.log("TRACK ACTIVATE", f, this.disable);
+                if (!f || !f.layer || this.disable) return;   
+                // console.log("ACTIVATE", f); 
+                var selectObj, layerid, feature = f;
 
-                var flayer = f.layer,
-                    feature = f.feature,
-                    fprops = feature.properties,
-                    selectObj; 
+                if (typeof f.layer == "string") layerid = f.layer;
+                else layerid = f.layer.id; 
 
-                // console.log("processing TRACK:", feature, flayer); 
+                if (f.feature) feature = f.feature;
 
-                if (fprops.coordTimes && map)  {  // SPEC-CASE : trackLogs 
-                    console.log("TRACK ACTIVATE", f);
 
-                    selectObj = this.tracksHilite(flayer, [feature]); 
-
+                if (feature.properties.coordTimes && map)  {  // SPEC-CASE : trackLogs 
+                    console.log("TRACK DECORATE ", feature);
+                    selectObj = this.trackDecorate(layerid, [feature]); 
                 } else {
-                    console.log("TRACK ZOOM", f);
-                    
+                    console.log("TRACK ZOOM", feature);
                     selectObj = this.setFeatureBounds([feature]);
                 }     
                 // console.log("processedTrack", selectObj); 
@@ -180,8 +209,7 @@ along waypoint file loaded from url
             // by HILITE-TRACE + "commented" end-nodes  
             //   - zooms to the feature
             //   - show start/stop based on "id-Filter"	
-
-            tracksHilite: function(layerid, tiledata) {
+            trackDecorate: function(layerid, tiledata) {
                 // by now for 1 feature only
                 // var map = this.map; 
                 var scope = this;
@@ -254,12 +282,12 @@ along waypoint file loaded from url
 
                 if (!tiledata) return;  
 
-                this.debounce("hilite", function() {
+                this.debounce("decorate", function() {
 
                     var tileInfo; 
-     
+                    // console.log("tiledata", tiledata); 
                     if (Array.isArray(tiledata)) { // List of map-features
-                        tileInfo = this.tileFeatureContent(tiledata[0], layerid); // map-behavior   
+                        tileInfo = this.tileFeatureContent(tiledata[0], layerid, "tile"); // map-behavior   
                     } else {    // preprocessed info-object 
                         tileInfo = tiledata;
                     }
@@ -267,6 +295,8 @@ along waypoint file loaded from url
                     var trackInfo =  this.trackFeatureContent(tileInfo);
 
                     if (!trackInfo) return;  
+                    
+                    // console.log("TRACK DECORATE of", trackInfo)
 
                     // APPLY start- and stop-nodes of track
                     showTrackNodes(layerid, trackInfo); 
@@ -315,8 +345,11 @@ along waypoint file loaded from url
                 // D. SPECIFIC: derive tracklog-specific time-parameters 
                 if (trackInfo.coordTimes) { 
 
-                    var trackTimes = trackInfo.coordTimes; // console.log("trackTimes", typeof trackTimes, trackTimes);
-                    if (typeof trackTimes == "string") trackTimes = JSON.parse(trackTimes);
+                    var trackTimes = trackInfo.coordTimes;  // console.log("trackTimes", typeof trackTimes, trackTimes);
+                    if (typeof trackTimes == "string") {
+                        trackTimes = JSON.parse(trackTimes);
+                        trackInfo.coordTimes = trackTimes;
+                    }
                     // console.log(trackInfo, trackTimes);
                     
                     var n = trackTimes.length, // equal to number of coords

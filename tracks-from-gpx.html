@@ -44,7 +44,7 @@ Optional: create quick-preview-data
                 type: Object,
             },
 
-            logmode: {
+            routemode: {
                 type: Boolean,
                 value: false
             },
@@ -83,14 +83,17 @@ Optional: create quick-preview-data
         ],
 
         observers: [
-            '_triggerQuery(srcmeta.*, logmode)',
-            '_createTrackData(_rawdata, srcmeta, logmode)'
+            '_triggerQuery(srcmeta.*, routemode)',
+            '_createTrackData(_rawdata, srcmeta, routemode)'
         ],
 
         attached: function() {
         },
 
-        _triggerQuery: function(srcmeta, logmode) { // trigger new dataquery !!
+        /**
+         * routemode required to trigger requests
+         */
+        _triggerQuery: function(srcmeta, routemode) { // trigger new dataquery !!
             if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
             if (srcmeta.type != "gpx") {
                 this.rawdata = null;
@@ -103,7 +106,7 @@ Optional: create quick-preview-data
             if (srcmeta.xmlquery && Object.keys(srcmeta.xmlquery).length) {
                 Object.assign(xmlquery, srcmeta.xmlquery);
             } // console.log("_triggerLog", srcmeta, xmlquery);
-            // console.log("gpx-Query (meta)",srcmeta, xmlquery,logmode) ;
+            // console.log("gpx-Query (meta)",srcmeta, xmlquery) ;
             
             // Trigger action 
             this._xmlquery = xmlquery; 
@@ -111,7 +114,7 @@ Optional: create quick-preview-data
         },
         
         // Convert raw gpx-json-data into 
-        _createTrackData: function(rawdata, srcmeta, logmode) {
+        _createTrackData: function(rawdata, srcmeta, routemode) {
             this.debounce("track", function() {
                 if (!rawdata || !Object.keys(rawdata).length) return; 
                 //console.log("GPX-data, rawTracks", rawdata); // return;
@@ -121,20 +124,22 @@ Optional: create quick-preview-data
                 //console.log("GPX-data, flatTracks", rawTracks); // return;
 
                 // 2. 
-                if (logmode) { // derive features for mb-visualization of rawTracks
-                    // console.log("prepare quickmap of ", rawTracks);  
-                    var trackLogs = this.createTrackLogs(rawTracks, srcmeta);
-                    if (trackLogs) {  console.log("RAW track-data (gpx)", trackLogs);
-                        this.trackdata = trackLogs;
-                    }    
 
-                } else {   // derive structures for mb-based animation of 'suitable' tracks
-                    // console.log("prepare trackSet from", rawTracks);  
+                if (routemode) {  // derive structures for mb-based animation of 'suitable' tracks
+
                     var trackSet = this.createTrackSet(rawTracks, srcmeta.minlength); // .features);
-                    if (trackSet.length) {  console.log("RAW route-data (gpx)",  trackSet);
+                    if (trackSet.length) {  // console.log("RAW route-data (gpx)",  trackSet);
                         // this.trackSet = trackSet;
                         this.trackdata = trackSet;
                     }    
+
+                } else {  // derive features for mb-visualization of rawTracks
+                    // console.log("prepare quickmap of ", rawTracks);  
+                    var trackLogs = this.createTrackLogs(rawTracks, srcmeta);
+                    if (trackLogs) {  // console.log("RAW track-data (gpx)", trackLogs);
+                        this.trackdata = trackLogs;
+                    }    
+                    // console.log("prepare trackSet from", rawTracks);  
                 }    
 
                 // ** !! ** 
@@ -181,6 +186,7 @@ Optional: create quick-preview-data
                     // console.log(f.geometry.type, i, f); // coordinates, tracktimes, coordz); 
 
                     type = f.geometry.type;
+                    
                     if (type == "MultiLineString") {
 
                         coordinates.forEach(function(coords, j) {
@@ -201,6 +207,7 @@ Optional: create quick-preview-data
                                 "properties": {
                                     "coordTimes": tt,
                                     "coordZ": cz,
+                                    "id": tt[0],
                                     "name": tt[0],
                                     "time": tt[0],
                                     "color": getRandomColor()
@@ -214,6 +221,7 @@ Optional: create quick-preview-data
 
                         if (!starttime) starttime = tracktimes[0];
 
+                        f.properties.id = tracktimes[0];
                         f.properties.color = getRandomColor();
 
                         segmentFeatures.push(f);

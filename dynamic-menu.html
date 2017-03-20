@@ -164,19 +164,20 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                     this._selectset = null;
                     this.selectitem = null;
                 }
+                this._lastid = null;
                 // console.log("_updateMenu. selected, _selectset", selected, this._selectset);
             },
 
             // Translate external selection into index of meun-item 
             _syncSelection: function(selectitemid) {
                 // use debounce to avoid "doubling" if event from different sources
-                this.debounce(
-                    "sync", function(){
-                    // console.log("TRY SYNC with", selectitemid, this._selectset); 
+                
+                this.debounce("sync", function(){
+                
                     if (this._selectset && selectitemid && (selectitemid != this._lastid)) {
-                        // console.log("sync within", this._selectset , "lastid was [" + this._lastid + "]"); // return; 
+                        // console.log("SYNC MENU for", selectitemid, this._selectset); 
+
                         var index;
-                        
                         this._selectset.some(function(item, i){
                             if (item.id == selectitemid) {
                                 index = i;

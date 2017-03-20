@@ -125,6 +125,7 @@
 
             var srcLayer = map.getLayer(layerid),
                 srcInfo = {}, keyname, keyvalue ; 
+            // console.log("START getSourceFeature Info of", layerid, tileFeature, srcLayer);
 
             if (srcLayer) {
 
@@ -146,13 +147,15 @@
                         return true;
                     }
                 });
-                console.log("getSourceFeatureInfo of", tileFeature, srcInfo);
+                //console.log("OK getSourceFeature Info of", layerid, tileFeature, srcInfo);
+            } else {
+                //console.log("BREAK getSourceFeature Info of", layerid, tileFeature);
             }
             return srcInfo; 
         }, 
 
         // Append srcInfo to (tile)Feature.properties
-        tileFeatureContent: function(tileFeature, layerid) {
+        tileFeatureContent: function(tileFeature, layerid, flag) {
             if (!map) return; 
             //if (!this.map) return; // not declared in behavior !! 
 
@@ -160,7 +163,7 @@
             var tileFeatureProperties = this.objectClone(tileFeature.properties);
 
             // B. GENERIC: SOURCE FEATURE (untiled)
-            var srcInfo = this.getSourceFeatureInfo(layerid, tileFeature);  // console.log("srcInfo", srcInfo);  
+            var srcInfo = this.getSourceFeatureInfo(layerid, tileFeature);  // console.log("srcInfo of ", layerid, srcInfo);  
 
             Object.keys(srcInfo).forEach(function(k){
                 tileFeatureProperties[k] = srcInfo[k];
@@ -328,11 +331,12 @@
 
 
         // ZoomTo
-        setFeatureBounds: function(features) {
-            // console.log("SFB:", features); // return
+        setFeatureBounds: function(features, padding) {
 
             if (features.features) features = features.features; 
-            if (!features.length) return; //console.log(features); 
+            if (!features.length) return; //console.log(features);
+            if (!padding) padding = 40; 
+            // console.log("SFB:", features, padding); // return
 
             // UNIFY coordsets (x,y) and (x,y,z) into (x,y)
             function concatcoords(coordinates, segment) {
@@ -382,7 +386,7 @@
                     //console.log("4-totalbounds", bounds);
 
                     map.fitBounds(bounds, {
-                        padding: 20
+                        padding: padding
                     });
                 }
 

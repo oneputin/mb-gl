@@ -32,9 +32,9 @@ Refresh mb-contentbox features
                     observer: "onMapSetup"
                 },
 
-                // OUT: features of (all) contentbox-layers loaded
+                // OUT: Feature Groups of (all) contentbox-layers loaded
                 // !! grouped by layer !!
-                contentfeatures: {
+                mapcontent: {
                     type: Object,
                     notify: true
                 },
@@ -46,13 +46,13 @@ Refresh mb-contentbox features
                     notify: true
                 },
 
-                // After selection by map-events defined on layers of contentbox 
+                // OUT: After selection by map-events defined on layers of contentbox 
                 featureselected : {
                     type: Object,
                     notify: true
                 },
 
-                // IN new contentbox to be 
+                // IN new contentbox to be processed
                 contentbox: {
                     type: Object,
                     notify: true
@@ -83,7 +83,7 @@ Refresh mb-contentbox features
 
             observers: [
                 'mbContentApply(contentbox.*, "CONTENTBOX")',
-                'contentToDataset(contentfeatures.*)'
+                'contentToDataset(mapcontent.*)'
             ],
 
 
@@ -134,18 +134,20 @@ Refresh mb-contentbox features
                         return; 
                     }
 
-                    // REMOVE actual contentbox (this._contentbox) 
+                    // REMOVE "actual" contentbox (= _contentbox) 
                     // from from actual map 
                     this._mbContentCheckOut();
+                    scope.mapcontent = {};
+                    
 
-                    // Memorize new contentbox 
+                    // Push contentbox  
                     this._contentbox = contentbox;   
 
                     // INSERT new contentbox into map
-                    let contentfeatures = this._mbContentCheckIn(contentbox, reason); 
+                    var mapcontent = this._mbContentCheckIn(contentbox, reason); 
 
-                    this.contentfeatures = contentfeatures;
-                    // ************************************
+                    scope.mapcontent = mapcontent;
+                    // **************************
                 }, 100);        
             },    
 
@@ -603,7 +605,7 @@ Refresh mb-contentbox features
             _mbContentCheckIn: function(contentbox, reason) { 
                 var mapcontent = this._mbContentChecker(contentbox, "IN", map) ;
                 if (mapcontent)  {
-                    console.log("MAP-IN-usercontent for", reason, contentbox, mapcontent);
+                    console.log("MAP-IN Usercontent for", reason, contentbox, mapcontent);
                     return mapcontent; 
                 }    
             },
@@ -614,20 +616,20 @@ Refresh mb-contentbox features
              * of the mapcontent-layer (marked with flag 'usefeatures' if more layers) 
              * and supply as notify-parameter 'dataset'
              */
-            contentToDataset: function(contentfeatures, keys) {
-                if (contentfeatures.path == 'contentfeatures') contentfeatures = contentfeatures.value;
-                if (!contentfeatures || !Object.keys(contentfeatures).length) return;
-                if (!keys) keys = Object.keys(contentfeatures);
+            contentToDataset: function(mapcontent, keys) {
+                if (mapcontent.path == 'mapcontent') mapcontent = mapcontent.value;
+                if (!mapcontent || !Object.keys(mapcontent).length) return;
+                if (!keys) keys = Object.keys(mapcontent);
                 
                 // Select features from layer with basefeatures only !! 
 
                 var obj, usedkey, dataset = [];
 
                 keys.some(function(lname) {
-                    obj = contentfeatures[lname];
+                    obj = mapcontent[lname];
                     // add features to dataset 
                     //  - if layer is "marked with 'usefeatures' "  or
-                    //  - if only one layer exists in contentfeatures  
+                    //  - if only one layer exists in mapcontent  
                     if ((keys.length == 1) || obj.usefeatures) { //
                         usedkey = lname; 
                         obj.features.forEach(function(item) {
