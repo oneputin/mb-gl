@@ -207,14 +207,14 @@ Refresh mb-contentbox features
                 }
 
                 // Apply prepared 
-                function rawEvents(layername) {
+                function rawEvents(layerName) {
 
                     function hiliter(e) {
-                        featureHilite(e, layername, scope);
+                        featureHilite(e, layerName, scope);
                     }
 
                     function selector(e) {
-                        featureSelect(e, layername, scope);
+                        featureSelect(e, layerName, scope);
                     }
 
                     // 
@@ -349,13 +349,13 @@ Refresh mb-contentbox features
 
                 var contentboxLayers = Object.keys(contentbox);   // console.log("Refreshing quickmap-layers", contentboxLayers);
 
-                contentboxLayers.forEach(function(layername, j) {
+                contentboxLayers.forEach(function(layerName, j) {
 
-                    layerObject = contentbox[layername];
-                    // console.log("VERIFY", layername, layerObject); 
+                    layerObject = contentbox[layerName];
+                    // console.log("VERIFY", layerName, layerObject); 
 
                     if (layerObject.raw) {
-                        // console.log("SETUP qlayer " + layername, layerObject);
+                        // console.log("SETUP qlayer " + layerName, layerObject);
                         layerObject.layer = rawBeautify(layerObject);
                     }
 
@@ -365,10 +365,10 @@ Refresh mb-contentbox features
 
 
                     if (!layerObject.events) { 
-                        layerObject.events = rawEvents(layername);
+                        layerObject.events = rawEvents(layerName);
                     }
 
-                    verifiedContent[layername] = layerObject;
+                    verifiedContent[layerName] = layerObject;
                 })
                 // console.log("NEW contentBox", verifiedContent);  
                 return verifiedContent; 
@@ -386,8 +386,8 @@ Refresh mb-contentbox features
 
                 // create linear list of features 
                 // suitable for "menu-generation"
-                function getFeatureList(layerData, layername, longtitle) {
-                    // console.log("getFeatureList", layername, layerData);
+                function getFeatureList(layerData, layerName, longtitle) {
+                    // console.log("getFeatureList", layerName, layerData);
 
                     var flist = [],
                         fitem = {},
@@ -399,7 +399,8 @@ Refresh mb-contentbox features
                         if (typeof id == "undefined") id = f.properties.time;
                         if (typeof id == "undefined") id = f.properties.name;
 
-                        // Typische Nachbearbeitung
+                        // 1. Typische Nachbearbeitung
+
                         if (typeof id == "string") {
                             id = id.replace("ACTIVE LOG:", "");
                         } else if (id) {
@@ -408,19 +409,21 @@ Refresh mb-contentbox features
                             id = "F-" + i; 
                         }
 
-                        // Ensure identical id at different places
+                        // 2. Ensure identical id at different places
                         
                         id = id.trim().replace(/ /g, ".");
                         id = id.replace(/-/g, "_");
 
-                        f.properties.name = id;
                         f.properties.id = id;
+                        if (!f.properties.name) f.properties.name = id;
                         
+                        // 3. Create 
+
                         title = id;
-                        if (longtitle) title = layername + "_" + title;
+                        if (longtitle) title = layerName + "_" + title;
 
                         fitem = {
-                            "layer": layername,
+                            "layer": layerName,
                             "id": id,
                             "title": title,
                             "feature": f
@@ -431,35 +434,36 @@ Refresh mb-contentbox features
                     })  // console.log("FLIST", flist); 
                     return flist;
                 }
+
                 // 
-                function addMapContent(layername, layerObject){
+                function addMapContent(layerName, layerObject){
                     var layerData = layerObject.srcdata;
                     if (!layerData) return ; 
 
-                    var layerSource = map.getSource(layername);
-
                     layerData.type = "FeatureCollection";
 
+                    var layerSource = map.getSource(layerName);  console.log(layerName, layerData, layerSource) 
+
                     if (!layerSource) {   // 1.A. Add(create) mapSource 
-                        // console.log("ADD source: "+layername, layerData);
-                        map.addSource(layername, {
+                        // console.log("ADD source: "+layerName, layerData);
+                        map.addSource(layerName, {
                             "type": "geojson",
                             "data": layerData
                         });
 
-                        layerSource = map.getSource(layername);
+                        layerSource = map.getSource(layerName);
 
                     } else {   
                                    // 1.B  Update data of existing mapSource  
                        layerSource.setData(layerData);
-                    }  // console.log("SET SRC", layername, layerData, layerSource._data);
+                    }  // console.log("SET SRC", layerName, layerData, layerSource._data);
 
 
                     // 1.C. (Re)Create all layer(s) of same srcdata 
-                    var mapLayer = map.getLayer(layername); // reference layer
+                    var mapLayer = map.getLayer(layerName); // reference layer
 
                     if (!mapLayer && layerObject.templates) {
-                        // console.log("ADD contentLayers for " + layername, layerObject);
+                        // console.log("ADD contentLayers for " + layerName, layerObject);
                         
                         layerObject.templates.forEach(function(template) {
 
@@ -480,16 +484,16 @@ Refresh mb-contentbox features
                             }
                         });
 
-                        mapLayer = map.getLayer(layername);
+                        mapLayer = map.getLayer(layerName);
                     }
 
                     // Check layer content  
                     if (mapLayer) { 
                     /*
-                        var features = map.querySourceFeatures(layername, {
+                        var features = map.querySourceFeatures(layerName, {
                             filter: null
                         });
-                        console.log("Checked "+features.length + " features of layer [" + layername+ "]"); // , features, layerSource);
+                        console.log("Checked "+features.length + " features of layer [" + layerName+ "]"); // , features, layerSource);
                     */
                     }
                     return layerData; 
@@ -521,12 +525,12 @@ Refresh mb-contentbox features
 
                     // remove templateLayers
                     contentLayers.forEach(function(template) {
-                        var qlayername = template.id,
-                            qlayer = map.getLayer(qlayername);
+                        var qlayerName = template.id,
+                            qlayer = map.getLayer(qlayerName);
 
                         if (qlayer) {
-                            // console.log("remove contentLayer", qlayername, qlayer) ;                        
-                            map.removeLayer(qlayername);
+                            // console.log("remove contentLayer", qlayerName, qlayer) ;                        
+                            map.removeLayer(qlayerName);
                         }  
                    });  
 
@@ -547,43 +551,43 @@ Refresh mb-contentbox features
                 
                 var contentboxKeys = Object.keys(contentbox);   // console.log("Refreshing contentboxlayers", contentboxLayers, contentbox);
 
-                contentboxKeys.forEach(function(layername, j) {
+                contentboxKeys.forEach(function(layerName, j) {
 
-                    var layerObject = contentbox[layername],
+                    var layerObject = contentbox[layerName],
                         contentfeatures = [];
-                    // console.log("CHECK-CONTENT-"+flag+" of " + layername, layerObject);
+                    // console.log("CHECK-CONTENT-"+flag+" of " + layerName, layerObject);
 
                     // Option 
                     if (flag == "IN") { // ADD/REFRESH a contentbox object 
 
                         var layerData = layerObject.srcdata;
 
-                        if (map)  {
-                            layerData = addMapContent(layername, layerObject);
-                            // console.log("MAP ADDed content for " + layername, layerData); // , layerObject);
-                        } 
-
                         if (layerData) {   // Check/Get all source-features of the basic layer 
-                            contentfeatures = getFeatureList(layerData, layername);
-                            // console.log("CHECKED-"+flag+" ["+layername+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
+                            contentfeatures = getFeatureList(layerData, layerName);
+                            // console.log("CHECKED-"+flag+" ["+layerName+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
                         }                        
+
+                        if (map)  {
+                            layerData = addMapContent(layerName, layerObject);
+                            // console.log("MAP ADDed content for " + layerName, layerData); // , layerObject);
+                        } 
 
                     }   else {        // REMOVE object (on demand)
 
                         if (map) {
-                            // console.log("CHECKED-"+flag+" [" + layername+"]", layerObject); 
+                            // console.log("CHECKED-"+flag+" [" + layerName+"]", layerObject); 
                             removeMapContent(layerObject); 
                         }     
                     } 
                     
                     if (map) {
-                        // console.log("TOGGLE Contentevents-"+flag +" [" + layername+"]", layerObject); 
+                        // console.log("TOGGLE Contentevents-"+flag +" [" + layerName+"]", layerObject); 
                         toggleContentEvents(layerObject, flag) 
                     }    
                     // Add layer-features to mapcontent
                     if (contentfeatures.length) {
-                        // console.log("contentfeatures of " + layername, contentfeatures);
-                        mapcontent[layername] = {
+                        // console.log("contentfeatures of " + layerName, contentfeatures);
+                        mapcontent[layerName] = {
                             "features": contentfeatures,
                             "usefeatures": layerObject['usefeatures']
                         }    
@@ -642,7 +646,7 @@ Refresh mb-contentbox features
                 if (usedkey) {
                     this.dataset = [];
                     this.dataset = dataset; // NOTIFIES  !!
-                    console.log("GUI-IN dataset from content ["+usedkey+"]", dataset);
+                    // console.log("GUI-IN dataset from contentBox-entry ["+usedkey+"]", dataset);
                 }
             },
 

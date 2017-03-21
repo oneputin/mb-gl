@@ -21,6 +21,178 @@
             } 
         },
 
+        // Specific initialization-(sync-)trigger 
+        // after a new route-dataset was loaded
+        onMapdataLoad : function(mapcontent, dataName){
+            if (this.disable) return;
+            // console.log("onMapdataLoad", mapcontent); 
+            var scope = this;
+
+            // Check applicability
+            mapcontent = mapcontent.value; // Polymer !! 
+            if (!dataName) dataName = Object.keys(mapcontent)[0] ; // 'routes';
+            if (!mapcontent[dataName]) {
+                console.log("MAPDATALOAD BREAK NO content "+dataName, mapcontent); 
+                return;
+            }     
+            mapcontent = mapcontent[dataName];
+            console.log("MAPDATALOAD NEW ["+dataName+"]-content of mapcontent", mapcontent);  
+
+            var reacted = false;
+            
+            /**
+                * load-event-action 
+                * checks loaded tiles for features of source 
+                */
+            function onFeatureLoaded(e){ // console.log("onFeatureLoad", dataName, e);
+
+                if (e.sourceId == dataName) {
+                    // console.log("features of src ["+dataName+"] are loaded into actual map-port"); // , features); 
+                    var features = map.querySourceFeatures(dataName);  
+
+                    if (features.length) {
+                        // console.log("FEATURES FOUND in MAPE", features); // , features); 
+
+                        var startfeature = preAction(features);
+                        
+                        reAction(startfeature, mapcontent); 
+
+                        // STOP listener on success
+                        map.off("data", onFeatureLoaded); 
+
+                        reacted = true;                      
+                    }
+                }
+            }
+            // "Detect desired" route in map-Context
+            function preAction(features){
+
+                function compareTrackTime(route, r) {
+                    var tmax = route.properties.stop - route.properties.start,
+                        t = r.properties.stop - r.properties.start;
+                    if (t > tmax) {
+                        route = r;
+                    }
+                    return route; 
+                }
+
+                // Sonderfall :
+                function checkEndpoints(r) {
+                    var routesLayer = map.getLayer(dataName);
+                    if (!routesLayer) return; 
+                    var rnodes;
+                    var bbox = map.getBounds();
+                    if (!r.properties.nodes) {
+                        console.log("BREAK at", r.properties);	
+                        rnodes = r.geometry.coordinates;
+                        return;
+                    } else {
+                        rnodes = JSON.parse(r.properties.nodes); 
+                    }       
+                    var p0 = turf.point(rnodes[0].coords),
+                        pn  = turf.point(rnodes[rnodes.length - 1].coords);
+                        poly = turf.polygon([[
+                            bbox.getSouthWest().toArray(), 
+                            bbox.getNorthWest().toArray(), 
+                            bbox.getNorthEast().toArray(), 
+                            bbox.getSouthEast().toArray(), 
+                            bbox.getSouthWest().toArray()
+                        ]]); // console.log(r.properties.id, p0, pn, poly);
+                    // console.log(turf.inside(p0, poly),turf.inside(pn, poly));
+                    return turf.inside(p0, poly) && turf.inside(pn, poly);
+                }
+
+                // Check FULL containment of feat-bbox in map-bbox
+                function checkFeature(r, poly) {
+                    var fbox = r.properties.bbox;
+                    if (!fbox) return; 
+                    if (typeof fbox == "string") fbox = JSON.parse(fbox);
+
+                    var pll = fbox.slice(0,2),
+                        pur  = fbox.slice(2);  // console.log(fbox, "LL", pll, "UR", pur);
+                    var isok = turf.inside(turf.point(pll), poly) && turf.inside(turf.point(pur), poly);
+                    return isok;
+                }
+
+                // 1. Extracts features compeletely(partially) within bbox (if any)
+                var ff = [];
+                if (map)  {
+                    var bbox = map.getBounds(),
+                        poly = turf.polygon([[
+                            bbox.getSouthWest().toArray(), 
+                            bbox.getNorthWest().toArray(), 
+                            bbox.getNorthEast().toArray(), 
+                            bbox.getSouthEast().toArray(), 
+                            bbox.getSouthWest().toArray()
+                        ]]); // console.log(r.properties.id, p0, pn, poly);
+                    // console.log("PREACTION: check "+features.length+" candidates in poly", features, poly);
+
+                    features.forEach(function(f){
+                        if (checkFeature(f, poly)) ff.push(f)  
+                        // if (checkEndpoints(f))  ff.push(f); 
+                    });
+                }
+
+                if (!ff.length) ff = features; // console.log("PREACTION: candidate start-features: n="+ff.length, ff);
+
+                var fstart = ff[0];
+
+                // 2. SPECIAL ROUTES-Heuristic: Select feature with "longest" track-time
+                if (fstart.properties.start) {
+                    ff.forEach(function(f){
+                        fstart = compareTrackTime(fstart, f);
+                    });
+                } 
+
+                return fstart; 
+            }     
+
+            // Activate selected feature in "correct" app-context(=scope)
+            function reAction(tilefeature, mapcontent){
+                // internal and external trigger
+                if (!tilefeature || !tilefeature.properties) return; 
+                var props = tilefeature.properties,
+                    fid = props.id,
+                    startfeature; 
+                if (fid) {
+                    mapcontent.features.some(function(f){  // console.log(fid, f)
+                        if (f.id == fid ){
+                            startfeature = f;
+                            return true; 
+                        } 
+                    })
+                    if (!startfeature) {
+                        startfeature = tilefeature;
+                        startfeature.id = fid; // to enable "feedback" to contentBrowser
+                    }                            
+                    // console.log("LOAD-start REACTION with Feature, id=" + fid, startfeature, scope);
+                    if (props.nodes) { 
+                        scope.routeselected = startfeature;
+                        scope.set("model.routeid", fid); 
+                    } else {
+                        scope.trackselected = startfeature;
+                    }
+                }
+            }
+
+
+            // START Listener to feature-loading
+            map.on("data", onFeatureLoaded);
+
+            // Pending Listener 
+            setTimeout(function () { 
+                // RETRY and STOP Listener after max pending time (Fi. 1 sec) 
+                if (!reacted) { console.log("AFTER timeOut TRY reAction();");
+                    reAction(); // default "empty" reaction 
+                }
+                map.off("data", onFeatureLoaded); 
+            }, 1000);
+
+
+
+        },
+
+
         // Utility for one-click re-orientation of a map  
         mapLocate: function(maporientation, minZoom, maxZoom) {
             if (!this.map) return; 

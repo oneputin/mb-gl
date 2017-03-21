@@ -115,13 +115,14 @@ Optional: create quick-preview-data
         
         // Convert raw gpx-json-data into 
         _createTrackData: function(rawdata, srcmeta, routemode) {
+
             this.debounce("track", function() {
                 if (!rawdata || !Object.keys(rawdata).length) return; 
-                //console.log("GPX-data, rawTracks", rawdata); // return;
+                // console.log("GPX-data, rawTracks", rawdata); // return;
     
-                // 1. Simplify list of "simple" tracks 
-                var rawTracks = this._getFlatTrackset(rawdata);
-                //console.log("GPX-data, flatTracks", rawTracks); // return;
+                // 1. "Simplify" into list of "simple" tracks 
+                var rawTracks = this._makeFlatTrackset(rawdata);
+                // console.log("GPX-data, rawTracks, flatTracks", rawdata, rawTracks); return;
 
                 // 2. 
 
@@ -150,9 +151,10 @@ Optional: create quick-preview-data
         },
 
         // Derive "raw tracks" from geoJson originating from GPX, KML 
-        _getFlatTrackset: function(rawdata) {
+        _makeFlatTrackset: function(rawdata) {
             if (!rawdata) return; 
-            // console.log("_getFlatTrackset: rawdata=", rawdata);
+            // console.log("_makeFlatTrackset: rawdata=", rawdata);
+            var scope = this;
 
             // get color in hex-format
             function getRandomColor() {
@@ -163,12 +165,6 @@ Optional: create quick-preview-data
                 }
                 return color;
             }
-            var scope = this;
-            var trackdata , mapboxlayer;
-            
-            // enable processing of different input structures
-            if (rawdata.features) rawdata = rawdata.features; 
-
             // Split multiLineTracks into tracksegments 
             // that can be identified by "own" start-time 
             function jsonTrackSimplify(rawdata) {
@@ -237,7 +233,33 @@ Optional: create quick-preview-data
                 return segdata;
             }
 
-            trackdata = jsonTrackSimplify(rawdata);
+            // append vec-gis-properties 
+            function addbbox(jsondata) {
+                var bb, ffa, ffc=[];
+                jsondata.features.forEach(function(f){
+                    ffa = [];
+                    f.geometry.coordinates.forEach(function(cc){
+                        ffa.push(turf.point(cc.slice(0,2)));
+                    })                        
+                    bb = turf.bbox(turf.featureCollection(ffa)); // console.log("bb of:"+ffa.length, bb);
+                    f.properties.bbox = bb;
+                    ffc = ffc.concat(ffa);
+                })
+                var bbox = turf.bbox(turf.featureCollection(ffc));
+                jsondata.bbox = bbox; // console.log("ADDBBOX", srcdata); 
+                return jsondata;
+            } 
+
+            // var trackdata , mapboxlayer;
+            
+            // enable processing of different input structures
+            if (rawdata.features) rawdata = rawdata.features; 
+
+            // 1. Simplify
+            var trackdata = jsonTrackSimplify(rawdata);
+
+            // 2. SET basic vec-props
+            addbbox(trackdata); 
             // console.log("Raw Tracks, geojson-flat", trackdata)
 
             return trackdata;

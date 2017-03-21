@@ -196,7 +196,7 @@ along waypoint file loaded from url
                 '_animationSetup(routedata, metadataset, disable)', //, map)', // creates _animationbox
                 '_animationMapSetup(map, _animationbox.*)',  // creates 'contentbox' for 
                 '_mapAlignChange(trackalignmap, model.trackobj)',
-                'onRoutesLoad(mapcontent.*)',
+                'onMapdataLoad(mapcontent.*, "routes")',
                 'routeActivate(model.routeid, disable)',
                 'trackCtrlAction(trackctrl)',
                 'trackInfoPopup(trackinfo.*)',
@@ -223,120 +223,6 @@ along waypoint file loaded from url
                     trackdata: {} 
                 }
             }, 
-
-            // Specific initialization-(sync-)trigger 
-            // after a new route-dataset was loaded
-            onRoutesLoad : function(mapcontent){
-                var dataName = 'routes';
-                if (this.disable) return;
-                var scope = this;
-
-                // Check applicability
-                mapcontent = mapcontent.value; // Polymer !! 
-                mapcontent = mapcontent[dataName];
-                if (!mapcontent) return; 
-                console.log("Loaded NEW ["+dataName+"]-content of mapcontent", mapcontent);  
-
-                var reacted = false;
-                
-                /**
-                 * load-event-action 
-                 * checks loaded tiles for features of source 
-                 */
-                function onFeatureLoaded(e){ // console.log("onFeatureLoad", dataName, e);
-
-                    if (e.sourceId == dataName) {
-                        // console.log("features of src ["+dataName+"] are loaded into actual map-port"); // , features); 
-                        var features = map.querySourceFeatures(dataName);  
-
-                        if (features.length) {
-                            // console.log("FEATURES FOUND in MAPE", features); // , features); 
-
-                            var status = preAction(features);
-                            reAction(status); 
-
-                            // STOP listener on success
-                            map.off("data", onFeatureLoaded); 
-                            reacted = true;                      
-                        }
-                    }
-                }
-                // "Detect desired" route in map-Context
-                function preAction(features){
-
-                    function compareTrackTime(route, r) {
-                        var tmax = route.properties.stop - route.properties.start,
-                            t = r.properties.stop - r.properties.start;
-                        if (t > tmax) {
-                            route = r;
-                        }
-                        return route; 
-                    }
-
-                    function checkEndpoints(r) {
-                        var routesLayer = map.getLayer(dataName);
-                        if (!routesLayer) return; 
-                        var bbox = map.getBounds();  
-                        var rnodes = JSON.parse(r.properties.nodes); 
-                        var p0 = turf.point(rnodes[0].coords),
-                            pn  = turf.point(rnodes[rnodes.length - 1].coords);
-                            poly = turf.polygon([[
-                                bbox.getSouthWest().toArray(), 
-                                bbox.getNorthWest().toArray(), 
-                                bbox.getNorthEast().toArray(), 
-                                bbox.getSouthEast().toArray(), 
-                                bbox.getSouthWest().toArray()
-                            ]]); // console.log(r.properties.id, p0, pn, poly);
-                        // console.log(turf.inside(p0, poly),turf.inside(pn, poly));
-                        return turf.inside(p0, poly) && turf.inside(pn, poly);
-                    }
-
-                    // 1. Extracts features compeletely within bbox (if any)
-                    var ff = [];
-                    if (map)  {
-                        features.forEach(function(f){
-                            if (checkEndpoints(f))  ff.push(f); 
-                        });
-                    }
-                    if (!ff.length) ff = features; //console.log(ff);
-
-                    // 2. Selects feature with longest track-time
-                    var route = ff[0];
-                    ff.forEach(function(f){
-                        route = compareTrackTime(f, route);
-                    });
-
-                    return route; 
-                }     
-
-                // Activate selected route in app
-                function reAction(route){
-                    // internal and external trigger
-                    var routeid = route.properties.id; 
-                    if (routeid) {
-                        route.id = routeid; // to enable "feedback" to contentBrowser
-                        console.log("Route-reAction with ROUTE=", route);
-                        scope.routeselected = route;
-                        scope.set("model.routeid", routeid); 
-                    }
-                }
-
-
-                // START Listener to feature-loading
-                map.on("data", onFeatureLoaded);
-
-                // Pending Listener 
-                setTimeout(function () { 
-                    // RETRY and STOP Listener after max pending time (Fi. 1 sec) 
-                    if (!reacted) { console.log("AFTER timeOut TRY reAction();");
-                        reAction(); // default "empty" reaction 
-                    }
-                    map.off("data", onFeatureLoaded); 
-                }, 1000);
-
-
-
-            },
 
             /**
              *  Generic shell triggering an appAction requiring userdata (vector features)

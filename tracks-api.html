@@ -52,8 +52,14 @@ along waypoint file loaded from url
                  */
                 rawcontent: {
                     type: Object,
-                    // observer: '_checkObject'
                 },
+                /**
+                 * Container for available mapdata
+                 */
+                mapcontent: {
+                    type: Object,
+                },
+
 
                 trackselected: {
                     type: Object,
@@ -75,19 +81,22 @@ along waypoint file loaded from url
 
             observers: [
                 'transfer(rawcontent.*)', // , metadata)'
+                'onMapdataLoad(mapcontent.*)',
             ],
 
             ready: function() {
                 this.setEventFunctions(); // initialize map-events
             }, 
 
+            // 
             transfer: function(rawcontent) { // , metadata) {
                 if (this.disable) return;   
+
                 rawcontent = rawcontent.value; 
                 if (!rawcontent || !Object.keys(rawcontent).length) return; 
-                console.log("SETUP contentbox from raw tracks.", rawcontent); 
-                this.set("metadata.datasetlabel",  this.datasetlabel);
+                // console.log("SETUP contentbox from raw tracks.", rawcontent); 
 
+                this.set("metadata.datasetlabel",  this.datasetlabel);
                 this.contentbox = rawcontent;
             },
 
@@ -158,7 +167,6 @@ along waypoint file loaded from url
                 // Feature-Select 
                 //   supplies info-object of selected feature 
                 mapevents["select"] = 
-
                     function featureSelect(e, layerid, eventscope) {
                         // console.log("featureSelect in ", layerid, e.point); 
 
@@ -178,7 +186,8 @@ along waypoint file loaded from url
                             apiscope.trackselected = srcContent; // features[0];
                         }    
                     };
-                //     
+               
+               //     
                 this.mapevents = mapevents; 
             },
 
@@ -194,11 +203,12 @@ along waypoint file loaded from url
 
                 if (f.feature) feature = f.feature;
 
-
-                if (feature.properties.coordTimes && map)  {  // SPEC-CASE : trackLogs 
-                    console.log("TRACK DECORATE ", feature);
-                    selectObj = this.trackDecorate(layerid, [feature]); 
-                } else {
+                if (map) { 
+                    if (feature.properties.coordTimes)  {  // SPEC-CASE : trackLogs 
+                        console.log("TRACK DECORATE ", feature);
+                        selectObj = this.trackDecorate(layerid, [feature]); 
+                    }    
+                } else {    // in non-map-mode
                     console.log("TRACK ZOOM", feature);
                     selectObj = this.setFeatureBounds([feature]);
                 }     
