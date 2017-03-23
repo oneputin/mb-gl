@@ -438,13 +438,14 @@ Refresh mb-contentbox features
                 // 
                 function addMapContent(layerName, layerObject){
                     var layerData = layerObject.srcdata;
-                    if (!layerData) return ; 
+                    console.log(layerData, map);  
+                    if (!layerData || !map) return ; 
 
                     layerData.type = "FeatureCollection";
 
                     var layerSource = map.getSource(layerName);  console.log(layerName, layerData, layerSource) 
 
-                    if (!layerSource) {   // 1.A. Add(create) mapSource 
+                    if (!layerSource ) {   // 1.A. Add(create) mapSource 
                         // console.log("ADD source: "+layerName, layerData);
                         map.addSource(layerName, {
                             "type": "geojson",
@@ -567,7 +568,8 @@ Refresh mb-contentbox features
                             // console.log("CHECKED-"+flag+" ["+layerName+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
                         }                        
 
-                        if (map)  {
+                        console.log("MAP:", typeof map, map); 
+                        if (typeof map != "undefined")  {
                             layerData = addMapContent(layerName, layerObject);
                             // console.log("MAP ADDed content for " + layerName, layerData); // , layerObject);
                         } 

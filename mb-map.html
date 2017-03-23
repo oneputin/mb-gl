@@ -142,6 +142,10 @@ the map-ctrls can be placed as map-overlay or anywhere else
             ],
 
             attached: function() {
+                if (typeof mapboxgl == "undefined") {
+                    console.log("CANNOT access map-SERVICES of [mb-gl-js]"); 
+                    return;
+                }    
                 mapscope = this;
                 // Use default apikey if NONE available from app-shell
                 if (!this.mapapikey) this.mapapikey = setup.mapapikey;

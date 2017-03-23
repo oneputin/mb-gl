@@ -33,14 +33,16 @@ presentation of track-properties (= selected feature)
                 position: absolute;
                 z-index: 9;
                 top: 0;
-                
+               
                 left: 50%;
                 margin-right: -50%;
                 transform: translate(-50%, 0);
 
                 font: 0.8em Courier, Lucida;
                 background-color: rgba(255,64,129,0.8); /*#ff4081*/
-                color: white;   
+                color: white;  
+                 
+                padding: 10px;
             }
 
             dynamic-menu {
@@ -54,9 +56,24 @@ presentation of track-properties (= selected feature)
                 color: blue;
             }
 
+            #zmenu  {
+                top: 50px;
+                left: 50px;
+                /*height: 400px;*/
+                /*width: 100%;*/
+            }
+
         </style>
     
         <h3 class="log" >Properties of track  <span id="meta">[[track]]</span> </h3> 
+
+        <dynamic-menu 
+            id="zmenu"
+            class="metadata"
+            menulabel="z-track"
+            menuitems="[[zitems]]"
+            selectitem="{{zitem}}">
+        </dynamic-menu>
 
         <google-chart
             id="zlog"
@@ -66,14 +83,6 @@ presentation of track-properties (= selected feature)
             cols='[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
             rows='[[zdata]]'>
         </google-chart>
-
-        <!--<dynamic-menu 
-            id="zmenu"
-            class="metadata"
-            menulabel="z-track"
-            menuitems="[[zitems]]"
-            selectitem="{{zitem}}">
-        </dynamic-menu>-->
 
         <div id="textcontent"> 
             <pre>{{log}}</pre>
@@ -134,9 +143,11 @@ presentation of track-properties (= selected feature)
             ],                
 
             observers: [
+
             ],
 
             ready: function() {
+                console.log("ZITEMS:", this.zitems) 
             },
 
             toggleElement: function(checked) {

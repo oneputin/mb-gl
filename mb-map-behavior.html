@@ -24,7 +24,7 @@
         // Specific initialization-(sync-)trigger 
         // after a new route-dataset was loaded
         onMapdataLoad : function(mapcontent, dataName){
-            if (this.disable) return;
+            if (this.disable || (typeof map == "undefined")) return;
             // console.log("onMapdataLoad", mapcontent); 
             var scope = this;
 
@@ -502,12 +502,11 @@
         },
 
 
-        // ZoomTo
+        // (Create&)ZoomTo FeatureBounds 
         setFeatureBounds: function(features, padding) {
 
             if (features.features) features = features.features; 
             if (!features.length) return; //console.log(features);
-            if (!padding) padding = 40; 
             // console.log("SFB:", features, padding); // return
 
             // UNIFY coordsets (x,y) and (x,y,z) into (x,y)
@@ -549,18 +548,35 @@
                 // console.log("2-coordinates", coordinates);
 
                 // ZOOM to bounds
-                if (map) {
+                if (map) { 
+                    if (!padding) padding = 40; 
                     // Pass the first coordinates to `lngLatBounds` 
                     // & wrap each coordinate pair in `extend` to include them in the bounds result. 
+                    bounds = new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]);
                     bounds = coordinates.reduce(function(bounds, coord) {
                         return bounds.extend(coord);
-                    }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
-                    //console.log("4-totalbounds", bounds);
+                    }, bounds);  
 
                     map.fitBounds(bounds, {
                         padding: padding
                     });
-                }
+
+                } else {  // selfmade bounds-extend
+                    var x = coordinates[0][0], y = coordinates[0][1];
+                    bounds = {xmin:x,xmax:x,ymin:y,ymax:y};
+                    
+                    function extendbounds(bounds, coord){ // console.log(bounds, coord);
+                        x = coord[0], y = coord[1];
+                        if (x < bounds.xmin) bounds.xmin = x;
+                        if (y < bounds.ymin) bounds.ymin = y;
+                        if (x > bounds.xmax) bounds.xmax = x;
+                        if (y > bounds.ymax) bounds.ymax = y;
+                        return bounds; 
+                    }
+                    bounds = coordinates.reduce(function(bounds, coord) {
+                        return extendbounds(bounds, coord);
+                    }, bounds);  
+                }   console.log("TRACK bbox", bounds);
 
             }
 
