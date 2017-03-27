@@ -57,38 +57,42 @@ presentation of track-properties (= selected feature)
             }
 
             #zmenu  {
-                top: 50px;
-                left: 50px;
-                /*height: 400px;*/
-                /*width: 100%;*/
+                left: 50%;
+                margin-right: -50%;
+                transform: translate(-50%, 0);
+                z-index: 99;
             }
 
         </style>
     
-        <h3 class="log" >Properties of track  <span id="meta">[[track]]</span> </h3> 
+        <h3 class="log" >Elevations of track  <span id="meta">[[track]]</span> </h3> 
 
-        <dynamic-menu 
-            id="zmenu"
-            class="metadata"
-            menulabel="z-track"
-            menuitems="[[zitems]]"
-            selectitem="{{zitem}}">
-        </dynamic-menu>
+        <template is="dom-if" if="{{zdata}}">
+            <dynamic-menu 
+                id="zmenu"
+                class="metadata"
+                menulabel="z-track"
+                menuitems="[[zitems]]"
+                selectitem="{{zitem}}">
+            </dynamic-menu>
+        </template>
+            
+        <!--<pre><b>Selected MenuItem</b><br>{{menulog}}</pre>-->
 
-        <google-chart
-            id="zlog"
-            type="line"
-            selection="{{selected}}"
-            options='{{chartoptions}}'
-            cols='[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
-            rows='[[zdata]]'>
-        </google-chart>
+        <template is="dom-if" if="{{zdata}}">
+            <pre><b>Checking LogIndex/MenuIndex: </b>[[logindex]]---[[zitem.id]]</pre>
+            <google-chart
+                id="zlog"
+                type="line"
+                selection="{{chartselection}}"
+                options='{{chartoptions}}'
+                cols='[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
+                rows='[[zdata]]'>
+            </google-chart>
+        </template>
 
         <div id="textcontent"> 
-            <pre>{{log}}</pre>
-            <pre>selection: {{selected}}</pre>
         </div>
-
 
     </template>
 
@@ -109,21 +113,26 @@ presentation of track-properties (= selected feature)
                     observer: 'checkoutTrack'
                 },
 
-                log: {
+                menulog: {
                     type: String
                 },
                 
-                selected: {
+                logindex: {
+                    type: Number
+                },
+
+                chartselection: {
                     type: Object,
-                    observer: 'toString'
+                    observer: 'getchartselection'
                 },
 
                 zitems : {
                     type: Array
                 },
+
                 zitem: {
                     type: Object,
-                    observer: 'toString' 
+                    observer: 'getmenuselection' 
                 },
 
                 disable: {
@@ -147,7 +156,7 @@ presentation of track-properties (= selected feature)
             ],
 
             ready: function() {
-                console.log("ZITEMS:", this.zitems) 
+                // console.log("ZITEMS:", this.zitems) 
             },
 
             toggleElement: function(checked) {
@@ -158,28 +167,52 @@ presentation of track-properties (= selected feature)
                 }
             },    
 
+            getchartselection: function(chartpoints){
+                console.log("getchartselection", chartpoints);
+                this.logindex = chartpoints[0].row;
+                this.zitem = this.zitems[this.logindex];
+            },
+
+            getmenuselection: function(menuitem){
+                console.log("getmenuselection", menuitem);
+                var chartpoints = [{
+                    column: 1,
+                    row: menuitem.id
+                }];
+                this.chartselection = chartpoints;
+            },
+
+
             /**
              * Select/Hilite a feature on the map  (fi. zoomTo)
              * @param      {object}  f       { mapbox-jeature }
              */
             checkoutTrack: function(f) { 
                 if (this.disable) return; 
-                if (!f || !f.feature) return;    
+                if (!f || !f.feature || !this.checked) return;    
                 // console.log("Checkout Feature to LOG: " + f.id , f);
                 
-                // A. generic map-select
                 // var selObj = this.featuresSelect([f.feature], f.layer);
                 //console.log("Selected Feature: " + f.id , f, selObj);
                 //console.log("Metadata of: " + f.layer , this.metadata);
 
-                // B. Create a text-log
-                var pp = f.feature.properties;   // console.log("Props of Selected F.", pp);
-                
-                var log = "<a href=''>["+f.id +"]</a> in <a href=''>{ "+ f.layer+" }</a>"; 
-                // this.track = log; 
-                this.$.meta.innerHTML = log;
+                var pp = f.feature.properties;   console.log("TRACK selected", pp);
+                if (!pp.coordZ) {
+                    this.zdata = null;
+                    return; 
+                }
 
+                // A. generic Track-identification
+                var cnt = pp.coordZ.length;
+                var log = "<a href=''>["+f.id +"]</a> (n="+cnt+")<br> in logbook <a href=''>{ "+ f.layer+" }</a>"; 
+                this.$.meta.innerHTML = log;
+                
+                // B. Refresh Generic Track viewer(s) (Menu, Chart) 
                 this.refreshElevChart(pp); 
+                this.refreshElevMenu(pp); 
+
+                // C.  
+                // this.chartlog = JSON.stringify(pp);
             },
 
             // Refresh parameters of chart-element <google-chart>
@@ -190,28 +223,12 @@ presentation of track-properties (= selected feature)
                 
                 if (!times || !elevs || !times.length || !elevs.length) {
                     console.log("No data for elevetion-chart in ", pp); 
-                    this.zitems = [];
                     this.zdata = [];
                     return;
                 } // console.log(times, elevs); 
 
-                var zitems = [], zitem, zdata = [];
-                var sp = String.fromCharCode(160), // &nbsp;
-                    delim = sp + sp +sp ;
-
-                times.forEach(function(t, j){
-                    let zeit = t.split("T")[1],
-                        utc = scope.utcTime(scope.trackTime(t), "h"); 
-                    zitem = {
-                        "id" : j,
-                        "title" : zeit + delim + elevs[j] + "[m]",
-                        "utctime" : utc
-                    }
-                    zitems.push(zitem);
-                })
-                this.zitems = zitems; 
-
-                // Create Chart 
+                // B. Create Chart 
+                // B.1 Setup ChartOptions
                 scope.chartoptions = {
                     "title": "Track Elevations [m NN]",
                     "width": 800,
@@ -219,7 +236,8 @@ presentation of track-properties (= selected feature)
                     "legend": "none"
                 };   
 
-                // create data with argument in datetime-format
+                // B.2 Create TimeChart-data with argument in datetime-format
+                var zdata = [];
                 times.forEach(function(t, j){
                     let utc1970 = scope.utcTime(scope.trackTime(t)); 
                     zitem = [
@@ -231,9 +249,41 @@ presentation of track-properties (= selected feature)
                 this.zdata = zdata; 
             },   
 
+            // Refresh parameters of chart-element <google-chart>
+            refreshElevMenu: function(pp){
+                var scope = this,
+                    times = pp["coordTimes"],
+                    elevs = pp["coordZ"];
+                
+                if (!times || !elevs || !times.length || !elevs.length) {
+                    console.log("No elev-data found in ", pp); 
+                    this.zitems = [];
+                    return;
+                } // console.log(times, elevs); 
+
+                // A. Create MenuItems  
+                var zitems = [], zitem;
+                var sp = String.fromCharCode(160), // &nbsp;
+                    delim = sp + sp; //  +sp ;
+
+                times.forEach(function(t, j){
+                    let zeit = t.split("T")[1],
+                        utc = scope.utcTime(scope.trackTime(t), "h"); 
+                    zitem = {
+                        "id" : j,
+                        "title" : zeit + delim + elevs[j] + "[m]",
+                        "utctime" : utc,
+                        "elevation": elevs[j]
+                    }
+                    zitems.push(zitem);
+                })
+                this.zitems = zitems; 
+
+            },   
+
             toString : function(obj) {
                 var str = JSON.stringify(obj); // console.log("obj2string", str); 
-                this.log = str; 
+                this.menulog = str; 
             }
         });
     </script>

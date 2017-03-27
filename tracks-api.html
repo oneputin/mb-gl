@@ -4,8 +4,8 @@
 
 <!--
 `tracks-api`
-creates anf follow animated routes 
-along waypoint file loaded from url
+create track-objects from alternative sources  
+display as decorated route (fi with commented endpoints)
 
 @demo demo/routingtracks.html 
 -->
@@ -100,6 +100,7 @@ along waypoint file loaded from url
                 this.contentbox = rawcontent;
             },
 
+            // Setup events related to UserInteractions with track-lines
             setEventFunctions: function(){
                 var mapevents = {};
                 var apiscope = this;
