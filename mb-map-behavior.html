@@ -397,7 +397,7 @@
 
             // Refresh popup contet and location
             if (!lnglat) {
-                if (bbox) { // console.log("bbox", bbox);
+                if (bbox && bbox.bounds) { // console.log("bbox", bbox);
                     lnglat = bbox.bounds.getCenter();
                 } else { // console.log("map.getCenter", map.getCenter);
                     lnglat = map.getCenter();
@@ -576,7 +576,7 @@
                     bounds = coordinates.reduce(function(bounds, coord) {
                         return extendbounds(bounds, coord);
                     }, bounds);  
-                }   console.log("TRACK bbox", bounds);
+                }   // console.log("TRACK bbox", bounds);
 
             }
 

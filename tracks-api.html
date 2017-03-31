@@ -168,6 +168,7 @@ display as decorated route (fi with commented endpoints)
                 // Feature-Select 
                 //   supplies info-object of selected feature 
                 mapevents["select"] = 
+                   
                     function featureSelect(e, layerid, eventscope) {
                         // console.log("featureSelect in ", layerid, e.point); 
 
@@ -179,13 +180,44 @@ display as decorated route (fi with commented endpoints)
                         }); // console.log("featureSelect. tiles", features); 
                         if (!features || !features.length) return;  
 
-                        // SYNC with content-browser after selection in map   
-                        
+                        // A. Trigger
+                        //  - Zoom to trackLine-BBOX  
+                        //  - SYNC of map-selection with item-selection in content-browser    
                         var srcContent = srcFeatureContent(features[0], layerid, eventscope); 
-                        if (srcContent) {
-                            // console.log("featureSelect. content", srcContent);
-                            apiscope.trackselected = srcContent; // features[0];
-                        }    
+
+                        if (!srcContent) return;  // console.log("srcContent:", srcContent);
+                        
+                        apiscope.trackselected = srcContent; // features[0];
+
+
+                        // B. Select/Identify a TrackPoint
+                        var trackLine = srcContent.feature; // console.log("SELECTLINE", trackLine); 
+                        var querypt = e.lngLat; 
+                        querypt = {
+                            "type": "Feature",
+                            "properties": {},
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [querypt.lng, querypt.lat]
+                            }
+                        };  
+
+                        var snapped = turf.pointOnLine(trackLine, querypt, 'kilometers');
+
+                        if (snapped) {
+                            snapped.properties['marker-color'] = '#00f'
+                            var index = snapped.properties.index; 
+                            var result = {
+                                "type": "FeatureCollection",
+                                "features": [trackLine, querypt, snapped]
+                            };
+                            // console.log("TrackPoint at Index=" + index, result);
+                            var trackPntInfo =  apiscope.trackFeatureContent(result); // snapped.properties);
+                            console.log("TrackPointInfo at: " + index, trackPntInfo);
+
+                            eventscope.popupOnMap(trackPntInfo);
+                        }
+
                     };
                
                //     
@@ -206,7 +238,7 @@ display as decorated route (fi with commented endpoints)
 
                 if (map) { 
                     if (feature.properties.coordTimes)  {  // SPEC-CASE : trackLogs 
-                        console.log("TRACK DECORATE ", feature);
+                        // console.log("TRACK DECORATE ", feature);
                         selectObj = this.trackDecorate(layerid, [feature]); 
                     }    
                 } else {    // in non-map-mode
@@ -291,12 +323,11 @@ display as decorated route (fi with commented endpoints)
                     map.setFilter(hilayerid, hifilter);
                 } 
 
-                if (!tiledata) return;  
+                if (!tiledata) return;  // console.log("tiledata", tiledata); 
 
                 this.debounce("decorate", function() {
 
                     var tileInfo; 
-                    // console.log("tiledata", tiledata); 
                     if (Array.isArray(tiledata)) { // List of map-features
                         tileInfo = this.tileFeatureContent(tiledata[0], layerid, "tile"); // map-behavior   
                     } else {    // preprocessed info-object 
@@ -342,10 +373,18 @@ display as decorated route (fi with commented endpoints)
             // the selected json-tile belongs to
 
             trackFeatureContent: function(trackInfo) {
-                var scope = this;    
+                var scope = this, trackLine, selectPnt, trackPnt, trackTimes, tpTime, trackZ, tpZ;    
+                
                 // C. APP-SPECIFIC: derive line-specific props
-
-                if (trackInfo.srcfeature) {
+                if (trackInfo.features && trackInfo.features.length) {
+                    // 
+                    selectPnt = trackInfo.features[1];
+                    trackPnt = trackInfo.features[2];
+                    trackLine = trackInfo.features[0];
+                    trackInfo = trackLine.properties
+                
+                } else if (trackInfo.srcfeature) {
+                    // 
                     trackInfo.coords = trackInfo.srcfeature.geometry.coordinates; // **!!!** 
                     trackInfo.fromnode = trackInfo.coords[0];
                     trackInfo.tonode = trackInfo.coords[trackInfo.coords.length - 1];
@@ -355,8 +394,7 @@ display as decorated route (fi with commented endpoints)
 
                 // D. SPECIFIC: derive tracklog-specific time-parameters 
                 if (trackInfo.coordTimes) { 
-
-                    var trackTimes = trackInfo.coordTimes;  // console.log("trackTimes", typeof trackTimes, trackTimes);
+                    trackTimes = trackInfo.coordTimes;  // console.log("trackTimes", typeof trackTimes, trackTimes);
                     if (typeof trackTimes == "string") {
                         trackTimes = JSON.parse(trackTimes);
                         trackInfo.coordTimes = trackTimes;
@@ -380,10 +418,34 @@ display as decorated route (fi with commented endpoints)
                 // E. SPECIFIC: compile some parameters as HTML 
                 trackInfo.html = "Track LOG <hr>"
                     + trackInfo.time
-                    + "<br>Length: " + trackInfo.length
                     + "<br>Duration: " + trackInfo.duration
-                    + "<br>[ " + trackInfo.von +" to " + trackInfo.bis + "]"
-                    + "<br>TP's: " + trackInfo.count;
+                    + "<br>[ " + trackInfo.von +" to " + trackInfo.bis + "]";
+                
+                if (trackPnt) { 
+                    var tpinfo = trackPnt.properties,
+                        coords = trackPnt.geometry.coordinates;
+                    trackInfo.html += "<hr>TP-Index: "+ tpinfo.index; 
+                    trackInfo.lnglat = new mapboxgl.LngLat(coords[0],coords[1]);
+
+                    if (trackTimes) {
+                        tpTime = scope.trackTime(trackTimes[tpinfo.index]);
+                        tpTime = scope.utcTime(tpTime, "h");
+                        tpTime = scope.logTime(tpTime, "h", "t");
+                        trackInfo.html += "<br>TP-Time: " + tpTime; 
+                    }    
+
+                    if (trackInfo.coordZ) {
+                        trackZ = trackInfo.coordZ;  // console.log("trackTimes", typeof trackTimes, trackTimes);
+                        if (typeof trackZ == "string") {
+                            trackZ = JSON.parse(trackZ);
+                        }
+                        trackInfo.html += "<br>TP-Elev: " + trackZ[tpinfo.index] + "[mNN]"; 
+                    }    
+                    // console.log("TP:", trackPnt, trackLine); // , trackInfo);
+                } else {
+                    trackInfo.html += "<br>Length: " + trackInfo.length
+                    trackInfo.html += "<br>TP's: " + trackInfo.count;
+                } 
 
                 return trackInfo;
             }
