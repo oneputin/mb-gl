@@ -3,15 +3,12 @@
 <link rel="import" href="../google-chart/google-chart.html">
 <link rel="import" href="mb-map-behavior.html">
 <link rel="import" href="tracks-behavior.html">
-<link rel="import" href="dynamic-menu.html">
 
 <!--
-`tracks-log`
-presentation of track-properties (= selected feature) 
+`track-log`
+container for presentation of track-properties (fi. elevations) 
 
-## Properties of *raw* data 
-### elevation-log
-- dropdown-menu of z-coords
+### Case: elevation-log
 - z(t)-line-chart (t as unix-h) 
 
 ### speed-log
@@ -22,7 +19,7 @@ presentation of track-properties (= selected feature)
 @demo demo/routingtracks.html 
 -->
 
-<dom-module id="tracks-log">
+<dom-module id="track-log-view">
 
     <template>
 
@@ -45,42 +42,17 @@ presentation of track-properties (= selected feature)
                 padding: 10px;
             }
 
-            dynamic-menu {
-               background-color: var(--paper-grey-300);
-            }
             #zlog  {
                 height: 400px;
                 width: 100%;
             }
+
             #metaxa {
                 color: blue;
             }
-
-            #zmenu  {
-                left: 50%;
-                margin-right: -50%;
-                transform: translate(-50%, 0);
-                z-index: 99;
-            }
-
         </style>
-    
-        <h3 class="log" >Elevations of track  <span id="meta">[[track]]</span> </h3> 
-
         <template is="dom-if" if="{{zdata}}">
-            <dynamic-menu 
-                id="zmenu"
-                class="metadata"
-                menulabel="z-track"
-                menuitems="[[zitems]]"
-                selectitem="{{zitem}}">
-            </dynamic-menu>
-        </template>
-            
-        <!--<pre><b>Selected MenuItem</b><br>{{menulog}}</pre>-->
-
-        <template is="dom-if" if="{{zdata}}">
-            <pre><b>Checking LogIndex/MenuIndex: </b>[[logindex]]---[[zitem.id]]</pre>
+            <pre><b>Checking TP-Index: </b>[[logindex]]</pre>
             <google-chart
                 id="zlog"
                 type="line"
@@ -99,7 +71,7 @@ presentation of track-properties (= selected feature)
     <script>
         
         Polymer({
-            is: 'tracks-log',
+            is: 'track-log-view',
 
             properties: {
 
@@ -107,32 +79,20 @@ presentation of track-properties (= selected feature)
                     type: Object
                 },
 
-                trackselected: {
-                    type: Object,
-                    notify: true,
-                    observer: 'checkoutTrack'
+                trackdata: {
+                    type: Array,
+                    observer: 'checkindata'
                 },
 
-                menulog: {
-                    type: String
-                },
-                
                 logindex: {
-                    type: Number
+                    type: Number,
+                    observer: 'setchartselection',
+                    notify: true
                 },
 
                 chartselection: {
                     type: Object,
                     observer: 'getchartselection'
-                },
-
-                zitems : {
-                    type: Array
-                },
-
-                zitem: {
-                    type: Object,
-                    observer: 'getmenuselection' 
                 },
 
                 disable: {
@@ -170,15 +130,14 @@ presentation of track-properties (= selected feature)
             getchartselection: function(chartpoints){
                 console.log("getchartselection", chartpoints);
                 this.logindex = chartpoints[0].row;
-                this.zitem = this.zitems[this.logindex];
             },
 
-            getmenuselection: function(menuitem){
-                console.log("getmenuselection", menuitem);
+            setchartselection: function(logindex){
                 var chartpoints = [{
                     column: 1,
-                    row: menuitem.id
+                    row: logindex
                 }];
+                console.log("setchartselection " + logindex, chartpoints);
                 this.chartselection = chartpoints;
             },
 
@@ -187,39 +146,17 @@ presentation of track-properties (= selected feature)
              * Select/Hilite a feature on the map  (fi. zoomTo)
              * @param      {object}  f       { mapbox-jeature }
              */
-            checkoutTrack: function(f) { 
+            checkindata: function(trackdata) { 
                 if (this.disable) return; 
-                if (!f || !f.feature || !this.checked) return;    
-                // console.log("Checkout Feature to LOG: " + f.id , f);
-                
-                // var selObj = this.featuresSelect([f.feature], f.layer);
-                //console.log("Selected Feature: " + f.id , f, selObj);
-                //console.log("Metadata of: " + f.layer , this.metadata);
-
-                var pp = f.feature.properties;   console.log("TRACK selected", pp);
-                if (!pp.coordZ) {
-                    this.zdata = null;
-                    return; 
-                }
-
-                // A. generic Track-identification
-                var cnt = pp.coordZ.length;
-                var log = "<a href=''>["+f.id +"]</a> (n="+cnt+")<br> in logbook <a href=''>{ "+ f.layer+" }</a>"; 
-                this.$.meta.innerHTML = log;
-                
                 // B. Refresh Generic Track viewer(s) (Menu, Chart) 
-                this.refreshElevChart(pp); 
-                this.refreshElevMenu(pp); 
-
-                // C.  
-                // this.chartlog = JSON.stringify(pp);
+                this.refreshElevChart(trackdata); 
             },
 
             // Refresh parameters of chart-element <google-chart>
             refreshElevChart: function(pp){
                 var scope = this,
                     times = pp["coordTimes"],
-                    elevs = pp["coordZ"];
+                    elevs = pp["coordElevs"];
                 
                 if (!times || !elevs || !times.length || !elevs.length) {
                     console.log("No data for elevetion-chart in ", pp); 
@@ -247,44 +184,8 @@ presentation of track-properties (= selected feature)
                     zdata.push(zitem);
                 })
                 this.zdata = zdata; 
-            },   
+            }   
 
-            // Refresh parameters of chart-element <google-chart>
-            refreshElevMenu: function(pp){
-                var scope = this,
-                    times = pp["coordTimes"],
-                    elevs = pp["coordZ"];
-                
-                if (!times || !elevs || !times.length || !elevs.length) {
-                    console.log("No elev-data found in ", pp); 
-                    this.zitems = [];
-                    return;
-                } // console.log(times, elevs); 
-
-                // A. Create MenuItems  
-                var zitems = [], zitem;
-                var sp = String.fromCharCode(160), // &nbsp;
-                    delim = sp + sp; //  +sp ;
-
-                times.forEach(function(t, j){
-                    let zeit = t.split("T")[1],
-                        utc = scope.utcTime(scope.trackTime(t), "h"); 
-                    zitem = {
-                        "id" : j,
-                        "title" : zeit + delim + elevs[j] + "[m]",
-                        "utctime" : utc,
-                        "elevation": elevs[j]
-                    }
-                    zitems.push(zitem);
-                })
-                this.zitems = zitems; 
-
-            },   
-
-            toString : function(obj) {
-                var str = JSON.stringify(obj); // console.log("obj2string", str); 
-                this.menulog = str; 
-            }
         });
     </script>
 </dom-module>

@@ -1,0 +1,205 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="mb-map-behavior.html">
+<link rel="import" href="tracks-behavior.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="dynamic-menu.html">
+
+<!--
+`track-log-ctrl`
+presentation of track-properties (= selected feature) 
+
+## Properties of *raw* data 
+### elevation-log
+- dropdown-menu of z-coords
+- z(t)-line-chart (t as unix-h) 
+
+### speed-log
+- v(t)-line-chart
+
+## Properties of *derived* data
+
+@demo demo/routingtracks.html 
+-->
+
+<dom-module id="track-log-ctrl">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                position: absolute;
+                width: 400px;
+                /*height: 600px;*/
+            }
+            .vertical {
+                @apply(--layout-vertical);
+            }
+            .horizontal {
+                @apply(--layout-horizontal);
+            }
+            .flexchild {
+                @apply(--layout-flex);
+            }
+
+            dynamic-menu {
+               background-color: var(--paper-grey-300);
+            }
+
+        </style>
+
+        <div class="vertical">
+            <!-- get a datasetMeta -->
+            <div class="flexchild">
+                <template is="dom-if" if="{{trackdata}}">
+                    <dynamic-menu 
+                        id="zmenu"
+                        class="metadata"
+                        menulabel="TrackPoint"
+                        menuitems="[[zitems]]"
+                        selectitem="{{zitem}}">
+                    </dynamic-menu>
+                </template>     
+            </div>
+
+    </template>
+
+    <script>
+        
+        Polymer({
+            is: 'track-log-ctrl',
+
+            properties: {
+
+                metadata: {
+                    type: Object
+                },
+
+                trackselected: {
+                    type: Object,
+                    notify: true,
+                    observer: 'checkoutTrack'
+                },
+
+                trackdata : {
+                    type: Array,
+                    notify: true
+                },
+
+                menulog: {
+                    type: String
+                },
+                
+                logindex: {
+                    type: Number,
+                    observer: 'setmenuselection'
+                },
+
+                zitems : {
+                    type: Array
+                },
+
+                zitem: {
+                    type: Object,
+                    observer: 'getmenuselection' 
+                },
+
+                disable: {
+                    type: Boolean,
+                },
+
+                checked: {
+                    type: Boolean,
+                    value: true,
+                    observer: "toggleElement"
+                }
+            },
+
+            behaviors: [
+                Mbb.TracksBehavior,
+                Mbb.MapBehavior
+            ],                
+
+            observers: [
+
+            ],
+
+            toggleElement: function(checked) {
+                if (checked) {
+                    this.style.display = "block";
+                } else {
+                    this.style.display = "none";
+                }
+            },    
+
+            setmenuselection: function(logindex){
+                this.zitem = this.zitems[logindex];
+            },
+
+            getmenuselection: function(menuitem){
+                console.log("getmenuselection", menuitem.id, menuitem);
+                this.logindex = menuitem.id;
+            },
+
+
+            /**
+             * 
+             * @param      {object}  f       { mapbox-jeature }
+             */
+            checkoutTrack: function(f) { 
+                if (this.disable) return; 
+                if (!f || !f.feature || !this.checked) return;    
+                // console.log("Checkout Feature to LOG: " + f.id , f);
+                
+                // A. generic Trackdata-identification
+                var trackdata = f.feature.properties;   
+                if (!trackdata.coordElevs || !trackdata.coordElevs.length) {
+                    this.trackdata = [];
+                    return; 
+                } console.log("selected TRACK props", trackdata);
+                
+                this.trackdata = trackdata; 
+
+                // B. Refresh Generic Track ctrls(Track-identification, pnt-menu) 
+                var cnt =  trackdata.coordElevs.length;
+                var log = "<a href=''>["+f.id +"]</a> (n="+cnt+")<br> in logbook <a href=''>{ "+ f.layer+" }</a>"; 
+                // this.$.meta.innerHTML = log;
+               
+                this.refreshCtrlMenu(trackdata); 
+            },
+
+            // Refresh parameters of chart-element <google-chart>
+            refreshCtrlMenu: function(pp){
+                var scope = this,
+                    times = pp["coordTimes"],
+                    elevs = pp["coordElevs"];
+                
+                if (!times || !elevs || !times.length || !elevs.length) {
+                    console.log("No elev-data found in ", pp); 
+                    this.zitems = [];
+                    return;
+                } // console.log(times, elevs); 
+
+                // A. Create MenuItems  
+                var zitems = [], zitem;
+                var sp = String.fromCharCode(160), // &nbsp;
+                    delim = sp + sp; //  +sp ;
+
+                times.forEach(function(t, j){
+                    let zeit = t.split("T")[1],
+                        utc = scope.utcTime(scope.trackTime(t), "h"); 
+                    zitem = {
+                        "id" : j,
+                        "title" : zeit + delim + elevs[j] + "[m]",
+                        "utctime" : utc,
+                        "elevation": elevs[j]
+                    }
+                    zitems.push(zitem);
+                })
+                this.zitems = zitems; 
+            }   
+        });
+    </script>
+</dom-module>

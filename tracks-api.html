@@ -213,8 +213,7 @@ display as decorated route (fi with commented endpoints)
                             };
                             // console.log("TrackPoint at Index=" + index, result);
                             var trackPntInfo =  apiscope.trackFeatureContent(result); // snapped.properties);
-                            console.log("TrackPointInfo at: " + index, trackPntInfo);
-
+                            // console.log("TrackPointInfo at: " + index, trackPntInfo, eventscope);
                             eventscope.popupOnMap(trackPntInfo);
                         }
 
@@ -355,18 +354,18 @@ display as decorated route (fi with commented endpoints)
                     // StartZoom with ZoomEnd-Action
 
                     // Define action to run AFTER startZoom (info-popup)
-                    map.once('moveend', function() {
-                        this.popupOnMap(trackInfo);
+                    map.once('moveend', function() { // console.log(trackInfo, this); 
+                        this.popupOnMap(trackInfo, {});
                     }.bind(this));
                 
                     // Start ZOOM to "complete track"" 
-                    if (trackInfo.bbox) {
+                    if (trackInfo.bbox && trackInfo.bbox.bounds) {
                         map.fitBounds(trackInfo.bbox.bounds, {
                             padding: 40
                         });
                     } 
                     return trackInfo; 
-                }, 100);    	
+                }, 200);    	
             },
 
             // Get app-specific Info about the "complete json-feature", 
@@ -434,8 +433,8 @@ display as decorated route (fi with commented endpoints)
                         trackInfo.html += "<br>TP-Time: " + tpTime; 
                     }    
 
-                    if (trackInfo.coordZ) {
-                        trackZ = trackInfo.coordZ;  // console.log("trackTimes", typeof trackTimes, trackTimes);
+                    if (trackInfo.coordElevs) {
+                        trackZ = trackInfo.coordElevs;  // console.log("trackTimes", typeof trackTimes, trackTimes);
                         if (typeof trackZ == "string") {
                             trackZ = JSON.parse(trackZ);
                         }

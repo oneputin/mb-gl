@@ -662,13 +662,13 @@ Optional: create quick-preview-data
                     if (!starttime) starttime = id; 
                     var coords = [],
                         coordTimes = [],
-                        coordZ = [],
+                        coordElevs = [],
                         coordV = [],
                         nodes = trackdata[id];  // console.log("nodes", nodes);
 
                     nodes.forEach(function(node){
                         coords.push(node.coords);
-                        if (node.z) coordZ.push(node.z);
+                        if (node.z) coordElevs.push(node.z);
                         if (node.v) coordV.push(node.v);
                         // coordTime-heuristic 
                         if (node.ab) {
@@ -682,7 +682,7 @@ Optional: create quick-preview-data
                             id: id,
                             time: id, // nodes[0].ab
                             coordTimes: coordTimes,
-                            coordZ: coordZ,
+                            coordElevs: coordElevs,
                             coordV: coordV,
                             color: getRandomColor()
                         };

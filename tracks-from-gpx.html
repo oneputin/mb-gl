@@ -170,7 +170,7 @@ Optional: create quick-preview-data
             function jsonTrackSimplify(rawdata) {
 
                 var segmentFeatures = [],
-                    coordinates, tracktimes, coordZ, 
+                    coordinates, tracktimes, coordElevs, 
                     starttime;
 
                 rawdata.forEach(function(f, i) {
@@ -178,7 +178,7 @@ Optional: create quick-preview-data
                     // All property-arrays are structured identical
                     coordinates = f.geometry.coordinates;
                     tracktimes = f.properties.coordTimes;
-                    coordz = f.properties.coordZ;
+                    coordz = f.properties.coordElevs;
                     // console.log(f.geometry.type, i, f); // coordinates, tracktimes, coordz); 
 
                     type = f.geometry.type;
@@ -202,7 +202,7 @@ Optional: create quick-preview-data
                                 },
                                 "properties": {
                                     "coordTimes": tt,
-                                    "coordZ": cz,
+                                    "coordElevs": cz,
                                     "id": tt[0],
                                     "name": tt[0],
                                     "time": tt[0],

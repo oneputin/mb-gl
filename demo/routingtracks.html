@@ -37,8 +37,9 @@
     <link rel="import" href="../tracks-info.html">
     <link rel="import" href="../tracks-api.html">
     <link rel="import" href="../tracks-load.html">
-    <link rel="import" href="../tracks-log.html">
-    
+    <link rel="import" href="../track-log-ctrl.html">
+    <link rel="import" href="../track-log-view.html">
+
     <style is="custom-style">
         .container {
             @apply(--layout-horizontal);
@@ -65,12 +66,16 @@
             width: 100%;
         }
         
-        .ctrls-out {
+        .ctrls_out {
             /* itself flex layouted div */
             width: 40%;
             margin-left: 10px;
             @apply(--layout-vertical);
             /*@apply(--layout-start);*/
+        }
+
+        .flexchild {
+            @apply(--layout-flex);
         }
         
         timer-ctrl {
@@ -92,6 +97,13 @@
         }
         
         mb-content-browser {
+            padding: 10px;
+            display: inline-block;
+            @apply(--layout-vertical);
+            @apply(--layout-start);
+        }
+
+        track-log-ctrl {
             padding: 10px;
             display: inline-block;
             @apply(--layout-vertical);
@@ -143,12 +155,13 @@
                     mapctrl="[[mapctrl]]">
 
                     <!-- placed here to overlay the map -->
-                    <tracks-log
+                    <track-log-view
                         disable = "[[userouting]]"
                         checked = "[[elevationshow]]"
                         metadata="[[metadataset]]"
-                        trackselected="[[datasetitem]]">
-                    </tracks-log>    
+                        trackdata="[[trackdata]]"
+                        logindex = "{{logindex}}">
+                    </track-log-view>    
 
                     <mb-styles 
                         checked = "[[styleselectshow]]"
@@ -253,6 +266,7 @@
                 
             </template>
 
+            <!-- -->
             <tracks-api 
                 disable = "[[userouting]]"
                 rawcontent = "[[trackdata]]" 
@@ -262,25 +276,6 @@
                 mapevents = "{{mapevents}}"
                 trackselected = "{{datasetitem}}">
             </tracks-api>
-
-            <!-- C. DATAFLOW INTERFACE -->
-            <mb-content-browser 
-                indexurl="[[indexurl]]" 
-                metadatasetslabel="[[metadatasetslabel]]" 
-                metadataset="{{metadataset}}"
-
-                dataset="[[dataset]]" 
-                selectitem="{{datasetitem}}"> 
-
-                <tracks-load 
-                    routemode = "[[!logmode]]"
-                    tracksetmeta = "{{metadataset}}" 
-                    trackdata = "{{trackdata}}"> 
-                    <!--routecontent = "{{routecontent}}">--> 
-                </tracks-load>
-
-            </mb-content-browser>
-            <!-- selectprop="id"--> 
 
             <!-- SYNC mapcontent from contentbox -->
             <!-- checked="[[logmode]]" --> 
@@ -294,13 +289,40 @@
                 featureselected="{{datasetitem}}">
             </mb-content-manager>
 
-            <!-- DIALOG ctrl <mb-map> <mb-content-browser> -->
-            <!-- featureapplied="{{selector}}"> -->
-            <!--<mb-content-select 
-                metadataset = "[[metadataset]]" 
-                featureselected = "{{datasetitem}}"
-                featurelog = "{{featurelog}}"> 
-            </mb-content-select>-->
+            <!-- C. DATA-Supply INTERFACE -->
+            <div class="flexchild">
+                <mb-content-browser 
+                    indexurl="[[indexurl]]" 
+                    metadatasetslabel="[[metadatasetslabel]]" 
+                    metadataset="{{metadataset}}"
+
+                    dataset="[[dataset]]" 
+                    selectitem="{{datasetitem}}"> 
+
+                    <tracks-load 
+                        routemode = "[[!logmode]]"
+                        tracksetmeta = "{{metadataset}}" 
+                        trackdata = "{{trackdata}}"> 
+                        <!--routecontent = "{{routecontent}}">--> 
+                    </tracks-load>
+
+                </mb-content-browser>
+                <!-- selectprop="id"--> 
+            </div>
+
+            <!-- C. DATA-LOG CTRL -->
+            <div class="flexchild">
+                <!-- placed below content-browser -->
+                <!-- checked = "[[elevationshow]]" -->
+                <track-log-ctrl
+                    disable = "[[userouting]]"
+                    checked = "true"
+                    metadata="[[metadataset]]"
+                    trackselected="[[datasetitem]]"
+                    trackdata="{{trackdata}}"
+                    logindex = "{{logindex}}">
+                </track-log-ctrl>    
+            </div>    
 
         </div>
 

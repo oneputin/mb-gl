@@ -366,19 +366,20 @@
         // Refresh content && location 
         // of an app-specific mapbox-popup 
         // default: html at map-center  
-        popupOnMap: function(popupcontent) {
+        popupOnMap: function(popupcontent, options) {
             // if (!this.map) return;
             // console.log("popupcontent",popupcontent);
             var html, lnglat, bbox, openflag;
-            // map = this.map; // popup = this.popup;
-
+            if (!options) { // 
+                options = {
+                    closeButton: false,
+                    closeOnClick: true
+                };
+            }    
             // Prepare a "" Info-Popup
             // to be closed on x-mark
             if (!this.popup) {
-                this.popup = new mapboxgl.Popup({
-                    closeButton: false,
-                    closeOnClick: true
-                });
+                this.popup = new mapboxgl.Popup(options);
             }
 
             if (typeof popupcontent == "object") {
@@ -396,6 +397,7 @@
             }
 
             // Refresh popup contet and location
+
             if (!lnglat) {
                 if (bbox && bbox.bounds) { // console.log("bbox", bbox);
                     lnglat = bbox.bounds.getCenter();
@@ -404,12 +406,10 @@
                 }
             }
 
-
             if (!this.popup.isOpen()) this.popup.addTo(map);
 
-            this.popup
-                .setLngLat(lnglat)
-                .setHTML(html);
+            this.popup.setLngLat(lnglat)
+                      .setHTML(html);
 
         },
 
