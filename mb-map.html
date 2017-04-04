@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
 
 <link rel="import" href="mb-api.html">
 <link rel="import" href="mb-map-behavior.html">
@@ -39,6 +40,10 @@ the map-ctrls can be placed as map-overlay or anywhere else
             </div>
             <content>
             </content>
+            <paper-toast id="toast" 
+                class="fit-bottom" 
+                text="[[maptoast]]">
+            </paper-toast>
         </div>
 
     </template>
@@ -129,6 +134,12 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 zoom: {
                     type: Number,
                     observer: 'zoomthemap'
+                },
+
+                maptoast : {
+                    type: String,
+                    observer: 'triggerToast',
+                    value: "Maps are presented here using mapBox Tech."
                 }
 
             },
@@ -181,8 +192,12 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 // D. "INSTALL" the mapbox-map
 
                 this.mapctrl = mapctrl; //console.log(this.mapapikey, this.mapctrl);
-
                 this.installmap();
+
+                // E. Setup "MapToast"
+                var toast = this.$.toast, map = this.$.map;
+                toast.fitInto = map;
+                toast.open();  // console.log("Triggered FIRST map-toast", toast, map); 
             },
 
             // app-event-action
@@ -280,6 +295,12 @@ the map-ctrls can be placed as map-overlay or anywhere else
                         }
                     }     
                 }
+            },
+
+            triggerToast: function(msg) {
+                var toast = this.$.toast, map = this.$.map;
+                toast.fitInto = map;
+                toast.open();  // console.log("Triggered msg into map-toast", msg); 
             }
 
         });

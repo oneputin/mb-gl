@@ -79,20 +79,20 @@ container for presentation of track-properties (fi. elevations)
                     type: Object
                 },
 
-                trackdata: {
+                logdata: {
                     type: Array,
                     observer: 'checkindata'
                 },
 
                 logindex: {
                     type: Number,
-                    observer: 'setchartselection',
+                    observer: 'setChartSelection',
                     notify: true
                 },
 
                 chartselection: {
                     type: Object,
-                    observer: 'getchartselection'
+                    observer: 'getChartSelection'
                 },
 
                 disable: {
@@ -127,17 +127,17 @@ container for presentation of track-properties (fi. elevations)
                 }
             },    
 
-            getchartselection: function(chartpoints){
-                console.log("getchartselection", chartpoints);
+            getChartSelection: function(chartpoints){
+                // console.log("getChartSelection", chartpoints);
                 this.logindex = chartpoints[0].row;
             },
 
-            setchartselection: function(logindex){
+            // update selectionpoint(s) on chart 
+            setChartSelection: function(logindex){
                 var chartpoints = [{
                     column: 1,
                     row: logindex
-                }];
-                console.log("setchartselection " + logindex, chartpoints);
+                }]; // console.log("setChartSelection at " + logindex, chartpoints);
                 this.chartselection = chartpoints;
             },
 
@@ -146,10 +146,10 @@ container for presentation of track-properties (fi. elevations)
              * Select/Hilite a feature on the map  (fi. zoomTo)
              * @param      {object}  f       { mapbox-jeature }
              */
-            checkindata: function(trackdata) { 
+            checkindata: function(logdata) { 
                 if (this.disable) return; 
                 // B. Refresh Generic Track viewer(s) (Menu, Chart) 
-                this.refreshElevChart(trackdata); 
+                this.refreshElevChart(logdata); 
             },
 
             // Refresh parameters of chart-element <google-chart>

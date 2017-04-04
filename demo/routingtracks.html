@@ -141,7 +141,7 @@
     <div class="container">
         <!-- LEFT block: CONTENT (Map, diagram, list) -->
 
-        <div class="content_area">
+        <div id="content" class="content_area">
 
             <template is="dom-if" if="{{mapstyle}}">
                 
@@ -152,14 +152,15 @@
                     mbid="{{mbid}}" 
                     cbox="{{cbox}}" 
                     zoom="{{zoom}}" 
-                    mapctrl="[[mapctrl]]">
+                    mapctrl = "[[mapctrl]]"
+                    maptoast = "[[mapmsg]]">
 
                     <!-- placed here to overlay the map -->
                     <track-log-view
                         disable = "[[userouting]]"
                         checked = "[[elevationshow]]"
                         metadata="[[metadataset]]"
-                        trackdata="[[trackdata]]"
+                        logdata ="[[logdata]]"
                         logindex = "{{logindex}}">
                     </track-log-view>    
 
@@ -191,7 +192,6 @@
                     </tracks-info>
                     -->
                     <template is="dom-if" if="{{userouting}}">
-                        
                         <div class="ctrls-in-map">
                             <!-- ctrl of animation-progress  -->
                             <timer-ctrl 
@@ -206,9 +206,6 @@
                             
                         </div>
                     </template>
-
-                    <!--<mb-info-drag carddata="[[trackdata]]">
-                        </mb-info-drag>-->
 
                 </mb-map>
 
@@ -269,12 +266,14 @@
             <!-- -->
             <tracks-api 
                 disable = "[[userouting]]"
+                mapmsg = "{{mapmsg}}"
                 rawcontent = "[[trackdata]]" 
                 metadata = "{{metadataset}}" 
                 contentbox = "{{contentbox}}" 
                 mapcontent = "[[mapcontent]]"
                 mapevents = "{{mapevents}}"
-                trackselected = "{{datasetitem}}">
+                trackselected = "{{datasetitem}}"
+                pntindex = "{{logindex}}">
             </tracks-api>
 
             <!-- SYNC mapcontent from contentbox -->
@@ -282,7 +281,7 @@
             <mb-content-manager 
                 map = "[[map]]" 
                 mbid = "[[mbid]]" 
-                contentbox="{{contentbox}}" 
+                contentbox ="{{contentbox}}" 
                 mapevents = "[[mapevents]]"
                 mapcontent = "{{mapcontent}}"
                 dataset = "{{dataset}}"
@@ -312,14 +311,13 @@
 
             <!-- C. DATA-LOG CTRL -->
             <div class="flexchild">
-                <!-- placed below content-browser -->
                 <!-- checked = "[[elevationshow]]" -->
                 <track-log-ctrl
                     disable = "[[userouting]]"
                     checked = "true"
-                    metadata="[[metadataset]]"
-                    trackselected="[[datasetitem]]"
-                    trackdata="{{trackdata}}"
+                    metadata ="[[metadataset]]"
+                    logobject ="[[datasetitem]]"
+                    logdata = "{{logdata}}"
                     logindex = "{{logindex}}">
                 </track-log-ctrl>    
             </div>    

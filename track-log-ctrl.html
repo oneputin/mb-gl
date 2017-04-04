@@ -53,7 +53,7 @@ presentation of track-properties (= selected feature)
         <div class="vertical">
             <!-- get a datasetMeta -->
             <div class="flexchild">
-                <template is="dom-if" if="{{trackdata}}">
+                <template is="dom-if" if="{{logdata}}">
                     <dynamic-menu 
                         id="zmenu"
                         class="metadata"
@@ -77,24 +77,23 @@ presentation of track-properties (= selected feature)
                     type: Object
                 },
 
-                trackselected: {
+                // 
+                logobject: {
                     type: Object,
                     notify: true,
-                    observer: 'checkoutTrack'
+                    observer: 'checkinLogdata'
                 },
 
-                trackdata : {
-                    type: Array,
+                // 
+                logindex: {
+                    type: Number,
+                    observer: 'setmenuselection',
                     notify: true
                 },
 
-                menulog: {
-                    type: String
-                },
-                
-                logindex: {
-                    type: Number,
-                    observer: 'setmenuselection'
+                logdata : {
+                    type: Array,
+                    notify: true
                 },
 
                 zitems : {
@@ -139,39 +138,39 @@ presentation of track-properties (= selected feature)
             },
 
             getmenuselection: function(menuitem){
-                console.log("getmenuselection", menuitem.id, menuitem);
+                // console.log("getmenuselection", menuitem.id, menuitem);
                 this.logindex = menuitem.id;
             },
 
 
             /**
-             * 
+             * Extract logdata (=properties) of multipoint (map-)features
              * @param      {object}  f       { mapbox-jeature }
              */
-            checkoutTrack: function(f) { 
+            checkinLogdata: function(logobject) { 
                 if (this.disable) return; 
-                if (!f || !f.feature || !this.checked) return;    
+                if (!logobject || !logobject.feature || !this.checked) return;    
                 // console.log("Checkout Feature to LOG: " + f.id , f);
                 
-                // A. generic Trackdata-identification
-                var trackdata = f.feature.properties;   
-                if (!trackdata.coordElevs || !trackdata.coordElevs.length) {
-                    this.trackdata = [];
+                // A. generic logdata-checkin from (map-)feature-properties
+                var logdata = logobject.feature.properties;   
+                if (!logdata.coordElevs || !logdata.coordElevs.length) {
+                    this.logdata = [];
                     return; 
-                } console.log("selected TRACK props", trackdata);
+                } console.log("LogData CheckedIN:", logdata);
                 
-                this.trackdata = trackdata; 
+                this.logdata = logdata; 
 
                 // B. Refresh Generic Track ctrls(Track-identification, pnt-menu) 
-                var cnt =  trackdata.coordElevs.length;
-                var log = "<a href=''>["+f.id +"]</a> (n="+cnt+")<br> in logbook <a href=''>{ "+ f.layer+" }</a>"; 
+                // var cnt =  logdata.coordElevs.length;
+                // var log = "<a href=''>["+f.id +"]</a> (n="+cnt+")<br> in logbook <a href=''>{ "+ logobject.layer+" }</a>"; 
                 // this.$.meta.innerHTML = log;
                
-                this.refreshCtrlMenu(trackdata); 
+                this.refreshCtrlElem(logdata); 
             },
 
             // Refresh parameters of chart-element <google-chart>
-            refreshCtrlMenu: function(pp){
+            refreshCtrlElem: function(pp){
                 var scope = this,
                     times = pp["coordTimes"],
                     elevs = pp["coordElevs"];
