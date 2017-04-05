@@ -31,10 +31,12 @@
             // Check applicability
             mapcontent = mapcontent.value; // Polymer !! 
             if (!dataName) dataName = Object.keys(mapcontent)[0] ; // 'routes';
+            
             if (!mapcontent[dataName]) {
                 console.log("MAPDATALOAD BREAK NO content "+dataName, mapcontent); 
                 return;
             }     
+
             mapcontent = mapcontent[dataName];
             console.log("MAPDATALOAD NEW ["+dataName+"]-content of mapcontent", mapcontent);  
 
@@ -175,7 +177,6 @@
                 }
             }
 
-
             // START Listener to feature-loading
             map.on("data", onFeatureLoaded);
 
@@ -187,8 +188,6 @@
                 }
                 map.off("data", onFeatureLoaded); 
             }, 1000);
-
-
 
         },
 
@@ -369,7 +368,7 @@
         popupOnMap: function(popupcontent, options) {
             // if (!this.map) return;
             // console.log("popupcontent",popupcontent);
-            var html, lnglat, bbox, openflag;
+            var html, lnglat, bbox, openflag, setcenter = options["center"];
             if (!options) { // 
                 options = {
                     closeButton: false,
@@ -398,7 +397,7 @@
 
             // Refresh popup contet and location
 
-            if (!lnglat) {
+            if (!lnglat || setcenter) {
                 if (bbox && bbox.bounds) { // console.log("bbox", bbox);
                     lnglat = bbox.bounds.getCenter();
                 } else { // console.log("map.getCenter", map.getCenter);

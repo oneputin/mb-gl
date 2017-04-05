@@ -67,6 +67,10 @@ display as decorated route (fi with commented endpoints)
                     notify: true
                 },
 
+                trackdata: {
+                    type: Array
+                },
+
                 pntindex: {
                     type: Number,
                     observer: 'logRefresh',
@@ -247,7 +251,6 @@ display as decorated route (fi with commented endpoints)
                                 // eventscope.popupOnMap(trackPntInfo);
                             } 
                         }
-
                     };
                
                //     
@@ -266,11 +269,17 @@ display as decorated route (fi with commented endpoints)
 
                 if (f.feature) feature = f.feature;
 
+                this.trackdata = feature.geometry.coordinates; 
+
                 if (map) { 
-                    if (feature.properties.coordTimes)  {  // SPEC-CASE : trackLogs 
+                    
+                    if (feature.properties.coordTimes)  {  
                         // console.log("TRACK DECORATE ", feature);
                         selectObj = this.trackDecorate(layerid, [feature]); 
                     }    
+
+                    this.refreshTrackObject(0); 
+
                 } else {    // in non-map-mode
                     console.log("TRACK VIEW", feature);
                     selectObj = this.setFeatureBounds([feature]);
@@ -279,7 +288,7 @@ display as decorated route (fi with commented endpoints)
             },    
 
             logRefresh: function(ix) { 
-                console.log("Refreshing trackPoint", ix);
+                this.refreshTrackObject(ix);  // console.log("Refreshing trackPoint", ix);
             },
 
             // Special "permanent" HILITE of selected tracks
@@ -377,23 +386,12 @@ display as decorated route (fi with commented endpoints)
                     // APPLY trace-overlay (gestrichelt) on track
                     showTrackLine(layerid, trackInfo); 
 
-                    // Refresh Triggersignal to enable ZOOM & SYNC with sibling elements (fi. with menues )
-                    if (trackInfo.html)  {
-                        // console.log("HILITE track(s)INFO", trackInfo); 
-                        // scope.popupOnMap(trackInfo);
-                    }    
-
-                    // StartZoom with ZoomEnd-Action
-
-                    // Define action to run AFTER startZoom (info-popup)
-                    map.once('moveend', function() { // console.log(trackInfo, this); 
-                        // MAPBOX-popup
-                        // this.popupOnMap(trackInfo, {});
-                        // WEBCOMPONENT-popup
-
+                    // Single PanZoom-Event with MoveEnd-Action 
+                    map.once('moveend', function() { 
+                        this.popupOnMap(trackInfo, {center: true});
                     }.bind(this));
                 
-                    // Start ZOOM to "complete track"" 
+                    // Start PanZoom to "complete trackDecoration" 
                     if (trackInfo.bbox && trackInfo.bbox.bounds) {
                         map.fitBounds(trackInfo.bbox.bounds, {
                             padding: 40
@@ -406,11 +404,12 @@ display as decorated route (fi with commented endpoints)
             // Get app-specific Info about the "complete json-feature", 
             // the selected json-tile belongs to
 
-            getTrackInfo: function(trackdata) {
+            getTrackInfo: function(trackdata ) {
                 var scope = this, 
                     trackInfo={}, trackLine, selectPnt, trackPnt, trackTimes, tpTime, trackZ, tpZ;    
-                
-                // C. APP-SPECIFIC: derive line-specific props
+                // console.log("getTrackInfo", trackdata); 
+
+                // A. APP-SPECIFIC: derive line-specific props
                 if (trackdata.features && trackdata.features.length) {
                     // 
                     selectPnt = trackdata.features[1];
@@ -428,7 +427,10 @@ display as decorated route (fi with commented endpoints)
                     trackInfo.length = this.deltaL(trackdata.srcfeature);
                 }
 
-                // D. SPECIFIC: derive tracklog-specific time-parameters 
+                trackInfo.html = "Track LOG <hr>" + trackInfo.time;
+                trackInfo.toast = "";
+
+                // B. SPECIFIC: derive tracklog-specific time-parameters 
                 if (trackInfo.coordTimes) { 
                     trackTimes = trackInfo.coordTimes;  // console.log("trackTimes", typeof trackTimes, trackTimes);
                     if (typeof trackTimes == "string") {
@@ -449,15 +451,14 @@ display as decorated route (fi with commented endpoints)
                     trackInfo.count = n;
                     trackInfo.von = scope.logTime(von, "h", "t");
                     trackInfo.bis = scope.logTime(bis, "h", "t");
-                }
 
-                // E. SPECIFIC: compile some parameters as HTML 
-                var vonbis = " [ " + trackInfo.von +" to " + trackInfo.bis + "] ";
-                trackInfo.toast = vonbis;
-                trackInfo.html = "Track LOG <hr>"
-                    + trackInfo.time
-                    + "<br>Duration: " + trackInfo.duration
-                    + "<br>" + vonbis; 
+                    // E. SPECIFIC: compile some parameters as HTML 
+                    var vonbis = " [ " + trackInfo.von +" to " + trackInfo.bis + "] ";
+                    trackInfo.html  += "<br>Duration: " 
+                                    + trackInfo.duration
+                                    + "<br>" + vonbis; 
+                    // trackInfo.toast += vonbis;
+                }
                 
                 if (trackPnt) { 
                     var tpinfo = trackPnt.properties,
@@ -470,9 +471,10 @@ display as decorated route (fi with commented endpoints)
                         tpTime = scope.trackTime(trackTimes[tpinfo.index]);
                         tpTime = scope.utcTime(tpTime, "h");
                         tpTime = scope.logTime(tpTime, "h", "t");
-                        tpTime = tpTime + "[UTC]" ;
-                        trackInfo.html += "<br>Time: " + tpTime; 
-                        trackInfo.toast = tpTime ; // + trackInfo.toast;
+                        tpTime = tpTime + " [UTC]" ;
+                    
+                        trackInfo.html  += "<br>Time: " + tpTime; 
+                        trackInfo.toast += tpTime ; // + trackInfo.toast;
                     }    
 
                     if (trackInfo.coordElevs) {
@@ -482,7 +484,7 @@ display as decorated route (fi with commented endpoints)
                         }
                         trackZ = trackZ[tpinfo.index] + " m";
                         trackInfo.html += "<br>Elev : " + trackZ + " m NN"; 
-                        trackInfo.toast = "z = "+ trackZ + " at " + trackInfo.toast; 
+                        trackInfo.toast += "  :  z = "+ trackZ ; 
                     }    
                     // console.log("TP:", trackPnt, trackLine); // , trackInfo);
                 } else {
@@ -491,8 +493,87 @@ display as decorated route (fi with commented endpoints)
                 } 
 
                 return trackInfo;
-            }
+            },
+
+            // 
+            refreshTrackObject: function(index, selectsymbol) {
+                // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
+
+                this.debounce("refresh", function() {
+                    if (!selectsymbol) selectsymbol = "airport-15";
+                    // create a GeoJSON point to serve as a starting point
+                    if (!this.trackdata) return;
+
+                    var coords = this.trackdata[index].slice(0,2); 
+                    var point = {
+                        "type": "Point",
+                        "coordinates": coords
+                    };  
+                    
+                    // 
+                    if (!map.getSource("tracker")) {
+                        map.addSource('tracker', { 
+                            type: 'geojson', 
+                            data: point 
+                        });
+                    } else {
+                        map.getSource("tracker").setData(point);
+                    }  
+                    console.log("refreshTrackObject at: " + index, point, map.getSource("tracker")); // return;  
+
+                    // At FIRST call only 
+                    if (!map.getLayer("tracks-glow-strong")) {
+
+                        var layers =  [
+                            {
+                                "id": "tracks-glow-strong",
+                                "type": "circle",
+                                "source": "tracker",
+                                "paint": {
+                                    "circle-radius": 18,
+                                    "circle-color": "#ff0",
+                                    "circle-opacity": 0.6
+                                }
+                            }, 
+                            
+                            {
+                                "id": "tracks-glow",
+                                "type": "circle",
+                                "source": "tracker",
+                                "paint": {
+                                    "circle-radius": 40,
+                                    "circle-color": "#ff0",
+                                    "circle-opacity": 0.2
+                                }
+                            }, 
+                            
+                            {
+                                "id": "tracks-select",
+                                "type": "symbol",
+                                "source": "tracker",
+                                "layout": {
+                                    "icon-image": selectsymbol,
+                                    "icon-rotate": 0,
+                                    "text-field": "{title}",
+                                    "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                                    "text-size": 12,
+                                    "text-offset": [0, 0.6],
+                                    "text-anchor": "top"
+                                }
+                            }
+                        ];
+                        console.log("LAYERS ADD", layers);
+
+                        layers.forEach(function(layer){
+                            map.addLayer(layer);
+                        })
+                        console.log("LAYERS ADDED");
+                    }    
+
+                }, 100);      
+            }  
 
         });
+
     </script>
 </dom-module>       

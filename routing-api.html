@@ -1042,7 +1042,7 @@ create and animate routes along waypoint file loaded from url
              * Actions connected with every Animationstep 
              *
              * @param      {number}  counter  The animation-counter
-             * @return     {number}  number of trackObjects visible after counter
+             * @return     {array}   array    Routes affected during animationStep
              */
             trackStepAction: function(counter, mapTime) {
                 // Function updates location and properties of trackThemes (trackPoints and/or trackTraces)
@@ -1157,8 +1157,9 @@ create and animate routes along waypoint file loaded from url
 
                     var contentsrc, contentdata;
                     themes.forEach(function(theme){
-                        contentsrc = map.getSource(theme);
+                        contentsrc  = map.getSource(theme);
                         contentdata = modeldata[theme];
+
                         if (contentsrc && contentdata.features.length) {
                             contentsrc.setData(contentdata);
                         }   
@@ -1248,11 +1249,12 @@ create and animate routes along waypoint file loaded from url
                             // A. Update list of actually animated routes   
                             located.push(route);
                             
-                            // B. REFRESH DATA
+                            // B. REFRESH geoDATA of dynamic features
                             var coords = legLocation["coords"];
                            
                             // B.1 Set new POSITION of trackObject 
                             trackObj.geometry.coordinates = coords; 
+                            
                             // B.2 EXTEND/MOVE the trackTrace 
                             mba.refreshTrace(coords, trackTrace);
 
@@ -1274,12 +1276,13 @@ create and animate routes along waypoint file loaded from url
                             // D. MARK this location as "lastLocation" 
                             //    to compare with in next animationStep 
                             trackObj.properties.lastPos = legLocation['coords'];
+
                         }
                     }
                 };
                 
-                // C. APPLY the updated sources of the animation-layers      
-                //    if trackers on one or more routes were updated          
+                // C. APPLY the updated sources of the animated mb-maplayers      
+                //    if modeldata on one or more routes were updated           
                 if (located.length) {                    
                     refreshTrackedSrcData(trackThemes, modeldata);
                 }
@@ -1288,6 +1291,7 @@ create and animate routes along waypoint file loaded from url
                 if (mapMsg) { // console.log(mapMsg);
                     mba._animationMapRefresh(mapTime, mapMsg, timer.filter);
                 } 
+
                 return located;
             },
 
@@ -1938,7 +1942,9 @@ create and animate routes along waypoint file loaded from url
                 // console.log("routedata at setupAnimationTracker", routedata);
                 // the trackLayerObj contains the data, the styling of the baseLayer AND the styling for the selectLayer
                 if (!timer) timer = this.timer;
-                if (!metadataset) metadataset = this.metadataset; // console.log("animationTrackerSetup metadata", metadataset); // metadata of primary datasrc 
+                if (!metadataset) metadataset = this.metadataset; 
+                if (!metadataset) metadataset = {}; 
+                // console.log("animationTrackerSetup metadata", metadataset); // metadata of primary datasrc 
                 
                 function guessRouteMeta(routedata) {
                     // HEURISTIC to alternatively(?) query from different properties 
@@ -2030,10 +2036,9 @@ create and animate routes along waypoint file loaded from url
                     return trackStyle; 
                 }
 
-                function setupSelectLayer(metadataset) {
+                function setupSelectLayer(selectsymbol) {
                     // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
-                    var selectsymbol = "airport-15";
-                    if (metadataset.symbol) selectsymbol = metadataset.symbol; 
+                    if (!selectsymbol) selectsymbol = "airport-15";
 
                     var selectLayer =  [
                         {
@@ -2082,7 +2087,6 @@ create and animate routes along waypoint file loaded from url
                 var routemetas = {};
 
                 var modeltracks = mba.model.data.tracks,
-                    // modeltracks.features = [],
                     routedata, routeid, startort, trackmeta,
                     nn = routedataset.length;
 
@@ -2129,6 +2133,7 @@ create and animate routes along waypoint file loaded from url
 
                 };  
 
+
                 // B. Setup ONE Layer for multiple trackers (DynamicPoints)
                 
                 // guess from last track-props used to build a Track
@@ -2140,7 +2145,7 @@ create and animate routes along waypoint file loaded from url
                 // C. ADD SPECIFIC "multiSymbol" presentation 
                 // of one!! "observed" trackObj (app-specific)
 
-                trackLayerObj['selectlayer'] = setupSelectLayer(metadataset);
+                trackLayerObj['selectlayer'] = setupSelectLayer(metadataset.symbol);
 
                 // console.log("trackLayerObj", trackLayerObj);
                 
