@@ -63,10 +63,11 @@ display as decorated route (fi with commented endpoints)
 
                 trackselected: {
                     type: Object,
-                    observer: 'trackActivate',
+                    // observer: 'trackActivate',
                     notify: true
                 },
 
+                // 
                 trackdata: {
                     type: Array
                 },
@@ -97,6 +98,7 @@ display as decorated route (fi with commented endpoints)
             observers: [
                 'transfer(rawcontent.*)', // , metadata)'
                 'onMapdataLoad(mapcontent.*)',
+                'trackActivate(trackselected.id)'
             ],
 
             ready: function() {
@@ -115,16 +117,41 @@ display as decorated route (fi with commented endpoints)
                 this.contentbox = rawcontent;
             },
 
+            snapTrackPoint : function(trackLine, queryPnt, elemscope) {
+
+                queryPnt = { 
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [queryPnt.lng, queryPnt.lat]
+                    }
+                };  
+
+                // B.2 Find/Eval nearest trackpoint
+                var snapPnt = turf.pointOnLine(trackLine, queryPnt, 'kilometers');
+                if (!snapPnt) return; 
+
+                // Set element-Property  
+                elemscope.pntindex = snapPnt.properties.index;
+
+                return {
+                    "track": trackLine, 
+                    "query": queryPnt, 
+                    "snap": snapPnt
+                };
+            },    
+
             // Setup events related to UserInteractions with track-lines
             setEventFunctions: function(){
                 var mapevents = {};
-                var apiscope = this;
+                var elemscope = this;
 
                 // Get content of tilefeature selected	
                 function srcFeatureContent(tileFeature, layerid, eventscope) {
                     var tilecontent = eventscope.tileFeatureContent(tileFeature, layerid, "src"),
                         selectid = tilecontent.id.replace(/-/g,'_'),
-                        allcontent = apiscope.contentbox[layerid].srcdata.features,
+                        allcontent = elemscope.contentbox[layerid].srcdata.features,
                         srccontent; 
                     // console.log("map-selected content", selectid, tilecontent, allcontent);
                     allcontent.some(function(f){
@@ -141,135 +168,134 @@ display as decorated route (fi with commented endpoints)
                     return srccontent;
                 }
 
+
                 // Generic HILITE-function based on "id-Filter"	
-                mapevents["hilite"] = 
-                    function featureHilite(e, layerid, scope) {
-                        // console.log("featureHilite in ", layerid, e.point); 
-                        if (!map.getLayer(layerid)) return;
-                        if (!map.getLayer(layerid + "-hover")) return;
+                mapevents["hilite"] = function featureHilite(e, layerid, scope) {
+                    // console.log("featureHilite in ", layerid, e.point); 
+                    if (!map.getLayer(layerid)) return;
+                    if (!map.getLayer(layerid + "-hover")) return;
 
-                        var hilayerid, hifilter;
+                    var hilayerid, hifilter;
 
-                        var features = map.queryRenderedFeatures(e.point, {
-                            layers: [layerid]
-                        });
+                    var features = map.queryRenderedFeatures(e.point, {
+                        layers: [layerid]
+                    });
 
-                        // CHANGE cursor temporarily
-                        map.getCanvas().style.cursor = (features.length) ? 'pointer' : ''; // crosshair';
+                    // CHANGE cursor temporarily
+                    map.getCanvas().style.cursor = (features.length) ? 'pointer' : ''; // crosshair';
 
-                        if (features.length) {  // Apply HILITE-FILTER  
+                    if (features.length) {  // Apply HILITE-FILTER  
 
-                            var fkeys = scope.guessFeatureKeys(features[0]); 
+                        var fkeys = scope.guessFeatureKeys(features[0]); 
 
-                            if (!fkeys) {
+                        if (!fkeys) {
 
-                                console.log("HILITING in " + layerid + ":", features[0]);
+                            console.log("HILITING in " + layerid + ":", features[0]);
+                        
+                        } else {    // Filtering the HOVER-Layer
                             
-                            } else {    // Filtering the HOVER-Layer
-                                
-                                hifilter = ["==", fkeys[0], fkeys[1]] ; // trackInfo[keyname]];
-                                // console.log("hi " + layerid + ":", trackInfo.length+" km");
+                            hifilter = ["==", fkeys[0], fkeys[1]] ; // trackInfo[keyname]];
+                            // console.log("hi " + layerid + ":", trackInfo.length+" km");
 
-                                hilayerid = layerid + "-hover";
-                            
-                                map.setFilter(hilayerid, hifilter);
-                            }
-
-                        } else {                // remove HILITE decoration
-                            map.setFilter(layerid + "-hover", ["==", "name", ""]);
+                            hilayerid = layerid + "-hover";
+                        
+                            map.setFilter(hilayerid, hifilter);
                         }
-                    };
+
+                    } else {                // remove HILITE decoration
+                        map.setFilter(layerid + "-hover", ["==", "name", ""]);
+                    }
+                };
 
                 // Feature-Select 
                 //   supplies info-object of selected feature 
-                mapevents["select"] = 
-                   
-                    function featureSelect(e, layerid, eventscope) {
-                        // console.log("featureSelect in ", layerid, e.point); 
+                mapevents["select"] =  function featureSelect(e, layerid, eventscope) {
+                    // console.log("featureSelect in ", layerid, e.point); 
 
-                        if (!map.getLayer(layerid)) return;
-                        // if (!map.getLayer(layerid + "-select")) return;
+                    if (!map.getLayer(layerid)) return;
+                    // if (!map.getLayer(layerid + "-select")) return;
 
-                        // A. Trigger
-                        //  - Zoom to trackLine-BBOX  
-                        //  - SYNC of map-selection with item-selection in content-browser    
+                    // A. Trigger
+                    //  - Zoom to trackLine-BBOX  
+                    //  - SYNC of map-selection with item-selection in content-browser    
 
-                        // A.1 
-                        var features = map.queryRenderedFeatures(e.point, {
-                            layers: [layerid]
-                        }); // console.log("featureSelect. tiles", features); 
-                        if (!features || !features.length) return;  
+                    // A.1 Get  
+                    var features = map.queryRenderedFeatures(e.point, {
+                        layers: [layerid]
+                    }); // console.log("featureSelect. tiles", features); 
+                    if (!features || !features.length) return;  
 
-                        var srcContent = srcFeatureContent(features[0], layerid, eventscope); 
+                    var srcContent = srcFeatureContent(features[0], layerid, eventscope); 
+                    if (!srcContent) return;  // console.log("srcContent:", srcContent);
+                    
+                    if (elemscope.trackselected.id != srcContent.id) {  
+                        elemscope.trackselected = srcContent; // features[0];
+                    }
+                
+                    // B. Select/Identify nearest point on trackLine 
 
-                        if (!srcContent) return;  // console.log("srcContent:", srcContent);
+                    var trackLine = srcContent.feature;  // console.log("SELECTLINE", srcContent, trackLine); 
 
-                        // I
-                        var trackLine = srcContent.feature; // console.log("SELECTLINE", trackLine); 
-                        
-                        apiscope.trackselected = srcContent; // features[0];
+                    var snapSet = elemscope.snapTrackPoint(trackLine, e.lngLat, elemscope);
 
+                    // OPTION: refresh trackPntInfo in mapPopup at correct location
+                    if (snapSet && snapSet.snap) {
+                        // console.log("TrackPoint at Index=" + index, result);
+                        var trackPntInfo =  elemscope.trackInfoCollect(snapSet); // snapped.properties);
+                        // console.log("TrackPointInfo at: " + pntindex, trackPntInfo, result); // , eventscope);
 
-                        // B. Select/Identify nearest point on trackLine 
+                        if (trackPntInfo.toast) elemscope.mapmsg = trackPntInfo.toast; 
+                        // eventscope.popupOnMap(trackPntInfo);
+                    } 
 
-                        // B.1 Get clickEvent-Location
-                        var querypt = e.lngLat; 
-                        querypt = { 
-                            "type": "Feature",
-                            "properties": {},
-                            "geometry": {
-                                "type": "Point",
-                                "coordinates": [querypt.lng, querypt.lat]
-                            }
-                        };  
-
-                        // B.2 Find/Eval nearest trackpoint
-                        var snapped = turf.pointOnLine(trackLine, querypt, 'kilometers');
-
-                        if (snapped) {
-
-                            var pntindex = snapped.properties.index;
-
-                            // send msg  
-                            apiscope.pntindex = pntindex; 
-
-                            // refresh map-track-marker
-                            snapped.properties['marker-color'] = '#00f'
-
-                            // OPTION: refresh trackPntInfo in mapPopup at correct location
-                            if (1) {
-                                var snapdata = {
-                                    "type": "FeatureCollection",
-                                    "features": [trackLine, querypt, snapped]
-                                };
-                                // console.log("TrackPoint at Index=" + index, result);
-                                var trackPntInfo =  apiscope.getTrackInfo(snapdata); // snapped.properties);
-                                // console.log("TrackPointInfo at: " + pntindex, trackPntInfo, result); // , eventscope);
-
-                                if (trackPntInfo.toast) apiscope.mapmsg = trackPntInfo.toast; 
-                              
-                                // eventscope.popupOnMap(trackPntInfo);
-                            } 
-                        }
-                    };
+                };
                
                //     
+                mapevents["mousemove"] =  function mouseMove(e) {
+                    var layerid = 'trackpnt-glow';
+                    var features = map.queryRenderedFeatures(e.point, { layers: [layerid] });
+                    // Change point and cursor style as a UI indicator
+                    // and set a flag to enable other mouse events.
+                    if (features.length) {
+                        map.setPaintProperty(layerid, 'circle-color', '#ff0000'); // '#3bb2d0');
+                        canvas.style.cursor = 'move';
+                        isCursorOverPoint = true;
+                        map.dragPan.disable();
+                        
+                    } else {
+                        map.setPaintProperty(layerid, 'circle-color', '#3887be');
+                        canvas.style.cursor = '';
+                        isCursorOverPoint = false;
+                        map.dragPan.enable();
+                    }
+                }
+
                 this.mapevents = mapevents; 
             },
 
             // (Basic) MAP-Action(s) to run after a trackContent is selected
             // further actions may run in separate elements
-            trackActivate: function(f) { 
-                if (!f || !f.layer || this.disable) return;   
-                // console.log("ACTIVATE", f); 
+            trackActivate: function(fid) { // console.log("ACTIVATE track, ID=", fid);
+                if (!fid || this.disable) return; 
+                
+                f = this.trackselected;                      
+                if (!f.layer) return;   // console.log("ACTIVATE track", f); 
+
                 var selectObj, layerid, feature = f;
 
-                if (typeof f.layer == "string") layerid = f.layer;
-                else layerid = f.layer.id; 
+                if (typeof f.layer == "string") {
+                    layerid = f.layer;
+                } else {
+                    layerid = f.layer.id; 
+                }
 
-                if (f.feature) feature = f.feature;
+                if (f.feature) feature = f.feature; console.log() 
 
-                this.trackdata = feature.geometry.coordinates; 
+                this.trackdata = {
+                    "coords": feature.geometry.coordinates,
+                    "elevs": feature.properties.coordElevs, 
+                    "times": feature.properties.coordTimes
+                };     
 
                 if (map) { 
                     
@@ -278,7 +304,7 @@ display as decorated route (fi with commented endpoints)
                         selectObj = this.trackDecorate(layerid, [feature]); 
                     }    
 
-                    this.refreshTrackObject(0); 
+                    this.trackPointRefresh(0); 
 
                 } else {    // in non-map-mode
                     console.log("TRACK VIEW", feature);
@@ -286,10 +312,6 @@ display as decorated route (fi with commented endpoints)
                 }     
                 // console.log("processedTrack", selectObj); 
             },    
-
-            logRefresh: function(ix) { 
-                this.refreshTrackObject(ix);  // console.log("Refreshing trackPoint", ix);
-            },
 
             // Special "permanent" HILITE of selected tracks
             // by HILITE-TRACE + "commented" end-nodes  
@@ -311,7 +333,7 @@ display as decorated route (fi with commented endpoints)
                     if (!hilayer) return; 
                     // console.log("NODES of "+ layerid, hilayer, trackInfo);                 
 
-                    var fromicon = "toilet"; // "monument",
+                    var fromicon = "monument",
                         toicon = "harbor";
 
                     var fromnode = trackInfo.fromnode.slice(0,2),
@@ -356,13 +378,13 @@ display as decorated route (fi with commented endpoints)
                     // 
                     var hilayerid = layerid + "-trace", // ?
                         hilayer = map.getLayer(hilayerid);  
+                    if (!hilayer) return ;
 
                     var keyname = trackInfo.keyname,
                         hifilter = ["==", keyname, trackInfo[keyname]];
 
-                    if (!hilayer) return ;
-
                     console.log("TRACE-filter of " + hilayerid, hifilter, hilayer); 
+
                     map.setFilter(hilayerid, hifilter);
                 } 
 
@@ -374,7 +396,7 @@ display as decorated route (fi with commented endpoints)
                         tiledata = this.tileFeatureContent(tiledata[0], layerid, "tile"); // map-behavior   
                     }
                     
-                    var trackInfo =  this.getTrackInfo(tiledata);
+                    var trackInfo =  this.trackInfoCollect(tiledata);
 
                     if (!trackInfo) return;  
                     
@@ -404,27 +426,28 @@ display as decorated route (fi with commented endpoints)
             // Get app-specific Info about the "complete json-feature", 
             // the selected json-tile belongs to
 
-            getTrackInfo: function(trackdata ) {
+            trackInfoCollect: function(trackident ) {
                 var scope = this, 
                     trackInfo={}, trackLine, selectPnt, trackPnt, trackTimes, tpTime, trackZ, tpZ;    
-                // console.log("getTrackInfo", trackdata); 
+                // console.log("trackInfoCollect", trackident); 
 
                 // A. APP-SPECIFIC: derive line-specific props
-                if (trackdata.features && trackdata.features.length) {
+                if (trackident.snap) {
                     // 
-                    selectPnt = trackdata.features[1];
-                    trackPnt = trackdata.features[2];
-                    trackLine = trackdata.features[0];
+                    selectPnt = trackident.query; // features[1];
+                    trackPnt = trackident.snap; // features[2];
+                    trackLine = trackident.track; // features[0];
+
                     trackInfo = trackLine.properties;
                 
-                } else if (trackdata.srcfeature) {
+                } else if (trackident.srcfeature) {
 
-                    trackInfo = trackdata; 
-                    trackInfo.coords = trackdata.srcfeature.geometry.coordinates; // **!!!** 
-                    trackInfo.fromnode = trackdata.coords[0];
-                    trackInfo.tonode = trackdata.coords[trackdata.coords.length - 1];
-                    trackInfo.bbox = this.setFeatureBounds([trackdata.srcfeature]);
-                    trackInfo.length = this.deltaL(trackdata.srcfeature);
+                    trackInfo = trackident; 
+                    trackInfo.coords = trackident.srcfeature.geometry.coordinates; // **!!!** 
+                    trackInfo.fromnode = trackident.coords[0];
+                    trackInfo.tonode = trackident.coords[trackident.coords.length - 1];
+                    trackInfo.bbox = this.setFeatureBounds([trackident.srcfeature]);
+                    trackInfo.length = this.deltaL(trackident.srcfeature);
                 }
 
                 trackInfo.html = "Track LOG <hr>" + trackInfo.time;
@@ -496,39 +519,57 @@ display as decorated route (fi with commented endpoints)
             },
 
             // 
-            refreshTrackObject: function(index, selectsymbol) {
-                // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
+            logRefresh: function(ix) { 
+                this.trackPointRefresh(ix, "elevs");  // console.log("Refreshing trackPoint", ix);
+            },
 
-                this.debounce("refresh", function() {
-                    if (!selectsymbol) selectsymbol = "airport-15";
+            // 
+            trackPointRefresh: function(index, title, selectsymbol) {
+                // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
+                var scope = this; 
+                this.debounce("refreshTP", function() {
+                    if (!selectsymbol) selectsymbol = "toilet-15"; // "airport-15";
                     // create a GeoJSON point to serve as a starting point
                     if (!this.trackdata) return;
 
-                    var coords = this.trackdata[index].slice(0,2); 
-                    var point = {
-                        "type": "Point",
-                        "coordinates": coords
-                    };  
-                    
-                    // 
-                    if (!map.getSource("tracker")) {
-                        map.addSource('tracker', { 
+                    var coords = this.trackdata["coords"][index].slice(0,2);  // console.log(coords[0],typeof coords[0]);
+                    if (title) {
+                     /*  time = this.trackdata["times"][index],
+                        z = this.trackdata["elevs"][index];  */
+                        title = this.trackdata[title][index]; 
+                    }
+                    if (!title) title = index;
+
+                    var geojsonpnt = {
+                        "type": "FeatureCollection",
+                        "features": [{
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": coords
+                            },
+                            "properties": {
+                                "title" : title
+                            }
+                        }]
+                    };
+
+                    if (map.getSource("trackpnt")) {
+                        // console.log("REFRESH-TP: " + index, geojsonpnt, map.getSource("trackpnt")); // return;  
+                        map.getSource("trackpnt").setData(geojsonpnt);
+
+                    } else {  // At FIRST app-session-call only 
+
+                        map.addSource('trackpnt', { 
                             type: 'geojson', 
-                            data: point 
-                        });
-                    } else {
-                        map.getSource("tracker").setData(point);
-                    }  
-                    console.log("refreshTrackObject at: " + index, point, map.getSource("tracker")); // return;  
+                            data: geojsonpnt 
+                        }); 
 
-                    // At FIRST call only 
-                    if (!map.getLayer("tracks-glow-strong")) {
-
-                        var layers =  [
+                        var trackpntLayers =  [
                             {
-                                "id": "tracks-glow-strong",
+                                "id": "trackpnt-glow-strong",
                                 "type": "circle",
-                                "source": "tracker",
+                                "source": "trackpnt",
                                 "paint": {
                                     "circle-radius": 18,
                                     "circle-color": "#ff0",
@@ -537,20 +578,19 @@ display as decorated route (fi with commented endpoints)
                             }, 
                             
                             {
-                                "id": "tracks-glow",
+                                "id": "trackpnt-glow",
                                 "type": "circle",
-                                "source": "tracker",
+                                "source": "trackpnt",
                                 "paint": {
                                     "circle-radius": 40,
                                     "circle-color": "#ff0",
                                     "circle-opacity": 0.2
                                 }
                             }, 
-                            
-                            {
-                                "id": "tracks-select",
+                        	{
+                                "id": "trackpnt-select",
                                 "type": "symbol",
-                                "source": "tracker",
+                                "source": "trackpnt",
                                 "layout": {
                                     "icon-image": selectsymbol,
                                     "icon-rotate": 0,
@@ -562,13 +602,83 @@ display as decorated route (fi with commented endpoints)
                                 }
                             }
                         ];
-                        console.log("LAYERS ADD", layers);
 
-                        layers.forEach(function(layer){
+                        // Change point and cursor style as a UI indicator
+                        // and set a flag to enable other mouse events.
+                        function mouseMove(e) {
+                            var layerid = 'trackpnt-glow';
+                            var features = map.queryRenderedFeatures(e.point, { layers: [layerid] });
+                            // Change point and cursor style as a UI indicator
+                            // and set a flag to enable other mouse events.
+                            if (features.length) {
+                                map.setPaintProperty(layerid, 'circle-color', '#f00'); // '#3bb2d0');
+                                // canvas.style.cursor = 'move';
+                                this.isCursorOverPoint = true;
+                                map.dragPan.disable();
+                                
+                            } else {
+                                map.setPaintProperty(layerid, 'circle-color', '#ff0');
+                                // canvas.style.cursor = '';
+                                this.isCursorOverPoint = false;
+                                map.dragPan.enable();
+                            }
+                        }
+
+                        function mouseDown() {
+                            if (!this.isCursorOverPoint) return;
+
+                            this.isDragging = true; // console.log("start dragging");
+                            // Set a cursor indicator
+                            // canvas.style.cursor = 'grab';
+                            // Mouse events
+                            map.on('mousemove', onMove);
+                            map.once('mouseup', onUp);
+                        }
+
+                        // actions when mouse over point 
+                        function onUp(e) {
+                            if (!this.isDragging) return;
+                            this.isDragging = false;
+
+                            var coords = e.lngLat,
+                                coordmsg = 'Longitude: ' + coords.lng + '<br />Latitude: ' + coords.lat;
+                            // console.log("STOPDRAG", coordmsg);
+
+                            // Print the coordinates of where the point had
+                            // finished being dragged to on the map.
+                            // coordinates.style.display = 'block';
+                            // coordinates.innerHTML = coordMsg;
+                            // canvas.style.cursor = '';
+
+                            // Unbind mouse events
+                            map.off('mousemove', onMove);
+                        }
+
+                        function onMove(e) {
+                            if (!this.isDragging) return;
+                            var coords = e.lngLat,
+                                coordsjson = [coords.lng, coords.lat];  // console.log(coordsjson);     
+
+                            // Set a UI indicator for dragging.
+                            // canvas.style.cursor = 'grabbing';
+
+                            // Update the "nearest"" trackpoint 
+                            var trackLine = scope.trackselected.feature; // console.log("move", coords, trackLine) ; 
+                            scope.snapTrackPoint(trackLine, coords, scope);
+                        }
+
+
+                        trackpntLayers.forEach(function(layer){
                             map.addLayer(layer);
-                        })
-                        console.log("LAYERS ADDED");
-                    }    
+                        }); //  console.log("trackpntLayers ADDED");
+
+
+                        map.on('mousemove', mouseMove);
+                        // Set `true` to dispatch the event before other functions call it. This
+                        // is necessary for disabling the default map dragging behaviour.
+                        map.on('mousedown', mouseDown, true);
+                        
+                    }
 
                 }, 100);      
             }  
