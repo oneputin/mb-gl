@@ -1,0 +1,333 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<!--
+`mb-trackpoint`
+Draggable mb-point with optional snapping to mb-theme features 
+
+@demo demo/slidemap.html 
+-->
+
+<dom-module id="mb-trackpoint">
+
+    <template>
+
+        <style>
+            :host {
+                position: absolute;
+                display: block;
+                left: 50%;
+                top: 50%;      
+                /* sync target-center to center-location ?? is size ??*/
+                transform: translate(-50%, -50%);
+            }
+
+            paper-icon-button.target {
+                border-radius: 50%; 
+                /*box-sizing:border-box;*/
+                color: var(--paper-pink-500);
+                opacity: 0.8;
+                --paper-icon-button-ink-color: var(--paper-indigo-500);
+            }          
+            
+            paper-icon-button.target:hover {
+                background-color: var(--paper-pink-500);
+                color: white;
+            }
+
+            paper-icon-button.target.idle {
+                color: black;
+            }
+        </style>
+
+        <!-- -->
+        <paper-icon-button 
+            icon="fullscreen" 
+            id="target" 
+            title="target" 
+            class="target" 
+            on-tap="toggletarget">
+        </paper-icon-button>
+        
+    </template>
+
+    <script>
+        Polymer({
+            is: 'mb-trackpoint',
+
+            properties: {
+
+                map: {
+                    type: Object,
+                    observer: 'setupPoint'
+                }, 
+
+                trackselected: {
+                    type: Object,
+                    value : {}                    
+                },
+
+                trackpntindex: {
+                    type: Number,
+                    value : -1,
+                    notify: true                    
+                },
+
+                coords: {
+                    type: Array,
+                    value : [0,0],
+                    notify: true                    
+                },
+
+                title: {
+                    type: String,
+                    value : ""                    
+                },
+
+                selectsymbol: {
+                    type: String,
+                    value : "toilet-15"                    
+                },
+
+                maptoast: {
+                    type: String,
+                    notify: true
+                }
+            },
+
+            observers: [
+                'refreshPoint(trackpntindex, coords, title, selectsymbol)'
+            ],
+
+            setupPoint : function(map) {
+                var scope = this; 
+
+                var trackpntLayers =  [
+                    {
+                        "id": "trackpnt-glow-strong",
+                        "type": "circle",
+                        "source": "trackpnt",
+                        "paint": {
+                            "circle-radius": 18,
+                            "circle-color": "#ff0",
+                            "circle-opacity": 0.6
+                        }
+                    }, 
+                    
+                    {
+                        "id": "trackpnt-glow",
+                        "type": "circle",
+                        "source": "trackpnt",
+                        "paint": {
+                            "circle-radius": 40,
+                            "circle-color": "#ff0",
+                            "circle-opacity": 0.2
+                        }
+                    }, 
+                    {
+                        "id": "trackpnt-select",
+                        "type": "symbol",
+                        "source": "trackpnt",
+                        "layout": {
+                            "icon-image": selectsymbol,
+                            "icon-rotate": 0,
+                            "text-field": "{title}",
+                            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                            "text-size": 12,
+                            "text-offset": [0, 0.6],
+                            "text-anchor": "top"
+                        }
+                    }
+                ];
+                
+                // get map-center or any boundary-point 
+                var coords = [0,0];
+                var geojsonpnt = {
+                    "type": "FeatureCollection",
+                    "features": [{
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": coords
+                            },
+                            "properties": {
+                                "title" : ""
+                            }
+                    }]
+                };
+                 
+                // Change point and cursor style as a UI indicator
+                // and set a flag to enable other mouse events.
+                function mouseMove(e) {
+                    var layerid = 'trackpnt-glow',
+                        iconlayerid = "trackpnt-select";
+                    var features = map.queryRenderedFeatures(e.point, { layers: [layerid] });
+                    // Change point and cursor style as a UI indicator
+                    // and set a flag to enable other mouse events.
+                    if (features.length) {
+                        map.setPaintProperty(layerid, 'circle-color', '#f00'); // '#3bb2d0');
+                        map.setLayoutProperty(iconlayerid, 'icon-image', 'rocket-15');
+
+                        this.isCursorOverPoint = true;
+                        map.dragPan.disable();
+                        
+                    } else {
+
+                        map.setPaintProperty(layerid, 'circle-color', '#ff0');
+                        map.setLayoutProperty(iconlayerid, 'icon-image', 'toilet-15');
+
+                        this.isCursorOverPoint = false;
+                        map.dragPan.enable();
+                    }
+                }
+
+                function mouseDown() {
+                    if (!this.isCursorOverPoint) return;
+                    // Set a cursor indicator (selectlayer-symbol) 
+                    // canvas.style.cursor = 'grab';
+                    var layerid = "trackpnt-select";
+                    map.setLayoutProperty(layerid, "icon-image", "toilet-15");
+
+                    // 
+                    this.isDragging = true; // console.log("start dragging");
+                    // Mouse events
+                    map.on('mousemove', onMove);
+                    map.once('mouseup', onUp);
+                }
+
+                // actions when mouse over point 
+                function onMove(e) {
+                    if (!this.isDragging) return;
+                    var lngLat = e.lngLat,
+                        coords = [lngLat.lng, lngLat.lat];  // console.log(coordsjson);     
+
+                    // Set a UI indicator for dragging.
+                    // canvas.style.cursor = 'grabbing';
+
+                    // Update the "nearest"" trackpoint ??? 
+                    var trackLine = scope.trackselected.feature; // console.log("move", coords, trackLine) ; 
+                    if (trackLine) {  // triggers location "bound" to trackLine  
+                        scope.snapTrackPoint(trackLine, coords, scope);
+                    } else {    // triggers "free" location
+                        this.coords = coords;
+                    }   
+                }
+
+                function onUp(e) {
+                    if (!this.isDragging) return;
+
+                    this.isDragging = false;
+
+                    var coords = e.lngLat,
+                        coordmsg = 'Longitude: ' + coords.lng + '<br />Latitude: ' + coords.lat;
+
+                    // console.log("STOPDRAG", coordmsg);
+
+                    // Print the coordinates of where the point had
+                    // finished being dragged to on the map.
+                    // coordinates.style.display = 'block';
+                    // coordinates.innerHTML = coordMsg;
+                    // canvas.style.cursor = '';
+
+                    // Unbind mouse events
+                    map.off('mousemove', onMove);
+                }
+
+                map.addSource('trackpnt', { 
+                    type: 'geojson', 
+                    data: geojsonpnt 
+                }); 
+
+                trackpntLayers.forEach(function(layer){
+                    map.addLayer(layer);
+                }); //  console.log("trackpntLayers ADDED");
+
+
+                map.on('mousemove', mouseMove);
+
+                // Set `true` to dispatch the event before other functions call it. This
+                // is necessary for disabling the default map dragging behaviour.
+                map.on('mousedown', mouseDown, true);
+                        
+            },
+
+            // 
+            snapTrackPoint : function(trackLine, coords) { // queryPnt) {
+                queryPnt = { 
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": coords // [queryPnt.lng, queryPnt.lat]
+                    }
+                };  
+
+                // B.2 Find/Eval nearest trackpoint
+                var snapPnt = turf.pointOnLine(trackLine, queryPnt, 'kilometers');
+                if (!snapPnt) return; 
+
+                // This will trigger all functions related to the location of trackpoint on trackline  Set element-Property  
+                this.trackpntindex = snapPnt.properties.index;
+
+                /*return {
+                    "track": trackLine, 
+                    "query": queryPnt, 
+                    "snap": snapPnt
+                };*/
+            },    
+
+            refreshPoint: function(pntindex, coords, title, selectsymbol) {
+                // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
+                var scope = this; 
+                this.debounce("refreshTP", function() {
+                    // if (!this.trackdata) return;
+                    // create a GeoJSON point to serve as a starting point
+                    if (pntindex >= 0) {
+                        var track = this.trackselected, 
+                            trackLine = track.feature;
+
+                        // ?? to specific ?? 
+                        var trackdata = { 
+                                "coords": trackLine.geometry.coordinates,
+                                "elevs": trackLine.properties.coordElevs, 
+                                "times": trackLine.properties.coordTimes
+                            };     
+
+                        coords = trackdata["coords"][pntindex].slice(0,2);  // console.log(coords[0],typeof coords[0]);
+                        
+                        if (title) { // title name of requested property ("times" or "elevs")
+                            title = this.trackdata[title][pntindex]; 
+                        } else {
+                            title = pntindex;
+                        }
+                    } else if (coords) { // ??
+                        title = "";
+                    } else {
+                        return; 
+                    }
+
+                    var geojsonpnt = {
+                        "type": "FeatureCollection",
+                        "features": [{
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": coords
+                            },
+                            "properties": {
+                                "title" : title
+                            }
+                        }]
+                    };
+
+                    var pntSrc = this.map.getSource("trackpnt");
+
+                    if (pntSrc) { // console.log("REFRESH-TP: " + index, geojsonpnt, map.getSource("trackpnt")); // return;  
+                        pntSrc.setData(geojsonpnt);
+                    }    
+
+              }, 200); 
+            }   
+        })
+    </script>
+</dom-module>                  
