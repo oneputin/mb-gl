@@ -104,9 +104,9 @@ Draggable mb-point with optional snapping to mb-theme features
 
                 var trackpntLayers =  [
                     {
-                        "id": "trackpnt-glow-strong",
+                        "id": "dragpnt-glow-strong",
                         "type": "circle",
-                        "source": "trackpnt",
+                        "source": "dragpnt",
                         "paint": {
                             "circle-radius": 18,
                             "circle-color": "#ff0",
@@ -115,9 +115,9 @@ Draggable mb-point with optional snapping to mb-theme features
                     }, 
                     
                     {
-                        "id": "trackpnt-glow",
+                        "id": "dragpnt-glow",
                         "type": "circle",
-                        "source": "trackpnt",
+                        "source": "dragpnt",
                         "paint": {
                             "circle-radius": 40,
                             "circle-color": "#ff0",
@@ -125,9 +125,9 @@ Draggable mb-point with optional snapping to mb-theme features
                         }
                     }, 
                     {
-                        "id": "trackpnt-select",
+                        "id": "dragpnt-select",
                         "type": "symbol",
-                        "source": "trackpnt",
+                        "source": "dragpnt",
                         "layout": {
                             "icon-image": selectsymbol,
                             "icon-rotate": 0,
@@ -159,8 +159,8 @@ Draggable mb-point with optional snapping to mb-theme features
                 // Change point and cursor style as a UI indicator
                 // and set a flag to enable other mouse events.
                 function mouseMove(e) {
-                    var layerid = 'trackpnt-glow',
-                        iconlayerid = "trackpnt-select";
+                    var layerid = 'dragpnt-glow',
+                        iconlayerid = "dragpnt-select";
                     var features = map.queryRenderedFeatures(e.point, { layers: [layerid] });
                     // Change point and cursor style as a UI indicator
                     // and set a flag to enable other mouse events.
@@ -185,7 +185,7 @@ Draggable mb-point with optional snapping to mb-theme features
                     if (!this.isCursorOverPoint) return;
                     // Set a cursor indicator (selectlayer-symbol) 
                     // canvas.style.cursor = 'grab';
-                    var layerid = "trackpnt-select";
+                    var layerid = "dragpnt-select";
                     map.setLayoutProperty(layerid, "icon-image", "toilet-15");
 
                     // 
@@ -233,14 +233,14 @@ Draggable mb-point with optional snapping to mb-theme features
                     map.off('mousemove', onMove);
                 }
 
-                map.addSource('trackpnt', { 
+                map.addSource('dragpnt', { 
                     type: 'geojson', 
                     data: geojsonpnt 
                 }); 
 
                 trackpntLayers.forEach(function(layer){
                     map.addLayer(layer);
-                }); //  console.log("trackpntLayers ADDED");
+                }); //  console.log("dragpntLayers ADDED");
 
 
                 map.on('mousemove', mouseMove);
@@ -320,9 +320,9 @@ Draggable mb-point with optional snapping to mb-theme features
                         }]
                     };
 
-                    var pntSrc = this.map.getSource("trackpnt");
+                    var pntSrc = this.map.getSource("dragpnt");
 
-                    if (pntSrc) { // console.log("REFRESH-TP: " + index, geojsonpnt, map.getSource("trackpnt")); // return;  
+                    if (pntSrc) { // console.log("REFRESH-TP: " + index, geojsonpnt, map.getSource("dragpnt")); // return;  
                         pntSrc.setData(geojsonpnt);
                     }    
 

@@ -72,7 +72,7 @@ display as decorated route (fi with commented endpoints)
                     type: Array
                 },
 
-                trackpntindex: {
+                dragpntindex: {
                     type: Number,
                     observer: 'tracklogRefresh',
                     notify: true
@@ -141,7 +141,7 @@ display as decorated route (fi with commented endpoints)
                 if (!snapPnt) return; 
 
                 // Refresh snap-index  
-                this.trackpntindex = snapPnt.properties.index;
+                this.dragpntindex = snapPnt.properties.index;
 
                 return {
                     "track": trackLine, 
@@ -250,21 +250,21 @@ display as decorated route (fi with commented endpoints)
 
                     var snapSet = elemscope.snapTrackPoint(e.lngLat, trackselected); //  , elemscope);
 
-                    // OPTION: refresh trackPntInfo in mapPopup at correct location
+                    // OPTION: refresh dragpntInfo in mapPopup at correct location
                     if (snapSet && snapSet.snap) {
                         // console.log("TrackPoint at Index=" + index, result);
-                        var trackPntInfo =  elemscope.trackInfoCollect(snapSet); // snapped.properties);
-                        // console.log("TrackPointInfo at: " + trackpntindex, trackPntInfo, result); // , eventscope);
+                        var dragpntInfo =  elemscope.trackInfoCollect(snapSet); // snapped.properties);
+                        // console.log("TrackPointInfo at: " + dragpntindex, dragpntInfo, result); // , eventscope);
 
-                        if (trackPntInfo.toast) elemscope.maptoast = trackPntInfo.toast; 
-                        // eventscope.popupOnMap(trackPntInfo);
+                        if (dragpntInfo.toast) elemscope.maptoast = dragpntInfo.toast; 
+                        // eventscope.popupOnMap(dragpntInfo);
                     } 
 
                 };
                
                //     
                 mapevents["mousemove"] =  function mouseMove(e) {
-                    var layerid = 'trackpnt-glow';
+                    var layerid = 'dragpnt-glow';
                     var features = map.queryRenderedFeatures(e.point, { layers: [layerid] });
                     // Change point and cursor style as a UI indicator
                     // and set a flag to enable other mouse events.
@@ -440,14 +440,14 @@ display as decorated route (fi with commented endpoints)
 
             trackInfoCollect: function(trackident ) {
                 var scope = this, 
-                    trackInfo={}, trackLine, selectPnt, trackPnt, trackTimes, tpTime, trackZ, tpZ;    
+                    trackInfo={}, trackLine, selectPnt, dragpnt, trackTimes, tpTime, trackZ, tpZ;    
                 // console.log("trackInfoCollect", trackident); 
 
                 // A. APP-SPECIFIC: derive line-specific props
                 if (trackident.snap) {
                     // 
                     selectPnt = trackident.query; // features[1];
-                    trackPnt = trackident.snap; // features[2];
+                    dragpnt = trackident.snap; // features[2];
                     trackLine = trackident.track; // features[0];
 
                     trackInfo = trackLine.properties;
@@ -495,9 +495,9 @@ display as decorated route (fi with commented endpoints)
                     // trackInfo.toast += vonbis;
                 }
                 
-                if (trackPnt) { 
-                    var tpinfo = trackPnt.properties,
-                        coords = trackPnt.geometry.coordinates;
+                if (dragpnt) { 
+                    var tpinfo = dragpnt.properties,
+                        coords = dragpnt.geometry.coordinates;
                     trackInfo.html += "<hr>TP-Index: "+ tpinfo.index; 
                     
                     trackInfo.lnglat = new mapboxgl.LngLat(coords[0],coords[1]);
@@ -521,7 +521,7 @@ display as decorated route (fi with commented endpoints)
                         trackInfo.html += "<br>Elev : " + trackZ + " m NN"; 
                         trackInfo.toast += "  :  z = "+ trackZ ; 
                     }    
-                    // console.log("TP:", trackPnt, trackLine); // , trackInfo);
+                    // console.log("TP:", dragpnt, trackLine); // , trackInfo);
                 } else {
                     trackInfo.html += "<br>Length: " + trackInfo.length
                     trackInfo.html += "<br>TP's: " + trackInfo.count;
@@ -544,7 +544,7 @@ display as decorated route (fi with commented endpoints)
                 // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
                 var scope = this; 
 
-                this.debounce("refreshTP", function() {
+                //this.debounce("refreshTP", function() {
                     if (!selectsymbol) selectsymbol = "toilet-15"; // "airport-15";
                     if (!this.trackdata) return;
 
@@ -571,22 +571,22 @@ display as decorated route (fi with commented endpoints)
                         }]
                     };
 
-                    if (map.getSource("trackpnt")) {
-                        // console.log("REFRESH-TP: " + index, geojsonpnt, map.getSource("trackpnt")); // return;  
-                        map.getSource("trackpnt").setData(geojsonpnt);
+                    if (map.getSource("dragpnt")) {
+                        // console.log("REFRESH-TP: " + index, geojsonpnt, map.getSource("dragpnt")); // return;  
+                        map.getSource("dragpnt").setData(geojsonpnt);
 
                     } else {  // At FIRST app-session-call only 
 
-                        map.addSource('trackpnt', { 
+                        map.addSource('dragpnt', { 
                             type: 'geojson', 
                             data: geojsonpnt 
                         }); 
 
-                        var trackpntLayers =  [
+                        var dragpntLayers =  [
                             {
-                                "id": "trackpnt-glow-strong",
+                                "id": "dragpnt-glow-strong",
                                 "type": "circle",
-                                "source": "trackpnt",
+                                "source": "dragpnt",
                                 "paint": {
                                     "circle-radius": 18,
                                     "circle-color": "#ff0",
@@ -595,9 +595,9 @@ display as decorated route (fi with commented endpoints)
                             }, 
                             
                             {
-                                "id": "trackpnt-glow",
+                                "id": "dragpnt-glow",
                                 "type": "circle",
-                                "source": "trackpnt",
+                                "source": "dragpnt",
                                 "paint": {
                                     "circle-radius": 40,
                                     "circle-color": "#ff0",
@@ -605,9 +605,9 @@ display as decorated route (fi with commented endpoints)
                                 }
                             }, 
                         	{
-                                "id": "trackpnt-select",
+                                "id": "dragpnt-select",
                                 "type": "symbol",
-                                "source": "trackpnt",
+                                "source": "dragpnt",
                                 "layout": {
                                     "icon-image": selectsymbol,
                                     "icon-rotate": 0,
@@ -623,9 +623,10 @@ display as decorated route (fi with commented endpoints)
                         // Change point and cursor style as a UI indicator
                         // and set a flag to enable other mouse events.
                         function mouseMove(e) {
-                            var circleid = 'trackpnt-glow',
-                                iconid = 'trackpnt-select';
+                            var circleid = 'dragpnt-glow',
+                                iconid = 'dragpnt-select';
                             var features = map.queryRenderedFeatures(e.point, { layers: [circleid] });
+                            
                             // Change point and cursor style as a UI indicator
                             // and set a flag to enable other mouse events.
                             if (features.length) {
@@ -663,7 +664,8 @@ display as decorated route (fi with commented endpoints)
                             // canvas.style.cursor = 'grabbing';
 
                             if (scope.trackselected) { // Update the "nearest" point on active track 
-                                scope.snapTrackPoint(lngLat); // , scope.trackselected);
+                                var snapSet = scope.snapTrackPoint(lngLat); // , scope.trackselected);
+
                             } else {
                                 scope.dragcoords = coords;
                             }
@@ -674,18 +676,28 @@ display as decorated route (fi with commented endpoints)
                             if (!this.isDragging) return;
                             this.isDragging = false;
 
-                            var coords = e.lngLat,
-                                maptoast = 'DRAGSTOP at Lon: ' + coords.lng + ', Lat: ' + coords.lat;
-                            // console.log("STOPDRAG", maptoast);
+                            var lngLat = e.lngLat,
+                                snapSet = scope.snapTrackPoint(lngLat),
+                                snapPnt = snapSet['snap'],
+                                trackLine = snapSet['track'],
+                                index = snapPnt.properties.index;
+                            console.log("snapSet at "+index, snapSet); 
+
+                            scope.dragpntindex = index;
+
+                            var t = trackLine.properties["coordTimes"][index],
+                                s = scope.toFixed(snapPnt.properties.location, 2)+" km";
+                       
+                            var maptoast = 'DRAGSTOP after s= ' + s + ', at t= ' + t;
                             scope.maptoast = maptoast;
 
                             // Unbind mouse events
                             map.off('mousemove', onMove);
                         }
 
-                        trackpntLayers.forEach(function(layer){
+                        dragpntLayers.forEach(function(layer){
                             map.addLayer(layer);
-                        }); //  console.log("trackpntLayers ADDED");
+                        }); //  console.log("dragpntLayers ADDED");
 
 
                         map.on('mousemove', mouseMove);
@@ -695,7 +707,7 @@ display as decorated route (fi with commented endpoints)
                         
                     }
 
-                }, 100);      
+                // }, 100);      
             }  
 
         });
