@@ -72,15 +72,15 @@ display as decorated route (fi with commented endpoints)
                     type: Array
                 },
 
-                dragpntindex: {
+                trackpntindex: {
                     type: Number,
-                    observer: 'tracklogRefresh',
+                    observer: 'trackPointRefresh',
                     notify: true
                 },
 
                 dragcoords: {
                     type: Array,
-                    observer: 'dragRefresh',
+                    observer: 'dragPointRefresh',
                 },
 
                 mapevents: {
@@ -121,34 +121,6 @@ display as decorated route (fi with commented endpoints)
                 this.set("metadata.datasetlabel",  this.datasetlabel);
                 this.contentbox = rawcontent;
             },
-
-            snapTrackPoint : function(queryPnt, track) { // , elemscope) {
-                if (!track) track = this.trackselected; 
-
-                var trackLine = track.feature; 
-
-                queryPnt = { 
-                    "type": "Feature",
-                    "properties": {},
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [queryPnt.lng, queryPnt.lat]
-                    }
-                };  
-
-                // B.2 Find/Eval nearest trackpoint
-                var snapPnt = turf.pointOnLine(trackLine, queryPnt, 'kilometers');
-                if (!snapPnt) return; 
-
-                // Refresh snap-index  
-                this.dragpntindex = snapPnt.properties.index;
-
-                return {
-                    "track": trackLine, 
-                    "query": queryPnt, 
-                    "snap": snapPnt
-                };
-            },    
 
             // Setup events related to UserInteractions with track-lines
             setTrackEvents: function(){
@@ -241,23 +213,17 @@ display as decorated route (fi with commented endpoints)
                     }
                 
                     // B. Select/Identify nearest point on trackLine 
-                    // var trackLine = srcContent.feature;  // console.log("SELECTLINE", srcContent, trackLine); 
 
-                    // PLAN : 
-                    // elemscope.lnglat = e.lngLat; // triggers 
-                    // };    
-                    // function getTrackToast(trackLine, ) {
-
-                    var snapSet = elemscope.snapTrackPoint(e.lngLat, trackselected); //  , elemscope);
+                    var snapSet = elemscope.trackPointSnap(e.lngLat, trackselected); //  , elemscope);
 
                     // OPTION: refresh dragpntInfo in mapPopup at correct location
-                    if (snapSet && snapSet.snap) {
-                        // console.log("TrackPoint at Index=" + index, result);
-                        var dragpntInfo =  elemscope.trackInfoCollect(snapSet); // snapped.properties);
-                        // console.log("TrackPointInfo at: " + dragpntindex, dragpntInfo, result); // , eventscope);
+                    if (snapSet.index) { console.log("Selected TrackPoint at Index=" + snapSet.index, snapSet);
 
-                        if (dragpntInfo.toast) elemscope.maptoast = dragpntInfo.toast; 
-                        // eventscope.popupOnMap(dragpntInfo);
+                        elemscope.trackpntindex = snapSet.index;
+                        
+                        var trackInfo =  elemscope.trackInfoCollect(snapSet); // snapped.properties);
+                        if (trackInfo.toast) elemscope.maptoast = trackInfo.toast; 
+                        // eventscope.popupOnMap(trackInfo);
                     } 
 
                 };
@@ -289,8 +255,8 @@ display as decorated route (fi with commented endpoints)
             // further actions may run in separate elements
             trackActivate: function(fid) { // console.log("ACTIVATE track, ID=", fid);
                 if (!fid || this.disable) return; 
-                f = this.trackselected;                      
 
+                f = this.trackselected;                      
                 if (!f.layer) return;   // console.log("ACTIVATE track", f); 
 
                 var selectObj, layerid, feature = f;
@@ -311,15 +277,12 @@ display as decorated route (fi with commented endpoints)
 
                 if (map) { 
                     
-                    if (feature.properties.coordTimes)  {  
-                        // console.log("TRACK DECORATE ", feature);
+                    if (feature.properties.coordTimes)  { // console.log("TRACK DECORATE ", feature);
                         selectObj = this.trackDecorate(layerid, [feature]); 
                     }    
 
-                    this.trackPointRefresh(0); 
+                } else {   console.log("TRACK VIEW", feature); // in non-map-mode
 
-                } else {    // in non-map-mode
-                    console.log("TRACK VIEW", feature);
                     selectObj = this.setFeatureBounds([feature]);
                 }     
                 // console.log("processedTrack", selectObj); 
@@ -530,17 +493,20 @@ display as decorated route (fi with commented endpoints)
                 return trackInfo;
             },
 
-            // 
-            tracklogRefresh: function(ix) { 
-                this.trackPointRefresh(ix, null, "elevs");  // console.log("Refreshing trackPoint", ix);
-            },
-
-            dragRefresh: function(coords) { 
-                this.trackPointRefresh(null, coords);  // console.log("Refreshing trackPoint", ix);
-            },
 
             // 
-            trackPointRefresh: function(index, coords, title, selectsymbol) {
+            trackPointRefresh: function(ix) { 
+                if (ix) { console.log("RELOCATE DRAGPNT at track-index: " + ix);
+                    this.dragPointLocate(ix, null, "elevs");  // console.log("Refreshing trackPoint", ix);
+                }
+            },
+
+            dragPointRefresh: function(coords) { console.log("RELOCATE DRAGPNT at coords", coords); 
+                this.dragPointLocate(null, coords);  // console.log("Refreshing trackPoint", ix);
+            },
+
+            // 
+            dragPointLocate: function(index, coords, title, selectsymbol) {
                 // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
                 var scope = this; 
 
@@ -571,11 +537,11 @@ display as decorated route (fi with commented endpoints)
                         }]
                     };
 
-                    if (map.getSource("dragpnt")) {
+                    if (map.getSource("dragpnt")) { 
                         // console.log("REFRESH-TP: " + index, geojsonpnt, map.getSource("dragpnt")); // return;  
                         map.getSource("dragpnt").setData(geojsonpnt);
 
-                    } else {  // At FIRST app-session-call only 
+                    } else {  // ONCE at FIRST app-session-call only 
 
                         map.addSource('dragpnt', { 
                             type: 'geojson', 
@@ -652,47 +618,65 @@ display as decorated route (fi with commented endpoints)
                             // Set a cursor indicator
                             // canvas.style.cursor = 'grab';
                             // Mouse events
-                            map.on('mousemove', onMove);
-                            map.once('mouseup', onUp);
+                            map.on('mousemove', onDragMove);
+                            map.once('mouseup', onDragUp);
                         }
 
-                        function onMove(e) {
+                        function onDragMove(e) {
                             if (!this.isDragging) return;
+
                             var lngLat = e.lngLat,
                                 coords = [lngLat.lng, lngLat.lat];  // console.log(coordsjson);     
                             // Set a UI indicator for dragging.
                             // canvas.style.cursor = 'grabbing';
 
                             if (scope.trackselected) { // Update the "nearest" point on active track 
-                                var snapSet = scope.snapTrackPoint(lngLat); // , scope.trackselected);
+                                
+                                var snapSet = scope.trackPointSnap(lngLat); // , scope.trackselected);
+                                if (snapSet.index != null) {
+                                    
+                                    // A. SYNC location and all related elements
+                                    // scope.trackpntindex = snapSet.index;
 
+                                    // B. refresh dragPnt only 
+                                    scope.dragPointLocate(snapSet.index, null, "elevs");
+                                }
                             } else {
                                 scope.dragcoords = coords;
                             }
                         }
-
                         // actions when mouse over point 
-                        function onUp(e) {
+                        function onDragUp(e) {
                             if (!this.isDragging) return;
+
                             this.isDragging = false;
 
-                            var lngLat = e.lngLat,
-                                snapSet = scope.snapTrackPoint(lngLat),
-                                snapPnt = snapSet['snap'],
-                                trackLine = snapSet['track'],
-                                index = snapPnt.properties.index;
-                            console.log("snapSet at "+index, snapSet); 
+                            var lngLat = e.lngLat;
+                            var maptoast = 'DRAGSTOP'; 
 
-                            scope.dragpntindex = index;
+                            if (1) {
+                                var snapSet = scope.trackPointSnap(lngLat),
+                                    snapPnt = snapSet['snap'],
+                                    trackLine = snapSet['track'],
+                                    index = snapPnt.properties.index;
+                                    console.log("onDragUp: snapSet at "+index, snapSet); 
 
-                            var t = trackLine.properties["coordTimes"][index],
-                                s = scope.toFixed(snapPnt.properties.location, 2)+" km";
-                       
-                            var maptoast = 'DRAGSTOP after s= ' + s + ', at t= ' + t;
+                                // 1. TRIGGER track-SYNC
+                                scope.trackpntindex = index;
+
+                                // 2. 
+                                var t = trackLine.properties["coordTimes"][index],
+                                    s = scope.toFixed(snapPnt.properties.location, 2)+" km";
+                                maptoast += ' after s= ' + s + ', at t= ' + t;
+
+                            } else {
+                                maptaoast = "Free " + maptoast ; // 
+                            }
+
                             scope.maptoast = maptoast;
 
                             // Unbind mouse events
-                            map.off('mousemove', onMove);
+                            map.off('mousemove', onDragMove);
                         }
 
                         dragpntLayers.forEach(function(layer){
@@ -708,7 +692,34 @@ display as decorated route (fi with commented endpoints)
                     }
 
                 // }, 100);      
-            }  
+            },
+
+            // 
+            trackPointSnap : function(queryPnt, track) { // , elemscope) {
+                if (!track) track = this.trackselected; 
+
+                var trackLine = track.feature; 
+
+                queryPnt = { 
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [queryPnt.lng, queryPnt.lat]
+                    }
+                };  
+
+                // B.2 Find/Eval nearest trackpoint
+                var snapPnt = turf.pointOnLine(trackLine, queryPnt, 'kilometers');
+                if (!snapPnt) return {}; 
+
+                return {
+                    "index" : snapPnt.properties.index,
+                    "track": trackLine, 
+                    "query": queryPnt, 
+                    "snap": snapPnt
+                };
+            }
 
         });
 

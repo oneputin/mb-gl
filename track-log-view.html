@@ -128,8 +128,10 @@ container for presentation of track-properties (fi. elevations)
             },    
 
             getChartSelection: function(chartpoints){
-                // console.log("getChartSelection", chartpoints);
-                this.logindex = chartpoints[0].row;
+                // if (chartpoints[0].row) { 
+                    // console.log("getChartSelection", chartpoints);
+                    this.logindex = chartpoints[0].row;
+                // }
             },
 
             // update selectionpoint(s) on chart 

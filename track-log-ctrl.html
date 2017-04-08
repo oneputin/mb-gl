@@ -137,11 +137,10 @@ presentation of track-properties (= selected feature)
                 this.zitem = this.zitems[logindex];
             },
 
-            getmenuselection: function(menuitem){
-                // console.log("getmenuselection", menuitem.id, menuitem);
+            // 
+            getmenuselection: function(menuitem){// console.log("getmenuselection", menuitem.id, menuitem);
                 this.logindex = menuitem.id;
             },
-
 
             /**
              * Extract logdata (=properties) of multipoint (map-)features
@@ -179,7 +178,7 @@ presentation of track-properties (= selected feature)
                     console.log("No elev-data found in ", pp); 
                     this.zitems = [];
                     return;
-                } // console.log(times, elevs); 
+                }   // console.log("Refresh CtrlElem", times, elevs); 
 
                 // A. Create MenuItems  
                 var zitems = [], zitem;
