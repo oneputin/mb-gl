@@ -40,6 +40,8 @@
     <link rel="import" href="../track-log-ctrl.html">
     <link rel="import" href="../track-log-view.html">
 
+    <link rel="import" href="../mb-dragpoint.html">
+
     <style is="custom-style">
         .container {
             @apply(--layout-horizontal);
@@ -276,6 +278,14 @@
                 trackpntindex = "{{logindex}}">
             </tracks-api>
 
+            <mb-dragpoint 
+                map = "[[map]]" 
+                indexedtarget = "[[datasetitem]]"
+                index = "{{logindex}}"
+                maptoast = "{{maptoast}}">
+            </mb-dragpoint>
+            <!-- lnglat = "[[lnglat]]"--> 
+
             <!-- SYNC mapcontent from contentbox -->
             <!-- checked="[[logmode]]" --> 
             <mb-content-manager 
@@ -290,6 +300,7 @@
 
             <!-- C. DATA-Supply INTERFACE -->
             <div class="flexchild">
+                
                 <mb-content-browser 
                     indexurl="[[indexurl]]" 
                     metadatasetslabel="[[metadatasetslabel]]" 

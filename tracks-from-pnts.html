@@ -2,7 +2,7 @@
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <link rel="import" href="routing-classes.html">
-<!--<link rel="import" href="tracks-behavior.html">-->
+<link rel="import" href="tracks-behavior.html">
 <link rel="import" href="mb-map-behavior.html">
 
 <!--
@@ -91,7 +91,7 @@ Optional: create quick-preview-data
         },
 
         behaviors: [
-            // Mbb.TracksBehavior,
+            Mbb.TracksBehavior,
             Mbb.MapBehavior
         ],
 
@@ -265,6 +265,7 @@ Optional: create quick-preview-data
                 return Math.sqrt(result / len);
             };
 
+
             var tracks = {}, track, tp, trackpoints;
             var t, dt, dx, dt_std, dx_std, z, zz=[],
                 vv=[], v, dv_std, vprev = 0;
@@ -363,6 +364,7 @@ Optional: create quick-preview-data
             //    into "tracks"  by  TP-id 
 
             rawdata.forEach(function(tp, j) {
+                
                 var tpx = {};
 
                 Object.keys(tp).forEach(function(k) {

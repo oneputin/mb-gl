@@ -134,11 +134,13 @@ presentation of track-properties (= selected feature)
             },    
 
             setmenuselection: function(logindex){
+                if (!this.zitems) return; 
                 this.zitem = this.zitems[logindex];
             },
 
             // 
             getmenuselection: function(menuitem){// console.log("getmenuselection", menuitem.id, menuitem);
+                if (!menuitem) return;  
                 this.logindex = menuitem.id;
             },
 
@@ -183,11 +185,12 @@ presentation of track-properties (= selected feature)
                 // A. Create MenuItems  
                 var zitems = [], zitem;
                 var sp = String.fromCharCode(160), // &nbsp;
-                    delim = sp + sp; //  +sp ;
+                    delim = sp + sp,
+                    zeit, utc; //  +sp ;
 
                 times.forEach(function(t, j){
-                    let zeit = t.split("T")[1],
-                        utc = scope.utcTime(scope.trackTime(t), "h"); 
+                    utc = scope.utcTime(scope.trackTime(t), "h");
+                    zeit = scope.logTime(utc,"h","t"); // +":"+scope.logTime(utc,"h","m");
                     zitem = {
                         "id" : j,
                         "title" : zeit + delim + elevs[j] + "[m]",

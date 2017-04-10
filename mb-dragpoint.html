@@ -1,0 +1,380 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="tracks-behavior.html">
+
+<!--
+`mb-dragpoint`
+Draggable mb-point with optional snapping to mb-theme features 
+
+@demo demo/slidemap.html 
+-->
+
+<dom-module id="mb-dragpoint">
+
+    <template>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'mb-dragpoint',
+
+            properties: {
+
+                map: {
+                    type: Object,
+                    observer: 'dragPointSetup'
+                }, 
+
+                // 
+                lnglat: {
+                    type: Object,
+                    observer: 'dragPointGet'
+                },
+
+                // 
+                dragcoords: {
+                    type: Array,
+                    value : [0,0],
+                    observer: 'dragPointRefresh',
+                    notify: true                    
+                },
+
+                // 
+                index: {
+                    type: Number,
+                    value : -1,
+                    observer: 'indexedPointRefresh',
+                    notify: true
+                },
+
+                // 
+                indexedtarget: {
+                    type: Object // ,   observer : 'indexedDataBuild'
+                },
+
+                allproperties : {
+                    type: Array,
+                    value:  ["coordElevs","coordTimes"]  // standard of trackLines
+                },
+
+                titleproperty: {
+                    type: String,
+                    value : "coordElevs"                    
+                },
+
+                // Array of indexed data
+                indexeddata: {
+                    type: Object
+                },
+
+                // 
+                selectsymbol: {
+                    type: String,
+                    value : "toilet-15"                    
+                },
+                // 
+                maptoast: {
+                    type: String,
+                    notify: true
+                }
+            },
+
+            behaviors: [
+                Mbb.TracksBehavior,
+            ],
+
+            observers: [
+                'indexedDataBuild(indexedtarget.feature)',
+                'dragPointGet(indexedtarget.lnglat)'
+            ],
+
+            // 
+            dragPointSetup : function(map) {
+                var scope = this; 
+
+                var geojsonpnt = this.geojsonPointCreate([0,0], "drag"); 
+
+                map.addSource('dragpnt', { 
+                    type: 'geojson', 
+                    data: geojsonpnt 
+                }); 
+
+                var dragpntLayers =  [
+                    {
+                        "id": "dragpnt-glow-strong",
+                        "type": "circle",
+                        "source": "dragpnt",
+                        "paint": {
+                            "circle-radius": 18,
+                            "circle-color": "#ff0",
+                            "circle-opacity": 0.6
+                        }
+                    }, 
+                    {
+                        "id": "dragpnt-glow",
+                        "type": "circle",
+                        "source": "dragpnt",
+                        "paint": {
+                            "circle-radius": 40,
+                            "circle-color": "#ff0",
+                            "circle-opacity": 0.2
+                        }
+                    }, 
+                    {
+                        "id": "dragpnt-select",
+                        "type": "symbol",
+                        "source": "dragpnt",
+                        "layout": {
+                            "icon-image": this.selectsymbol,
+                            "icon-rotate": 0,
+                            "text-field": "{title}",
+                            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                            "text-size": 12,
+                            "text-offset": [0, 0.6],
+                            "text-anchor": "top"
+                        }
+                    }
+                ];
+
+                // Change point and cursor style as a UI indicator
+                // and set a flag to enable other mouse events.
+                function mouseMove(e) {
+
+                    var circleid = 'dragpnt-glow',
+                        iconid   = 'dragpnt-select';
+                    var features = map.queryRenderedFeatures(e.point, { layers: [circleid] });
+                    
+                    // Change point and cursor style as a UI indicator
+                    // and set a flag to enable other mouse events.
+                    if (features.length) {
+                        map.setPaintProperty(circleid, 'circle-color', '#f00'); // '#3bb2d0');
+                        map.setLayoutProperty(iconid, 'icon-image', 'rocket-15'); // '#3bb2d0');
+
+                        this.isCursorOverPoint = true;
+                        map.dragPan.disable();
+                        
+                    } else {
+                        map.setPaintProperty(circleid, 'circle-color', '#ff0');
+                        map.setLayoutProperty(iconid, 'icon-image', 'toilet-15'); // '#3bb2d0');
+
+                        this.isCursorOverPoint = false;
+                        map.dragPan.enable();
+                    }
+                }
+
+                function mouseDown(e) {
+
+                    if (!this.isCursorOverPoint) {
+                        return;
+                    }  
+
+                    this.isDragging = true; // console.log("start dragging");
+                    // Set a cursor indicator
+                    // canvas.style.cursor = 'grab';
+                    // Mouse events
+                    map.on('mousemove', onDragMove);
+                    map.once('mouseup', onDragUp);
+                }
+
+                function onDragMove(e) {
+                    if (!this.isDragging) return;
+
+                    var lngLat = e.lngLat,
+                        coords = [lngLat.lng, lngLat.lat];  // console.log(coordsjson);     
+                    // Set a UI indicator for dragging.
+                    // canvas.style.cursor = 'grabbing';
+
+                    if (scope.indexedtarget) { // Update the "nearest" point on active target(fi. track) 
+                        
+                        var snapSet = scope.indexedPointSnap(lngLat); // , scope.indexedtarget);
+                        
+                        if (snapSet.index != null) {
+                            
+                            // A. SYNC location and all related elements
+                            // scope.index = snapSet.index;
+
+                            // B. refresh dragPnt only 
+                            scope.dragPointLocate(snapSet.index);
+                        }
+                    } else {
+                        scope.dragcoords = coords;
+                    }
+                }
+                // actions when mouse over point 
+                function onDragUp(e) {
+                    if (!this.isDragging) return;
+
+                    this.isDragging = false;
+
+                    scope.maptoast = scope.dragPointGet(e.lngLat);
+
+                    // Unbind mouse events
+                    map.off('mousemove', onDragMove);
+                }
+
+                dragpntLayers.forEach(function(layer){
+                    map.addLayer(layer);
+                }); //  console.log("dragpntLayers ADDED");
+
+                map.on('mousemove', mouseMove);
+                // Set `true` to dispatch the event before other functions call it. This
+                // is necessary for disabling the default map dragging behaviour.
+                map.on('mousedown', mouseDown, true);
+
+            },
+            // 
+            dragPointRefresh: function(coords) { console.log("DRAGGED to", coords); 
+                this.dragPointLocate(null, coords);  // console.log("Refreshing dragPoint", ix);
+            },
+
+            // Refresh coords of dragPnt (= refresh Source)
+            dragPointLocate: function(index, coords, title, selectsymbol) {
+                // A meaningful dragPointSymbol built from 3 symbol(Layer)s 
+                var scope = this; 
+                if (!this.map) return; 
+
+                if (!selectsymbol) selectsymbol = "toilet-15"; // "airport-15";
+
+                if (index != null) {
+                    if (!this.indexeddata) return;
+                    coords = this.indexeddata["coords"][index].slice(0,2);  // console.log(coords[0],typeof coords[0]);
+                    if (!title) title = this.titleproperty;
+                    if (title) {
+                        var data = this.indexeddata[title];
+                        if (data) title = data[index];
+                        else title = null;
+                    }     
+                } 
+
+                if (!coords) return; 
+
+                if (!title) title = "drag"; 
+
+                // Create a GeoJSON point to serve as a starting point
+                var geojsonpnt = this.geojsonPointCreate(coords, title); 
+                
+                if (map.getSource("dragpnt")) { 
+                    // console.log("REFRESH-TP: " + index, geojsonpnt, map.getSource("dragpnt")); // return;  
+                    map.getSource("dragpnt").setData(geojsonpnt);
+                }
+
+            },
+            // 
+            geojsonPointCreate: function(coords, title) {
+
+                var dragPoint = {
+                    "type": "FeatureCollection",
+                    "features": [{
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": coords
+                        },
+                        "properties": {
+                            "title" : title
+                        }
+                    }]
+                };
+                return dragPoint; 
+            },
+
+            // 
+            // indexedDataBuild: function(target) { //, properties) {
+                // if (!target || !target.feature) return; 
+                // var indexedFeature = target.feature;  
+            indexedDataBuild: function(indexedFeature) { //, properties) {
+                if (!indexedFeature) return; 
+
+                // A. Collect 
+                var indexedData = { 
+                    "coords": indexedFeature.geometry.coordinates
+                };     
+
+                var properties = this.allproperties;  // console.log("indexedDataBuild from", indexedFeature, properties);
+                properties.forEach(function(prop){
+                    indexedData[prop] = indexedFeature.properties[prop];
+                }.bind(this));
+                // z.B.
+                //"elevs": indexedFeature.properties.coordElevs,
+                //"times": indexedFeature.properties.coordTimes
+
+                this.indexeddata = indexedData;
+        
+                // B. Initialize dragpoint on trackLine 
+                /*if (target.lnglat) { 
+                    var snapSet = this.dragPointGet(target.lnglat);
+                    if (snapSet.index) { console.log("Start with targetPoint at index=" + snapSet.index, snapSet);
+                        scope.index = snapSet.index;
+                        //var trackInfo =  scope.trackInfoCollect(snapSet); // snapped.properties);
+                        //if (trackInfo.toast) scope.maptoast = trackInfo.toast; 
+                        // eventscope.popupOnMap(trackInfo);
+                    } 
+                }*/
+
+            },
+            // 
+            indexedPointSnap : function(queryPnt, target) { // , elemscope) {
+                if (!target) target = this.indexedtarget; 
+                // console.log("queryPnt, target", queryPnt, target);
+
+                var indexedFeature = target.feature; 
+
+                queryPnt = { 
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [queryPnt.lng, queryPnt.lat]
+                    }
+                };  
+
+                // B.2 Find/Eval nearest point on target
+                var snapPnt = turf.pointOnLine(indexedFeature, queryPnt, 'kilometers');
+                if (!snapPnt) return {}; 
+
+                return {
+                    "index" : snapPnt.properties.index,
+                    "target": indexedFeature, 
+                    "query": queryPnt, 
+                    "snap": snapPnt
+                };
+            },
+
+            // appShell around indexPointSnap
+            dragPointGet : function(lngLat) {
+                if (!lngLat) return;
+
+                if (this.indexedtarget) {
+                    var snapSet = this.indexedPointSnap(lngLat),
+                        snapPnt = snapSet['snap'],
+                        indexedFeature = snapSet['target'],
+                        index = snapPnt.properties.index;
+                        // console.log("dragPointGet: snapSet at " + index, snapSet); 
+
+                    // MAIN Trigger: SYNC of target-use in external apps
+                    this.index = index;
+
+                    // Additional UI-info 
+                    var t = indexedFeature.properties["coordTimes"][index],
+                        s = this.toFixed(snapPnt.properties.location, 2)+" km";
+                    mapToast = 'FIXED s= ' + s + ', t= ' + t;
+  
+                } else {
+                    
+                    // MAIN Trigger 
+                    // this.dragcoords = [lngLat.lng, lngLat.lat];
+                    // Additional UI-info 
+                    mapToast = "FREE drag to ???"; 
+                }
+
+                return mapToast;
+            },        
+            // 
+            indexedPointRefresh: function(ix) { 
+                if (ix >= 0) { // console.log("RELOCATE DRAGPNT at indexed Feature: " + ix);
+                    this.dragPointLocate(ix);  // console.log("Refreshing dragPoint", ix);
+                }
+            },
+
+        })
+    </script>
+</dom-module>                  

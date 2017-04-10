@@ -384,6 +384,9 @@ Refresh mb-contentbox features
                 if (!map) map = scope.map;
                 if (!map) return; 
 
+                //var before = "admin_country";
+                var before = "country_label";
+
                 // create linear list of features 
                 // suitable for "menu-generation"
                 function getFeatureList(layerData, layerName, longtitle) {
@@ -438,11 +441,11 @@ Refresh mb-contentbox features
                 // 
                 function addMapContent(layerName, layerObject){
                     var layerData = layerObject.srcdata;    
-                    if (!layerData) return ;  console.log(layerData, map);
+                    if (!layerData) return ;  // console.log(layerData, map);
 
                     layerData.type = "FeatureCollection";
 
-                    var layerSource = map.getSource(layerName);  console.log(layerName, layerData, layerSource) 
+                    var layerSource = map.getSource(layerName);  // console.log(layerName, layerData, layerSource) 
 
                     if (!layerSource ) {   // 1.A. Add(create) mapSource 
                         // console.log("ADD source: "+layerName, layerData);
@@ -480,7 +483,7 @@ Refresh mb-contentbox features
                                         });
                                     }    
                                 }
-                                map.addLayer(template);
+                                map.addLayer(template, before);
                             }
                         });
 
@@ -551,7 +554,7 @@ Refresh mb-contentbox features
                 var mapcontent = {},
                     layerObject, contentfeatures ;
                 
-                var contentboxKeys = Object.keys(contentbox);   console.log("Refreshing contentboxkeys", contentboxKeys, contentbox);
+                var contentboxKeys = Object.keys(contentbox);   // console.log("Refreshing contentboxkeys", contentboxKeys, contentbox);
 
                 contentboxKeys.forEach(function(layerName, j) {
 
