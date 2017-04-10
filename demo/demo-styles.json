@@ -29,5 +29,9 @@
     {
         "id": "satellite-v9",
         "title": "mb-satellite"
+    },
+    {
+        "id": "satellite-streets-v9",
+        "title": "mb-satellite-streets"
     }
 ]
