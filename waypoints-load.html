@@ -1,0 +1,195 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="geotags-from-gpx.html">
+<link rel="import" href="tracks-behavior.html">
+
+<!--
+`waypoints-load`
+component loadswaypoint data 
+- from location sets of different formats
+    - raw handheld (gps as gpx)
+    - tabular handheld export (gps as csv)
+    - tabular database export (vendee-tables)
+
+@demo demo/routingtracks.html 
+-->
+
+<dom-module id="waypoints-load">
+
+    <template>
+
+    <style is="custom-style">
+        :host {
+            display: none; /*inline-block;*/
+            position: absolute;
+            opacity: 1; 
+            top: 50%;
+            margin-bottom: -50%;
+            transform: translate(0, -50%);
+        }
+    </style>
+
+    <geotags-from-gpx 
+        tagname="Waypoint"
+        srcmeta="[[srcmetax]]"
+        tagdata="{{_rawdata}}">
+    </geotags-from-gpx>    
+
+    <content>
+    </content>    
+
+</template>
+
+    <script>
+        Polymer({
+            is: 'waypoints-load',
+
+            properties: {
+
+                // OUT: TRACKS as static log conternt
+                wpdata: {
+                    type: Object,
+                    notify: true
+                },
+
+                /** metadata describing rawdata to load
+                 *  
+                 */
+                querymeta: {
+                    type: Object
+                },
+
+                // raw data imported from different  
+                _rawdata: {
+                    type: Object
+                },
+
+            },
+
+            behaviors: [
+            ],
+
+            observers: [
+                '_requestManager(querymeta.*)',
+                '_responseManager(_rawdata)'
+            ],
+
+            attached: function() {
+                // this._uxManager();
+            },
+
+
+            /** Prepares import of rawdata
+             *  - from alternative low-level import-components (evaluates metadata)  
+             *  - with structures dependent on routemode
+             */
+            _requestManager: function(srcmeta) {
+
+                this.debounce("request", function() {  
+                    if (srcmeta.path == 'querymeta') srcmeta = srcmeta.value;
+                    var srcurl = srcmeta.url,      // 
+                        srctype = srcmeta.type,    // 
+                        srctitle = srcmeta.title;  // 
+
+                    // Check some url - conditions ???
+                    if (!srcurl) {
+                        return;
+                    } 
+
+                    if (this.querymeta && (srcurl != this.querymeta.url)) {
+                        //this.routecontent = [];
+                        //this.rawdata = [];
+                        srctitle = this.querymeta.title;
+                    } 
+
+                    // Extend metadata with Query/Format - parameters
+                    if ((srctype == "kml") || (srctype == "gpx")) {
+
+                        srctype = "xml"; 
+                        srcmeta.xmlquery = {};
+                        if (srcmeta.query) {  
+                            srcmeta.xmlquery = srcmeta.query;
+                        } 
+                    
+                        if (srctype == "gpx") {
+                            // ALWAYS extract only tracks (neither waypoints or routes)
+                            srcmeta.xmlquery["tags"] = "Waypoint";
+                            srcmeta.xmlquery["structure"] = "doc";
+                        } 
+
+                    } // console.log("srcmeta",srcmeta) ; 
+
+                    // trigger one of alternative import-elements
+                    if (srctype == "xml")  {
+                        this.srcmetax = srcmeta;
+                        this.srcmetad = null;
+                    } else {
+                        this.srcmetad = srcmeta;
+                        this.srcmetax = null;
+                    }   
+
+                }, 100);     
+            },
+
+            /** 
+             * Postprocess raw tracks into alternative Formats 
+             */    
+            _responseManager : function(rawdata, srcmetad) {
+                if (!rawdata) return; // console.log("prepare wp-quickmap of ", rawdata);  return; 
+                rawdata  = this.createWaypoints(rawdata);
+                if (!rawdata) return;  
+
+                this.wpdata = rawdata;
+                // this._rawdata = null;
+            },
+
+            // Combine rawdata and metadata into contentObj 
+            // (with mb-preview-properties) 
+            createWaypoints: function(rawdata) {
+                console.log("CREATE Waypoints on map:", rawdata); 
+
+                map.addSource("waypoints", {
+                    "type": "geojson",
+                    "data": {
+                        "type": "FeatureCollection",
+                        "features": rawdata.features
+                    }
+                });
+
+                map.addLayer({
+                    "id": "waypoints",
+                    "type": "circle",
+                    "source": "waypoints",
+                    "paint": {
+                        "circle-radius": 6,
+                        "circle-color": "#B42222"
+                    },
+                    "filter": ["==", "$type", "Point"],
+                });
+
+                // map.on('click', 'waypoints', function (e) {
+                map.on('click', function (e) {
+                    // console.log("WAYPOINT-click", e);   // return;  
+                    var features = map.queryRenderedFeatures(e.point, {
+                        layers: ['waypoints']
+                    });
+                    if (!features.length) return;
+                    var pp = features[0].properties;  
+                    var html = "<h3>Waypoint</h3>" 
+                        + pp.name
+                        + "<br/>z="+pp.coordElevs
+                        + "<hr/>"+pp.time;
+                    var lnglat = features[0].geometry.coordinates;
+                    new mapboxgl.Popup()
+                        .setLngLat(lnglat)
+                        .setHTML(html)
+                        .addTo(map);
+                });
+
+                return rawdata;
+            }
+
+        });
+    </script>
+
+</dom-module>

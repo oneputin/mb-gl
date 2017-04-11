@@ -37,6 +37,7 @@
     <link rel="import" href="../tracks-info.html">
     <link rel="import" href="../tracks-api.html">
     <link rel="import" href="../tracks-load.html">
+    <link rel="import" href="../waypoints-load.html">
     <link rel="import" href="../track-log-ctrl.html">
     <link rel="import" href="../track-log-view.html">
 
@@ -161,7 +162,7 @@
                     <track-log-view
                         disable = "[[userouting]]"
                         checked = "[[elevationshow]]"
-                        metadata="[[metadataset]]"
+                        metadata ="[[metadataset]]"
                         logdata ="[[logdata]]"
                         logindex = "{{logindex}}">
                     </track-log-view>    
@@ -313,11 +314,17 @@
                         routemode = "[[!logmode]]"
                         tracksetmeta = "{{metadataset}}" 
                         trackdata = "{{trackdata}}"> 
-                        <!--routecontent = "{{routecontent}}">--> 
                     </tracks-load>
 
                 </mb-content-browser>
                 <!-- selectprop="id"--> 
+
+                <waypoints-load 
+                    querymeta = "{{metadataset}}" 
+                    wpdata = "{{wpdata}}"> 
+                </waypoints-load>
+
+
             </div>
 
             <!-- C. DATA-LOG CTRL -->

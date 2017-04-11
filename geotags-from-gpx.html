@@ -1,0 +1,261 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../kml-json/kml-json.html">
+<link rel="import" href="tracks-behavior.html">
+
+<!--
+`geotags-from-gpx`
+Interface for import/export of tracking data from handheld gps-devices
+
+Optional: create quick-preview-data 
+
+@demo demo/routingtracks.html 
+-->
+
+<dom-module id="geotags-from-gpx">
+
+<template>
+
+    <!--<style is="custom-style">
+        :host {
+            position: absolute;
+            display: none; /*inline-block;*/
+            opacity: 1; 
+            top: 50%;
+            margin-bottom: -50%;
+            transform: translate(0, -50%);
+        }
+    </style>-->
+
+    <kml-json 
+        url="[[_xmlurl]]" 
+        query="[[_xmlquery]]" 
+        geojson="{{_rawdata}}">
+    </kml-json>
+
+</template>
+
+<script>
+    Polymer({
+        is: 'geotags-from-gpx',
+
+        properties: {
+
+            srcmeta: {
+                type: Object,
+            },
+
+            tagname: {
+                type: String,
+                value: "Track"
+            },
+
+            tagdata : {
+                type: Object,
+                notify: true
+            },
+
+            _xmlurl: {
+                type: String
+            },
+
+            _xmlquery: {
+                type: Object,
+                value: {}
+            },
+            
+            // json from document-IF
+            _rawdata: {
+                type: Object
+            },
+
+        },
+
+        behaviors: [
+            Mbb.TracksBehavior
+        ],
+
+        observers: [
+            '_triggerQuery(srcmeta.*)',
+            '_processRawData(_rawdata, srcmeta)'
+        ],
+
+        attached: function() {
+        },
+
+        /**
+         */
+        _triggerQuery: function(srcmeta) { // trigger new dataquery !!
+            if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
+            if (!srcmeta) return; 
+
+            if (srcmeta.type != "gpx") {
+                this.rawdata = null;
+                return;
+            }  
+            
+            // Join the xmlquery from basic and variable query-items
+            var xmlquery = {
+                "tags": this.tagname,
+                "structure": "doc"
+            };
+
+            if (srcmeta.xmlquery && Object.keys(srcmeta.xmlquery).length) {
+               Object.assign(xmlquery, srcmeta.xmlquery);
+            }  // console.log("gpx-Query (meta)", srcmeta, xmlquery) ;
+            
+            // Trigger action 
+            this._tagname = xmlquery.tags;
+            this._xmlquery = xmlquery; 
+            this._xmlurl = srcmeta.url; // !! TRIGGER !!
+        },
+        
+        // Convert raw gpx-json-data into 
+        _processRawData: function(rawdata, srcmeta) { // console.log("GPX-data, raw", rawdata); // return;
+            var _tagdata ; 
+            this.debounce("raw", function() {
+                if (!rawdata || !Object.keys(rawdata).length) return; 
+                // console.log("GPX-data, rawTracks", rawdata); // return;
+    
+                if (this._tagname == "Waypoint") {
+
+                    _tagdata = this._normalizeWaypoints(rawdata);
+
+                } else {
+                    // 1. "Simplify" into list of "simple" tracks 
+                    _tagdata = this._normalizeTracks(rawdata);
+                    // console.log("GPX-data, rawTracks", rawTracks); // return;
+                }    
+
+                this.tagdata = _tagdata ; 
+
+                // ** !! ** 
+                this._rawdata = null; 
+                this._xmlurl = null;
+
+            }, 200);      
+        },
+
+        // Derive "raw tracks" from geoJson originating from GPX, KML 
+        _normalizeTracks: function(rawdata) {
+            if (!rawdata) return; 
+            // console.log("_normalizeTracks: rawdata=", rawdata);
+            var scope = this;
+
+            // get color in hex-format
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+            // Split multiLineTracks into tracksegments 
+            // that can be identified by "own" start-time 
+            function jsonTrackSimplify(rawdata) {
+
+                var segmentFeatures = [],
+                    coordinates, tracktimes, coordElevs, 
+                    starttime;
+
+                rawdata.forEach(function(f, i) {
+
+                    // All property-arrays are structured identical
+                    coordinates = f.geometry.coordinates;
+                    tracktimes = f.properties.coordTimes;
+                    coordz = f.properties.coordElevs;
+                    // console.log(f.geometry.type, i, f); // coordinates, tracktimes, coordz); 
+
+                    type = f.geometry.type;
+                    
+                    if (type == "MultiLineString") {
+
+                        coordinates.forEach(function(coords, j) {
+
+                            // All property-arrays are structured identical to coords-array (same j)
+                            var cc = JSON.parse(JSON.stringify(coords)); 
+                            var tt = JSON.parse(JSON.stringify(tracktimes[j])); 
+                            var cz = JSON.parse(JSON.stringify(coordz[j]));  
+
+                            if (!starttime) starttime = tt[0];
+
+                            var seg = {
+                                "type": "Feature",
+                                "geometry": {
+                                    "type": "LineString",
+                                    "coordinates": cc
+                                },
+                                "properties": {
+                                    "coordTimes": tt,
+                                    "coordElevs": cz,
+                                    "id": tt[0],
+                                    "name": tt[0],
+                                    "time": tt[0],
+                                    "color": getRandomColor()
+                                }
+                            };
+
+                            segmentFeatures.push(seg);
+                        })
+
+                    } else {
+
+                        if (!starttime) starttime = tracktimes[0];
+
+                        f.properties.id = tracktimes[0];
+                        f.properties.color = getRandomColor();
+
+                        segmentFeatures.push(f);
+                    }
+                })
+
+                var segdata = {
+                    "time": starttime, // rawdata.time (probably time of gpxToJson-conversion)
+                    "type": rawdata.type,
+                    "features": segmentFeatures
+                };
+
+                return segdata;
+            }
+
+            // append vec-gis-properties 
+            function addbbox(jsondata) {
+                var bb, ffa, ffc=[];
+                jsondata.features.forEach(function(f){
+                    ffa = [];
+                    f.geometry.coordinates.forEach(function(cc){
+                        ffa.push(turf.point(cc.slice(0,2)));
+                    })                        
+                    bb = turf.bbox(turf.featureCollection(ffa)); // console.log("bb of:"+ffa.length, bb);
+                    f.properties.bbox = bb;
+                    ffc = ffc.concat(ffa);
+                })
+                var bbox = turf.bbox(turf.featureCollection(ffc));
+                jsondata.bbox = bbox; // console.log("ADDBBOX", srcdata); 
+                return jsondata;
+            } 
+
+            // var trackdata , mapboxlayer;
+            
+            // enable processing of different input structures
+            if (rawdata.features) rawdata = rawdata.features; 
+
+            // 1. Simplify
+            var trackdata = jsonTrackSimplify(rawdata);
+
+            // 2. SET basic vec-props
+            addbbox(trackdata); 
+            // console.log("Raw Tracks, geojson-flat", trackdata)
+
+            return trackdata;
+        },
+
+        _normalizeWaypoints: function(rawdata) {
+            return rawdata;
+        }    
+
+
+    });
+</script>
+
+</dom-module>

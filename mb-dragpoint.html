@@ -30,8 +30,8 @@ Draggable mb-point with optional snapping to mb-theme features
                     observer: 'dragPointGet'
                 },
 
-                // 
-                dragcoords: {
+                // externally available
+                coords: {
                     type: Array,
                     value : [0,0],
                     observer: 'dragPointRefresh',
@@ -188,7 +188,6 @@ Draggable mb-point with optional snapping to mb-theme features
                         var snapSet = scope.indexedPointSnap(lngLat); // , scope.indexedtarget);
                         
                         if (snapSet.index != null) {
-                            
                             // A. SYNC location and all related elements
                             // scope.index = snapSet.index;
 
@@ -196,7 +195,9 @@ Draggable mb-point with optional snapping to mb-theme features
                             scope.dragPointLocate(snapSet.index);
                         }
                     } else {
-                        scope.dragcoords = coords;
+                        
+                        scope.dragPointLocate(null, coords);
+                        // scope.coords = coords;
                     }
                 }
                 // actions when mouse over point 
@@ -221,6 +222,39 @@ Draggable mb-point with optional snapping to mb-theme features
                 map.on('mousedown', mouseDown, true);
 
             },
+
+            // appShell around indexPointSnap
+            dragPointGet : function(lngLat) {
+                if (!lngLat) return;
+
+                if (this.indexedtarget) {
+                    var snapSet = this.indexedPointSnap(lngLat),
+                        snapPnt = snapSet['snap'],
+                        indexedFeature = snapSet['target'],
+                        index = snapPnt.properties.index;
+                        // console.log("dragPointGet: snapSet at " + index, snapSet); 
+
+                    // MAIN Trigger: SYNC of target-use in external apps
+                    this.index = index;
+
+                    // Additional UI-info 
+                    var t = indexedFeature.properties["coordTimes"][index],
+                        s = this.toFixed(snapPnt.properties.location, 2)+" km";
+                    mapToast = 'FIXED s= ' + s + ', t= ' + t;
+  
+                } else {
+                    // MAIN Trigger 
+                    dragPointRefresh([lngLat.lng, lngLat.lat]);
+                    // OR with export-options 
+                    // this.coords = [lngLat.lng, lngLat.lat];
+
+                    // Additional UI-info 
+                    mapToast = "FREE drag to ???"; 
+                }
+
+                return mapToast;
+            },        
+
             // 
             dragPointRefresh: function(coords) { // console.log("DRAGGED to", coords); 
                 this.dragPointLocate(null, coords);  // console.log("Refreshing dragPoint", ix);
@@ -339,35 +373,6 @@ Draggable mb-point with optional snapping to mb-theme features
                 };
             },
 
-            // appShell around indexPointSnap
-            dragPointGet : function(lngLat) {
-                if (!lngLat) return;
-
-                if (this.indexedtarget) {
-                    var snapSet = this.indexedPointSnap(lngLat),
-                        snapPnt = snapSet['snap'],
-                        indexedFeature = snapSet['target'],
-                        index = snapPnt.properties.index;
-                        // console.log("dragPointGet: snapSet at " + index, snapSet); 
-
-                    // MAIN Trigger: SYNC of target-use in external apps
-                    this.index = index;
-
-                    // Additional UI-info 
-                    var t = indexedFeature.properties["coordTimes"][index],
-                        s = this.toFixed(snapPnt.properties.location, 2)+" km";
-                    mapToast = 'FIXED s= ' + s + ', t= ' + t;
-  
-                } else {
-                    
-                    // MAIN Trigger 
-                    // this.dragcoords = [lngLat.lng, lngLat.lat];
-                    // Additional UI-info 
-                    mapToast = "FREE drag to ???"; 
-                }
-
-                return mapToast;
-            },        
             // 
             indexedPointRefresh: function(ix) { 
                 if (ix >= 0) { // console.log("RELOCATE DRAGPNT at indexed Feature: " + ix);

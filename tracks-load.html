@@ -1,6 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 
-<link rel="import" href="tracks-from-gpx.html">
+<link rel="import" href="geotags-from-gpx.html">
 <link rel="import" href="tracks-from-pnts.html">
 
 
@@ -41,11 +41,11 @@ component loads tracking data
         trackdata="{{_trackdata}}">
     </tracks-from-pnts>    
 
-    <tracks-from-gpx 
+    <!--tagname="Track"-->
+    <geotags-from-gpx 
         srcmeta="[[srcmetax]]"
-        routemode="[[routemode]]"
-        trackdata="{{_trackdata}}">
-    </tracks-from-gpx>    
+        tagdata="{{_trackdata}}">
+    </geotags-from-gpx>    
 
     <content>
     </content>    
@@ -68,6 +68,10 @@ component loads tracking data
                     type: Boolean
                 },
 
+                srcmetad : {
+                    type: String
+                },
+
                 /** metadata describing trackdata to load
                  *  
                  */
@@ -87,8 +91,8 @@ component loads tracking data
             ],
 
             observers: [
-                '_requestManager(tracksetmeta.*, routemode)',
-                '_responseManager(_trackdata)'
+                '_requestManager(tracksetmeta.*)',
+                '_responseManager(_trackdata, routemode, srcmetad)'
             ],
 
             attached: function() {
@@ -100,7 +104,8 @@ component loads tracking data
              *  - from alternative low-level import-components (evaluates metadata)  
              *  - with structures dependent on routemode
              */
-            _requestManager: function(srcmeta, routemode) {
+            _requestManager: function(srcmeta) {
+
                 this.debounce("request", function() {  //console.log(srcmeta, routemode);
                     if (srcmeta.path == 'tracksetmeta') srcmeta = srcmeta.value;
 
@@ -142,22 +147,183 @@ component loads tracking data
                     // console.log("tracksetmeta. AFTER", srcmeta);
                     // this.tracksetmeta = srcmeta;
                     // trigger one of alternative import-elements
-                    if (srctype == "xml")  this.srcmetax = srcmeta;
-                    else                   this.srcmetad = srcmeta;
+                    if (srctype == "xml")  {
+                        this.srcmetax = srcmeta;
+                        this.srcmetad = null;
+                    } else {
+                        this.srcmetad = srcmeta;
+                        this.srcmetax = null;
+                    }   
+
                 }, 100);     
             },
 
-            /** Return loaded tracks into alternative  
-             *  Output-parameters 
+            /** 
+             * Postprocess raw tracks into alternative Formats 
              */    
-            _responseManager : function(trackdata) {
+            _responseManager : function(trackdata, routemode, srcmetad) {
                 if (!trackdata) return; 
-                console.log("CHECKOUT TrackData:", trackdata); 
-                
+
+                if (srcmetad) {
+                    console.log("Pass TrackData unchanged", trackdata); 
+
+                } else if (routemode) {  // derive structures for mb-based animation of 'suitable' tracks
+                    var minlength = this.srcemetax.minlength;
+                    var trackSet = this.createRouteSet(trackdata, minlength); // .features);
+                    if (trackSet.length) {  // console.log("RAW route-data (gpx)",  trackSet);
+                        trackdata = trackSet;
+                    } else {
+                        trackdata = null;
+                    }   
+
+                } else {  // derive features for mb-visualization of rawTracks
+                    // console.log("prepare quickmap of ", rawTracks);  
+                    var trackLogs = this.createTrackSet(trackdata);
+                    if (trackLogs) {  // console.log("RAW track-data (gpx)", trackLogs);
+                        trackdata = trackLogs;
+                    } else {
+                        trackdata = null;
+                    }    
+                }  
+
+                if (!trackdata) return;  // console.log("CHECKOUT TrackData:", trackdata); 
                 this.trackdata = trackdata;
-                this._trackdata = null;
+                // this._trackdata = null;
             },
 
+            // Combine rawdata and metadata into contentObj 
+            // (with mb-preview-properties) 
+            createTrackSet: function(rawdata) {
+                // Create geojson-object for quickview of raw trackdata 
+                // with "short as possible" id-entification of features 
+                function trackLogCreate(srcdata, title) {
+                    
+                    var logId = srcdata.time;
+
+                    if(!logId) title;
+                    if(!logId) logId = srcdata.id;
+                    if(!logId) logId = srcdata.name;
+                    
+                    var trackLog = {};
+                    trackLog[logId] = {
+                        "layer": {
+                            "type": "line",
+                            "id": logId,
+                            "source": logId
+                        },
+                        "srcdata": srcdata,
+                        "raw": 1
+                    };
+
+                    return trackLog; 
+                };
+
+                var title; //  = this.srcmetax.key;
+                if (!title) title = this.srcmetax.title;
+                
+                var trackLogObject = trackLogCreate(rawdata, title); 
+                
+                return trackLogObject;
+
+            },
+
+            // Derive contentObj usable by animatation-api 
+            // !! id of features = "first coord-time"
+            createRouteSet: function(rawdata, minTrackLength) {
+                if (!minTrackLength) minTrackLength = 5; 
+                var scope = this,
+                    trackSet = [],
+                    trackpoints, tracktimes,
+                    track, tt, coordinates,
+                    type, id, title;
+
+                // 
+                function extractPnts(coords, tt) {
+                    // tracktimes = r.properties.coordTimes;
+                    var tp, trackpoints = [];
+                    if (!coords || !coords.length) return trackpoints;
+                    var dott, utc;
+                    coords.forEach(function(cc, j) {
+                        dott = scope.trackTime(tt[j]);
+                        utc = scope.utcTime(dott);
+                        tp = {};
+                        tp.coords = [cc[0], cc[1]]; // !!! mapbox
+                        tp.z = cc[2];
+                        tp.ab = dott;
+                        tp.an = tp.ab;
+                        tp.utc = utc;
+                        trackpoints.push(tp);
+                    });
+
+                    return trackpoints;
+                }
+                // 
+                if (rawdata.features) rawdata = rawdata.features;
+
+                rawdata.forEach(function(r, i) {
+
+                    coordinates = r.geometry.coordinates;
+
+                    tracktimes = r.properties.coordTimes;
+
+                    type = r.geometry.type;
+
+                    if (type == "MultiLineString") {
+
+                        coordinates.forEach(function(coords, j) {
+
+                            if (coords.length > minTrackLength) {
+
+                                tt = tracktimes[j];
+
+                                id = tt[0];
+                                //*********
+
+                                trackpoints = extractPnts(coords, tt);
+                                // console.log(id, coords, trackpoints);
+
+                                track = {
+                                    "id": id,
+                                    "title": id,
+                                    "unitsystem": "metric",
+                                    "trackmode": true,
+                                    "nodes": trackpoints
+                                };
+
+                                trackSet.push(track);
+                            }
+                        })
+
+                    } else { // other like LineString
+
+                        id = r.properties.time;
+                        // ********************
+                        id = id.replace(/-/g, "_");
+                        
+                        title = r.properties.name;
+                        if (!title) title = r.properties.id;
+                        if (!title) title = id;
+
+                        if (coordinates.length > minTrackLength) {
+
+                            trackpoints = extractPnts(coordinates, tracktimes);
+
+                            route = {
+                                "id": id,
+                                "title": title,
+                                "unitsystem": "metric",
+                                "trackmode": true,
+                                "nodes": trackpoints
+                            };
+
+                            trackSet.push(route);
+                        }
+                    }
+
+                })
+
+                return trackSet;
+            }
 
         });
     </script>

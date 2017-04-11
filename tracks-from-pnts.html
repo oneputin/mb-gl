@@ -106,7 +106,9 @@ Optional: create quick-preview-data
 
         // derive ajax-parameters from metadata
         _triggerQuery: function(srcmeta) { // trigger new dataquery !!
+            if (!srcmeta) return; // console.log("srcmeta", srcmeta);
             if (srcmeta.path == 'srcmeta') srcmeta = srcmeta.value;
+            if (!srcmeta) return;
 
             if (srcmeta.type.indexOf("table") < 0) { // console.log("Cannot query data from:", srcmeta);  
                 this._rawdata = null; // 
@@ -731,8 +733,7 @@ Optional: create quick-preview-data
             var traceContent = traceContentCreate(traceData, title, prefix);  // console.log("ok quickMapObj");
 
             return traceContent; 
-        },    
-
+        }    
 
     });
 </script>

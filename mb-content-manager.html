@@ -108,8 +108,8 @@ Refresh mb-contentbox features
              * related to newly selected contentbox
              */
             mbContentApply: function(contentbox, reason) { 
-                console.log("mbContentApply ["+reason+"]"); 
-                console.log("Content:", contentbox); 
+                //console.log("mbContentApply ["+reason+"]"); 
+                //console.log("Content:", contentbox); 
                 if (!contentbox || !Object.keys(contentbox).length) return;
 
                 var scope = this,
@@ -153,7 +153,7 @@ Refresh mb-contentbox features
             // Make contentbox "complete"  
             _mbContentVerify: function(contentbox, mapevents) { // , map) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
-                console.log("_mbContentVerify. contentbox, events", contentbox, mapevents);
+                // console.log("_mbContentVerify. contentbox, events", contentbox, mapevents);
 
                 var scope = this;
                 //  map = scope.map;
