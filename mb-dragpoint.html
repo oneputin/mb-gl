@@ -19,9 +19,9 @@ Draggable mb-point with optional snapping to mb-theme features
 
             properties: {
 
-                map: {
+                mbid: {
                     type: Object,
-                    observer: 'dragPointSetup'
+                    observer: 'dragPointAdd'
                 }, 
 
                 // 
@@ -88,9 +88,8 @@ Draggable mb-point with optional snapping to mb-theme features
             ],
 
             // 
-            dragPointSetup : function(map) {
+            dragPointAdd : function(mbid) {  console.log("ADD dragPoint into", mbid);
                 var scope = this; 
-
                 var geojsonpnt = this.geojsonPointCreate([0,0], "drag"); 
 
                 map.addSource('dragpnt', { 
@@ -139,21 +138,22 @@ Draggable mb-point with optional snapping to mb-theme features
                 // and set a flag to enable other mouse events.
                 function mouseMove(e) {
 
-                    var circleid = 'dragpnt-glow',
-                        iconid   = 'dragpnt-select';
-                    var features = map.queryRenderedFeatures(e.point, { layers: [circleid] });
+                    var dragid = 'dragpnt-glow',
+                        iconid = 'dragpnt-select';
+                    if (!map.getLayer(dragid)) return;
+                    var features = map.queryRenderedFeatures(e.point, { layers: [dragid] });
                     
                     // Change point and cursor style as a UI indicator
                     // and set a flag to enable other mouse events.
                     if (features.length) {
-                        map.setPaintProperty(circleid, 'circle-color', '#f00'); // '#3bb2d0');
+                        map.setPaintProperty(dragid, 'circle-color', '#f00'); // '#3bb2d0');
                         map.setLayoutProperty(iconid, 'icon-image', 'rocket-15'); // '#3bb2d0');
 
                         this.isCursorOverPoint = true;
                         map.dragPan.disable();
                         
                     } else {
-                        map.setPaintProperty(circleid, 'circle-color', '#ff0');
+                        map.setPaintProperty(dragid, 'circle-color', '#ff0');
                         map.setLayoutProperty(iconid, 'icon-image', 'toilet-15'); // '#3bb2d0');
 
                         this.isCursorOverPoint = false;
@@ -222,7 +222,7 @@ Draggable mb-point with optional snapping to mb-theme features
 
             },
             // 
-            dragPointRefresh: function(coords) { console.log("DRAGGED to", coords); 
+            dragPointRefresh: function(coords) { // console.log("DRAGGED to", coords); 
                 this.dragPointLocate(null, coords);  // console.log("Refreshing dragPoint", ix);
             },
 
@@ -230,7 +230,7 @@ Draggable mb-point with optional snapping to mb-theme features
             dragPointLocate: function(index, coords, title, selectsymbol) {
                 // A meaningful dragPointSymbol built from 3 symbol(Layer)s 
                 var scope = this; 
-                if (!this.map) return; 
+                if (!map) return; 
 
                 if (!selectsymbol) selectsymbol = "toilet-15"; // "airport-15";
 

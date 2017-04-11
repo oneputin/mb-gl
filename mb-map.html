@@ -268,30 +268,29 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 });
             },
 
-            // 
+            // Compare style of mb-map-api with style-ctrl-parameters (id and url) of map-element
+            // - inform app about id of actual api-mapstyle
+            // - refresh mb-mapstyle if map-element got a new style-parameter meanwhile 
+            //   (especially as SYNC during start-phase with style-menu )     
             onStyleChange: function(e){
 
                 if (e.dataType == "style") {
-                    var mapstyleurl = mapscope.mapstyle;
+                    var mapstyleurl = mapscope.mapstyle,
+                        oldstyleid = mapscope.mbid;
                     if (!mapstyleurl) {
                         return;
                     }   // return;   
-                    // Compare style of mb-map-api with style-ctrl-parameters (id and url) of map-element
-                    // - inform app about id of actual api-mapstyle
-                    // - refresh mb-mapstyle if map-element got a new style-parameter meanwhile 
-                    //   (especially as SYNC during start-phase with style-menu )     
+
                     var stylesheet = e.style.stylesheet,
-                        newstyleid = stylesheet.id,
-                        oldstyleid = mapscope.mbid;
+                        newstyleid = stylesheet.id;
 
                     if (newstyleid != oldstyleid)  {
                         console.log("MAPSTYLE-CHANGE: [" + oldstyleid+"]", "to ["+ newstyleid +"]")
-                        if (mapstyleurl.indexOf(newstyleid) < 0 ) {
-                            // console.log("BUT LAST requested style is:", mapstyleurl );
+                        if (mapstyleurl.indexOf(newstyleid) < 0 ) { // console.log("BUT LAST requested style is:", mapstyleurl );
                             map.setStyle(mapstyleurl);
                         } else {
                             map.off("data", mapscope.onStyleChange); // console.log("onStyleChange OFF");
-                            mapscope.mbid = newstyleid; // Trigger to Rebuild themes of contentbox within new style
+                            mapscope.mbid = newstyleid;     // Trigger to Rebuild themes of contentbox within new style
                         }
                     }     
                 }

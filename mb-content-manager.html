@@ -108,14 +108,13 @@ Refresh mb-contentbox features
              * related to newly selected contentbox
              */
             mbContentApply: function(contentbox, reason) { 
-                console.log("mbContentApply. For ", reason,"Content:", contentbox); 
+                console.log("mbContentApply ["+reason+"]"); 
+                console.log("Content:", contentbox); 
                 if (!contentbox || !Object.keys(contentbox).length) return;
 
                 var scope = this,
-                    map = scope.map; 
-                // if (contentbox.path == 'contentbox') {
+                    map = this.map; 
                 this.debounce("apply", function(){
-                    
                     // POLYMER-feature 
                     var cp = contentbox.path; 
                     if (cp && (cp.indexOf('contentbox') >= 0)) { 
@@ -125,9 +124,8 @@ Refresh mb-contentbox features
                     // Verify contentbox
                     // Check weather new content(at least some) is "well defined"
                     if (map) {
-                        // 
                         var mapevents = this.mapevents;
-                        contentbox = this._mbContentVerify(contentbox, map, mapevents);
+                        contentbox = scope._mbContentVerify(contentbox, mapevents); // , map);
                     }
 
                     if (!contentbox || !Object.keys(contentbox).length)  {
@@ -153,8 +151,9 @@ Refresh mb-contentbox features
             },    
 
             // Make contentbox "complete"  
-            _mbContentVerify: function(contentbox, map, mapevents) {    
+            _mbContentVerify: function(contentbox, mapevents) { // , map) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
+                console.log("_mbContentVerify. contentbox, events", contentbox, mapevents);
 
                 var scope = this;
                 //  map = scope.map;
@@ -381,7 +380,7 @@ Refresh mb-contentbox features
                 if (!flag) flag = "IN";
 
                 var scope = this;
-                if (!map) map = scope.map;
+                // if (!map) map = scope.map;
                 if (!map) return; 
 
                 //var before = "admin_country";
@@ -508,8 +507,6 @@ Refresh mb-contentbox features
                     var eventset = layerObject.events;
                     if (!eventset) return;  
 
-                    // var events = ;
-
                     Object.keys(eventset).forEach(function(ev){
                         if (flag=="IN") {
                             map.on(ev, eventset[ev])
@@ -517,13 +514,13 @@ Refresh mb-contentbox features
                             map.off(ev, eventset[ev])
                         }    
                     }); 
-
                 }
+
                 // 
                 function removeMapContent(layerObject) {
 
                     var contentLayers = layerObject.templates;
-                    if (!contentLayers) return;  console.log("remove contentLayers of " + layerObject, contentLayers); // , layerObject); 
+                    if (!contentLayers) return;  // console.log("remove contentLayers of " + layerObject, contentLayers); // , layerObject); 
                     
                     // deactivate related events (?) 
 
@@ -564,29 +561,22 @@ Refresh mb-contentbox features
 
                     // Option 
                     if (flag == "IN") { // ADD/REFRESH a contentbox object 
-
                         var layerData = layerObject.srcdata;
-
                         if (layerData) {   // Check/Get all source-features of the basic layer 
                             contentfeatures = getFeatureList(layerData, layerName);
                             // console.log("CHECKED-"+flag+" ["+layerName+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
                         }                        
-
                         if (typeof map != "undefined")  { // console.log("MAP:", typeof map, map); 
                             layerData = addMapContent(layerName, layerObject);
                             // console.log("MAP ADDed content for " + layerName, layerData); // , layerObject);
                         } 
-
-                    }   else {        // REMOVE object (on demand)
-
-                        if (map) {
-                            // console.log("CHECKED-"+flag+" [" + layerName+"]", layerObject); 
+                    } else {        // REMOVE object (on demand)
+                        if (map) {  // console.log("CHECKED-"+flag+" [" + layerName+"]", layerObject); 
                             removeMapContent(layerObject); 
                         }     
                     } 
                     
-                    if (map) {
-                        // console.log("TOGGLE Contentevents-"+flag +" [" + layerName+"]", layerObject); 
+                    if (map) {  // console.log("TOGGLE Contentevents-"+flag +" [" + layerName+"]", layerObject); 
                         toggleContentEvents(layerObject, flag) 
                     }  
 
