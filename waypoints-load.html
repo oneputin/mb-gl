@@ -170,7 +170,7 @@ component loadswaypoint data
                             srcmeta.xmlquery["structure"] = "doc";
                         } 
                         srctype = "xml"; 
-                    }  console.log("THEMEREQUEST based on", srcmeta) ; 
+                    }  // console.log("THEMEREQUEST based on", srcmeta) ; 
 
                     // trigger one of alternative import-elements
                     if (srctype == "xml")  {
@@ -211,9 +211,7 @@ component loadswaypoint data
             // Combine rawdata and metadata into contentObj 
             // (with mb-preview-properties) 
             _refreshLayer: function(rawdata) {
-                var st = this._layerStatus();
-
-                console.log("CREATELAYER: " + st.id, st, this.querymeta); 
+                var st = this._layerStatus();  // console.log("CREATELAYER: " + st.id, st, this.querymeta); 
                 if (!st.src) {
                     map.addSource(st.id, {
                         "type": "geojson",

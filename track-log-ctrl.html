@@ -79,9 +79,7 @@ presentation of track-properties (= selected feature)
 
                 // 
                 logobject: {
-                    type: Object,
-                    notify: true,
-                    observer: 'checkinLogdata'
+                    type: Object // , notify: true
                 },
 
                 // 
@@ -122,7 +120,7 @@ presentation of track-properties (= selected feature)
             ],                
 
             observers: [
-
+                'checkinLogdata(logobject, disable)'
             ],
 
             toggleElement: function(checked) {
@@ -148,8 +146,11 @@ presentation of track-properties (= selected feature)
              * Extract logdata (=properties) of multipoint (map-)features
              * @param      {object}  f       { mapbox-jeature }
              */
-            checkinLogdata: function(logobject) { 
-                if (this.disable) return; 
+            checkinLogdata: function(logobject, disable) { 
+                if (disable) {
+                    this.logdata = null;
+                    return;
+                } 
                 if (!logobject || !logobject.feature || !this.checked) return;    
                 // console.log("Checkout Feature to LOG: " + f.id , f);
                 

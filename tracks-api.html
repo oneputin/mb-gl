@@ -84,6 +84,7 @@ display as decorated route (fi with commented endpoints)
                     observer: 'dragPointRefresh',
                 },
 */
+
                 mapevents: {
                     type: Object,
                     notify: true
@@ -102,7 +103,7 @@ display as decorated route (fi with commented endpoints)
             ],
 
             observers: [
-                'transfer(rawcontent.*)', // , metadata)'
+                'transfer(rawcontent.*, disable)', // , metadata)'
                 'onMapdataLoad(mapcontent.*)',
                 'trackActivate(trackselected.id)' //,
             ],
@@ -112,15 +113,19 @@ display as decorated route (fi with commented endpoints)
             }, 
 
             // 
-            transfer: function(rawcontent) { // , metadata) {
-                if (this.disable) return;   
+            transfer: function(rawcontent, disabled) { // , metadata) {
+                
+                this.debounce("transfer", function(){
+                    // console.log("TRANSFER TRACK into contentBox", disabled, rawcontent);
+                    if (disabled) return;   
 
-                rawcontent = rawcontent.value; 
-                if (!rawcontent || !Object.keys(rawcontent).length) return; 
-                // console.log("SETUP contentbox from raw tracks.", rawcontent); 
+                    rawcontent = rawcontent.value; 
+                    if (!rawcontent || !Object.keys(rawcontent).length) return; 
+                    // console.log("SETUP contentbox from raw tracks.", rawcontent); 
 
-                this.set("metadata.datasetlabel",  this.datasetlabel);
-                this.contentbox = rawcontent;
+                    this.set("metadata.datasetlabel",  this.datasetlabel);
+                    this.contentbox = rawcontent;
+                }, 200);
             },
 
             // Setup events related to UserInteractions with track-lines

@@ -2,7 +2,7 @@
 
 <link rel="import" href="geotags-from-gpx.html">
 <link rel="import" href="tracks-from-pnts.html">
-
+<link rel="import" href="tracks-behavior.html">
 
 <!--
 `tracks-load`
@@ -87,6 +87,7 @@ component loads tracking data
             },
 
             behaviors: [
+                Mbb.TracksBehavior
             ],
 
             observers: [
@@ -95,7 +96,7 @@ component loads tracking data
             ],
 
             attached: function() {
-                // this._uxManager();
+
             },
 
 
@@ -160,16 +161,16 @@ component loads tracking data
             /** 
              * Postprocess raw tracks into alternative Formats 
              */    
-            _responseManager : function(trackdata, routemode, srcmetad) {
+            _responseManager : function(trackdata, routemode, srcmetad) { // console.log("TRACKRESPONSE", trackdata, routemode, this._trackdata);
                 if (!trackdata) return; 
 
                 if (srcmetad) {
                     console.log("Pass TrackData unchanged", trackdata); 
-
+               
                 } else if (routemode) {  // derive structures for mb-based animation of 'suitable' tracks
-                    var minlength = this.srcemetax.minlength;
-                    var trackSet = this.createRouteSet(trackdata, minlength); // .features);
-                    if (trackSet.length) {  // console.log("RAW route-data (gpx)",  trackSet);
+                    
+                    var trackSet = this.createRouteSet(trackdata); // .features);
+                    if (trackSet && trackSet.length) {  // console.log("RAW route-data (gpx)",  trackSet);
                         trackdata = trackSet;
                     } else {
                         trackdata = null;
@@ -177,15 +178,15 @@ component loads tracking data
 
                 } else {  // derive features for mb-visualization of rawTracks
                     // console.log("prepare quickmap of ", rawTracks);  
-                    var trackLogs = this.createTrackSet(trackdata);
-                    if (trackLogs) {  // console.log("RAW track-data (gpx)", trackLogs);
+                    var trackLogs = this.createTrackSet(trackdata); // console.log("RAW track-data (gpx)", trackLogs);
+                    if (trackLogs) {  
                         trackdata = trackLogs;
                     } else {
                         trackdata = null;
                     }    
                 }  
 
-                if (!trackdata) return;  // console.log("CHECKOUT TrackData:", trackdata); 
+                if (!trackdata) return;  // console.log("CHECKOUT TrackData (routemode="+routemode+")", trackdata); 
                 this.trackdata = trackdata;
                 // this._trackdata = null;
             },
@@ -230,6 +231,8 @@ component loads tracking data
             // !! id of features = "first coord-time"
             createRouteSet: function(rawdata, minTrackLength) {
                 if (!minTrackLength) minTrackLength = 5; 
+                // var minlength = this.srcemetax.minlength;
+
                 var scope = this,
                     trackSet = [],
                     trackpoints, tracktimes,

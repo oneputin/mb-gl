@@ -19,6 +19,12 @@ Draggable mb-point with optional snapping to mb-theme features
 
             properties: {
 
+                disable: {
+                    type: Boolean,
+                    observer: 'toggleVis',
+                    value: false
+                },
+
                 mbid: {
                     type: Object,
                     observer: 'dragPointAdd'
@@ -75,6 +81,10 @@ Draggable mb-point with optional snapping to mb-theme features
                 maptoast: {
                     type: String,
                     notify: true
+                },
+
+                _dragpntLayers : {
+                    type: Array
                 }
             },
 
@@ -84,20 +94,11 @@ Draggable mb-point with optional snapping to mb-theme features
 
             observers: [
                 'indexedDataBuild(indexedtarget.feature)',
-                'dragPointGet(indexedtarget.lnglat)'
+                'dragPointGet(indexedtarget.lnglat, disable)',
             ],
 
-            // 
-            dragPointAdd : function(mbid) {  console.log("ADD dragPoint into", mbid);
-                var scope = this; 
-                var geojsonpnt = this.geojsonPointCreate([0,0], "drag"); 
-
-                map.addSource('dragpnt', { 
-                    type: 'geojson', 
-                    data: geojsonpnt 
-                }); 
-
-                var dragpntLayers =  [
+            ready : function() {
+                this._dragpntLayers =  [
                     {
                         "id": "dragpnt-glow-strong",
                         "type": "circle",
@@ -133,6 +134,26 @@ Draggable mb-point with optional snapping to mb-theme features
                         }
                     }
                 ];
+            },
+
+            toggleVis : function(flag) {
+                if (!this._dragpntLayers) return;  
+                var vis = "visible";
+                if (flag) vis = "none";
+                this._dragpntLayers.forEach(function(layer){
+                    map.setLayoutProperty(layer.id, 'visibility', vis);
+                });    
+            },
+
+            // 
+            dragPointAdd : function(mbid) {  // console.log("ADD dragPoint into", mbid);
+                var scope = this; 
+                var geojsonpnt = this.geojsonPointCreate([0,0], "drag"); 
+
+                map.addSource('dragpnt', { 
+                    type: 'geojson', 
+                    data: geojsonpnt 
+                }); 
 
                 // Change point and cursor style as a UI indicator
                 // and set a flag to enable other mouse events.
@@ -212,7 +233,7 @@ Draggable mb-point with optional snapping to mb-theme features
                     map.off('mousemove', onDragMove);
                 }
 
-                dragpntLayers.forEach(function(layer){
+                this._dragpntLayers.forEach(function(layer){
                     map.addLayer(layer);
                 }); //  console.log("dragpntLayers ADDED");
 
@@ -224,8 +245,15 @@ Draggable mb-point with optional snapping to mb-theme features
             },
 
             // appShell around indexPointSnap
-            dragPointGet : function(lngLat) {
+            dragPointGet : function(lngLat, disable) {
+                if (disable) {
+                    return; 
+                } 
                 if (!lngLat) return;
+
+                this._dragpntLayers.forEach(function(layer){
+                    map.setLayoutProperty(layer.id, 'visibility', 'visible');
+                });    
 
                 if (this.indexedtarget) {
                     var snapSet = this.indexedPointSnap(lngLat),
@@ -345,6 +373,7 @@ Draggable mb-point with optional snapping to mb-theme features
                 }*/
 
             },
+
             // 
             indexedPointSnap : function(queryPnt, target) { // , elemscope) {
                 if (!target) target = this.indexedtarget; 

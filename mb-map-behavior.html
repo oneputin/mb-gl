@@ -25,22 +25,20 @@
         // after a new route-dataset was loaded
         onMapdataLoad : function(mapcontent, dataName){
             if (this.disable || (typeof map == "undefined")) return;
-            // console.log("onMapdataLoad", mapcontent); 
             var scope = this;
+            var reacted = false;
 
             // Check applicability
             mapcontent = mapcontent.value; // Polymer !! 
             if (!dataName) dataName = Object.keys(mapcontent)[0] ; // 'routes';
+            if (!dataName) return; 
             
             if (!mapcontent[dataName]) {
-                console.log("MAPDATALOAD BREAK NO content "+dataName, mapcontent); 
+                console.log("MAPDATALOAD BREAK. NO content: "+dataName, mapcontent); 
                 return;
             }     
-
             mapcontent = mapcontent[dataName];
             // console.log("MAPDATALOAD NEW ["+dataName+"]-content of mapcontent", mapcontent);  
-
-            var reacted = false;
             
             /**
                 * load-event-action 
@@ -151,8 +149,9 @@
 
             // Activate selected feature in "correct" app-context(=scope)
             function reAction(tilefeature, mapcontent){
-                // internal and external trigger
                 if (!tilefeature || !tilefeature.properties) return; 
+                // internal and external trigger
+
                 var props = tilefeature.properties,
                     fid = props.id,
                     startfeature; 
@@ -183,10 +182,11 @@
             // Pending Listener 
             setTimeout(function () { 
                 // RETRY and STOP Listener after max pending time (Fi. 1 sec) 
-                if (!reacted) { console.log("AFTER timeOut TRY reAction();");
+                if (!reacted) { // console.log("AFTER timeOut TRY reAction();");
                     reAction(); // default "empty" reaction 
                 }
                 map.off("data", onFeatureLoaded); 
+
             }, 1000);
 
         },
@@ -368,13 +368,15 @@
         popupOnMap: function(popupcontent, options) {
             // if (!this.map) return;
             // console.log("popupcontent",popupcontent);
-            var html, lnglat, bbox, openflag, setcenter = options["center"];
+            var html, lnglat, bbox, openflag;
             if (!options) { // 
                 options = {
                     closeButton: false,
                     closeOnClick: true
                 };
             }    
+            var setcenter = options["center"];
+            
             // Prepare a "" Info-Popup
             // to be closed on x-mark
             if (!this.popup) {

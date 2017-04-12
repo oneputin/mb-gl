@@ -182,7 +182,6 @@ create and animate routes along waypoint file loaded from url
                     type: Array,
                     value: []
                 },
-
             },
 
             behaviors: [
@@ -206,22 +205,34 @@ create and animate routes along waypoint file loaded from url
              * set a 'quasiglobal' this-context for recursive calls during animation 
              * and setup track-features
              */
-            ready: function() {
-                mba = this;  // console.log("mba is set!", mba); 
-                mba.model = {
-                    data : {
-                        routes : {},
-                        tracks: {},
-                        traces : {},
-                        nodes : {}
-                    },
-                    loaded: false,
-                    routeid: "",  // Unique id of route to be "processed" (fi. animated)
-                    trackobj: {},
-                    trackid: "",
-                    trackdata: {} 
+            created: function() { //console.log("CREATED");
+            },
+
+            ready: function() {//console.log("READY");
+                this.mbaInit(); 
+            },
+            attached: function() {//console.log("ATTACHED");
+            },
+
+            mbaInit : function() {
+                if (!mba) {  console.log("INITS MBA"); 
+                    mba = this;  // console.log("mba is set!", mba); 
+                    mba.model = {
+                        data : {
+                            routes : {},
+                            tracks: {},
+                            traces : {},
+                            nodes : {}
+                        },
+                        loaded: false,
+                        routeid: "",  // Unique id of route to be "processed" (fi. animated)
+                        trackobj: {},
+                        trackid: "",
+                        trackdata: {} 
+                    };
+                    mba._animationbox = {}
                 }
-            }, 
+            },    
 
             /**
              *  Generic shell triggering an appAction requiring userdata (vector features)
@@ -382,6 +393,12 @@ create and animate routes along waypoint file loaded from url
                     return true ;
                 }
 
+                if (!mba || mba.model) {
+                    this.mbaInit(); 
+                }
+
+                mba._animationbox = {};
+
                 // A. Setup Timer for animation 
                 var contentbox = {},
                     timer = this.timer, 
@@ -391,16 +408,18 @@ create and animate routes along waypoint file loaded from url
 
                 // routes and traces
                 contentbox = this.animationRoutesSetup(routedata, timer, metadata);  
+
                 // console.log("basic contentbox from  route-data", routedata, contentbox);
                 // track(point)s
                 contentbox['tracks'] = this.animationTrackerSetup(routedata, timer, metadata);
 
                 // contentbox['nodes'] = this.animationNodesSetup(routedata, metadata); // wayPoints or trackPoints
 
-                if (!checkContent(contentbox)) return; 
+                if (!checkContent(contentbox)) {
+                    return; 
+                }
 
                 // ??? Doubled assignment of sourceData to trigger PM1-multi-parameter observer  ???
-                this._animationbox = {};
                 this._animationbox = contentbox; // triggers data-binding "refresh-action"
 
             } ,
@@ -924,9 +943,7 @@ create and animate routes along waypoint file loaded from url
                 }
 
                 this._trackctrl = ctrlflag; 
-
-                console.log("ctrlAction: " + ctrlflag +", [", trackctrl+"]" ); 
-
+                // console.log("ctrlAction: " + ctrlflag +", [", trackctrl+"]" ); 
                 this.trackStepCtrl(ctrlflag);
                 // ******************************
             },
@@ -1459,7 +1476,6 @@ create and animate routes along waypoint file loaded from url
              */
             animationRoutesSetup: function(routedataset, timer, metadataset) {
                 // console.log("animationRoutesSetup, configdata:", routedataset, timer, metadataset);
-
                 mba.model.data.routes.features = [];
                 mba.model.data.traces.features = [];
 
@@ -2178,10 +2194,9 @@ create and animate routes along waypoint file loaded from url
                     tracklayer = map.getLayer(trackname), 
                     scope = this; 
                 if (!tracklayer) {
-                    console.log("REFRESH _animationMap BREAK", mapTime, syncflag, routeFilter); 
+                    // console.log("REFRESH _animationMap BREAK", mapTime, syncflag, routeFilter); 
                     return;
-                } 
-                console.log("REFRESH _animationMap", mapTime, syncflag, routeFilter);
+                } // console.log("REFRESH _animationMap", mapTime, syncflag, routeFilter);
 
                 // 
                 function checkNextRoutes (mapTime, routeFilter) {
@@ -2464,10 +2479,10 @@ create and animate routes along waypoint file loaded from url
                         zoomFilter = [];
                     }
 
-                    // A. Select a route from "Rawfeatures"
+                    // A. Select a route from "Raw features"
                     // SPECIAL
                     if (zoomFilter) {
-                        routeContent = this._animationbox.routes,
+                        routeContent = mba._animationbox.routes;
                         routeFeatures = this.filterContentSources(routeContent, zoomFilter);
                         // routeFeatures = this._trackRouteGetSrcFeatures(routeid, contentlayer);
                     }   // console.log("ZWI of "+ routeid, bboxFilter, routeFeatures);

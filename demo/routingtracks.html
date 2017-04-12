@@ -235,38 +235,34 @@
                 </template>    
             </div>
 
-            <!-- B. Routing APIs -->
+            <!-- B. TRACK-APIs -->
 
-            <!-- rawdata="{{rawdata}}" --> 
+            <!-- B.1 TRACK-animation (ROUTING) --> 
 
-            <template is="dom-if" if="{{userouting}}">
+            <routing-api 
+                disable = "[[!userouting]]"
+                map = "[[map]]" 
+                timer = "{{timer}}"
+                trackctrl = "{{trackctrl}}"      
 
-                <routing-api 
-                    disable = "[[!userouting]]"
-                    map = "[[map]]" 
-                    timer = "{{timer}}"
-                    trackctrl = "{{trackctrl}}"      
+                routedata = "[[trackdata]]" 
 
-                    routedata = "[[trackdata]]" 
+                metadataset = "{{metadataset}}"
+                contentbox = "{{contentbox}}"               
+                mapcontent = "[[mapcontent]]"
 
-                    metadataset = "{{metadataset}}"
-                    contentbox = "{{contentbox}}"               
-                    mapcontent = "[[mapcontent]]"
+                routeselected ="{{datasetitem}}"> 
+                <!--trackdata = "{{trackdata}}"
+                trackinfo = "[[trackinfo]]">-->
+            </routing-api>
 
-                    routeselected ="{{datasetitem}}"> 
-                    <!--trackdata = "{{trackdata}}"
-                    trackinfo = "[[trackinfo]]">-->
-                </routing-api>
-
-                <timer-setup  
-                    timer="{{timer}}"
-                    starttimer="[[starttimer]]"
-                    metadataset="[[metadataset]]">
-                </timer-setup>
+            <timer-setup  
+                timer="{{timer}}"
+                starttimer="[[starttimer]]"
+                metadataset="[[metadataset]]">
+            </timer-setup>
                 
-            </template>
-
-            <!-- -->
+            <!-- B.2 TRACK-Explorer -->
             <tracks-api 
                 disable = "[[userouting]]"
                 maptoast = "{{maptoast}}"
@@ -280,6 +276,7 @@
             </tracks-api>
 
             <mb-dragpoint 
+                disable = "[[userouting]]"
                 mbid = "[[mbid]]" 
                 indexedtarget = "[[datasetitem]]"
                 index = "{{logindex}}"
@@ -288,7 +285,6 @@
             <!-- lnglat = "[[lnglat]]"--> 
 
             <!-- SYNC mapcontent from contentbox -->
-            <!-- checked="[[!routemode]]" --> 
             <mb-content-manager 
                 map = "[[map]]" 
                 mbid = "[[mbid]]" 
@@ -325,7 +321,6 @@
                     querymeta = "[[metadataset]]" 
                     wpdata = "{{wpdata}}"> 
                 </waypoints-load>
-
 
             </div>
 
@@ -369,9 +364,10 @@
     // scope.lnglat = "13,52";
 
     // STATE init
+    scope.routemode = false; // true; // false
+
     scope.styleselectshow = false;
     scope.locationlogshow = true;
-    scope.routemode = false;
     scope.waypointmode = false;
     
     // Animation- INIT
@@ -408,6 +404,7 @@
                 toggleRouting(this); 
             });
         }
+
     });
 
     /*
