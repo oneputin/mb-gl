@@ -221,17 +221,17 @@
         <div class="ctrls_out">
             <!-- element with [n] visible features -->
             <div id="radios">
+                <template is="dom-if" if="{{!userouting}}">
+                    <paper-radio-button checked="{{elevationshow}}">Track Log</paper-radio-button>
+                </template>    
                 <template is="dom-if" if="{{mapstyle}}">
+                    <paper-radio-button class="preview red" checked="{{routemode}}">Track Animation</paper-radio-button>
+                    <paper-radio-button checked="{{waypointshow}}">Waypoints</paper-radio-button>
                     <template is="dom-if" if="{{!userouting}}">
                         <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
                     </template>
                     <paper-radio-button checked="{{mapmeasureshow}}">Map Measure</paper-radio-button>
                     <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
-                    <!--<paper-radio-button checked="{{waypointshow}}">Show Waypoints</paper-radio-button>-->
-                    <paper-radio-button class="preview red" checked="{{logmode}}">CheckSources</paper-radio-button>
-                </template>    
-                <template is="dom-if" if="{{!userouting}}">
-                    <paper-radio-button checked="{{elevationshow}}">Elevation Log</paper-radio-button>
                 </template>    
             </div>
 
@@ -288,7 +288,7 @@
             <!-- lnglat = "[[lnglat]]"--> 
 
             <!-- SYNC mapcontent from contentbox -->
-            <!-- checked="[[logmode]]" --> 
+            <!-- checked="[[!routemode]]" --> 
             <mb-content-manager 
                 map = "[[map]]" 
                 mbid = "[[mbid]]" 
@@ -311,8 +311,8 @@
                     selectitem="{{datasetitem}}"> 
 
                     <tracks-load 
-                        routemode = "[[!logmode]]"
-                        tracksetmeta = "{{metadataset}}" 
+                        routemode = "[[routemode]]"
+                        tracksetmeta = "[[metadataset]]" 
                         trackdata = "{{trackdata}}"> 
                     </tracks-load>
 
@@ -320,7 +320,9 @@
                 <!-- selectprop="id"--> 
 
                 <waypoints-load 
-                    querymeta = "{{metadataset}}" 
+                    mbid = "[[mbid]]" 
+                    visible = "[[waypointshow]]" 
+                    querymeta = "[[metadataset]]" 
                     wpdata = "{{wpdata}}"> 
                 </waypoints-load>
 
@@ -369,7 +371,7 @@
     // STATE init
     scope.styleselectshow = false;
     scope.locationlogshow = true;
-    scope.logmode = true;
+    scope.routemode = false;
     scope.waypointmode = false;
     
     // Animation- INIT
@@ -394,7 +396,7 @@
         // Switch "visibility" of elements related with routing-api- and routing-gui  
         function toggleRouting(radio) {
             if (!radio) scope.userouting = false;
-            else if (!radio.checked)  scope.userouting = true;
+            else if (radio.checked)  scope.userouting = true;
             else scope.userouting = false;
         }
 

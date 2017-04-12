@@ -30,7 +30,7 @@ component loadswaypoint data
     </style>
 
     <geotags-from-gpx 
-        tagname="Waypoint"
+        tagname = "Waypoint"
         srcmeta="[[srcmetax]]"
         tagdata="{{_rawdata}}">
     </geotags-from-gpx>    
@@ -41,22 +41,38 @@ component loadswaypoint data
 </template>
 
     <script>
+        var wpscope;
         Polymer({
             is: 'waypoints-load',
 
             properties: {
 
+                layerid : {
+                    type: String,
+                    value: "waypoints"
+                },
+
+                // id of mb-style
+                mbid : {
+                    type: String
+                },
+
+                visible : {
+                    type: Boolean,
+                    value: false,
+                    observer: '_layerVisibility'
+                },
+
+                /** metadata describing rawdata to load
+                 */
+                querymeta: {
+                    type: Object
+                },
+
                 // OUT: TRACKS as static log conternt
                 wpdata: {
                     type: Object,
                     notify: true
-                },
-
-                /** metadata describing rawdata to load
-                 *  
-                 */
-                querymeta: {
-                    type: Object
                 },
 
                 // raw data imported from different  
@@ -71,13 +87,51 @@ component loadswaypoint data
 
             observers: [
                 '_requestManager(querymeta.*)',
-                '_responseManager(_rawdata)'
+                '_responseManager(_rawdata, mbid)'
             ],
 
             attached: function() {
-                // this._uxManager();
+                wpscope = this;
             },
 
+            // Process selected feature
+            clickAction : function(feature) {
+                if (!feature) return;
+                var meta = this.querymeta,
+                    lnglat = feature.geometry.coordinates,
+                    pp = feature.properties;  
+                
+                var html = "<h3>Waypoint</h3>";
+                if (meta) {
+                    html = "<h3>WP in [" +meta.title+ "] </h3>"; 
+                }
+                html = html + pp.time
+                     + "<hr/>" + pp.name
+                     + "<br/>z = "+pp.coordElevs+" m";
+
+                new mapboxgl.Popup()
+                    .setLngLat(lnglat)
+                    .setHTML(html)
+                    .addTo(map);
+            },
+
+            // Toggle layer-visibility
+            _layerVisibility : function(flag){ // console.log("SET _layerVisibility", flag);
+                if (!map) return;  
+                if (flag)  map.setLayoutProperty(this.layerid, 'visibility', 'visible');
+                else map.setLayoutProperty(this.layerid, 'visibility', 'none');
+            },
+
+            // 
+            _layerStatus : function(layid) {
+                if (!layid) layid = this.layerid;
+                var status = {
+                    id : layid,
+                    layer : map.getLayer(layid),
+                    src :  map.getSource(layid)
+                }    
+                return status;  
+            },
 
             /** Prepares import of rawdata
              *  - from alternative low-level import-components (evaluates metadata)  
@@ -105,7 +159,6 @@ component loadswaypoint data
                     // Extend metadata with Query/Format - parameters
                     if ((srctype == "kml") || (srctype == "gpx")) {
 
-                        srctype = "xml"; 
                         srcmeta.xmlquery = {};
                         if (srcmeta.query) {  
                             srcmeta.xmlquery = srcmeta.query;
@@ -116,8 +169,8 @@ component loadswaypoint data
                             srcmeta.xmlquery["tags"] = "Waypoint";
                             srcmeta.xmlquery["structure"] = "doc";
                         } 
-
-                    } // console.log("srcmeta",srcmeta) ; 
+                        srctype = "xml"; 
+                    }  console.log("THEMEREQUEST based on", srcmeta) ; 
 
                     // trigger one of alternative import-elements
                     if (srctype == "xml")  {
@@ -132,61 +185,76 @@ component loadswaypoint data
             },
 
             /** 
-             * Postprocess raw tracks into alternative Formats 
+             * Postprocess raw geoJson-data into mb-Layer(s) 
              */    
-            _responseManager : function(rawdata, srcmetad) {
-                if (!rawdata) return; // console.log("prepare wp-quickmap of ", rawdata);  return; 
-                rawdata  = this.createWaypoints(rawdata);
+            _responseManager : function(rawdata, mbid) {
+                if (!rawdata) return;  // console.log("WP-REFRESH ", rawdata, mbid);  // return; 
+                rawdata  = this._refreshLayer(rawdata);
                 if (!rawdata) return;  
 
                 this.wpdata = rawdata;
-                // this._rawdata = null;
+                // this._rawdata = null; // do NOT !!!
             },
+
+            // 
+            _clickListener : function(e) {
+                var st = wpscope._layerStatus(); 
+                if (!st.layer) return ;  
+                var features = map.queryRenderedFeatures(e.point, {
+                    layers: [st.id]
+                });
+                if (!features || !features.length) return; // console.log("WAYPOINT-click", e, st);   // return;  
+
+                wpscope.clickAction(features[0]);
+            }, 
 
             // Combine rawdata and metadata into contentObj 
             // (with mb-preview-properties) 
-            createWaypoints: function(rawdata) {
-                console.log("CREATE Waypoints on map:", rawdata); 
+            _refreshLayer: function(rawdata) {
+                var st = this._layerStatus();
 
-                map.addSource("waypoints", {
-                    "type": "geojson",
-                    "data": {
-                        "type": "FeatureCollection",
-                        "features": rawdata.features
-                    }
-                });
-
-                map.addLayer({
-                    "id": "waypoints",
-                    "type": "circle",
-                    "source": "waypoints",
-                    "paint": {
-                        "circle-radius": 6,
-                        "circle-color": "#B42222"
-                    },
-                    "filter": ["==", "$type", "Point"],
-                });
-
-                // map.on('click', 'waypoints', function (e) {
-                map.on('click', function (e) {
-                    // console.log("WAYPOINT-click", e);   // return;  
-                    var features = map.queryRenderedFeatures(e.point, {
-                        layers: ['waypoints']
+                console.log("CREATELAYER: " + st.id, st, this.querymeta); 
+                if (!st.src) {
+                    map.addSource(st.id, {
+                        "type": "geojson",
+                        "data": {
+                            "type": "FeatureCollection",
+                            "features": rawdata.features
+                        }
                     });
-                    if (!features.length) return;
-                    var pp = features[0].properties;  
-                    var html = "<h3>Waypoint</h3>" 
-                        + pp.name
-                        + "<br/>z="+pp.coordElevs
-                        + "<hr/>"+pp.time;
-                    var lnglat = features[0].geometry.coordinates;
-                    new mapboxgl.Popup()
-                        .setLngLat(lnglat)
-                        .setHTML(html)
-                        .addTo(map);
-                });
+                } else { // console.log("REFRESH SRC from ", rawdata);
+                    map.getSource(st.id).setData(rawdata);
+                    // st.src.setData(features);
+                }
+                
+                if (!st.layer) {
+                    var vis = "none";
+                    if (this.visible) vis = "visible";
+                    map.addLayer({
+                        "id": st.id,
+                        "type": "circle",
+                        "source": st.id,
+                        "layout" : {
+                            "visibility": vis
+                        },
+                        "paint": {
+                            "circle-radius": 6,
+                            "circle-color": "#B42222"
+                        },
+                        "filter": ["==", "$type", "Point"],
+                    });
+                }    
 
-                return rawdata;
+                if (this.clickAction) {
+                    map.off('click', this._clickListener);
+                    map.on('click', this._clickListener);
+                } 
+                if (this.hoverAction) {
+                    map.off('hover', this.hoverListener);
+                    map.on('hover', this.hoverListener);
+                } 
+
+                return st;
             }
 
         });
