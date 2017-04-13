@@ -4,7 +4,7 @@
 <link rel="import" href="tracks-behavior.html">
 
 <!--
-`waypoints-load`
+`layer-waypoints`
 component loadswaypoint data 
 - from location sets of different formats
     - raw handheld (gps as gpx)
@@ -14,7 +14,7 @@ component loadswaypoint data
 @demo demo/routingtracks.html 
 -->
 
-<dom-module id="waypoints-load">
+<dom-module id="layer-waypoints">
 
     <template>
 
@@ -43,7 +43,7 @@ component loadswaypoint data
     <script>
         var wpscope;
         Polymer({
-            is: 'waypoints-load',
+            is: 'layer-waypoints',
 
             properties: {
 
@@ -52,10 +52,16 @@ component loadswaypoint data
                     value: "waypoints"
                 },
 
+                tagname : {
+                    type: String,
+                    value: "Waypoint"                   
+                },
+
                 // id of mb-style
                 mbid : {
                     type: String
                 },
+
 
                 visible : {
                     type: Boolean,
@@ -86,7 +92,7 @@ component loadswaypoint data
             ],
 
             observers: [
-                '_requestManager(querymeta.*)',
+                '_requestManager(querymeta.*, tagname)',
                 '_responseManager(_rawdata, mbid)'
             ],
 
@@ -115,6 +121,7 @@ component loadswaypoint data
                     .addTo(map);
             },
 
+
             // Toggle layer-visibility
             _layerVisibility : function(flag){ // console.log("SET _layerVisibility", flag);
                 if (!map) return;  
@@ -137,10 +144,11 @@ component loadswaypoint data
              *  - from alternative low-level import-components (evaluates metadata)  
              *  - with structures dependent on routemode
              */
-            _requestManager: function(srcmeta) {
+            _requestManager: function(srcmeta, gpxtagname) {
 
                 this.debounce("request", function() {  
                     if (srcmeta.path == 'querymeta') srcmeta = srcmeta.value;
+
                     var srcurl = srcmeta.url,      // 
                         srctype = srcmeta.type,    // 
                         srctitle = srcmeta.title;  // 
@@ -148,7 +156,7 @@ component loadswaypoint data
                     // Check some url - conditions ???
                     if (!srcurl) {
                         return;
-                    } 
+                    } // console.log("_requestManager", srcmeta); 
 
                     if (this.querymeta && (srcurl != this.querymeta.url)) {
                         //this.routecontent = [];
@@ -166,7 +174,7 @@ component loadswaypoint data
                     
                         if (srctype == "gpx") {
                             // ALWAYS extract only tracks (neither waypoints or routes)
-                            srcmeta.xmlquery["tags"] = "Waypoint";
+                            srcmeta.xmlquery["tags"] = gpxtagname;
                             srcmeta.xmlquery["structure"] = "doc";
                         } 
                         srctype = "xml"; 
@@ -181,10 +189,14 @@ component loadswaypoint data
                         this.srcmetax = null;
                     }   
 
-                }, 100);     
+                }, 100);   
+
             },
 
             /** 
+             * rawdata  
+             * mbid     trigger reset in new mb-style
+             * 
              * Postprocess raw geoJson-data into mb-Layer(s) 
              */    
             _responseManager : function(rawdata, mbid) {
@@ -196,14 +208,15 @@ component loadswaypoint data
                 // this._rawdata = null; // do NOT !!!
             },
 
-            // 
+            // generic click-listener
             _clickListener : function(e) {
                 var st = wpscope._layerStatus(); 
                 if (!st.layer) return ;  
+
                 var features = map.queryRenderedFeatures(e.point, {
                     layers: [st.id]
                 });
-                if (!features || !features.length) return; // console.log("WAYPOINT-click", e, st);   // return;  
+                if (!features || !features.length) return;   
 
                 wpscope.clickAction(features[0]);
             }, 

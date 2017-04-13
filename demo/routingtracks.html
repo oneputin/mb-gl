@@ -37,7 +37,7 @@
     <link rel="import" href="../tracks-info.html">
     <link rel="import" href="../tracks-api.html">
     <link rel="import" href="../tracks-load.html">
-    <link rel="import" href="../waypoints-load.html">
+    <link rel="import" href="../layer-waypoints.html">
     <link rel="import" href="../track-log-ctrl.html">
     <link rel="import" href="../track-log-view.html">
 
@@ -221,18 +221,23 @@
         <div class="ctrls_out">
             <!-- element with [n] visible features -->
             <div id="radios">
+                
                 <template is="dom-if" if="{{!userouting}}">
                     <paper-radio-button checked="{{elevationshow}}">Track Log</paper-radio-button>
                 </template>    
+
                 <template is="dom-if" if="{{mapstyle}}">
-                    <paper-radio-button class="preview red" checked="{{routemode}}">Track Animation</paper-radio-button>
                     <paper-radio-button checked="{{waypointshow}}">Waypoints</paper-radio-button>
+                    <paper-radio-button class="animate red" checked="{{routemode}}">Track Animation</paper-radio-button>
                     <template is="dom-if" if="{{!userouting}}">
-                        <paper-radio-button checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
+                        <paper-radio-button class="style" checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
                     </template>
                     <paper-radio-button checked="{{mapmeasureshow}}">Map Measure</paper-radio-button>
                     <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
-                </template>    
+                </template>   
+
+                <paper-radio-button class="drag">Show Dragpoint</paper-radio-button>
+                <paper-radio-button class="mobile">Simulate Mobiles</paper-radio-button>
             </div>
 
             <!-- B. TRACK-APIs -->
@@ -276,8 +281,8 @@
             </tracks-api>
 
             <mb-dragpoint 
-                disable = "[[userouting]]"
-                mbid = "[[mbid]]" 
+                map = "[[map]]" 
+                visible = "[[dragpointshow]]"
                 indexedtarget = "[[datasetitem]]"
                 index = "{{logindex}}"
                 maptoast = "{{maptoast}}">
@@ -315,12 +320,12 @@
                 </mb-content-browser>
                 <!-- selectprop="id"--> 
 
-                <waypoints-load 
+                <layer-waypoints 
                     mbid = "[[mbid]]" 
                     visible = "[[waypointshow]]" 
-                    querymeta = "[[metadataset]]" 
+                    querymeta = "[[metadataset]]"
                     wpdata = "{{wpdata}}"> 
-                </waypoints-load>
+                </layer-waypoints>
 
             </div>
 
@@ -343,6 +348,9 @@
 </template>
 
 <script>
+    var mobilemode = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+    // mobilemode = "simulate"; console.log("mobilemode=", mobilemode);
+
     var scope = document.querySelector('#app');
 
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
@@ -366,9 +374,10 @@
     // STATE init
     scope.routemode = false; // true; // false
 
+    scope.dragpointshow = false;
+    scope.waypointshow = false;
     scope.styleselectshow = false;
     scope.locationlogshow = true;
-    scope.waypointmode = false;
     
     // Animation- INIT
     scope.trackalignmap; // 
@@ -396,7 +405,7 @@
             else scope.userouting = false;
         }
 
-        var r1 = document.querySelector("paper-radio-button.preview");
+        var r1 = document.querySelector("paper-radio-button.animate");
         if (r1) {
             toggleRouting(r1); 
             // Inverse Toggling of RoutingFlag  
@@ -404,6 +413,25 @@
                 toggleRouting(this); 
             });
         }
+
+        var r2 = document.querySelector("paper-radio-button.mobile"); // console.log("MOBILE-RADIO", r2);
+        if (r2) {
+            if (r2.checked) mobilemode = "simulate"; 
+            r2.addEventListener("change", function() {  // console.log("Simulate mobile:", r2.checked)
+                if (r2.checked) mobilemode = "simulate"; 
+                else mobilemode = false;
+            });
+        }    
+
+        var r3 = document.querySelector("paper-radio-button.drag"); // console.log("MOBILE-RADIO", r2);
+        if (r3) {
+            if (r3.checked && !scope.userouting) scope.dragpointshow = true; 
+            r3.addEventListener("change", function() { 
+                if (r3.checked && !scope.userouting) scope.dragpointshow = true; 
+                else scope.dragpointshow = false;
+                console.log("Show dragpoint:", scope.dragpointshow);
+            });
+        }    
 
     });
 
