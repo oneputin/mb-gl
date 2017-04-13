@@ -615,103 +615,105 @@ create and animate routes along waypoint file loaded from url
              * ( key = routeid or specific ctrl)
              */ 
             routeActivate: function(filterkey, disable) {
-                if (disable) return; 
-                var dataName = "routes";
-                var timer = this.timer;
-                if (!timer || !timer[dataName]) return;
-                // console.log("ACTIVATE route, filterkey=", filterkey); // , "timer", timer); 
-                // if (!map.getLayer(dataName)) return;
+                this.debounce("activate", function(){
+                    if (disable) return; 
+                    var dataName = "routes";
+                    var timer = this.timer;
+                    if (!timer || !timer[dataName]) return;
+                    // console.log("ACTIVATE route, filterkey=", filterkey); // , "timer", timer); 
+                    // if (!map.getLayer(dataName)) return;
 
-                var routeid, timerFilter, timerEntry, startTime, msg = "Apply route";
+                    var routeid, timerFilter, timerEntry, startTime, msg = "Apply route";
 
-                // A. Eval filterkey-cases  
+                    // A. Eval filterkey-cases  
 
-                if (filterkey == "all") {
-                    // reset timer to "ALL"
-                    this.trackTimerRefresh();
+                    if (filterkey == "all") {
+                        // reset timer to "ALL"
+                        this.trackTimerRefresh();
 
-                } else if (filterkey == "clear") {
-                    console.log("NOT implemented: CLEAR all features"); 
-                    return; 
+                    } else if (filterkey == "clear") {
+                        console.log("NOT implemented: CLEAR all features"); 
+                        return; 
 
-                } else if (typeof filterkey == "string") { // DEFAULT case : routeid is given 
+                    } else if (typeof filterkey == "string") { // DEFAULT case : routeid is given 
 
-                    routeid = filterkey;
-                
-                } else {
-                    // B. Get the id of first route in contentbox-srcdata
-                    var contentbox;
+                        routeid = filterkey;
                     
-                    if (filterkey) { // DEFAULT case : routeid is given 
-                        contentbox = filterkey;
-                    } else {         // Default(fallback, if no key) !! 
-                        contentbox = this.contentbox;
-                    }
-
-                    if (contentbox && contentbox[dataName])  {
-                        msg = "Get a FIRST Route from RAW srces";
-                        var allfeatures = contentbox[dataName].srcdata.features; 
-                        if (allfeatures.length) {
-                            routeid = allfeatures[0].properties.id; 
+                    } else {
+                        // B. Get the id of first route in contentbox-srcdata
+                        var contentbox;
+                        
+                        if (filterkey) { // DEFAULT case : routeid is given 
+                            contentbox = filterkey;
+                        } else {         // Default(fallback, if no key) !! 
+                            contentbox = this.contentbox;
                         }
-                    }
-                } 
 
-                // B. SPATIAL and TEMPORAL ZOOM 
-                //    + create Visibility-Filter of tracks
+                        if (contentbox && contentbox[dataName])  {
+                            msg = "Get a FIRST Route from RAW srces";
+                            var allfeatures = contentbox[dataName].srcdata.features; 
+                            if (allfeatures.length) {
+                                routeid = allfeatures[0].properties.id; 
+                            }
+                        }
+                    } 
 
-                if (routeid) {
-                    // B.1 Refresh app-timer (triggers sync with related elements, fi. timer-ctrl) 
-                    timerEntry = timer.routes[routeid];
-                    startTime = timerEntry.start; 
-                    // console.log("ROUTE ACTIVATE routeid=", routeid, "timerEntry", timerEntry); 
+                    // B. SPATIAL and TEMPORAL ZOOM 
+                    //    + create Visibility-Filter of tracks
 
-                    this.trackTimerRefresh(timerEntry);
+                    if (routeid) {
+                        // B.1 Refresh app-timer (triggers sync with related elements, fi. timer-ctrl) 
+                        timerEntry = timer.routes[routeid];
+                        startTime = timerEntry.start; 
+                        // console.log("ROUTE ACTIVATE routeid=", routeid, "timerEntry", timerEntry); 
 
-                    // B.2 Zoom to "original/complete" route-geometry
-                    this.trackRoutesZoomTo(null, routeid);
+                        this.trackTimerRefresh(timerEntry);
 
-                    // B.3 Filter all trackpoint-related map-layers 
-                    this._trackFilterApply(routeid);
+                        // B.2 Zoom to "original/complete" route-geometry
+                        this.trackRoutesZoomTo(null, routeid);
 
-                    // B.4 Prepare syncFilter
-                    timerFilter = this._timerFilterCreate(routeid);
+                        // B.3 Filter all trackpoint-related map-layers 
+                        this._trackFilterApply(routeid);
 
-                    console.log("ROUTING ACTIVATED (id, key, timerEntry, timerFilter): ["+ routeid+"]", filterkey, timerEntry, timerFilter); 
+                        // B.4 Prepare syncFilter
+                        timerFilter = this._timerFilterCreate(routeid);
 
-                } else {
+                        console.log("ROUTING ACTIVATED (id, key, timerEntry, timerFilter): ["+ routeid+"]", filterkey, timerEntry, timerFilter); 
 
-                    this.trackRoutesZoomTo();
+                    } else {
 
-                    this._trackFilterApply("");
+                        this.trackRoutesZoomTo();
 
-                    timerFilter = this._timerFilterCreate("all");
+                        this._trackFilterApply("");
 
-                }   // console.log("routeActivate: Setup route(s) ["+routeid+"]", timerFilter); 
+                        timerFilter = this._timerFilterCreate("all");
 
-                // C. Apply timerFilter 
+                    }   // console.log("routeActivate: Setup route(s) ["+routeid+"]", timerFilter); 
 
-                // C1. Store/replace syncFilter in timer-object
+                    // C. Apply timerFilter 
 
-                if (!timerFilter) {
-                    delete timer.filter;
-                } else {
-                    timer.filter = timerFilter;
-                }   
-                // console.log("Setup animation for ["+ routeid+"], VON " + this.logTime(timer.start, "h"), "BIS " + this.logTime(timer.stop, "h")); 
-                // console.log("with filter, timer:", timerEntry, timer ); 
+                    // C1. Store/replace syncFilter in timer-object
 
-                // D. Activate/Locate "filtered" animationFeature(s) on map and timeSlider 
-        
-                if (map) {
-                    var animationFeatures = this._animationMapRefresh(null, null,  timerFilter);
-                    // TEMPORAL Location at START of selected routes
-                    if (animationFeatures && animationFeatures.routes) {   //console.log("running the FIRST animation-step");
-                        // console.log("animationFeatures filtered for:" + routeid, srcFeatures, this.timer);
-                        if (startTime ) this.trackStepAction(null, startTime); 
-                        else this.trackStepAction(0);
-                    }
-                } 
+                    if (!timerFilter) {
+                        delete timer.filter;
+                    } else {
+                        timer.filter = timerFilter;
+                    }   
+                    // console.log("Setup animation for ["+ routeid+"], VON " + this.logTime(timer.start, "h"), "BIS " + this.logTime(timer.stop, "h")); 
+                    // console.log("with filter, timer:", timerEntry, timer ); 
+
+                    // D. Activate/Locate "filtered" animationFeature(s) on map and timeSlider 
+            
+                    if (map) {
+                        var animationFeatures = this._animationMapRefresh(null, null,  timerFilter);
+                        // TEMPORAL Location at START of selected routes
+                        if (animationFeatures && animationFeatures.routes) {   //console.log("running the FIRST animation-step");
+                            // console.log("animationFeatures filtered for:" + routeid, srcFeatures, this.timer);
+                            if (startTime ) this.trackStepAction(null, startTime); 
+                            else this.trackStepAction(0);
+                        }
+                    } 
+                }, 200)    
             },
 
 

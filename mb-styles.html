@@ -61,6 +61,7 @@ recieves or selects a style from menu
                 checked: {
                     type: Boolean,
                     value: true,
+                    notify: true,
                     observer: '_toggleVisibility'
                 },
 
@@ -124,6 +125,7 @@ recieves or selects a style from menu
 
                 if (styleurl && (this.mapstyle != styleurl)) {  // console.log("SWITCHSTYLE TO " + styleid, styleurl);
                     this.mapstyle = styleurl;
+                    this.checked = false;
                 }    
             },
 
