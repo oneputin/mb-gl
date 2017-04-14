@@ -2,43 +2,48 @@
 <link rel="import" href="tracks-behavior.html">
 
 <!--
-`mb-dragpoint`
+`tracklog`
 Draggable mb-point with optional snapping to mb-theme features 
-
-@demo demo/slidemap.html 
+(or vice-versa)
+@demo demo/routingtracks.html 
 -->
 
-<dom-module id="mb-dragpoint">
+<dom-module id="tracklog-mb">
 
     <template>
     </template>
 
     <script>
         Polymer({
-            is: 'mb-dragpoint',
+            is: 'tracklog-mb',
 
             properties: {
 
-                map: {
+                mbid: {
                     type: Object,  
-                    observer: 'dragPointSetup'
+                    observer: '_install'
                 }, 
 
                 lnglat: {
                     type: Object,
-                    observer: 'dragPointGet'
+                    observer: 'logPointGet'
                 },
 
-                visible: {
+                draggable: {
                     type: Boolean,
-                    observer: 'toggleVis'
+                    observer: 'toggleDrag'
+                },
+
+                disable: {
+                    type: Boolean,
+                    value: false //, observer: 'toggleVis'
                 },
 
                 // externally available
                 coords: {
                     type: Array,
                     value : [0,0],
-                    observer: 'dragPointRefresh',
+                    observer: 'logPointRefresh',
                     notify: true                    
                 },
 
@@ -50,42 +55,45 @@ Draggable mb-point with optional snapping to mb-theme features
                     notify: true
                 },
 
+                // mbstyleSymbol of logpoint
+                logsymbol: {
+                    type: String,
+                    value : "toilet-15"                    
+                },
+
                 // 
                 indexedtarget: {
                     type: Object // ,   observer : 'indexedDataBuild'
                 },
 
-                allproperties : {
+                // 
+                logproperties : {
                     type: Array,
                     value:  ["coordElevs","coordTimes"]  // standard of trackLines
                 },
-
+                // 
                 titleproperty: {
                     type: String,
                     value : "coordElevs"                    
                 },
 
-                // Array of indexed data
-                indexeddata: {
-                    type: Object
-                },
-
-                // 
-                selectsymbol: {
-                    type: String,
-                    value : "toilet-15"                    
-                },
                 // 
                 maptoast: {
                     type: String,
                     notify: true
                 },
 
-                _dragevtFunctions : {
+                // Array of indexed data
+                _indexedData: {
                     type: Object
                 },
 
-                _dragpntLayers : {
+                _logPntLayers : {
+                    type: Array,
+                    value : []
+                },
+
+                _dragPntLayers : {
                     type: Array,
                     value : []
                 }
@@ -97,37 +105,27 @@ Draggable mb-point with optional snapping to mb-theme features
 
             observers: [
                 'indexedDataBuild(indexedtarget.feature)',
-                'dragPointGet(indexedtarget.lnglat)',
+                'logPointGet(indexedtarget.lnglat)',
             ],
 
             ready : function() {
-                this._dragpntLayers =  [
+                this.logPointSymbolSetup();
+            },
+
+            _install : function(mbid, mbidbefore) { console.log("_install", mbid, mbidbefore);
+                if (mbidbefore) return; 
+                this.logPointSetup();
+            },
+
+            logPointSymbolSetup : function() {
+                // symbolLayers-1 (permanent)
+                this._logPntLayers = [
                     {
-                        "id": "dragpnt-glow-strong",
-                        "type": "circle",
-                        "source": "dragpnt",
-                        "paint": {
-                            "circle-radius": 18,
-                            "circle-color": "#ff0",
-                            "circle-opacity": 0.6
-                        }
-                    }, 
-                    {
-                        "id": "dragpnt-glow",
-                        "type": "circle",
-                        "source": "dragpnt",
-                        "paint": {
-                            "circle-radius": 40,
-                            "circle-color": "#ff0",
-                            "circle-opacity": 0.2
-                        }
-                    }, 
-                    {
-                        "id": "dragpnt-select",
+                        "id": "logpoint",
                         "type": "symbol",
-                        "source": "dragpnt",
+                        "source": "logpoint",
                         "layout": {
-                            "icon-image": this.selectsymbol,
+                            "icon-image": this.logsymbol,
                             "icon-rotate": 0,
                             "text-field": "{title}",
                             "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
@@ -137,39 +135,55 @@ Draggable mb-point with optional snapping to mb-theme features
                         }
                     }
                 ];
+                // symbolLayers-2 (dragmode only)
+                this._dragPntLayers =  [
+                    {
+                        "id": "dragpnt-glow-strong",
+                        "type": "circle",
+                        "source": "logpoint",
+                        "paint": {
+                            "circle-radius": 18,
+                            "circle-color": "#ff0",
+                            "circle-opacity": 0.6
+                        }
+                    }, 
+                    {
+                        "id": "dragpnt-glow",
+                        "type": "circle",
+                        "source": "logpoint",
+                        "paint": {
+                            "circle-radius": 40,
+                            "circle-color": "#ff0",
+                            "circle-opacity": 0.2
+                        }
+                    }
+                ];
             },
 
-            toggleVis : function(flag) { // console.log("toggleVis", flag, map);
-                if (!map) return;   
-                this._layerVisibility(flag);
-            },
-
-            // Toggle layer-visibility
-            _layerVisibility : function(flag){ 
-                if (flag == null) flag = this.visible; 
-                var vis = "visible";
-                if (!flag) vis = "none";  // console.log("SET dragVis", vis);
-                this._dragpntLayers.forEach(function(layer){
-                    map.setLayoutProperty(layer.id, 'visibility', vis);
-                });    
+            toggleDrag : function(draggable) { 
+                if (!this.mbid || (draggable == null)) return;   console.log("toggleDrag", draggable);
+                this.logPointSetup(draggable); 
             },
 
             // 
-            dragPointSetup : function() {  // console.log("ADD dragPoint into ["+mbid+"], was ["+mbid_old+"] mobilemode=" + mobilemode);
+            logPointSetup : function(draggable) {  // console.log("ADD logPoint into ["+mbid+"], was ["+mbid_old+"] mobilemode=" + mobilemode);
+                if (!draggable) draggable = this.draggable;
 
                 var scope = this;
-                var dragid = 'dragpnt-glow',
-                    iconid = 'dragpnt-select';
+                var logid = 'logpoint',
+                    dragid = 'dragpnt-glow';
+
                 var isCursorOverPoint,
                     isDragging;
 
                 // Change point and cursor style as a UI indicator
                 // and set a flag to enable other mouse events.
-                function dragPointToggle(flag) {
+                function logPointToggle(flag) {
 
                     if (flag) {
+
                         map.setPaintProperty(dragid, 'circle-color', '#f00'); // '#3bb2d0');
-                        map.setLayoutProperty(iconid, 'icon-image', 'rocket-15'); // '#3bb2d0');
+                        map.setLayoutProperty(logid, 'icon-image', 'rocket-15'); // '#3bb2d0');
 
                         isCursorOverPoint = true;
                         map.dragPan.disable();
@@ -177,14 +191,14 @@ Draggable mb-point with optional snapping to mb-theme features
                     } else {
                         
                         map.setPaintProperty(dragid, 'circle-color', '#ff0');
-                        map.setLayoutProperty(iconid, 'icon-image', 'toilet-15'); // '#3bb2d0');
+                        map.setLayoutProperty(logid, 'icon-image', 'toilet-15'); // '#3bb2d0');
 
                         isCursorOverPoint = false;
                         map.dragPan.enable();
                     }
                 }
 
-                function dragPointActivate() {  // console.log("dragPointActivate. isCursorOverPoint=", isCursorOverPoint)   
+                function logPointActivate() {  // console.log("logPointActivate. isCursorOverPoint=", isCursorOverPoint)   
                     if (!isCursorOverPoint) {
                         return;
                     }  
@@ -193,7 +207,7 @@ Draggable mb-point with optional snapping to mb-theme features
                     // Set a cursor indicator ?? 
                     // canvas.style.cursor = 'grab';
 
-                    // Events on DragPoint
+                    // Events on logPoint
                     if (mobilemode=="simulate") {  // simulates touch actions 
                         map.on('mousemove', onDragMove);
                         map.once('mouseup', onDragStop);
@@ -211,11 +225,11 @@ Draggable mb-point with optional snapping to mb-theme features
                 function mouseMove(e) {
                     if (!map.getLayer(dragid)) return;
                     var features = map.queryRenderedFeatures(e.point, { layers: [dragid] });
-                    dragPointToggle(features.length); 
+                    logPointToggle(features.length); 
                 }
                 
                 function mouseDown(e) {
-                    dragPointActivate();
+                    logPointActivate();
                 }
 
                 function touchStart(e){
@@ -224,9 +238,9 @@ Draggable mb-point with optional snapping to mb-theme features
                     if (!map.getLayer(dragid)) return;
                     var features = map.queryRenderedFeatures(e.point, { layers: [dragid] });
                     // if (!features.length) return; 
-                    dragPointToggle(features.length);
+                    logPointToggle(features.length);
 
-                    dragPointActivate(); 
+                    logPointActivate(); 
                 } 
 
                 // event-actions when point was "activated"
@@ -248,11 +262,11 @@ Draggable mb-point with optional snapping to mb-theme features
                             // scope.index = snapSet.index;
 
                             // B. refresh dragPnt only 
-                            scope.dragPointLocate(snapSet.index);
+                            scope.logPointLocate(snapSet.index);
                         }
                     } else {
                         
-                        scope.dragPointLocate(null, coords);
+                        scope.logPointLocate(null, coords);
                         // scope.coords = coords;
                     }
                 }
@@ -262,17 +276,17 @@ Draggable mb-point with optional snapping to mb-theme features
 
                     isDragging = false;  // console.log("onDragStop. stopDragging");
 
-                    scope.maptoast = scope.dragPointGet(e.lngLat);
+                    scope.maptoast = scope.logPointGet(e.lngLat);
 
                     // Unbind drag-events
                     map.off('mousemove', onDragMove);
                     map.off('touchmove', onDragMove);
 
-                    dragPointToggle(0); 
+                    logPointToggle(0); 
                 }
 
-                // 
-                function dragPointSetup(){
+                function logPointSetup(draggable){
+                    if (!draggable) draggable = scope.draggable; console.log("logPointSetup. draggable=",draggable);
 
                     map.off('mousemove', mouseMove); 
                     map.off('mousedown', mouseDown); 
@@ -280,64 +294,73 @@ Draggable mb-point with optional snapping to mb-theme features
                     map.off('touchstart', touchStart); // console.log("dragpntEvents REMOVED");
                     // map.off('data', onStyleChange);
 
-                    if (!map.getSource('dragpnt')) {
-                        var geojsonpnt = scope.geojsonPointCreate([0,0], "drag"); 
-
-                        map.addSource('dragpnt', { 
+                    if (!map.getSource('logpoint')) {
+                        // var geojsonpnt = scope.logPointGeojson([0,0], "drag"); 
+                        map.addSource('logpoint', { 
                             type: 'geojson', 
-                            data: geojsonpnt 
-                        }); //console.log(map.getSource('dragpnt')); 
+                            data: scope.logPointGeojson([0,0]) 
+                        }); console.log("logpnt SOURCE ADDED", map.getSource('logpoint')); 
                     }
 
-                    scope._dragpntLayers.forEach(function(layer){
-                        map.addLayer(layer);
-                    }); // console.log("dragpntLayers ADDED");
+                    if (!map.getLayer('logpoint')) {
 
-                    scope._layerVisibility(); 
+                        scope._dragPntLayers.forEach(function(layer){
+                            map.addLayer(layer);
+                        }); //console.log("dragpntLayers ADDED", scope._dragPntLayers);
 
-                    // Set `true` to dispatch start-events (mousedown, touchstart) before other functions call it. 
-                    // This is necessary for disabling the default map dragging behaviour.
-                    if (mobilemode == "simulate") {
-                        map.on('mousedown', touchStart, true);
-                    } else if (mobilemode) {                    
-                        map.on('touchstart', touchStart, true);
-                    } else {
-                        map.on('mousemove', mouseMove);
-                        
-                        map.on('mousedown', mouseDown, true);
+                        scope._logPntLayers.forEach(function(layer){
+                            map.addLayer(layer);
+                        }); //console.log("logpntLayers ADDED", scope._logPntLayers[0]);
+                    }
 
-                    }  // console.log("Refreshed DRAGPOINT-MAP-listeners ", map._listeners.mousemove, map._listeners.mousedown); // , map._listeners.data );
+                    // HIDE/SHOW drag-layers
+                    var vis = "visible";
+                    if (!draggable) vis = "none";  // console.log("SET dragVisibility", vis);                    
+                    scope._dragPntLayers.forEach(function(layer){ 
+                        map.setLayoutProperty(layer.id, 'visibility', vis);
+                    });    
+
+                    if (draggable) {
+                        // Set `true` to dispatch start-events (mousedown, touchstart) before other functions call it. 
+                        // This is necessary for disabling the default map dragging behaviour.
+                        if (mobilemode == "simulate") {
+                            map.on('mousedown', touchStart, true);
+                        } else if (mobilemode) {                    
+                            map.on('touchstart', touchStart, true);
+                        } else {
+                            map.on('mousemove', mouseMove);
+                            map.on('mousedown', mouseDown, true);
+                        }  // console.log("Refreshed logPoint-MAP-listeners ", map._listeners.mousemove, map._listeners.mousedown); // , map._listeners.data );
+                    }
                 }
 
-                // reset dragpoint in new Style
+                // reset logPoint in new Style
                 function onStyleChange(e) {
                     if (e.dataType == "style") {   
                         if (e.style.stylesheet.id == scope.mbid) { // console.log("style unchanged ", e.style.stylesheet.id); 
                             return; 
                         } 
-                        scope.mbid = e.style.stylesheet.id;  // console.log("refreshing dragpoint into ["+mbid+"]. mobilemode=" + mobilemode); 
-                       
-                        dragPointSetup(); 
+                        scope.mbid = e.style.stylesheet.id;  // console.log("refreshing logPoint into ["+mbid+"]. mobilemode=" + mobilemode); 
+                        
+                        logPointSetup(); 
                     }    
                 }  
 
-                dragPointSetup(); 
-
+                map.off('data', onStyleChange);
+                logPointSetup(); 
                 map.on('data', onStyleChange);
             },
 
             // appShell around indexPointSnap
-            dragPointGet : function(lngLat) {
+            logPointGet : function(lngLat) {
                 if (!lngLat) return;
-
-                this._layerVisibility(); 
 
                 if (this.indexedtarget) {
                     var snapSet = this.indexedPointSnap(lngLat),
                         snapPnt = snapSet['snap'],
                         indexedFeature = snapSet['target'],
                         index = snapPnt.properties.index;
-                        // console.log("dragPointGet: snapSet at " + index, snapSet); 
+                        // console.log("logPointGet: snapSet at " + index, snapSet); 
 
                     // MAIN Trigger: SYNC of target-use in external apps
                     this.index = index;
@@ -349,7 +372,7 @@ Draggable mb-point with optional snapping to mb-theme features
   
                 } else {
                     // MAIN Trigger 
-                    dragPointRefresh([lngLat.lng, lngLat.lat]);
+                    logPointRefresh([lngLat.lng, lngLat.lat]);
                     // OR with export-options 
                     // this.coords = [lngLat.lng, lngLat.lat];
 
@@ -361,46 +384,39 @@ Draggable mb-point with optional snapping to mb-theme features
             },        
 
             // 
-            dragPointRefresh: function(coords) { // console.log("DRAGGED to", coords); 
-                this.dragPointLocate(null, coords);  // console.log("Refreshing dragPoint", ix);
+            logPointRefresh: function(coords) { // console.log("DRAGGED to", coords); 
+                this.logPointLocate(null, coords);  // console.log("Refreshing logPoint", ix);
             },
 
             // Refresh coords of dragPnt (= refresh Source)
-            dragPointLocate: function(index, coords, title, selectsymbol) {
-                // A meaningful dragPointSymbol built from 3 symbol(Layer)s 
+            logPointLocate: function(index, coords, title, logsymbol) {
+                // A meaningful logPointSymbolSetup built from 3 symbol(Layer)s 
                 var scope = this; 
                 if (!map) return; 
+                var logPointSrc = map.getSource("logpoint");
+                if (!logPointSrc) return; 
+                
+                if (!logsymbol) logsymbol = "toilet-15"; // "airport-15";
 
-                if (!selectsymbol) selectsymbol = "toilet-15"; // "airport-15";
-
-                if (index != null) {
-                    if (!this.indexeddata) return;
-                    coords = this.indexeddata["coords"][index].slice(0,2);  // console.log(coords[0],typeof coords[0]);
+                if (index != null) { 
+                    if (!this._indexedData) return;
+                    coords = this._indexedData["coords"][index].slice(0,2);  // console.log(coords[0],typeof coords[0]);
                     if (!title) title = this.titleproperty;
                     if (title) {
-                        var data = this.indexeddata[title];
+                        var data = this._indexedData[title];
                         if (data) title = data[index];
                         else title = null;
                     }     
                 } 
+                if (!coords) return; // console.log("DEBUG-1", index, this._indexedData, coords, title );
 
-                if (!coords) return; 
-
-                if (!title) title = "drag"; 
-
-                // Create a GeoJSON point to serve as a starting point
-                var geojsonpnt = this.geojsonPointCreate(coords, title); 
-                
-                if (map.getSource("dragpnt")) { 
-                    // console.log("REFRESH-TP: " + index, geojsonpnt, map.getSource("dragpnt")); // return;  
-                    map.getSource("dragpnt").setData(geojsonpnt);
-                }
-
+                // Update LogPoint-srcData 
+                logPointSrc.setData(this.logPointGeojson(coords, title));
             },
             // 
-            geojsonPointCreate: function(coords, title) {
-
-                var dragPoint = {
+            logPointGeojson: function(coords, title) {
+                if (!title) title = "drag"; 
+                var logPoint = {
                     "type": "FeatureCollection",
                     "features": [{
                         "type": "Feature",
@@ -413,13 +429,9 @@ Draggable mb-point with optional snapping to mb-theme features
                         }
                     }]
                 };
-                return dragPoint; 
+                return logPoint; 
             },
 
-            // 
-            // indexedDataBuild: function(target) { //, properties) {
-                // if (!target || !target.feature) return; 
-                // var indexedFeature = target.feature;  
             indexedDataBuild: function(indexedFeature) { //, properties) {
                 if (!indexedFeature) return; 
 
@@ -428,7 +440,7 @@ Draggable mb-point with optional snapping to mb-theme features
                     "coords": indexedFeature.geometry.coordinates
                 };     
 
-                var properties = this.allproperties;  // console.log("indexedDataBuild from", indexedFeature, properties);
+                var properties = this.logproperties;  // console.log("indexedDataBuild from", indexedFeature, properties);
                 properties.forEach(function(prop){
                     indexedData[prop] = indexedFeature.properties[prop];
                 }.bind(this));
@@ -436,11 +448,11 @@ Draggable mb-point with optional snapping to mb-theme features
                 //"elevs": indexedFeature.properties.coordElevs,
                 //"times": indexedFeature.properties.coordTimes
 
-                this.indexeddata = indexedData;
+                this._indexedData = indexedData;
         
-                // B. Initialize dragpoint on trackLine 
+                // B. Initialize logPoint on trackLine 
                 /*if (target.lnglat) { 
-                    var snapSet = this.dragPointGet(target.lnglat);
+                    var snapSet = this.logPointGet(target.lnglat);
                     if (snapSet.index) { console.log("Start with targetPoint at index=" + snapSet.index, snapSet);
                         scope.index = snapSet.index;
                         //var trackInfo =  scope.trackInfoCollect(snapSet); // snapped.properties);
@@ -481,8 +493,8 @@ Draggable mb-point with optional snapping to mb-theme features
 
             // 
             indexedPointRefresh: function(ix) { 
-                if (ix >= 0) { // console.log("RELOCATE DRAGPNT at indexed Feature: " + ix);
-                    this.dragPointLocate(ix);  // console.log("Refreshing dragPoint", ix);
+                if (ix >= 0) { // console.log("RELOCATE LOGPNT at indexedFeature: " + ix);
+                    this.logPointLocate(ix);  
                 }
             },
 

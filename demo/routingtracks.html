@@ -38,10 +38,10 @@
     <link rel="import" href="../tracks-api.html">
     <link rel="import" href="../tracks-load.html">
     <link rel="import" href="../layer-waypoints.html">
-    <link rel="import" href="../track-log-ctrl.html">
-    <link rel="import" href="../track-log-view.html">
 
-    <link rel="import" href="../mb-dragpoint.html">
+    <link rel="import" href="../tracklog-ctrl.html">
+    <link rel="import" href="../tracklog-view.html">
+    <link rel="import" href="../tracklog-mb.html">
 
     <style is="custom-style">
         .container {
@@ -106,7 +106,7 @@
             @apply(--layout-start);
         }
 
-        track-log-ctrl {
+        tracklog-ctrl {
             padding: 10px;
             display: inline-block;
             @apply(--layout-vertical);
@@ -159,13 +159,13 @@
                     maptoast = "[[maptoast]]">
 
                     <!-- placed here to overlay the map -->
-                    <track-log-view
+                    <tracklog-view
                         disable = "[[userouting]]"
                         checked = "[[elevationshow]]"
                         metadata ="[[metadataset]]"
                         logdata ="[[logdata]]"
                         logindex = "{{logindex}}">
-                    </track-log-view>    
+                    </tracklog-view>    
 
                     <mb-styles 
                         checked = "{{styleselectshow}}"
@@ -223,7 +223,8 @@
             <div id="radios">
                 
                 <template is="dom-if" if="{{!userouting}}">
-                    <paper-radio-button checked="{{elevationshow}}">Track Log</paper-radio-button>
+                    <paper-radio-button checked="{{elevationshow}}">Track Chart</paper-radio-button>
+                    <paper-radio-button checked="{{draggable}}" class="drag">Draggable Log</paper-radio-button>
                 </template>    
 
                 <template is="dom-if" if="{{mapstyle}}">
@@ -236,7 +237,6 @@
                     <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
                 </template>   
 
-                <paper-radio-button class="drag">Show Dragpoint</paper-radio-button>
                 <paper-radio-button class="mobile">Simulate Mobiles</paper-radio-button>
             </div>
 
@@ -280,13 +280,14 @@
                 trackpntindex = "{{logindex}}">
             </tracks-api>
 
-            <mb-dragpoint 
-                map = "[[map]]" 
-                visible = "[[dragpointshow]]"
+            <tracklog-mb
+                disable = "[[userouting]]"
+                mbid = "[[mbid]]" 
+                draggable = "[[draggable]]"
                 indexedtarget = "[[datasetitem]]"
                 index = "{{logindex}}"
                 maptoast = "{{maptoast}}">
-            </mb-dragpoint>
+            </tracklog-mb>
             <!-- lnglat = "[[lnglat]]"--> 
 
             <!-- SYNC mapcontent from contentbox -->
@@ -331,15 +332,17 @@
 
             <!-- C. DATA-LOG CTRL -->
             <div class="flexchild">
-                <!-- checked = "[[elevationshow]]" -->
-                <track-log-ctrl
-                    disable = "[[userouting]]"
-                    checked = "true"
-                    metadata ="[[metadataset]]"
-                    logobject ="[[datasetitem]]"
-                    logdata = "{{logdata}}"
-                    logindex = "{{logindex}}">
-                </track-log-ctrl>    
+                <template is="dom-if" if="{{!userouting}}">
+                    <!-- checked = "[[elevationshow]]" -->
+                    <tracklog-ctrl
+                        disable = "false"
+                        checked = "true"
+                        metadata = "[[metadataset]]"
+                        logobject = "[[datasetitem]]"
+                        logdata = "{{logdata}}"
+                        logindex = "{{logindex}}">
+                    </tracklog-ctrl>    
+                </template>
             </div>    
 
         </div>
@@ -420,16 +423,6 @@
             r2.addEventListener("change", function() {  // console.log("Simulate mobile:", r2.checked)
                 if (r2.checked) mobilemode = "simulate"; 
                 else mobilemode = false;
-            });
-        }    
-
-        var r3 = document.querySelector("paper-radio-button.drag"); // console.log("MOBILE-RADIO", r2);
-        if (r3) {
-            if (r3.checked && !scope.userouting) scope.dragpointshow = true; 
-            r3.addEventListener("change", function() { 
-                if (r3.checked && !scope.userouting) scope.dragpointshow = true; 
-                else scope.dragpointshow = false;
-                console.log("Show dragpoint:", scope.dragpointshow);
             });
         }    
 

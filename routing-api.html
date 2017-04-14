@@ -672,7 +672,7 @@ create and animate routes along waypoint file loaded from url
                         // B.2 Zoom to "original/complete" route-geometry
                         this.trackRoutesZoomTo(null, routeid);
 
-                        // B.3 Filter all trackpoint-related map-layers 
+                        // B.3 Filter all map-layers related to track  
                         this._trackFilterApply(routeid);
 
                         // B.4 Prepare syncFilter
@@ -2055,7 +2055,7 @@ create and animate routes along waypoint file loaded from url
                 }
 
                 function setupSelectLayer(selectsymbol) {
-                    // A meaningful TrackPoint-presentation built from 3 symbol(Layer)s 
+                    // A meaningful presentation of TrackPoint built from 3 symbol(Layer)s 
                     if (!selectsymbol) selectsymbol = "airport-15";
 
                     var selectLayer =  [

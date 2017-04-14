@@ -5,7 +5,7 @@
 <link rel="import" href="tracks-behavior.html">
 
 <!--
-`track-log`
+`tracklog-view`
 container for presentation of track-properties (fi. elevations) 
 
 ### Case: elevation-log
@@ -19,7 +19,7 @@ container for presentation of track-properties (fi. elevations)
 @demo demo/routingtracks.html 
 -->
 
-<dom-module id="track-log-view">
+<dom-module id="tracklog-view">
 
     <template>
 
@@ -71,7 +71,7 @@ container for presentation of track-properties (fi. elevations)
     <script>
         
         Polymer({
-            is: 'track-log-view',
+            is: 'tracklog-view',
 
             properties: {
 
@@ -149,7 +149,7 @@ container for presentation of track-properties (fi. elevations)
              * @param      {object}  f       { mapbox-jeature }
              */
             checkindata: function(logdata) { 
-                if (this.disable) return; 
+                if (this.disable || !logdata) return; 
                 // B. Refresh Generic Track viewer(s) (Menu, Chart) 
                 this.refreshElevChart(logdata); 
             },

@@ -7,7 +7,7 @@
 <link rel="import" href="dynamic-menu.html">
 
 <!--
-`track-log-ctrl`
+`tracklog-ctrl`
 presentation of track-properties (= selected feature) 
 
 ## Properties of *raw* data 
@@ -23,7 +23,7 @@ presentation of track-properties (= selected feature)
 @demo demo/routingtracks.html 
 -->
 
-<dom-module id="track-log-ctrl">
+<dom-module id="tracklog-ctrl">
 
     <template>
 
@@ -47,13 +47,13 @@ presentation of track-properties (= selected feature)
             dynamic-menu {
                background-color: var(--paper-grey-300);
             }
-
         </style>
 
         <div class="vertical">
             <!-- get a datasetMeta -->
             <div class="flexchild">
-                <template is="dom-if" if="{{logdata}}">
+                <!--<template is="dom-if" if="{{logdata}}">-->
+                <template is="dom-if" if="{{_showmenu}}">
                     <dynamic-menu 
                         id="zmenu"
                         class="metadata"
@@ -63,13 +63,13 @@ presentation of track-properties (= selected feature)
                     </dynamic-menu>
                 </template>     
             </div>
-
+        </div>
     </template>
 
     <script>
         
         Polymer({
-            is: 'track-log-ctrl',
+            is: 'tracklog-ctrl',
 
             properties: {
 
@@ -85,7 +85,7 @@ presentation of track-properties (= selected feature)
                 // 
                 logindex: {
                     type: Number,
-                    observer: 'setmenuselection',
+                    observer: 'setMenuSelection',
                     notify: true
                 },
 
@@ -105,6 +105,7 @@ presentation of track-properties (= selected feature)
 
                 disable: {
                     type: Boolean,
+                    value: true
                 },
 
                 checked: {
@@ -120,7 +121,7 @@ presentation of track-properties (= selected feature)
             ],                
 
             observers: [
-                'checkinLogdata(logobject, disable)'
+                'checkinLogdata(logobject, disable)',
             ],
 
             toggleElement: function(checked) {
@@ -131,7 +132,7 @@ presentation of track-properties (= selected feature)
                 }
             },    
 
-            setmenuselection: function(logindex){
+            setMenuSelection: function(logindex){
                 if (!this.zitems) return; 
                 this.zitem = this.zitems[logindex];
             },
@@ -147,12 +148,18 @@ presentation of track-properties (= selected feature)
              * @param      {object}  f       { mapbox-jeature }
              */
             checkinLogdata: function(logobject, disable) { 
-                if (disable) {
-                    this.logdata = null;
+
+                if (disable || (logobject==null)) this._showmenu = false;
+                if (!logobject || !logobject.feature || !this.checked) {
+                    this._showmenu = false;
                     return;
-                } 
-                if (!logobject || !logobject.feature || !this.checked) return;    
-                // console.log("Checkout Feature to LOG: " + f.id , f);
+                }    
+                if (disable) this._showmenu = false;
+                else this._showmenu = true;
+
+                //    this.logdata = null;
+                //    return;
+                //} 
                 
                 // A. generic logdata-checkin from (map-)feature-properties
                 var logdata = logobject.feature.properties;   
