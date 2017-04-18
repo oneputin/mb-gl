@@ -30,8 +30,11 @@ Draggable mb-point with optional snapping to mb-theme features
                 },
 
                 draggable: {
+                    type: Boolean
+                },
+                mobilemode: {
                     type: Boolean,
-                    observer: 'toggleDrag'
+                    value: false
                 },
 
                 disable: {
@@ -106,6 +109,7 @@ Draggable mb-point with optional snapping to mb-theme features
             observers: [
                 'indexedDataBuild(indexedtarget.feature)',
                 'logPointGet(indexedtarget.lnglat)',
+                'toggleMode(draggable, mobilemode)'
             ],
 
             ready : function() {
@@ -160,20 +164,25 @@ Draggable mb-point with optional snapping to mb-theme features
                 ];
             },
 
-            toggleDrag : function(draggable) { 
-                if (!this.mbid || (draggable == null)) return;   console.log("toggleDrag", draggable);
-                this.logPointSetup(draggable); 
+            toggleMode : function(draggable, mobilemode) { 
+                if (!this.mbid || (draggable == null)) return;   
+                console.log("logModes: ", "draggable="+draggable, "mobilemode="+mobilemode);
+
+                this.logPointSetup(draggable, mobilemode); 
+                
             },
 
             // 
-            logPointSetup : function(draggable) {  // console.log("ADD logPoint into ["+mbid+"], was ["+mbid_old+"] mobilemode=" + mobilemode);
-                if (!draggable) draggable = this.draggable;
+            logPointSetup : function(draggable, mobilemode) {  // console.log("ADD logPoint into ["+mbid+"], was ["+mbid_old+"] mobilemode=" + mobilemode);
+                if (draggable == null) draggable = this.draggable;
+                if (mobilemode == null) mobilemode = this.mobilemode;
 
                 var scope = this;
                 var logid = 'logpoint',
                     dragid = 'dragpnt-glow';
 
-                var isCursorOverPoint,
+                var isMobile = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1),
+                    isCursorOverPoint,
                     isDragging;
 
                 // Change point and cursor style as a UI indicator
@@ -202,23 +211,27 @@ Draggable mb-point with optional snapping to mb-theme features
                     if (!isCursorOverPoint) {
                         return;
                     }  
+
+                    // A. Set Drg-Status
                     isDragging = true; // console.log("start dragging");
 
-                    // Set a cursor indicator ?? 
+                    // B. Set a cursor indicator ?? 
                     // canvas.style.cursor = 'grab';
 
-                    // Events on logPoint
-                    if (mobilemode=="simulate") {  // simulates touch actions 
-                        map.on('mousemove', onDragMove);
-                        map.once('mouseup', onDragStop);
-                    } else if (mobilemode) {  // if Touch based
-                        map.on('touchmove', onDragMove);
-                        map.once('touchend', onDragStop);
-                    } else { // if Mouse based
+                    // C. Setup Events on logPoint
+
+                    if (mobilemode) {    
+                        if (isMobile) { // Real TouchActions
+                            map.on('touchmove', onDragMove);
+                            map.once('touchend', onDragStop);
+                        } else {        // Simulates TouchActions
+                            map.on('mousemove', onDragMove);
+                            map.once('mouseup', onDragStop);
+                        }
+                    } else { // Purely Desktop: MouseActions
                         map.on('mousemove', onDragMove);
                         map.once('mouseup', onDragStop);
                     }
-
                 }
 
                 // basic event-actions 
@@ -232,12 +245,13 @@ Draggable mb-point with optional snapping to mb-theme features
                     logPointActivate();
                 }
 
+                // Combines action of desktop-events 'mousemove' and 'mousedown' 
+                // var dragid = 'dragpnt-glow'; // outer circle
                 function touchStart(e){
-                    // combines action of desktop-events 'mousemove' and 'mousedown' 
-                    // var dragid = 'dragpnt-glow'; // outer circle
                     if (!map.getLayer(dragid)) return;
+
                     var features = map.queryRenderedFeatures(e.point, { layers: [dragid] });
-                    // if (!features.length) return; 
+
                     logPointToggle(features.length);
 
                     logPointActivate(); 
@@ -278,28 +292,31 @@ Draggable mb-point with optional snapping to mb-theme features
 
                     scope.maptoast = scope.logPointGet(e.lngLat);
 
-                    // Unbind drag-events
+                    // Unbind 'permanent' drag-events
                     map.off('mousemove', onDragMove);
                     map.off('touchmove', onDragMove);
 
                     logPointToggle(0); 
                 }
 
-                function logPointSetup(draggable){
-                    if (!draggable) draggable = scope.draggable; console.log("logPointSetup. draggable=",draggable);
+                function logPointReset(draggable){
+                    if (!draggable) draggable = scope.draggable; console.log("logPointReset. draggable=",draggable);
 
                     map.off('mousemove', mouseMove); 
                     map.off('mousedown', mouseDown); 
+
                     map.off('mousedown', touchStart);
-                    map.off('touchstart', touchStart); // console.log("dragpntEvents REMOVED");
-                    // map.off('data', onStyleChange);
+                    map.off('touchstart', touchStart); 
+                    
+                    // map.off('data', testStyleChange);
+                    console.log("dragpntEvents REMOVED");
 
                     if (!map.getSource('logpoint')) {
                         // var geojsonpnt = scope.logPointGeojson([0,0], "drag"); 
                         map.addSource('logpoint', { 
                             type: 'geojson', 
                             data: scope.logPointGeojson([0,0]) 
-                        }); console.log("logpnt SOURCE ADDED", map.getSource('logpoint')); 
+                        }); console.log("logpnt SOURCE ADDED"); // , map.getSource('logpoint')); 
                     }
 
                     if (!map.getLayer('logpoint')) {
@@ -313,42 +330,49 @@ Draggable mb-point with optional snapping to mb-theme features
                         }); //console.log("logpntLayers ADDED", scope._logPntLayers[0]);
                     }
 
-                    // HIDE/SHOW drag-layers
+                    // HIDE/SHOW "dragLayers""
                     var vis = "visible";
                     if (!draggable) vis = "none";  // console.log("SET dragVisibility", vis);                    
                     scope._dragPntLayers.forEach(function(layer){ 
                         map.setLayoutProperty(layer.id, 'visibility', vis);
                     });    
 
+                    // 
                     if (draggable) {
                         // Set `true` to dispatch start-events (mousedown, touchstart) before other functions call it. 
                         // This is necessary for disabling the default map dragging behaviour.
-                        if (mobilemode == "simulate") {
-                            map.on('mousedown', touchStart, true);
-                        } else if (mobilemode) {                    
-                            map.on('touchstart', touchStart, true);
+                        if (mobilemode) { 
+                            if (isMobile) {
+                                map.on('touchstart', touchStart, true);
+                            } else {                    
+                                map.on('mousedown', touchStart, true);
+                            }
                         } else {
                             map.on('mousemove', mouseMove);
                             map.on('mousedown', mouseDown, true);
-                        }  // console.log("Refreshed logPoint-MAP-listeners ", map._listeners.mousemove, map._listeners.mousedown); // , map._listeners.data );
-                    }
+                        }  
+                    } console.log("Refreshed logPoint-MAP-listeners ", map._listeners); 
                 }
 
                 // reset logPoint in new Style
-                function onStyleChange(e) {
+                function testStyleChange(e) {
                     if (e.dataType == "style") {   
-                        if (e.style.stylesheet.id == scope.mbid) { // console.log("style unchanged ", e.style.stylesheet.id); 
-                            return; 
+                        if (e.style.stylesheet.id != scope.mbid) { // console.log("style unchanged ", e.style.stylesheet.id); 
+
+                            // mbid for internal ctrl only 
+                            scope.mbid = e.style.stylesheet.id;  // console.log("refreshing logPoint into ["+mbid+"]. mobilemode=" + mobilemode); 
+                            
+                            // 
+                            logPointReset(); 
+
+                            // return; 
                         } 
-                        scope.mbid = e.style.stylesheet.id;  // console.log("refreshing logPoint into ["+mbid+"]. mobilemode=" + mobilemode); 
-                        
-                        logPointSetup(); 
                     }    
                 }  
 
-                map.off('data', onStyleChange);
-                logPointSetup(); 
-                map.on('data', onStyleChange);
+                map.off('data', testStyleChange); // to avoid duplicates 
+                logPointReset(); 
+                map.on('data', testStyleChange);
             },
 
             // appShell around indexPointSnap

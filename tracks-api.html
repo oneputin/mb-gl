@@ -112,13 +112,14 @@ display as decorated route (fi with commented endpoints)
             // Setup events related to UserInteractions with track-lines
             setTrackEvents: function(){
                 var mapevents = {};
-                var elemscope = this;
+                var scope = this;
+                var delta = 5; // half-width(px) of event-querybox 
 
                 // Get content of tilefeature selected	
                 function srcFeatureContent(tileFeature, layerid, eventscope) {
                     var tilecontent = eventscope.tileFeatureContent(tileFeature, layerid, "src"),
                         selectid = tilecontent.id.replace(/-/g,'_'),
-                        allcontent = elemscope.contentbox[layerid].srcdata.features,
+                        allcontent = scope.contentbox[layerid].srcdata.features,
                         srccontent; 
                     // console.log("map-selected content", selectid, tilecontent, allcontent);
                     allcontent.some(function(f){
@@ -136,18 +137,21 @@ display as decorated route (fi with commented endpoints)
                 }
 
                 // Generic HILITE-function based on "id-Filter"	
+                // 
                 mapevents["hilite"] = function featureHilite(e, layerid, scope) {
                     // console.log("featureHilite in ", layerid, e.point); 
                     if (!map.getLayer(layerid)) return;
                     if (!map.getLayer(layerid + "-hover")) return;
-
                     var hilayerid, hifilter;
+                    var hidelta = 5;
+                    //var selgeo = e.point;
+                    var selgeo = [[e.point.x - hidelta, e.point.y - hidelta], [e.point.x + hidelta, e.point.y + hidelta]];
 
-                    var features = map.queryRenderedFeatures(e.point, {
+                    var features = map.queryRenderedFeatures(selgeo, {
                         layers: [layerid]
                     });
 
-                    // CHANGE cursor temporarily
+                    // Toggle cursor (temporarily)
                     map.getCanvas().style.cursor = (features.length) ? 'pointer' : ''; // crosshair';
 
                     if (features.length) {  // Apply HILITE-FILTER  
@@ -166,41 +170,41 @@ display as decorated route (fi with commented endpoints)
                             hilayerid = layerid + "-hover";
                         
                             map.setFilter(hilayerid, hifilter);
-
                         }
-
                     } else {                // remove HILITE decoration
+                        
                         map.setFilter(layerid + "-hover", ["==", "name", ""]);
                     }
                 };
 
                 // Feature-Select 
-                //   supplies info-object of selected feature 
+                //  - Zoom to trackLine-BBOX  
+                //  - SYNC of map-selection with item-selection in content-browser    
+                //  - supplies info-object of selected feature 
                 mapevents["select"] =  function featureSelect(e, layerid, eventscope) {
-                    // console.log("featureSelect in ", layerid, e.point); 
+                    if (!map.getLayer(layerid)) return; // console.log("featureSelect in ", layerid, e.point); 
 
-                    if (!map.getLayer(layerid)) return;
-                    // if (!map.getLayer(layerid + "-select")) return;
-
-                    // A. Trigger
-                    //  - Zoom to trackLine-BBOX  
-                    //  - SYNC of map-selection with item-selection in content-browser    
-
-                    // A.1 Get  
-                    var features = map.queryRenderedFeatures(e.point, {
+                    // A. Get visible feature 
+                    //var selgeo = e.point;
+                    var selgeo = [[e.point.x - delta, e.point.y - delta], [e.point.x + delta, e.point.y + delta]];
+                    
+                    var features = map.queryRenderedFeatures(selgeo, {
                         layers: [layerid]
-                    }); // console.log("featureSelect. tiles", features); 
-                    if (!features || !features.length) return;  
+                    }); 
+                    if (!features || !features.length) return;  // console.log("featureSelect. tiles", features); 
 
+                    // B. get SRC-feture 
                     var trackselected = srcFeatureContent(features[0], layerid, eventscope); 
                     if (!trackselected) return;  // console.log("srcContent:", srcContent);
                     
-                    if (elemscope.trackselected.id != trackselected.id) {  
+                    if (scope.trackselected.id != trackselected.id) {  
+
                         trackselected.lnglat = e.lngLat;    // where track was selected
-                        elemscope.trackselected = trackselected; 
+                        scope.trackselected = trackselected; 
+                    
                     } else {
                         // 
-                        elemscope.set("trackselected.lnglat", e.lngLat);    // where track was selected
+                        scope.set("trackselected.lnglat", e.lngLat);    // where track was selected
                     }
 
                 };
@@ -319,13 +323,12 @@ display as decorated route (fi with commented endpoints)
 
                     // map.addSource(layerid, node);    
                     var src = map.getSource(hilayerid); 
-                    if (src)  {
-                        // console.log("set nodes-data into ", hilayerid, nodedata, src); 
+                    if (src)  { // console.log("set nodes-data into ", hilayerid, nodedata, src); 
                         src.setData(nodedata);                     
                     }    
                 } 
 
-                // 2. HILITE the TRACE of the track (Filtering-Layer)
+                // 2. HILITE the "TRACE" of the track (Filtering-Layer)
                 function showTrackLine(layerid, trackInfo) {
                     // 
                     var hilayerid = layerid + "-trace", // ?

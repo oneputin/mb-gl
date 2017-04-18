@@ -31,7 +31,9 @@ Refresh mb-contentbox features
                     type: Object,
                     observer: "onMapSetup"
                 },
-
+                mobilemode : {
+                    type: Boolean
+                },
                 // OUT: Feature Groups of (all) contentbox-layers loaded
                 // !! grouped by layer !!
                 mapcontent: {
@@ -124,8 +126,9 @@ Refresh mb-contentbox features
                     // Verify contentbox
                     // Check weather new content(at least some) is "well defined"
                     if (map) {
-                        var mapevents = this.mapevents;
-                        contentbox = scope._mbContentVerify(contentbox, mapevents); // , map);
+                        var mapevents = this.mapevents,
+                            mobilemode = this.mobilemode;
+                        contentbox = scope._mbContentVerify(contentbox, mapevents, mobilemode); // , map);
                     }
 
                     if (!contentbox || !Object.keys(contentbox).length)  {
@@ -151,7 +154,7 @@ Refresh mb-contentbox features
             },    
 
             // Make contentbox "complete"  
-            _mbContentVerify: function(contentbox, mapevents) { // , map) {    
+            _mbContentVerify: function(contentbox, mapevents, mobilemode) { // , map) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
                 // console.log("_mbContentVerify. contentbox, events", contentbox, mapevents);
 
@@ -166,12 +169,12 @@ Refresh mb-contentbox features
                 // Fallback-functions
                 if (!featureHilite) {
                     featureHilite = function(e, layerid){
-                        // console.log("HILITE", e,layerid)
+                        console.log("HILITE placeholder", e,layerid)
                     }
                 }
                 if (!featureSelect) {
                     featureSelect = function(e, layerid){
-                        console.log("SELECT", e, layerid)
+                        console.log("SELECT placeholder", e, layerid)
                     }
                 }
 
@@ -208,7 +211,8 @@ Refresh mb-contentbox features
 
                 // Apply prepared 
                 function rawEvents(layerName) {
-
+                    var isMobile = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+                    
                     function hiliter(e) {
                         featureHilite(e, layerName, scope);
                     }
@@ -218,10 +222,21 @@ Refresh mb-contentbox features
                     }
 
                     // 
-                    var eventset = {
-                        "mousemove" : hiliter,
+                    var eventset = {};
+                    /*    "mousemove" : hiliter,
                         "click" : selector
-                    };
+                    };*/
+
+                    if (mobilemode || isMobile) {
+                        if (isMobile) {
+                            eventset["touchstart"] = selector;
+                        } else {
+                            eventset["click"] = selector;
+                        }
+                    } else {
+                        eventset["click"] = selector;
+                        eventset["mousemove"] = hiliter;
+                    }
 
                     return eventset;
                 }
@@ -249,7 +264,7 @@ Refresh mb-contentbox features
                                         "text-field": "{title}",
                                         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
                                         "text-offset": [0, 0.6],
-                                        "text-anchor": "top"
+                                        "text-anchor": "left" //"top"
                                     },
                                     "paint": {
                                         "text-halo-color": "#ffffff",
@@ -257,6 +272,7 @@ Refresh mb-contentbox features
                                         "text-color": "#ff0000"
                                     }
                             };
+                            // "text-anchor": "top"
                             return lhilite; 
                         } 
                         
@@ -385,6 +401,7 @@ Refresh mb-contentbox features
 
                 //var before = "admin_country";
                 var before = "country_label";
+                if (map.getLayer("logpoint")) before = "logpoint"; 
 
                 // create linear list of features 
                 // suitable for "menu-generation"

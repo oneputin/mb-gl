@@ -76,6 +76,10 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     type: Object,
                     notify: true
                 },
+                mobilemode: {
+                    type: Boolean,
+                    observer: 'toggleMobile'
+                },                
                 /**
                  *  access-key to mapbox-gl api
                  */
@@ -83,12 +87,12 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     type: String
                 },
                 /**
-                 *  mapbox-style  
+                 *  mapbox-style to be set  
                  */
                 mapstyle: {
                     type: String,
                     notify: true,
-                    observer: 'changeMapStyle'
+                    observer: 'setMapStyle'
                 },
 
                 mbid: {
@@ -200,12 +204,17 @@ the map-ctrls can be placed as map-overlay or anywhere else
                 toast.open();  // console.log("Triggered FIRST map-toast", toast, map); 
             },
 
+            toggleMobile: function(mobilemode, oldmode){
+                this._oldstyle = this.mapstyle;
+                this.mapstyle="mapbox://styles/mapbox/light-v9";
+            },
+
             // app-event-action
-            changeMapStyle: function(mapstyle){
-                if (map) {  // console.log("CHANGE mapstyle", mapstyle);
-                    map.on('data', this.onStyleChange); // set map-event-action  
+            setMapStyle: function(mapstyle){
+                if (map) {  console.log("CHANGE mapstyle", mapstyle);
+                    map.on('style.load', this.onStyleLoad); // set map-event-action
                     map.setStyle(mapstyle); // trigger map-event "setStyle""
-                }    
+                } 
             },
 
             // 
@@ -238,62 +247,60 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     console.log("cannot install map!"); 
                     return; 
                 }
-                var that = this;
+                var scope = this;
 
                 mapboxgl.accessToken = this.mapapikey;
 
                 map = new mapboxgl.Map(this.mapctrl);
 
-                map.on('load', function(e) { // console.log("map loaded", map);
-                    // console.log("map LOADED", e);
+                map.on('load', function(e) {  // console.log("map LOADED", e);
 
                     if (this.zoom) map.setZoom(this.zoom);
                     if (this.cbox) map.setCenter(this.cbox);
 
-                    // inform about map-center after map-move 
-                    map.on('moveend', function() {
+                    // inform about maps center&zoom after every map-move 
+                    function getMapCenter() {
                         let cb = map.getCenter(),
                             bb = map.getBounds(),
                             z = map.getZoom();
 
-                        that.cbox = cb.lng + "," + cb.lat;
-                        that.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
-                        that.zoom = z;
-                        // console.log(cb,bb,that.cbox,that.bbox);
-                    });
+                        scope.cbox = cb.lng + "," + cb.lat;
+                        scope.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
+                        scope.zoom = z;
+                        // console.log(cb,bb,scope.cbox,scope.bbox);
+                    };
 
-                    // 
-                    map.on('data', that.onStyleChange);
-                    that.map = map;
+                    map.on('moveend', getMapCenter); 
+                    map.on('style.load', scope.onStyleLoad);
+
+                    scope.map = map;    // as msg ??? to other components  
                 });
+
             },
 
             // Compare style of mb-map-api with style-ctrl-parameters (id and url) of map-element
             // - inform app about id of actual api-mapstyle
             // - refresh mb-mapstyle if map-element got a new style-parameter meanwhile 
             //   (especially as SYNC during start-phase with style-menu )     
-            onStyleChange: function(e){
+            onStyleLoad: function(e){
+                var mapstyleurl = mapscope.mapstyle,
+                    oldstyleid = mapscope.mbid;
+                if (!mapstyleurl) {
+                    return;
+                }  
 
-                if (e.dataType == "style") {
-                    var mapstyleurl = mapscope.mapstyle,
-                        oldstyleid = mapscope.mbid;
-                    if (!mapstyleurl) {
-                        return;
-                    }   // return;   
+                var stylesheet = e.style.stylesheet,
+                    newstyleid = stylesheet.id; console.log();
 
-                    var stylesheet = e.style.stylesheet,
-                        newstyleid = stylesheet.id;
-
-                    if (newstyleid != oldstyleid)  {
-                        console.log("MAPSTYLE-CHANGE: [" + oldstyleid+"]", "to ["+ newstyleid +"]")
-                        if (mapstyleurl.indexOf(newstyleid) < 0 ) { // console.log("BUT LAST requested style is:", mapstyleurl );
-                            map.setStyle(mapstyleurl);
-                        } else {
-                            map.off("data", mapscope.onStyleChange); // console.log("onStyleChange OFF");
-                            mapscope.mbid = newstyleid;     // Trigger to Rebuild themes of contentbox within new style
-                        }
-                    }     
-                }
+                if (newstyleid != oldstyleid)  {
+                    console.log("MAPSTYLE-CHANGE: [" + oldstyleid+"]", "to ["+ newstyleid +"]", stylesheet)
+                    if (mapstyleurl.indexOf(newstyleid) < 0 ) { // console.log("BUT LAST requested style is:", mapstyleurl );
+                        map.setStyle(mapstyleurl);
+                    } else {
+                        map.off('style.load', mapscope.onStyleLoad); // console.log("onStyleLoad OFF");
+                        mapscope.mbid = newstyleid;     // Trigger to Rebuild themes of contentbox within new style
+                    }
+                }     
             },
 
             triggerToast: function(msg) {

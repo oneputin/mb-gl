@@ -150,7 +150,6 @@
                 
                 <mb-map 
                     map="{{map}}" 
-                    mobilemode = "[[mobilemode]]"
                     mapapikey="[[mbkey]]" 
                     mapstyle="[[mapstyle]]" 
                     mbid="{{mbid}}" 
@@ -168,13 +167,6 @@
                         logindex = "{{logindex}}">
                     </tracklog-view>    
 
-                    <mb-styles 
-                        checked = "{{styleselectshow}}"
-                        styleset ="[[morestyles]]"
-                        selectable = "{{styleselectable}}"
-                        mapstyle = "{{mapstyle}}"> 
-                    </mb-styles>
-
                     <!-- TOOL to measure user-generated lines -->
                     <mb-distance 
                         checked="[[mapmeasureshow]]"
@@ -187,29 +179,6 @@
                         lnglat="{{lnglat}}" 
                         map="[[map]]"> 
                     </mb-location-log>
-
-                    <!-- not implemented 
-                    <tracks-info 
-                        metadataset = "[[metadataset]]" 
-                        trackinfo = "[[trackinfo]]" 
-                        trackdata = "{{trackdata}}">
-                    </tracks-info>
-                    -->
-                    <template is="dom-if" if="{{userouting}}">
-                        <div class="ctrls-in-map">
-                            <!-- ctrl of animation-progress  -->
-                            <timer-ctrl 
-                                timerctrl="{{trackctrl}}"
-                                timer="{{timer}}">
-                            </timer-ctrl>
-
-                            <!-- ctrl of map-orientation -->
-                            <mb-orientation-ctrl 
-                                trackmap="[[trackalignmap]]">
-                            </mb-orientation-ctrl>
-                            
-                        </div>
-                    </template>
 
                 </mb-map>
 
@@ -238,37 +207,10 @@
                     <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
                 </template>   
 
-                <paper-radio-button checked="{{mobilemode}}">Simulate Mobiles</paper-radio-button>
-
+                <paper-radio-button class="mobile">Simulate Mobiles</paper-radio-button>
             </div>
 
             <!-- B. TRACK-APIs -->
-
-            <!-- B.1 TRACK-animation (ROUTING) --> 
-
-            <routing-api 
-                disable = "[[!userouting]]"
-                map = "[[map]]" 
-                timer = "{{timer}}"
-                trackctrl = "{{trackctrl}}"      
-
-                routedata = "[[trackdata]]" 
-
-                metadataset = "{{metadataset}}"
-                contentbox = "{{contentbox}}"               
-                mapcontent = "[[mapcontent]]"
-
-                routeselected ="{{datasetitem}}"> 
-                <!--trackdata = "{{trackdata}}"
-                trackinfo = "[[trackinfo]]">-->
-            </routing-api>
-
-            <timer-setup  
-                timer="{{timer}}"
-                starttimer="[[starttimer]]"
-                metadataset="[[metadataset]]">
-            </timer-setup>
-                
             <!-- B.2 TRACK-Explorer -->
             <tracks-api 
                 disable = "[[userouting]]"
@@ -285,7 +227,6 @@
             <tracklog-mb
                 disable = "[[userouting]]"
                 mbid = "[[mbid]]" 
-                mobilemode = "[[mobilemode]]"
                 draggable = "[[draggable]]"
                 indexedtarget = "[[datasetitem]]"
                 index = "{{logindex}}"
@@ -296,7 +237,6 @@
             <!-- SYNC mapcontent from contentbox -->
             <mb-content-manager 
                 map = "[[map]]" 
-                mobilemode = "[[mobilemode]]"
                 mbid = "[[mbid]]" 
                 contentbox ="{{contentbox}}" 
                 mapevents = "[[mapevents]]"
@@ -355,9 +295,10 @@
 </template>
 
 <script>
-    // 
+    var mobilemode = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+    // mobilemode = "simulate"; console.log("mobilemode=", mobilemode);
+
     var scope = document.querySelector('#app');
-    scope.mobilemode = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
 
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
     scope.mapstyle = 'mapbox://styles/mapbox/light-v9';
@@ -419,6 +360,15 @@
                 toggleRouting(this); 
             });
         }
+
+        var r2 = document.querySelector("paper-radio-button.mobile"); // console.log("MOBILE-RADIO", r2);
+        if (r2) {
+            if (r2.checked) mobilemode = "simulate"; 
+            r2.addEventListener("change", function() {  // console.log("Simulate mobile:", r2.checked)
+                if (r2.checked) mobilemode = "simulate"; 
+                else mobilemode = false;
+            });
+        }    
 
     });
 
