@@ -41,7 +41,7 @@
 
     <link rel="import" href="../tracklog-ctrl.html">
     <link rel="import" href="../tracklog-view.html">
-    <link rel="import" href="../tracklog-mb.html">
+    <link rel="import" href="../tracklog-map.html">
 
     <style is="custom-style">
         .container {
@@ -60,7 +60,7 @@
             height: 670px;
         }
         
-        .ctrls-in-map {
+        .mapctrls-bottom {
             display: inline-block;
             position: absolute;
             @apply(--layout-horizontal);
@@ -68,7 +68,14 @@
             bottom: 12px;
             width: 100%;
         }
-        
+
+        .mapctrl-log {
+            display: inline-block;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+        }
+
         .ctrls_out {
             /* itself flex layouted div */
             width: 40%;
@@ -195,8 +202,22 @@
                         trackdata = "{{trackdata}}">
                     </tracks-info>
                     -->
+
+                    <template is="dom-if" if="{{!userouting}}">
+                        <!-- (menulike)ctrl of single log-points  -->
+                        <tracklog-ctrl
+                            class = "mapctrl-log"
+                            visible = "[[!draggable]]"
+                            metadata = "[[metadataset]]"
+                            logdata = "[[logdata]]"
+                            logindex = "{{logindex}}">
+                        </tracklog-ctrl>
+                    </template>
+
+
                     <template is="dom-if" if="{{userouting}}">
-                        <div class="ctrls-in-map">
+                        <div class="mapctrls-bottom">
+                            
                             <!-- ctrl of animation-progress  -->
                             <timer-ctrl 
                                 timerctrl="{{trackctrl}}"
@@ -225,7 +246,7 @@
                 
                 <template is="dom-if" if="{{!userouting}}">
                     <paper-radio-button checked="{{elevationshow}}">Track Chart</paper-radio-button>
-                    <paper-radio-button checked="{{draggable}}" class="drag">Draggable Log</paper-radio-button>
+                    <paper-radio-button checked="{{draggable}}" class="drag">Drag Logpoint</paper-radio-button>
                 </template>    
 
                 <template is="dom-if" if="{{mapstyle}}">
@@ -234,7 +255,7 @@
                     <template is="dom-if" if="{{!userouting}}">
                         <paper-radio-button class="style" checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
                     </template>
-                    <paper-radio-button checked="{{mapmeasureshow}}">Map Measure</paper-radio-button>
+                    <paper-radio-button checked="{{mapmeasureshow}}">Measure Dist</paper-radio-button>
                     <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
                 </template>   
 
@@ -278,19 +299,21 @@
                 contentbox = "{{contentbox}}" 
                 mapcontent = "[[mapcontent]]"
                 mapevents = "{{mapevents}}"
+                tracksall = "[[dataset]]"
                 trackselected = "{{datasetitem}}"
                 trackpntindex = "{{logindex}}">
             </tracks-api>
 
-            <tracklog-mb
+            <tracklog-map
                 disable = "[[userouting]]"
                 mbid = "[[mbid]]" 
                 mobilemode = "[[mobilemode]]"
                 draggable = "[[draggable]]"
                 indexedtarget = "[[datasetitem]]"
+                logdata = "{{logdata}}"
                 index = "{{logindex}}"
                 maptoast = "{{maptoast}}">
-            </tracklog-mb>
+            </tracklog-map>
             <!-- lnglat = "[[lnglat]]"--> 
 
             <!-- SYNC mapcontent from contentbox -->
@@ -313,7 +336,7 @@
                     metadatasetslabel="[[metadatasetslabel]]" 
                     metadataset="{{metadataset}}"
 
-                    dataset="[[dataset]]" 
+                    dataset = "[[dataset]]" 
                     selectitem="{{datasetitem}}"> 
 
                     <tracks-load 
@@ -336,17 +359,6 @@
 
             <!-- C. DATA-LOG CTRL -->
             <div class="flexchild">
-                <template is="dom-if" if="{{!userouting}}">
-                    <!-- checked = "[[elevationshow]]" -->
-                    <tracklog-ctrl
-                        disable = "false"
-                        checked = "true"
-                        metadata = "[[metadataset]]"
-                        logobject = "[[datasetitem]]"
-                        logdata = "{{logdata}}"
-                        logindex = "{{logindex}}">
-                    </tracklog-ctrl>    
-                </template>
             </div>    
 
         </div>
@@ -456,7 +468,7 @@
         // testfunction 
         function toggleRoutingControls(flag) {
             var el,
-                parent = document.querySelector("div.ctrls-in-map");
+                parent = document.querySelector("div.mapctrls-bottom");
             if (!parent) {
                 return; 
             }     

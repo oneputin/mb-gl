@@ -148,7 +148,7 @@ container for presentation of track-properties (fi. elevations)
              * Select/Hilite a feature on the map  (fi. zoomTo)
              * @param      {object}  f       { mapbox-jeature }
              */
-            checkindata: function(logdata) { 
+            checkindata: function(logdata) { // console.log("logdata",logdata);
                 if (this.disable || !logdata) return; 
                 // B. Refresh Generic Track viewer(s) (Menu, Chart) 
                 this.refreshElevChart(logdata); 

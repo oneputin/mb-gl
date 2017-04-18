@@ -8,14 +8,14 @@ Draggable mb-point with optional snapping to mb-theme features
 @demo demo/routingtracks.html 
 -->
 
-<dom-module id="tracklog-mb">
+<dom-module id="tracklog-map">
 
     <template>
     </template>
 
     <script>
         Polymer({
-            is: 'tracklog-mb',
+            is: 'tracklog-map',
 
             properties: {
 
@@ -28,6 +28,18 @@ Draggable mb-point with optional snapping to mb-theme features
                     type: Object,
                     observer: 'logPointGet'
                 },
+
+                // property-items to be used for decription, charting etc
+                logitems : {
+                    type: Array,
+                    value:  ["coordElevs","coordTimes"]  // standard of trackLines
+                },
+                // 
+                titleitem: {
+                    type: String,
+                    value : "coordTimes" // "coordElevs"                    
+                },
+
 
                 draggable: {
                     type: Boolean
@@ -54,7 +66,7 @@ Draggable mb-point with optional snapping to mb-theme features
                 index: {
                     type: Number,
                     value : -1,
-                    observer: 'indexedPointRefresh',
+                    observer: '_indexedPointRefresh',
                     notify: true
                 },
 
@@ -66,29 +78,19 @@ Draggable mb-point with optional snapping to mb-theme features
 
                 // 
                 indexedtarget: {
-                    type: Object // ,   observer : 'indexedDataBuild'
+                    type: Object // ,   observer : 'logDataBuild'
                 },
 
-                // 
-                logproperties : {
-                    type: Array,
-                    value:  ["coordElevs","coordTimes"]  // standard of trackLines
-                },
-                // 
-                titleproperty: {
-                    type: String,
-                    value : "coordElevs"                    
+                // Array of indexed data
+                logdata: {
+                    type: Object,
+                    notify : true
                 },
 
                 // 
                 maptoast: {
                     type: String,
                     notify: true
-                },
-
-                // Array of indexed data
-                _indexedData: {
-                    type: Object
                 },
 
                 _logPntLayers : {
@@ -107,9 +109,9 @@ Draggable mb-point with optional snapping to mb-theme features
             ],
 
             observers: [
-                'indexedDataBuild(indexedtarget.feature)',
+                'logDataBuild(indexedtarget.feature)',
                 'logPointGet(indexedtarget.lnglat)',
-                'toggleMode(draggable, mobilemode)'
+                '_toggleMode(draggable, mobilemode)'
             ],
 
             ready : function() {
@@ -121,9 +123,20 @@ Draggable mb-point with optional snapping to mb-theme features
                 this.logPointSetup();
             },
 
+            // 
             logPointSymbolSetup : function() {
                 // symbolLayers-1 (permanent)
                 this._logPntLayers = [
+                    {
+                        "id": "logpoint-glow",
+                        "type": "circle",
+                        "source": "logpoint",
+                        "paint": {
+                            "circle-radius": 18,
+                            "circle-color": "#ff0",
+                            "circle-opacity": 0.6
+                        }
+                    }, 
                     {
                         "id": "logpoint",
                         "type": "symbol",
@@ -142,17 +155,7 @@ Draggable mb-point with optional snapping to mb-theme features
                 // symbolLayers-2 (dragmode only)
                 this._dragPntLayers =  [
                     {
-                        "id": "dragpnt-glow-strong",
-                        "type": "circle",
-                        "source": "logpoint",
-                        "paint": {
-                            "circle-radius": 18,
-                            "circle-color": "#ff0",
-                            "circle-opacity": 0.6
-                        }
-                    }, 
-                    {
-                        "id": "dragpnt-glow",
+                        "id": "dragpnt",
                         "type": "circle",
                         "source": "logpoint",
                         "paint": {
@@ -164,22 +167,46 @@ Draggable mb-point with optional snapping to mb-theme features
                 ];
             },
 
-            toggleMode : function(draggable, mobilemode) { 
-                if (!this.mbid || (draggable == null)) return;   
-                console.log("logModes: ", "draggable="+draggable, "mobilemode="+mobilemode);
+            // 
+            logDataBuild: function(indexedFeature) { //, properties) {
+                if (!indexedFeature) return; 
 
-                this.logPointSetup(draggable, mobilemode); 
-                
+                // A. Collect 
+                var indexedData = { 
+                    "coords": indexedFeature.geometry.coordinates
+                };     
+
+                var properties = this.logitems;  // console.log("logDataBuild from", indexedFeature, properties);
+                properties.forEach(function(prop){
+                    indexedData[prop] = indexedFeature.properties[prop];
+                }.bind(this));
+                // z.B.
+                //"elevs": indexedFeature.properties.coordElevs,
+                //"times": indexedFeature.properties.coordTimes
+
+                this.logdata = indexedData;
+        
+                // B. Initialize logPoint on trackLine 
+                /*if (target.lnglat) { 
+                    var snapSet = this.logPointGet(target.lnglat);
+                    if (snapSet.index) { console.log("Start with targetPoint at index=" + snapSet.index, snapSet);
+                        scope.index = snapSet.index;
+                        //var trackInfo =  scope.trackInfoCollect(snapSet); // snapped.properties);
+                        //if (trackInfo.toast) scope.maptoast = trackInfo.toast; 
+                        // eventscope.popupOnMap(trackInfo);
+                    } 
+                }*/
+
             },
 
-            // 
+            // map-entity 
             logPointSetup : function(draggable, mobilemode) {  // console.log("ADD logPoint into ["+mbid+"], was ["+mbid_old+"] mobilemode=" + mobilemode);
                 if (draggable == null) draggable = this.draggable;
                 if (mobilemode == null) mobilemode = this.mobilemode;
 
                 var scope = this;
                 var logid = 'logpoint',
-                    dragid = 'dragpnt-glow';
+                    dragid = 'dragpnt';
 
                 var isMobile = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1),
                     isCursorOverPoint,
@@ -246,7 +273,6 @@ Draggable mb-point with optional snapping to mb-theme features
                 }
 
                 // Combines action of desktop-events 'mousemove' and 'mousedown' 
-                // var dragid = 'dragpnt-glow'; // outer circle
                 function touchStart(e){
                     if (!map.getLayer(dragid)) return;
 
@@ -269,7 +295,7 @@ Draggable mb-point with optional snapping to mb-theme features
 
                     if (scope.indexedtarget) { // Update the "nearest" point on active target(fi. track) 
                         
-                        var snapSet = scope.indexedPointSnap(lngLat); // , scope.indexedtarget);
+                        var snapSet = scope._indexedPointSnap(lngLat); // , scope.indexedtarget);
                         
                         if (snapSet.index != null) {
                             // A. SYNC location and all related elements
@@ -312,10 +338,10 @@ Draggable mb-point with optional snapping to mb-theme features
                     console.log("dragpntEvents REMOVED");
 
                     if (!map.getSource('logpoint')) {
-                        // var geojsonpnt = scope.logPointGeojson([0,0], "drag"); 
+                        // var geojsonpnt = scope._logPointGeojson([0,0], "drag"); 
                         map.addSource('logpoint', { 
                             type: 'geojson', 
-                            data: scope.logPointGeojson([0,0]) 
+                            data: scope._logPointGeojson([0,0]) 
                         }); console.log("logpnt SOURCE ADDED"); // , map.getSource('logpoint')); 
                     }
 
@@ -380,7 +406,7 @@ Draggable mb-point with optional snapping to mb-theme features
                 if (!lngLat) return;
 
                 if (this.indexedtarget) {
-                    var snapSet = this.indexedPointSnap(lngLat),
+                    var snapSet = this._indexedPointSnap(lngLat),
                         snapPnt = snapSet['snap'],
                         indexedFeature = snapSet['target'],
                         index = snapPnt.properties.index;
@@ -415,31 +441,52 @@ Draggable mb-point with optional snapping to mb-theme features
             // Refresh coords of dragPnt (= refresh Source)
             logPointLocate: function(index, coords, title, logsymbol) {
                 // A meaningful logPointSymbolSetup built from 3 symbol(Layer)s 
-                var scope = this; 
+                if (index == null); 
                 if (!map) return; 
+
+                var scope = this; 
+                function _logdataTitle(index, titleprop, logdata) {
+                    var titledata, title, titleraw;
+                    if (titleprop ) { // console.log(index, titleprop); // , logdata); 
+                        
+                        titledata = logdata[titleprop];
+                        
+                        if (titledata) {
+                            titleraw = titledata[index];
+                            if (titleprop=="coordTimes") {
+                                var t = scope.trackTime(titleraw);
+                                t = scope.utcTime(t, "h");
+                                title = scope.logTime(t, "h", "t");
+                            } else if (titleprop=="coordTimes") {
+                                title = titleraw + "m"
+                            } else {
+                                title = titleraw
+                            }
+                        }
+                    }  
+                    return title;   
+                }
+
                 var logPointSrc = map.getSource("logpoint");
                 if (!logPointSrc) return; 
                 
-                if (!logsymbol) logsymbol = "toilet-15"; // "airport-15";
-
-                if (index != null) { 
-                    if (!this._indexedData) return;
-                    coords = this._indexedData["coords"][index].slice(0,2);  // console.log(coords[0],typeof coords[0]);
-                    if (!title) title = this.titleproperty;
-                    if (title) {
-                        var data = this._indexedData[title];
-                        if (data) title = data[index];
-                        else title = null;
-                    }     
+                if (!coords) {
+                    if (!this.logdata) return;
+                    coords = this.logdata["coords"][index].slice(0,2);  // console.log(coords[0],typeof coords[0]);
                 } 
-                if (!coords) return; // console.log("DEBUG-1", index, this._indexedData, coords, title );
+                if (!coords) return; // console.log("DEBUG-1", index, this.logdata, coords, title );
+                
+                if (!title && this.titleitem && this.logdata) {
+                    title = _logdataTitle(index, this.titleitem, this.logdata); 
+                }
 
                 // Update LogPoint-srcData 
-                logPointSrc.setData(this.logPointGeojson(coords, title));
+                logPointSrc.setData(this._logPointGeojson(coords, title));
             },
+
             // 
-            logPointGeojson: function(coords, title) {
-                if (!title) title = "drag"; 
+            _logPointGeojson: function(coords, title) {
+                if (title == null) title = "drag"; 
                 var logPoint = {
                     "type": "FeatureCollection",
                     "features": [{
@@ -456,39 +503,8 @@ Draggable mb-point with optional snapping to mb-theme features
                 return logPoint; 
             },
 
-            indexedDataBuild: function(indexedFeature) { //, properties) {
-                if (!indexedFeature) return; 
-
-                // A. Collect 
-                var indexedData = { 
-                    "coords": indexedFeature.geometry.coordinates
-                };     
-
-                var properties = this.logproperties;  // console.log("indexedDataBuild from", indexedFeature, properties);
-                properties.forEach(function(prop){
-                    indexedData[prop] = indexedFeature.properties[prop];
-                }.bind(this));
-                // z.B.
-                //"elevs": indexedFeature.properties.coordElevs,
-                //"times": indexedFeature.properties.coordTimes
-
-                this._indexedData = indexedData;
-        
-                // B. Initialize logPoint on trackLine 
-                /*if (target.lnglat) { 
-                    var snapSet = this.logPointGet(target.lnglat);
-                    if (snapSet.index) { console.log("Start with targetPoint at index=" + snapSet.index, snapSet);
-                        scope.index = snapSet.index;
-                        //var trackInfo =  scope.trackInfoCollect(snapSet); // snapped.properties);
-                        //if (trackInfo.toast) scope.maptoast = trackInfo.toast; 
-                        // eventscope.popupOnMap(trackInfo);
-                    } 
-                }*/
-
-            },
-
             // 
-            indexedPointSnap : function(queryPnt, target) { // , elemscope) {
+            _indexedPointSnap : function(queryPnt, target) { // , elemscope) {
                 if (!target) target = this.indexedtarget; 
                 // console.log("queryPnt, target", queryPnt, target);
 
@@ -516,12 +532,19 @@ Draggable mb-point with optional snapping to mb-theme features
             },
 
             // 
-            indexedPointRefresh: function(ix) { 
+            _indexedPointRefresh: function(ix) { 
                 if (ix >= 0) { // console.log("RELOCATE LOGPNT at indexedFeature: " + ix);
                     this.logPointLocate(ix);  
                 }
             },
 
+            // 
+            _toggleMode : function(draggable, mobilemode) { 
+                if (!this.mbid || (draggable == null)) return;   
+                console.log("logModes: ", "draggable="+draggable, "mobilemode="+mobilemode);
+                this.logPointSetup(draggable, mobilemode); 
+                
+            }
         })
     </script>
 </dom-module>                  

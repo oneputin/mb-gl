@@ -41,7 +41,7 @@
 
     <link rel="import" href="../tracklog-ctrl.html">
     <link rel="import" href="../tracklog-view.html">
-    <link rel="import" href="../tracklog-mb.html">
+    <link rel="import" href="../tracklog-map.html">
 
     <style is="custom-style">
         .container {
@@ -224,14 +224,14 @@
                 trackpntindex = "{{logindex}}">
             </tracks-api>
 
-            <tracklog-mb
+            <tracklog-map
                 disable = "[[userouting]]"
                 mbid = "[[mbid]]" 
                 draggable = "[[draggable]]"
                 indexedtarget = "[[datasetitem]]"
                 index = "{{logindex}}"
                 maptoast = "{{maptoast}}">
-            </tracklog-mb>
+            </tracklog-map>
             <!-- lnglat = "[[lnglat]]"--> 
 
             <!-- SYNC mapcontent from contentbox -->

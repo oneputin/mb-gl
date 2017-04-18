@@ -61,6 +61,11 @@ display as decorated route (fi with commented endpoints)
                 },
 
                 // 
+                tracksall: {
+                    type: Object
+                },
+
+                // 
                 trackselected: {
                     type: Object,
                     notify: true
@@ -237,18 +242,34 @@ display as decorated route (fi with commented endpoints)
             trackActivate: function(fid) { // console.log("ACTIVATE track, ID=", fid);
                 if (!fid || this.disable) return; 
 
-                f = this.trackselected;                      
-                if (!f.layer) return;   // console.log("ACTIVATE track", f); 
 
-                var selectObj, layerid, feature = f;
+                // Operate on ALL features (tracks)
+                if (fid == "all") {
+                    var msg = "Zoom to ALL tracks";  // console.log("DEBUG", msg, this.tracksall); 
+                    this.maptoast = msg;
+                    
+                    var ff = [];
+                    this.tracksall.forEach(function(item){
+                        ff.push(item.feature)
+                    });
+                    this.setFeatureBounds(ff, 10);
 
+                    return;
+                } 
+
+                // Activate SINGLE track
+                var f = this.trackselected;                      
+                if (!f.layer) return;   
+
+                var selectObj, layerid, feature;
                 if (typeof f.layer == "string") {
                     layerid = f.layer;
                 } else {
                     layerid = f.layer.id; 
                 }
 
-                if (f.feature) feature = f.feature; // console.log("") ; 
+                if (f.feature) feature = f.feature; // console.log("ACTIVATE track", feature); 
+                else feature = f;
 
                 this.trackdata = {
                     "coords": feature.geometry.coordinates,
@@ -269,6 +290,7 @@ display as decorated route (fi with commented endpoints)
                 // console.log("processedTrack", selectObj); 
             },    
 
+
             // Special "permanent" HILITE of selected tracks
             // by HILITE-TRACE + "commented" end-nodes  
             //   - zooms to the feature
@@ -276,6 +298,7 @@ display as decorated route (fi with commented endpoints)
             trackDecorate: function(layerid, tiledata) {
                 // by now for 1 feature only
                 // var map = this.map; 
+                if (!tiledata) return;  // console.log("tiledata", tiledata); 
                 var scope = this;
 
                 // MB-Function for trackContent: 
@@ -284,48 +307,46 @@ display as decorated route (fi with commented endpoints)
                 function showTrackNodes(layerid, trackInfo) {
                     // layer of nodes symbols with text in HALO
                     var hilayerid = layerid + "-nodes",
-                        hilayer = map.getLayer(hilayerid);
-
-                    if (!hilayer) return; 
-                    // console.log("NODES of "+ layerid, hilayer, trackInfo);                 
+                        hilayer = map.getLayer(hilayerid),
+                        src = map.getSource(hilayerid); 
+                    if (!hilayer) return;  
+                    // console.log("Show NODES of "+ layerid, hilayer, trackInfo);                 
 
                     var fromicon = "monument",
-                        toicon = "harbor";
+                        toicon   = "harbor";
 
                     var fromnode = trackInfo.fromnode.slice(0,2),
                         tonode   = trackInfo.tonode.slice(0,2),
                         fromtime = trackInfo.von,
-                        totime = trackInfo.bis,
-                        nodedata = { // for nodes-source = 2 points
-                            "type": "FeatureCollection",
-                            "features": [{
-                                "type": "Feature",
-                                "geometry": {
-                                    "type": "Point",
-                                    "coordinates": fromnode
-                                },
-                                "properties": {
-                                    "title": fromtime,
-                                    "icon": fromicon
-                                }
-                            }, {
-                                "type": "Feature",
-                                "geometry": {
-                                    "type": "Point",
-                                    "coordinates": tonode
-                                },
-                                "properties": {
-                                    "title": totime,
-                                    "icon": toicon
-                                }
-                            }]
-                        } ;
+                        totime = trackInfo.bis;
 
-                    // map.addSource(layerid, node);    
-                    var src = map.getSource(hilayerid); 
-                    if (src)  { // console.log("set nodes-data into ", hilayerid, nodedata, src); 
-                        src.setData(nodedata);                     
-                    }    
+                    var nodes_json = { // for nodes-source = 2 points
+                        "type": "FeatureCollection",
+                        "features": [{
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": fromnode
+                            },
+                            "properties": {
+                                "title": fromtime,
+                                "icon": fromicon
+                            }
+                        }, {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": tonode
+                            },
+                            "properties": {
+                                "title": totime,
+                                "icon": toicon
+                            }
+                        }]
+                    } ;
+
+                    if (!src) map.addSource(hilayerid, nodes_json);    
+                    else      src.setData(nodes_json);                     
                 } 
 
                 // 2. HILITE the "TRACE" of the track (Filtering-Layer)
@@ -343,8 +364,6 @@ display as decorated route (fi with commented endpoints)
                     map.setFilter(hilayerid, hifilter);
                 } 
 
-                if (!tiledata) return;  // console.log("tiledata", tiledata); 
-
                 this.debounce("decorate", function() {
 
                     if (Array.isArray(tiledata)) { // List of map-features
@@ -352,7 +371,6 @@ display as decorated route (fi with commented endpoints)
                     }
                     
                     var trackInfo =  this.trackInfoCollect(tiledata);
-
                     if (!trackInfo) return;  
                     
                     // console.log("TRACK DECORATE of", trackInfo)
@@ -411,11 +429,11 @@ display as decorated route (fi with commented endpoints)
                 // B. SPECIFIC: derive tracklog-specific time-parameters 
                 if (trackInfo.coordTimes) { 
                     trackTimes = trackInfo.coordTimes;  // console.log("trackTimes", typeof trackTimes, trackTimes);
+                   
                     if (typeof trackTimes == "string") {
                         trackTimes = JSON.parse(trackTimes);
                         trackInfo.coordTimes = trackTimes;
-                    }
-                    // console.log(trackInfo, trackTimes);
+                    }   // console.log(trackInfo, trackTimes);
                     
                     var n = trackTimes.length, // equal to number of coords
                         tvon = scope.trackTime(trackTimes[0]);
