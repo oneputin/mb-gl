@@ -94,7 +94,7 @@ The visual signature can be toogled in sync with the value of the exported servi
                 },
 
                 // minimum criterium for target-reactivation
-                mindy : {
+                dy_min : {
                     type: Number,
                     value: 0.01
                 }
@@ -122,20 +122,21 @@ The visual signature can be toogled in sync with the value of the exported servi
 
             },
 
-            locationCheck: function(n, o) {
+            locationCheck: function(newcbox, oldcbox) {
+                
                 // 1. Check for 'too small movements' of cbox
-                //    using lat-differences
-                if (n && o && map && map.getBounds()) {
+                //    using lat-differences between old and new cbox
+                if (newcbox && oldcbox && map && map.getBounds()) {
                     var mbounds = map.getBounds(),
                         dlat = Math.abs(mbounds.getNorth() - mbounds.getSouth()),
-                        dy = Math.abs(n.split(",")[1] - o.split(",")[1]);
-                        console.log("locationCheck", dlat, dy, dy / dlat , this.mindy);
-                    if ((dy / dlat) < this.mindy) return;
+                        dy = Math.abs(newcbox.split(",")[1] - oldcbox.split(",")[1]);
+                        console.log("locationCheck: deltalat, deltay, deltay_min", dlat, dy, this.dy_min);
+                    if ((dy / dlat) < this.dy_min) return;
                 }
 
                 // 2. Check for cbox in targetArea
-                var cbox = n.split(",");
-                var x=parseFloat(cbox[0]), y=parseFloat(cbox[1]);
+                var cbox = newcbox.split(",");
+                var x = parseFloat(cbox[0]), y=parseFloat(cbox[1]);
                 if (this.targetarea) {
                     var box = this.targetarea,                    
                         xmin=box[0][0], ymin=box[0][1],

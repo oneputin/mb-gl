@@ -54,6 +54,14 @@
             height: 670px;
         }
 
+        .ctrls_area {
+            /* itself flex layouted div */
+            width: 40%;
+            margin-left: 10px;
+            @apply(--layout-vertical);
+            /*@apply(--layout-start);*/
+        }
+
         mb-map {
             /*width: 55%;*/
             width: 800px;
@@ -74,14 +82,6 @@
             position: absolute;
             top: 12px;
             right: 12px;
-        }
-
-        .ctrls_out {
-            /* itself flex layouted div */
-            width: 40%;
-            margin-left: 10px;
-            @apply(--layout-vertical);
-            /*@apply(--layout-start);*/
         }
 
         .flexchild {
@@ -149,8 +149,8 @@
 <template is="dom-bind" id="app">
 
     <div class="container">
-        <!-- LEFT block: CONTENT (Map, diagram, list) -->
 
+        <!-- LEFT block: CONTENT (Map, diagram, list) -->
         <div id="content" class="content_area">
 
             <template is="dom-if" if="{{mapstyle}}">
@@ -239,8 +239,7 @@
         </div>
 
         <!-- RIGHT Block: several external app-controls -->
-
-        <div class="ctrls_out">
+        <div class="ctrls_area">
             <!-- element with [n] visible features -->
             <div id="radios">
                 
@@ -369,8 +368,8 @@
 <script>
     // 
     var scope = document.querySelector('#app');
-    scope.mobilemode = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
 
+    scope.mobilemode = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
     scope.mapstyle = 'mapbox://styles/mapbox/light-v9';
     scope.morestyles = "demo-styles.json";
