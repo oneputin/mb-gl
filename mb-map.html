@@ -1,17 +1,14 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../paper-toast/paper-toast.html">
 
 <link rel="import" href="mb-api.html">
-<link rel="import" href="mb-map-behavior.html">
-
 
 <!--
 `mb-map`
 wraps a map created with mapbox-gl-api.  
-the map-ctrls can be placed as map-overlay or anywhere else 
+the map-object can be ctrld from outside
 
-@demo demo/slidemap.html 
+@demo demo/index1.html 
 -->
 
 <dom-module id="mb-map">
@@ -21,48 +18,37 @@ the map-ctrls can be placed as map-overlay or anywhere else
         <style>
             :host {
                 display: block;
-                /*position: absolute;*/
             }
             #map {
-                position:absolute;
+                position: absolute;
                 width: 100%;
                 height: 100%;
-            }    
-            .container {
-                position: relative;
-                width: 100%;
-                height: 100%;
-            }    
+            }            
         </style>
 
-        <div class="container">
-            <div id='map'>
-            </div>
-            <content>
-            </content>
-            <paper-toast id="toast" 
-                class="fit-bottom" 
-                text="[[maptoast]]">
-            </paper-toast>
-        </div>
+        <div id='map'></div>
 
+        <content></content>
+    
     </template>
 
     <script>
-        var map, mapscope;
-
+        var map;
         var setup = {
-            // oneputin
+
             mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
-            // My "Light" style
+
             map: {
-                style: 'mapbox://styles/mapbox/basic-v9',
-                //style: 'mapbox://styles/oneputin/cimlpzor80051zpmctds91fxn',
-                // center: [13.5, 52.5], // must be synced by client with service
+                // container: 'map',     // useless as map is in shadowdom  
+                // center: [10.5, 50.5], // must be synced by client with service
+                style: 'mapbox://styles/mapbox/streets-v9',                
                 insertlayer: 'water'
             },
-            cbox: "10,52", 
-            zoom: 8
+
+            cbox: "12,52",
+            
+            zoom: 7
+
         };
 
         Polymer({
@@ -76,38 +62,12 @@ the map-ctrls can be placed as map-overlay or anywhere else
                     type: Object,
                     notify: true
                 },
-                mobilemode: {
-                    type: Boolean,
-                    observer: 'toggleMobile'
-                },                
                 /**
                  *  access-key to mapbox-gl api
                  */
                 mapapikey: {
                     type: String
                 },
-                /**
-                 *  mapbox-style to be set  
-                 */
-                mapstyle: {
-                    type: String,
-                    notify: true,
-                    observer: 'setMapStyle'
-                },
-
-                mbid: {
-                    type: String,
-                    notify: true,
-                },
-
-                /**
-                 *  layer of mapbox-style 
-                 *  below (!?!) which userdate are inserted into layerstack   
-                 */
-                insertlayer: {
-                    type: String
-                },
-                
                 /**
                  *  parameterset to specify mapbox-gl basemap
                  *  composed from internal defaults an external data 
@@ -124,11 +84,12 @@ the map-ctrls can be placed as map-overlay or anywhere else
                  */
                 cbox: {
                     type: String,
+                    value: "13.5, 52.5",
                     notify: true,
                     observer: 'centerthemap'
                 },
                 /**
-                 *  boundingbox of vidible mapview : LL,UR as Lon,Lat-csv
+                 *  boundingbox of visible mapview : LL,UR as Lon,Lat-csv
                  */
                 bbox: {
                     type: String,
@@ -137,176 +98,84 @@ the map-ctrls can be placed as map-overlay or anywhere else
 
                 zoom: {
                     type: Number,
+                    value: 8,
                     observer: 'zoomthemap'
-                },
-
-                maptoast : {
-                    type: String,
-                    observer: 'triggerToast',
-                    value: "Maps are presented here using mapBox Tech."
                 }
-
             },
 
-            behaviors: [
-                Mbb.MapBehavior
-            ],
-
             observers: [
-                // 'changeMap(mapctrl.*)'
+                // 'centerthemap(cbox, zoom)'
             ],
 
             attached: function() {
-                if (typeof mapboxgl == "undefined") {
-                    console.log("CANNOT access map-SERVICES of [mb-gl-js]"); 
-                    return;
-                }    
-                mapscope = this;
-                // Use default apikey if NONE available from app-shell
+                // console.log("mb-map setup", setup);
+                // 
                 if (!this.mapapikey) this.mapapikey = setup.mapapikey;
 
-                // 
-                var mapcontainer = {
-                    container: this.$.map // get container as dom-element  
-                };
-
                 // ************************************
-                // Compile basic map-parameters from 
-                //      internal setup (default), 
-                //      external parameters   and
-                //      the local container-object !!
-                var mapctrl = Object.assign({}, setup.map, this.mapctrl, mapcontainer);
+                // Compile map-parameters from (default)setup, external parameters 
+                // and the local container-object !!
+                var context = { container: this.$.map }; // get container as dom-element                    
+                if (this.zoom) context["zoom"] = this.zoom;
+                if (this.cbox) context["center"] = this.cbox.split(",");
+
+                var mapctrl = Object.assign({}, setup.map, this.mapctrl, context);
                 // ************************************
 
-                // A. Specify app-specific initial INSERT-LAYER
-                if (this.mapstyle) {
-                    mapctrl.style = this.mapstyle;
-                }
-
-                // B. Specify initial MAP-CENTER
-                /*if (!this.cbox) this.cbox = setup.cbox;
+                if (!this.cbox) this.cbox = setup.cbox;
                 if (this.cbox) mapctrl.center = this.cbox.split(",");
-                if (!this.zoom) this.zoom = setup.zoom;
-                if (this.zoom) mapctrl.zoom = this.zoom; */
 
+                // 
+                this.mapctrl = mapctrl;  // console.log("map attached", this.mapapikey, this.mapctrl);
 
-                // C. Specify app-specific initial INSERT-LAYER
-                if (this.insertlayer) mapctrl.insertlayer = this.insertlayer;
-
-                // D. "INSTALL" the mapbox-map
-
-                this.mapctrl = mapctrl; //console.log(this.mapapikey, this.mapctrl);
-                this.installmap();
-
-                // E. Setup "MapToast"
-                var toast = this.$.toast, map = this.$.map;
-                toast.fitInto = map;
-                toast.open();  // console.log("Triggered FIRST map-toast", toast, map); 
+                this.installmap(mapctrl);
             },
-
-            toggleMobile: function(mobilemode, oldmode){
-                this._oldstyle = this.mapstyle;
-                this.mapstyle="mapbox://styles/mapbox/light-v9";
+            zoomthemap: function(zoom) { // console.log("zoomthemap", zoom, map);
+                if (map) { map.setZoom(zoom);}
             },
-
-            // app-event-action
-            setMapStyle: function(mapstyle){
-                if (map) {  console.log("CHANGE mapstyle", mapstyle);
-                    map.on('style.load', this.onStyleLoad); // set map-event-action
-                    map.setStyle(mapstyle); // trigger map-event "setStyle""
-                } 
-            },
-
-            // 
-            zoomthemap: function(zoom) {
-                // console.log("zoomthemap", zoom, this.map);
-                if (this.map) {
-                    this.map.setZoom(zoom);
-                } else {
-                    this.mapctrl.zoom = zoom;
-                }
-            },
-
-            centerthemap: function(cbox) {
-                // console.log("centerthemap", cbox, this.map);
-                cbox = cbox.split(",");
-                if (this.map) {
+            centerthemap: function(cbox) { // console.log("centerthemap", cbox, map);
+                if (map) {
+                    cbox = cbox.split(",");
                     cbox = new mapboxgl.LngLat(cbox[0], cbox[1]);
-                    this.map.setCenter(cbox);
-                } else {
-                    this.mapctrl.center = cbox;
+                    map.setCenter(cbox);
                 }
             },
             /**
              * setup a mb-gl-map 
              */
-            installmap: function() {
-                // console.log("MAP installs using:", this.mapctrl);
-                // console.log("apikey= " + this.mapapikey, typeof mapboxgl, mapboxgl);
-                if (typeof mapboxgl == "undefined") {
-                    console.log("cannot install map!"); 
-                    return; 
-                }
-                var scope = this;
+            installmap: function(mapctrl) {
+                // 
+                var that = this;
 
                 mapboxgl.accessToken = this.mapapikey;
 
-                map = new mapboxgl.Map(this.mapctrl);
+                map = new mapboxgl.Map(mapctrl);  // console.log("create map using", this.mapctrl, mapboxgl, map);
 
-                map.on('load', function(e) {  // console.log("map LOADED", e);
+                map.on('load', function() { // console.log("map loaded", map);
+                    // inform app about new center after any move
+                    that.map = map;
 
-                    if (this.zoom) map.setZoom(this.zoom);
-                    if (this.cbox) map.setCenter(this.cbox);
+                    map.on('movestart', function() {
+                        // this.start = map.getCenter();
+                    });
 
-                    // inform about maps center&zoom after every map-move 
-                    function getMapCenter() {
+                    map.on('moveend', function() {
                         let cb = map.getCenter(),
                             bb = map.getBounds(),
                             z = map.getZoom();
 
-                        scope.cbox = cb.lng + "," + cb.lat;
-                        scope.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
-                        scope.zoom = z;
-                        // console.log(cb,bb,scope.cbox,scope.bbox);
-                    };
+                        that.cbox = cb.lng + "," + cb.lat;
+                        that.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
+                        that.zoom = z;
+                        console.log("moveend", that.zoom,that.cbox,that.bbox);
+                    });
 
-                    map.on('moveend', getMapCenter); 
-                    map.on('style.load', scope.onStyleLoad);
-
-                    scope.map = map;    // as msg ??? to other components  
+                    //if zoom is NOT communicated to app via map-object : 
+                    //map.on('zoomend', function() { 
+                    //console.log("zoomed the map");                
+                    //});
+                    // that.map = map;
                 });
-
-            },
-
-            // Compare style of mb-map-api with style-ctrl-parameters (id and url) of map-element
-            // - inform app about id of actual api-mapstyle
-            // - refresh mb-mapstyle if map-element got a new style-parameter meanwhile 
-            //   (especially as SYNC during start-phase with style-menu )     
-            onStyleLoad: function(e){
-                var mapstyleurl = mapscope.mapstyle,
-                    oldstyleid = mapscope.mbid;
-                if (!mapstyleurl) {
-                    return;
-                }  
-
-                var stylesheet = e.style.stylesheet,
-                    newstyleid = stylesheet.id; console.log();
-
-                if (newstyleid != oldstyleid)  {
-                    console.log("MAPSTYLE-CHANGE: [" + oldstyleid+"]", "to ["+ newstyleid +"]", stylesheet)
-                    if (mapstyleurl.indexOf(newstyleid) < 0 ) { // console.log("BUT LAST requested style is:", mapstyleurl );
-                        map.setStyle(mapstyleurl);
-                    } else {
-                        map.off('style.load', mapscope.onStyleLoad); // console.log("onStyleLoad OFF");
-                        mapscope.mbid = newstyleid;     // Trigger to Rebuild themes of contentbox within new style
-                    }
-                }     
-            },
-
-            triggerToast: function(msg) {
-                var toast = this.$.toast, map = this.$.map;
-                toast.fitInto = map;
-                toast.open();  // console.log("Triggered msg into map-toast", msg); 
             }
 
         });

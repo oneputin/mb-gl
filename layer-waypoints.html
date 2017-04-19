@@ -201,6 +201,7 @@ component loadswaypoint data
              */    
             _responseManager : function(rawdata, mbid) {
                 if (!rawdata) return;  // console.log("WP-REFRESH ", rawdata, mbid);  // return; 
+                
                 rawdata  = this._refreshLayer(rawdata);
                 if (!rawdata) return;  
 
@@ -225,7 +226,9 @@ component loadswaypoint data
             // (with mb-preview-properties) 
             _refreshLayer: function(rawdata) {
                 var st = this._layerStatus();  // console.log("CREATELAYER: " + st.id, st, this.querymeta); 
+                
                 if (!st.src) {
+
                     map.addSource(st.id, {
                         "type": "geojson",
                         "data": {
@@ -233,14 +236,17 @@ component loadswaypoint data
                             "features": rawdata.features
                         }
                     });
-                } else { // console.log("REFRESH SRC from ", rawdata);
+
+                } else { console.log("REFRESH WPT-SRC from ", rawdata);
+
                     map.getSource(st.id).setData(rawdata);
-                    // st.src.setData(features);
+                    
                 }
                 
                 if (!st.layer) {
                     var vis = "none";
                     if (this.visible) vis = "visible";
+
                     map.addLayer({
                         "id": st.id,
                         "type": "circle",
@@ -249,8 +255,10 @@ component loadswaypoint data
                             "visibility": vis
                         },
                         "paint": {
-                            "circle-radius": 6,
-                            "circle-color": "#B42222"
+                            "circle-radius": 8,
+                            "circle-color": "#FFFFFF",
+                            "circle-stroke-width": 2,
+                            "circle-stroke-color": "#B42222"
                         },
                         "filter": ["==", "$type", "Point"],
                     });
