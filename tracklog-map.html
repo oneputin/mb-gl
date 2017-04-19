@@ -44,6 +44,7 @@ Draggable mb-point with optional snapping to mb-theme features
                 draggable: {
                     type: Boolean
                 },
+
                 mobilemode: {
                     type: Boolean,
                     value: false
@@ -118,86 +119,11 @@ Draggable mb-point with optional snapping to mb-theme features
                 this.logPointSymbolSetup();
             },
 
-            _install : function(mbid, mbidbefore) { console.log("_install", mbid, mbidbefore);
+            _install : function(mbid, mbidbefore) { console.log("TRACKLOG _install", mbid, mbidbefore);
                 if (mbidbefore) return; 
                 this.logPointSetup();
             },
 
-            // 
-            logPointSymbolSetup : function() {
-                // symbolLayers-1 (permanent)
-                this._logPntLayers = [
-                    {
-                        "id": "logpoint-glow",
-                        "type": "circle",
-                        "source": "logpoint",
-                        "paint": {
-                            "circle-radius": 18,
-                            "circle-color": "#ff0",
-                            "circle-opacity": 0.6
-                        }
-                    }, 
-                    {
-                        "id": "logpoint",
-                        "type": "symbol",
-                        "source": "logpoint",
-                        "layout": {
-                            "icon-image": this.logsymbol,
-                            "icon-rotate": 0,
-                            "text-field": "{title}",
-                            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-                            "text-size": 12,
-                            "text-offset": [0, 0.6],
-                            "text-anchor": "top"
-                        }
-                    }
-                ];
-                // symbolLayers-2 (dragmode only)
-                this._dragPntLayers =  [
-                    {
-                        "id": "dragpnt",
-                        "type": "circle",
-                        "source": "logpoint",
-                        "paint": {
-                            "circle-radius": 40,
-                            "circle-color": "#ff0",
-                            "circle-opacity": 0.2
-                        }
-                    }
-                ];
-            },
-
-            // 
-            logDataBuild: function(indexedFeature) { //, properties) {
-                if (!indexedFeature) return; 
-
-                // A. Collect 
-                var indexedData = { 
-                    "coords": indexedFeature.geometry.coordinates
-                };     
-
-                var properties = this.logitems;  // console.log("logDataBuild from", indexedFeature, properties);
-                properties.forEach(function(prop){
-                    indexedData[prop] = indexedFeature.properties[prop];
-                }.bind(this));
-                // z.B.
-                //"elevs": indexedFeature.properties.coordElevs,
-                //"times": indexedFeature.properties.coordTimes
-
-                this.logdata = indexedData;
-        
-                // B. Initialize logPoint on trackLine 
-                /*if (target.lnglat) { 
-                    var snapSet = this.logPointGet(target.lnglat);
-                    if (snapSet.index) { console.log("Start with targetPoint at index=" + snapSet.index, snapSet);
-                        scope.index = snapSet.index;
-                        //var trackInfo =  scope.trackInfoCollect(snapSet); // snapped.properties);
-                        //if (trackInfo.toast) scope.maptoast = trackInfo.toast; 
-                        // eventscope.popupOnMap(trackInfo);
-                    } 
-                }*/
-
-            },
 
             // map-entity 
             logPointSetup : function(draggable, mobilemode) {  // console.log("ADD logPoint into ["+mbid+"], was ["+mbid_old+"] mobilemode=" + mobilemode);
@@ -396,9 +322,85 @@ Draggable mb-point with optional snapping to mb-theme features
                     }    
                 }  
 
-                map.off('data', testStyleChange); // to avoid duplicates 
+                map.off('data', testStyleChange); console.log("SETUP logPoint"); // to avoid duplicates 
                 logPointReset(); 
                 map.on('data', testStyleChange);
+            },
+
+            // 
+            logPointSymbolSetup : function() {
+                // symbolLayers-1 (permanent)
+                this._logPntLayers = [
+                    {
+                        "id": "logpoint-glow",
+                        "type": "circle",
+                        "source": "logpoint",
+                        "paint": {
+                            "circle-radius": 18,
+                            "circle-color": "#ff0",
+                            "circle-opacity": 0.6
+                        }
+                    }, 
+                    {
+                        "id": "logpoint",
+                        "type": "symbol",
+                        "source": "logpoint",
+                        "layout": {
+                            "icon-image": this.logsymbol,
+                            "icon-rotate": 0,
+                            "text-field": "{title}",
+                            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                            "text-size": 12,
+                            "text-offset": [0, 0.6],
+                            "text-anchor": "top"
+                        }
+                    }
+                ];
+                // symbolLayers-2 (dragmode only)
+                this._dragPntLayers =  [
+                    {
+                        "id": "dragpnt",
+                        "type": "circle",
+                        "source": "logpoint",
+                        "paint": {
+                            "circle-radius": 40,
+                            "circle-color": "#ff0",
+                            "circle-opacity": 0.2
+                        }
+                    }
+                ];
+            },
+
+            // 
+            logDataBuild: function(indexedFeature) { //, properties) {
+                if (!indexedFeature) return; 
+
+                // A. Collect 
+                var indexedData = { 
+                    "coords": indexedFeature.geometry.coordinates
+                };     
+
+                var properties = this.logitems;  // console.log("logDataBuild from", indexedFeature, properties);
+                properties.forEach(function(prop){
+                    indexedData[prop] = indexedFeature.properties[prop];
+                }.bind(this));
+                // z.B.
+                //"elevs": indexedFeature.properties.coordElevs,
+                //"times": indexedFeature.properties.coordTimes
+
+                this.logdata = indexedData;
+        
+                // B. Initialize logPoint on trackLine 
+                /*if (target.lnglat) { 
+                    var snapSet = this.logPointGet(target.lnglat);
+                    if (snapSet.index) { console.log("Start with targetPoint at index=" + snapSet.index, snapSet);
+                        scope.index = snapSet.index;
+                        //var trackInfo =  scope.trackInfoCollect(snapSet); // snapped.properties);
+                        //if (trackInfo.toast) scope.maptoast = trackInfo.toast; 
+                        // eventscope.popupOnMap(trackInfo);
+                    } 
+                }*/
+
             },
 
             // appShell around indexPointSnap

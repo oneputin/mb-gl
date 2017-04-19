@@ -39,9 +39,9 @@
     <link rel="import" href="../tracks-load.html">
     <link rel="import" href="../layer-waypoints.html">
 
-    <link rel="import" href="../tracklog-ctrl.html">
-    <link rel="import" href="../tracklog-view.html">
     <link rel="import" href="../tracklog-map.html">
+    <link rel="import" href="../tracklog-view.html">
+    <link rel="import" href="../tracklog-ctrl.html">
 
     <style is="custom-style">
         .container {
@@ -77,12 +77,6 @@
             width: 100%;
         }
 
-        .mapctrl-log {
-            display: inline-block;
-            position: absolute;
-            top: 12px;
-            right: 12px;
-        }
 
         .flexchild {
             @apply(--layout-flex);
@@ -113,12 +107,18 @@
             @apply(--layout-start);
         }
 
-        tracklog-ctrl {
+        /* tracklog-ctrl {
             padding: 10px;
             display: inline-block;
             @apply(--layout-vertical);
             @apply(--layout-start);
-        }
+        }*/
+        /* .mapctrl-log {
+            display: inline-block;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+        }*/
         
         #radios {
             padding: 10px;
@@ -141,6 +141,7 @@
             --paper-radio-button-unchecked-ink-color: var(--paper-red-900);
             --paper-radio-button-label-color: var(--paper-red-500);
         }
+
     </style>
 </head>
 
@@ -169,11 +170,22 @@
                     <!-- placed here to overlay the map -->
                     <tracklog-view
                         disable = "[[userouting]]"
-                        checked = "[[elevationshow]]"
+                        checked = "{{elevationshow}}"
                         metadata ="[[metadataset]]"
                         logdata ="[[logdata]]"
                         logindex = "{{logindex}}">
                     </tracklog-view>    
+
+                    <!-- (menulike)ctrl of single log-points  
+                    <template is="dom-if" if="{{!userouting}}">-->
+                    <tracklog-ctrl
+                        class = "mapctrl-log"
+                        visible = "[[elevationshow]]"
+                        metadata = "[[metadataset]]"
+                        logdata = "[[logdata]]"
+                        logindex = "{{logindex}}">
+                    </tracklog-ctrl>
+                    <!--</template>-->
 
                     <mb-styles 
                         checked = "{{styleselectshow}}"
@@ -203,32 +215,18 @@
                     </tracks-info>
                     -->
 
-                    <template is="dom-if" if="{{!userouting}}">
-                        <!-- (menulike)ctrl of single log-points  -->
-                        <tracklog-ctrl
-                            class = "mapctrl-log"
-                            visible = "[[!draggable]]"
-                            metadata = "[[metadataset]]"
-                            logdata = "[[logdata]]"
-                            logindex = "{{logindex}}">
-                        </tracklog-ctrl>
-                    </template>
-
 
                     <template is="dom-if" if="{{userouting}}">
                         <div class="mapctrls-bottom">
-                            
                             <!-- ctrl of animation-progress  -->
                             <timer-ctrl 
                                 timerctrl="{{trackctrl}}"
                                 timer="{{timer}}">
                             </timer-ctrl>
-
                             <!-- ctrl of map-orientation -->
                             <mb-orientation-ctrl 
                                 trackmap="[[trackalignmap]]">
                             </mb-orientation-ctrl>
-                            
                         </div>
                     </template>
 
@@ -244,8 +242,8 @@
             <div id="radios">
                 
                 <template is="dom-if" if="{{!userouting}}">
-                    <paper-radio-button checked="{{elevationshow}}">Track Chart</paper-radio-button>
-                    <paper-radio-button checked="{{draggable}}" class="drag">Drag Logpoint</paper-radio-button>
+                    <paper-radio-button checked="{{elevationshow}}">Track details</paper-radio-button>
+                    <paper-radio-button checked="{{draggable}}" class="drag">LogDrag enable</paper-radio-button>
                 </template>    
 
                 <template is="dom-if" if="{{mapstyle}}">

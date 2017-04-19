@@ -1,0 +1,284 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="mb-api.html">
+<link rel="import" href="mb-map-behavior.html">
+
+
+<!--
+`mb-map`
+wraps a map created with mapbox-gl-api.  
+the map-ctrls can be placed as map-overlay or anywhere else 
+
+@demo demo/slidemap.html 
+-->
+
+<dom-module id="mb-map">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                /*position: absolute;*/
+            }
+            #map {
+                position:absolute;
+                width: 100%;
+                height: 100%;
+            }    
+            .container {
+                position: relative;
+                width: 100%;
+                height: 100%;
+            }    
+        </style>
+
+        <div class="container">
+            <div id='map'>
+            </div>
+            <content>
+            </content>
+        </div>
+
+    </template>
+
+    <script>
+        var map, mapscope;
+
+        var setup = {
+            // oneputin
+            mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
+            // My "Light" style
+            map: {
+                style: 'mapbox://styles/mapbox/basic-v9',
+                //style: 'mapbox://styles/oneputin/cimlpzor80051zpmctds91fxn',
+                // center: [13.5, 52.5], // must be synced by client with service
+                insertlayer: 'water'
+            },
+            cbox: "10,52", 
+            zoom: 8
+        };
+
+        Polymer({
+            is: 'mb-map',
+
+            properties: {
+                /**
+                 *  map-object available for query and manipulation outside 
+                 */
+                map: {
+                    type: Object,
+                    notify: true
+                },
+                /**
+                 *  access-key to mapbox-gl api
+                 */
+                mapapikey: {
+                    type: String
+                },
+                /**
+                 *  mapbox-style  
+                 */
+                mapstyle: {
+                    type: String,
+                    notify: true,
+                    observer: 'changeMapStyle'
+                },
+
+                mbid: {
+                    type: String,
+                    notify: true,
+                },
+
+                /**
+                 *  layer of mapbox-style 
+                 *  below (!?!) which userdate are inserted into layerstack   
+                 */
+                insertlayer: {
+                    type: String
+                },
+                
+                /**
+                 *  parameterset to specify mapbox-gl basemap
+                 *  composed from internal defaults an external data 
+                 */
+                mapctrl: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+
+                /**
+                 *  center of visible mapview as csv(Lon,Lat)
+                 */
+                cbox: {
+                    type: String,
+                    notify: true,
+                    observer: 'centerthemap'
+                },
+                /**
+                 *  boundingbox of vidible mapview : LL,UR as Lon,Lat-csv
+                 */
+                bbox: {
+                    type: String,
+                    notify: true
+                },
+
+                zoom: {
+                    type: Number,
+                    observer: 'zoomthemap'
+                }
+
+            },
+
+            behaviors: [
+                Mbb.MapBehavior
+            ],
+
+            observers: [
+                // 'changeMap(mapctrl.*)'
+            ],
+
+            attached: function() {
+                mapscope = this;
+                // Use default apikey if NONE available from app-shell
+                if (!this.mapapikey) this.mapapikey = setup.mapapikey;
+
+                // 
+                var mapcontainer = {
+                    container: this.$.map // get container as dom-element  
+                };
+
+                // ************************************
+                // Compile basic map-parameters from 
+                //      internal setup (default), 
+                //      external parameters   and
+                //      the local container-object !!
+                var mapctrl = Object.assign({}, setup.map, this.mapctrl, mapcontainer);
+                // ************************************
+
+                // A. Specify app-specific initial INSERT-LAYER
+                if (this.mapstyle) {
+                    mapctrl.style = this.mapstyle;
+                }
+
+                // B. Specify initial MAP-CENTER
+                /*if (!this.cbox) this.cbox = setup.cbox;
+                if (this.cbox) mapctrl.center = this.cbox.split(",");
+                if (!this.zoom) this.zoom = setup.zoom;
+                if (this.zoom) mapctrl.zoom = this.zoom; */
+
+
+                // C. Specify app-specific initial INSERT-LAYER
+                if (this.insertlayer) mapctrl.insertlayer = this.insertlayer;
+
+                // D. "INSTALL" the mapbox-map
+
+                this.mapctrl = mapctrl; //console.log(this.mapapikey, this.mapctrl);
+
+                this.installmap();
+            },
+
+            // app-event-action
+            changeMapStyle: function(mapstyle){
+                if (map) {  // console.log("CHANGE mapstyle", mapstyle);
+                    map.on('data', this.onStyleChange); // set map-event-action  
+                    map.setStyle(mapstyle); // trigger map-event "setStyle""
+                }    
+            },
+
+            // 
+            zoomthemap: function(zoom) {
+                // console.log("zoomthemap", zoom, this.map);
+                if (this.map) {
+                    this.map.setZoom(zoom);
+                } else {
+                    this.mapctrl.zoom = zoom;
+                }
+            },
+
+            // 
+            centerthemap: function(cbox) {
+                // console.log("centerthemap", cbox, this.map);
+                cbox = cbox.split(",");
+                if (this.map) {
+                    cbox = new mapboxgl.LngLat(cbox[0], cbox[1]);
+                    this.map.setCenter(cbox);
+                } else {
+                    this.mapctrl.center = cbox;
+                }
+            },
+            /**
+             * setup a mb-gl-map 
+             */
+            installmap: function() {
+                // console.log("MAP installs using:", this.mapctrl);
+                // console.log("apikey= " + this.mapapikey, typeof mapboxgl, mapboxgl);
+                if (typeof mapboxgl == "undefined") {
+                    console.log("cannot install map!"); 
+                    return; 
+                }
+                var that = this;
+
+                mapboxgl.accessToken = this.mapapikey;
+
+                map = new mapboxgl.Map(this.mapctrl);
+
+                map.on('load', function(e) { // console.log("map loaded", map);
+                    // console.log("map LOADED", e);
+
+                    if (this.zoom) map.setZoom(this.zoom);
+                    if (this.cbox) map.setCenter(this.cbox);
+
+                    // inform about map-center after map-move 
+                    map.on('moveend', function() {
+                        let cb = map.getCenter(),
+                            bb = map.getBounds(),
+                            z = map.getZoom();
+
+                        that.cbox = cb.lng + "," + cb.lat;
+                        that.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
+                        that.zoom = z;
+                        // console.log(cb,bb,that.cbox,that.bbox);
+                    });
+
+                    // 
+                    map.on('data', that.onStyleChange);
+                    that.map = map;
+                });
+            },
+
+            // 
+            onStyleChange: function(e){
+
+                if (e.dataType == "style") {
+                    var mapstyleurl = mapscope.mapstyle;
+                    if (!mapstyleurl) {
+                        return;
+                    }   // return;   
+                    // Compare style of mb-map-api with style-ctrl-parameters (id and url) of map-element
+                    // - inform app about id of actual api-mapstyle
+                    // - refresh mb-mapstyle if map-element got a new style-parameter meanwhile 
+                    //   (especially as SYNC during start-phase with style-menu )     
+                    var stylesheet = e.style.stylesheet,
+                        newstyleid = stylesheet.id,
+                        oldstyleid = mapscope.mbid;
+
+                    if (newstyleid != oldstyleid)  {
+                        console.log("MAPSTYLE-CHANGE: [" + oldstyleid+"]", "to ["+ newstyleid +"]")
+                        if (mapstyleurl.indexOf(newstyleid) < 0 ) {
+                            // console.log("BUT LAST requested style is:", mapstyleurl );
+                            map.setStyle(mapstyleurl);
+                        } else {
+                            map.off("data", mapscope.onStyleChange); // console.log("onStyleChange OFF");
+                            mapscope.mbid = newstyleid; // Trigger to Rebuild themes of contentbox within new style
+                        }
+                    }     
+                }
+            }
+
+        });
+    </script>
+</dom-module>

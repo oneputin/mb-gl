@@ -130,7 +130,7 @@ The visual signature can be toogled in sync with the value of the exported servi
                     var mbounds = map.getBounds(),
                         dlat = Math.abs(mbounds.getNorth() - mbounds.getSouth()),
                         dy = Math.abs(newcbox.split(",")[1] - oldcbox.split(",")[1]);
-                        console.log("locationCheck: deltalat, deltay, deltay_min", dlat, dy, this.dy_min);
+                        // console.log("locationCheck: deltalat, deltay, deltay_min", dlat, dy, this.dy_min);
                     if ((dy / dlat) < this.dy_min) return;
                 }
 

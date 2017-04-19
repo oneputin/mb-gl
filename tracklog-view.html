@@ -1,7 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
 
 <link rel="import" href="../google-chart/google-chart.html">
-<link rel="import" href="mb-map-behavior.html">
 <link rel="import" href="tracks-behavior.html">
 
 <!--
@@ -28,39 +28,80 @@ container for presentation of track-properties (fi. elevations)
             :host {
                 display: block;
                 position: absolute;
-                z-index: 9;
                 top: 0;
-               
+                right: 0; 
+                z-index: 9;
+
+                /* if to center 
+                height: 50%;
+                width: 50%;
                 left: 50%;
                 margin-right: -50%;
-                transform: translate(-50%, 0);
+                transform: translate(-50%, 0); */
 
                 font: 0.8em Courier, Lucida;
-                background-color: rgba(255,64,129,0.8); /*#ff4081*/
+                /*background-color: rgba(255,64,129,0.8); */ /*#ff4081*/
+                background-color: rgba(255,255,255,0.3); /*#ff4081*/
                 color: white;  
                  
                 padding: 10px;
             }
 
-            #zlog  {
-                height: 400px;
+            #logchart  {
+                position : absolute;
+                width: 100px;
+                height: 100px;
+            }
+
+            .chartctrls {
+                display: block;
+                /*display: inline-block;
+                position: absolute;*/
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+                /*top: 12px;*/
+                bottom : 5px;
+                color : black;
+                /*height : 50px;*/
                 width: 100%;
+                z-index: 99;
+            }
+
+            .flexchild {
+                @apply(--layout-flex);
             }
 
             #metaxa {
                 color: blue;
             }
+
+            #container {
+                /*position: relative;*/
+                /*width: 100%;
+                height: 100%;*/
+            }
+
         </style>
+
         <template is="dom-if" if="{{zdata}}">
-            <pre><b>Checking TP-Index: </b>[[logindex]]</pre>
-            <google-chart
-                id="zlog"
-                type="line"
-                selection="{{chartselection}}"
-                options='{{chartoptions}}'
-                cols='[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
-                rows='[[zdata]]'>
-            </google-chart>
+            
+            <!--<div id="container" class="flexchild">-->
+                <google-chart
+                    id="logchart"
+                    type="line"
+                    cols='[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
+                    selection="{{chartselection}}"
+                    options='[[chartoptions]]'
+                    rows='[[zdata]]'>
+                </google-chart>
+            <!--</div>-->
+
+            <div class="chartctrls">
+                <pre class="flexchild"><b>Checking TP-Index: </b>[[logindex]]</pre>
+                <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
+                <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
+            </div>
+
         </template>
 
         <div id="textcontent"> 
@@ -80,8 +121,7 @@ container for presentation of track-properties (fi. elevations)
                 },
 
                 logdata: {
-                    type: Array,
-                    observer: 'checkindata'
+                    type: Array // , observer: 'checkindata'
                 },
 
                 logindex: {
@@ -95,31 +135,81 @@ container for presentation of track-properties (fi. elevations)
                     observer: 'getChartSelection'
                 },
 
-                disable: {
+                chartoptions: {
+                    type: Object,
+                    value : {
+                        "title": "Track Elevations [m NN]",
+                        "legend": "none",
+                        "width": 100,
+                        "height": 100
+                    }     
+                },
+
+                minsize : {
+                    type: Number,
+                    value: 240
+                },
+                maxsize : {
+                    type: Number,
+                    value: 640
+                },
+                _maxsize: {
                     type: Boolean,
+                    value : false,
+                    observer : '_toggleSize'
+                },
+
+                disable: {
+                    type: Boolean
                 },
 
                 checked: {
                     type: Boolean,
-                    value: true,
-                    observer: "toggleElement"
+                    value: false,
+                    observer: "_toggleVisibility",
+                    notify : true
                 }
             },
 
             behaviors: [
                 Mbb.TracksBehavior,
-                Mbb.MapBehavior
             ],                
 
             observers: [
-
+                'refreshLogChart(logdata, chartoptions)'
             ],
 
-            ready: function() {
+            attached: function() {
                 // console.log("ZITEMS:", this.zitems) 
+                // this.$.zlog.redraw();
             },
 
-            toggleElement: function(checked) {
+            _closer : function() {
+                this.checked = false;
+                // this._toggleVisibility(false); 
+            },
+
+            _toggle : function() {
+                this._maxsize = !this._maxsize;
+            },
+
+            _toggleSize: function() { console.log("TOGGLE", this.chartoptions, this._maxsize); 
+                
+                if (!this._maxsize) {
+                    this.style.width = this.minsize + "px";
+                    this.style.height = this.minsize + "px";
+                    this.set('chartoptions.width', this.minsize - 40);
+                    this.set('chartoptions.height', this.minsize - 40);
+                } else {
+                    this.style.width = this.maxsize + "px";
+                    this.style.height = this.maxsize + "px";
+                    this.set('chartoptions.width', this.maxsize - 40);
+                    this.set('chartoptions.height', this.maxsize - 40);
+                }
+            },    
+
+            // 
+            _toggleVisibility: function(checked) {
                 if (checked) {
                     this.style.display = "block";
                 } else {
@@ -143,37 +233,24 @@ container for presentation of track-properties (fi. elevations)
                 this.chartselection = chartpoints;
             },
 
-
-            /**
-             * Select/Hilite a feature on the map  (fi. zoomTo)
-             * @param      {object}  f       { mapbox-jeature }
-             */
-            checkindata: function(logdata) { // console.log("logdata",logdata);
-                if (this.disable || !logdata) return; 
-                // B. Refresh Generic Track viewer(s) (Menu, Chart) 
-                this.refreshElevChart(logdata); 
-            },
-
-            // Refresh parameters of chart-element <google-chart>
-            refreshElevChart: function(pp){
+            // Refresh data and/or parameters of chart-element <google-chart>
+            refreshLogChart: function(chartdata, chartoptions){
+                if (this.disable || !chartdata) return;  // console.log("CHARTOPTIONS ::: ", chartdata, chartoptions); 
                 var scope = this,
-                    times = pp["coordTimes"],
-                    elevs = pp["coordElevs"];
+                    times = chartdata["coordTimes"],
+                    elevs = chartdata["coordElevs"];
                 
                 if (!times || !elevs || !times.length || !elevs.length) {
-                    console.log("No data for elevetion-chart in ", pp); 
+                    console.log("No data for elevetion-chart in ", chartdata); 
                     this.zdata = [];
                     return;
                 } // console.log(times, elevs); 
 
                 // B. Create Chart 
-                // B.1 Setup ChartOptions
-                scope.chartoptions = {
-                    "title": "Track Elevations [m NN]",
-                    "width": 800,
-                    "height": 500,
-                    "legend": "none"
-                };   
+                // B.1 Option: Update ChartOptions
+
+                //this.chartoptions = {
+                //};   
 
                 // B.2 Create TimeChart-data with argument in datetime-format
                 var zdata = [];
