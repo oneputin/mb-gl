@@ -102,17 +102,32 @@
         
         mb-content-browser {
             padding: 10px;
-            display: inline-block;
-            @apply(--layout-vertical);
-            @apply(--layout-start);
+            top : 0px;
+            left : 0px;
+            z-index: 9;
+            background-color: rgba(255,255,255,0.3); /*#ff4081*/
+            color: white;  
+            /*display: inline-block;*/
+            /*@apply(--layout-vertical);
+            @apply(--layout-start);*/
+        }
+
+        tracklog-view {
+            top: 0;
+            right: 0; 
+            z-index: 9;
+            padding: 10px;
         }
 
         /* tracklog-ctrl {
+            top : 0px;
+            left : 0px;
             padding: 10px;
             display: inline-block;
             @apply(--layout-vertical);
             @apply(--layout-start);
         }*/
+
         /* .mapctrl-log {
             display: inline-block;
             position: absolute;
@@ -216,9 +231,10 @@
                     </mb-distance>
 
                     <mb-location-log 
-                        checked="[[locationlogshow]]"
+                        checked
                         lnglat="{{lnglat}}" 
-                        map="[[map]]"> 
+                        map="[[map]]"
+                        mousemode="[[mousemode]]"> 
                     </mb-location-log>
 
                     <!-- not implemented 
@@ -266,7 +282,7 @@
                         <paper-radio-button class="style" checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
                     </template>
                     <paper-radio-button checked="{{mapmeasureshow}}">Measure Dist</paper-radio-button>
-                    <paper-radio-button checked="{{locationlogshow}}">Location Log</paper-radio-button>
+                    <paper-radio-button checked="{{mousemode}}">GetMouseLocation</paper-radio-button>
                 </template>   
 
                 <paper-radio-button checked="{{mobilemode}}">Simulate Mobiles</paper-radio-button>
@@ -405,7 +421,7 @@
     scope.dragpointshow = false;
     scope.waypointshow = false;
     scope.styleselectshow = false;
-    scope.locationlogshow = true;
+    scope.mousemode = false; // 
     
     // Animation- INIT
     scope.trackalignmap; // 

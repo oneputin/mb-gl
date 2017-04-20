@@ -63,9 +63,9 @@ wraps a distance utility
                     notify: true
                 },
 
-                srcmode: {
-                    type: String,
-                    value: "mouse"
+                mousemode: {
+                    type: Boolean,
+                    value : false
                 },
                 /**
                  * creating with formatter from mb-tools
@@ -78,7 +78,7 @@ wraps a distance utility
                 checked: {
                     type: Boolean,
                     value: true,
-                    observer: "toggleTool"
+                    observer: "toggleVisibility"
                 }
             },
 
@@ -86,51 +86,56 @@ wraps a distance utility
                 Mbb.MapBehavior,
             ],
 
-            observers: [],
+            observers: [
+                'toggleMode(mousemode, checked)'
+            ],
 
             attached: function() {
-                if (typeof this.checked == 'undefined') this.toggleTool(true);
+                if (typeof this.checked == 'undefined') this.toggleVisibility(true);
                 logscope = this;  //console.log("logscope", logscope);
             },
 
             // 
-            toggleTool: function(checked) {
+            toggleVisibility: function(checked) {
                 if (!this.map) return;
-                // var msg = "location ctrl toggled " + checked ; // console.log(msg, "srcmode=", this.srcmode);
-                
                 if (checked) {
-                    this.style.display = "block";
-
-                    if (this.srcmode == "mouse") {
-                        this.map.on('mousemove', this.onMoveEvent);
-                    } else if (this.srcmode == "mapcenter") {
-                        this.map.on('move', this.onMoveEvent);
-                    }
-                } else {
-                    console.log("toggleTool NONE");  
+                    this.style.display = "block";                    
+                } else {   // console.log("toggleVisibility NONE");  
                     this.style.display = "none";
-
-                    if (this.srcmode == "mouse") { // 
-                        this.map.off('mousemove', this.onMoveEvent);
-                    } else if (this.srcmode == "mapcenter") {
-                        this.map.off('move', this.onMoveEvent);
-                    }
                 }
             },
-
             // 
+            toggleMode : function(mousemode, checked) {
+                if (!this.map) return; 
+
+                // 1. always set (previous) events OFF (if existing) 
+                this.map.off('move', this.onMoveEvent);
+                this.map.off('mousemove', this.onMoveEvent);
+
+                // 2. set ON specific event only if log-element is checked TRUE
+                if (checked) {
+                    if (mousemode) {
+                        this.map.on('mousemove', this.onMoveEvent);
+                    } else {
+                        this.map.on('move', this.onMoveEvent);
+                    }
+                } 
+            },
+
+            // derive location-info from mouse or map-center
             onMoveEvent: function(e) {
-                if (logscope.srcmode == "mapcenter") logscope.lnglat = logscope.map.getCenter();
-                else logscope.lnglat = e.lngLat;
-                // console.log("MOVE-Event", e, logscope.lnglat);
+                if (logscope.mousemode) {
+                    logscope.lnglat = e.lngLat;
+                } else {
+                    logscope.lnglat = logscope.map.getCenter();
+                } 
             },
 
             // 
             setupTool: function(map) {
-                // if (!this.map) return;
-                if (this.checked && this.map) {
-                    if (this.srcmode == "mouse") this.map.on('mousemove', this.onMoveEvent);
-                    else if (this.srcmode == "mapcenter") this.map.on('move', this.onMoveEvent);
+                if (map) { // console.log("FIRST locationLogMode" , this.mousemode);
+                    this.toggleMode(this.mousemode, this.checked); 
+                    this.lnglat = this.map.getCenter(); // INITIAL location
                 }
             },
 

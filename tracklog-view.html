@@ -29,9 +29,15 @@ container for presentation of track-properties (fi. elevations)
             :host {
                 display: block;
                 position: absolute;
+                font: 0.8em Courier, Lucida;
+                color: white;                   
+
+                /*background-color: rgba(255,64,129,0.8); */ /*#ff4081*/
+                /*
                 top: 0;
                 right: 0; 
                 z-index: 9;
+                padding: 10px;*/
 
                 /* if to center 
                 height: 50%;
@@ -40,11 +46,6 @@ container for presentation of track-properties (fi. elevations)
                 margin-right: -50%;
                 transform: translate(-50%, 0); */
 
-                font: 0.8em Courier, Lucida;
-                /*background-color: rgba(255,64,129,0.8); */ /*#ff4081*/
-                color: white;  
-                 
-                padding: 10px;
             }
 
             #logchart  {
@@ -163,13 +164,14 @@ container for presentation of track-properties (fi. elevations)
 
                 minsize : {
                     type: Number,
-                    value: 240
+                    value: 200
                 },
                 maxsize : {
                     type: Number,
-                    value: 640
+                    value: 600
                 },
-                _maxsize: {
+
+                _issized: {
                     type: Boolean,
                     value : false,
                     observer : '_toggleSize'
@@ -196,55 +198,66 @@ container for presentation of track-properties (fi. elevations)
             ],
 
             attached: function() {
-                // console.log("ZITEMS:", this.zitems) 
-                // this.$.zlog.redraw();
+                this._toggleSize(50); 
             },
 
             _closer : function() {
                 // this.checked = false;
                 this._toggleVisibility(false); 
+                this._issized = false;
             },
 
             _toggle : function() {
-                this._maxsize = !this._maxsize;
+                this._issized = !this._issized;
             },
 
-            _toggleSize: function() { // console.log("TOGGLE", this.chartoptions, this._maxsize); 
-                
-                if (!this._maxsize) {
-                    this.style.width = this.minsize + "px";
-                    this.style.height = this.minsize + "px";
-                    this.set('chartoptions.width', this.minsize - 40);
-                    this.set('chartoptions.height', this.minsize - 40);
-                } else {
-                    this.style.width = this.maxsize + "px";
-                    this.style.height = this.maxsize + "px";
-                    this.set('chartoptions.width', this.maxsize - 40);
-                    this.set('chartoptions.height', this.maxsize - 40);
-                }
+            _toggleSize: function(size) { 
+                // debounce to enable _issized-flipflop
+                this.debounce("size", function(){ // console.log("TOGGLESIZE", typeof size, size,  this._issized); // , typethis.chartoptions);                 
+                    if (typeof size == "number") {
+                        this.style.width = size + "px";
+                        this.style.height = size + "px";
+                    } else if (!this._issized) {
+                        this.style.width = this.minsize + 40 + "px";
+                        this.style.height = this.minsize + "px";
+                        size = this.minsize;
+                    } else {
+                        this.style.width = this.maxsize + 40 + "px";
+                        this.style.height = this.maxsize + "px";
+                        size = this.maxsize;
+                    }
+                    this.set('chartoptions.width', size);
+                    this.set('chartoptions.height', size);
+                }, 50);
             },    
 
             // alternative visibility of control and container
-            _toggleVisibility: function(flag) {
+            _toggleVisibility: function(flag) {                
                 
                 if (flag == null) flag = !this.checked; 
+                if (!flag)  this._toggleSize(50);
+                else {
+                    this._issized = true;
+                    this._issized = false;
+                }
                 this.checked = flag;
                 return; 
 
-                // old 
-                var cont = this.$$("#container"),
-                    ctrl = this.$$("#control"); 
-                    //console.log(flag, cont.style, ctrl.style);
-                if (flag) { console.log("SHOW", flag);
-                    cont.style.display == "block";
-                    ctrl.style.display == "none"
-                    // this.style.display = "block";
-                } else { console.log("HIDE", flag);
-                    cont.style.display == "none";
-                    ctrl.style.display == "block"
-                    // this.style.display = "none";
-                }
-                this.updateStyles();
+                /* old approach
+                    var cont = this.$$("#container"),
+                        ctrl = this.$$("#control"); 
+                        //console.log(flag, cont.style, ctrl.style);
+                    if (flag) { console.log("SHOW", flag);
+                        cont.style.display == "block";
+                        ctrl.style.display == "none"
+                        // this.style.display = "block";
+                    } else { console.log("HIDE", flag);
+                        cont.style.display == "none";
+                        ctrl.style.display == "block"
+                        // this.style.display = "none";
+                    }
+                    this.updateStyles(); 
+                */
             },    
 
             getChartSelection: function(chartpoints){

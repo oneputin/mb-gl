@@ -119,7 +119,7 @@ Draggable mb-point with optional snapping to mb-theme features
                 this.logPointSymbolSetup();
             },
 
-            _install : function(mbid, mbidbefore) { console.log("TRACKLOG _install", mbid, mbidbefore);
+            _install : function(mbid, mbidbefore) { // console.log("TRACKLOG _install", mbid, mbidbefore);
                 if (mbidbefore) return; 
                 this.logPointSetup();
             },
@@ -322,7 +322,7 @@ Draggable mb-point with optional snapping to mb-theme features
                     }    
                 }  
 
-                map.off('data', testStyleChange); console.log("SETUP logPoint"); // to avoid duplicates 
+                map.off('data', testStyleChange); // console.log("SETUP logPoint"); // to avoid duplicates 
                 logPointReset(); 
                 map.on('data', testStyleChange);
             },

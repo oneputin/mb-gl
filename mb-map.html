@@ -168,11 +168,8 @@ the map-object can be ctrld from outside
                 map = new mapboxgl.Map(mapctrl);  // console.log("create map using", this.mapctrl, mapboxgl, map);
 
                 map.on('load', function() { // console.log("map loaded", map);
+                    
                     // inform app about new center after any move
-                    map.on('movestart', function() {
-                        // this.start = map.getCenter();
-                    });
-
                     map.on('moveend', function() {
                         let cb = map.getCenter(),
                             bb = map.getBounds(),
@@ -184,17 +181,20 @@ the map-object can be ctrld from outside
                         // console.log("moveend", that.zoom,that.cbox,that.bbox);
                     });
 
+                    //map.on('movestart', function() {
+                        // prepare calculation of move-distance
+                        // this.start = map.getCenter();
+                    //});
+
+                    //map.on('zoomend', function() { 
+                    //if zoom is NOT communicated to app via map-object : 
+                    //});
+
+                    // console.log("mapbox map is loaded");                
+                    // LOAD of json-themes will be triggered by changeMapStyle 
+                    // if this.map is set
                     that.map = map;
 
-                    //if zoom is NOT communicated to app via map-object : 
-                    //map.on('zoomend', function() { 
-                    //});
-                    console.log("map is loaded");                
-
-                    //NOT required: Triggered by 
-                    //that.changeMapStyle(that.mapstyle);  
-                    //map.on('data', that.onStyleChange);
-                    //map.setStyle(mapstyle); // trigger map-event "setStyle""
                 });
             },
 
@@ -224,12 +224,13 @@ the map-object can be ctrld from outside
 
                     if (newstyleid != oldstyleid)  {
                         if (mapstyleurl.indexOf(newstyleid) < 0 ) {
+                            map.setStyle(mapstyleurl);
                             console.log("MAPSTYLE-CHANGE: [" + oldstyleid+"]", "to ["+ newstyleid +"]")
                             // console.log("BUT LAST requested style is:", mapstyleurl );
-                            map.setStyle(mapstyleurl);
                         } else {
                             map.off("data", mapscope.onStyleChange); // console.log("onStyleChange OFF");
-                            mapscope.mbid = newstyleid;  console.log("TRIGGER-Integration of json-themes(contentbox, track, waypoint) into new style"); 
+                            mapscope.mbid = newstyleid;  
+                            console.log("TRIGGER (Re)Integration of json-themes(contentbox, track, waypoint) into new style"); 
                         }
                     }     
                 }
