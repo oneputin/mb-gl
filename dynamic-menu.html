@@ -32,7 +32,8 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
             }
         </style>
         
-        <template is="dom-if" if="{{menuitems}}">
+        <!--<template is="dom-if" if="{{menuitems}}">-->
+        <template is="dom-if" if="{{_selectset}}">
             <paper-dropdown-menu class="dataitems" label="{{menulabel}}">
                 <paper-listbox id="listbox" class="dropdown-content" 
                     on-iron-items-changed="_menuChanged" 

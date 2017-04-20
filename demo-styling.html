@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="https://polygit.org/components/">
+  <script src="webcomponentsjs/webcomponents-lite.min.js"></script>
+  <link href="polymer/polymer.html" rel="import"/> 
+  <link href="paper-card/paper-card.html" rel="import"/>
+</head>
+
+<body>
+  <my-wrapper></my-wrapper>
+  
+  <dom-module id="my-elem">
+    <template>
+      <style>
+        .card-page {
+          @apply(--my-elem-card-page);
+        }
+      </style>
+      
+      <paper-card heading="my-elem specific style" class="card-page">
+        <div class="card-content">
+          Content here
+        </div>
+      </paper-card>
+      <paper-card heading="Default style" class="unstyled-page">
+        <div class="card-content">
+          Content here
+        </div>
+      </paper-card>
+    </template>
+  </dom-module>
+  
+  <dom-module id="my-wrapper">
+    <template>
+      <style>
+        /*will be ignored*/
+        paper-card {
+          width: 200px;
+        }
+        
+        my-elem{
+          --paper-card: {
+            color: blue;
+            display: block;
+          }
+        }
+        
+        my-elem {
+          --my-elem-card-page: {
+              color: red;
+          }
+        }
+      </style>
+      
+      <my-elem></my-elem>
+    </template>
+  </dom-module>
+  
+  <script>
+    Polymer({
+      is: 'my-elem'
+    });
+
+    Polymer({
+      is: 'my-wrapper'
+    });
+  </script>
+
+</body>
+</html>

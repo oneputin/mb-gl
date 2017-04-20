@@ -167,25 +167,39 @@
                     mapctrl = "[[mapctrl]]"
                     maptoast = "[[maptoast]]">
 
+                    <mb-content-browser 
+                        indexurl="[[indexurl]]" 
+                        metadatasetslabel="[[metadatasetslabel]]" 
+                        metadataset="{{metadataset}}"
+
+                        dataset = "[[dataset]]" 
+                        selectitem="{{datasetitem}}"> 
+
+                        <tracks-load 
+                            routemode = "[[routemode]]"
+                            tracksetmeta = "[[metadataset]]" 
+                            trackdata = "{{trackdata}}"> 
+                        </tracks-load>
+                    </mb-content-browser>
+
+
                     <!-- placed here to overlay the map -->
                     <tracklog-view
                         disable = "[[userouting]]"
-                        checked = "{{elevationshow}}"
+                        checked = "{{trackdetailshow}}"
                         metadata ="[[metadataset]]"
                         logdata ="[[logdata]]"
                         logindex = "{{logindex}}">
                     </tracklog-view>    
 
                     <!-- (menulike)ctrl of single log-points  
-                    <template is="dom-if" if="{{!userouting}}">-->
                     <tracklog-ctrl
                         class = "mapctrl-log"
-                        visible = "[[elevationshow]]"
+                        visible = "[[trackdetailshow]]"
                         metadata = "[[metadataset]]"
                         logdata = "[[logdata]]"
                         logindex = "{{logindex}}">
-                    </tracklog-ctrl>
-                    <!--</template>-->
+                    </tracklog-ctrl>-->
 
                     <mb-styles 
                         checked = "{{styleselectshow}}"
@@ -215,7 +229,6 @@
                     </tracks-info>
                     -->
 
-
                     <template is="dom-if" if="{{userouting}}">
                         <div class="mapctrls-bottom">
                             <!-- ctrl of animation-progress  -->
@@ -242,7 +255,7 @@
             <div id="radios">
                 
                 <template is="dom-if" if="{{!userouting}}">
-                    <paper-radio-button checked="{{elevationshow}}">Track details</paper-radio-button>
+                    <!--<paper-radio-button checked="{{trackdetailshow}}">Track details</paper-radio-button>-->
                     <paper-radio-button checked="{{draggable}}" class="drag">LogDrag enable</paper-radio-button>
                 </template>    
 
@@ -313,6 +326,13 @@
             </tracklog-map>
             <!-- lnglat = "[[lnglat]]"--> 
 
+            <layer-waypoints 
+                mbid = "[[mbid]]" 
+                visible = "[[waypointshow]]" 
+                querymeta = "[[metadataset]]"
+                wpdata = "{{wpdata}}"> 
+            </layer-waypoints>
+
             <!-- SYNC mapcontent from contentbox -->
             <mb-content-manager 
                 map = "[[map]]" 
@@ -328,7 +348,7 @@
             <!-- C. DATA-Supply INTERFACE -->
             <div class="flexchild">
                 
-                <mb-content-browser 
+                <!--<mb-content-browser 
                     indexurl="[[indexurl]]" 
                     metadatasetslabel="[[metadatasetslabel]]" 
                     metadataset="{{metadataset}}"
@@ -341,16 +361,8 @@
                         tracksetmeta = "[[metadataset]]" 
                         trackdata = "{{trackdata}}"> 
                     </tracks-load>
-
-                </mb-content-browser>
+                </mb-content-browser>-->
                 <!-- selectprop="id"--> 
-
-                <layer-waypoints 
-                    mbid = "[[mbid]]" 
-                    visible = "[[waypointshow]]" 
-                    querymeta = "[[metadataset]]"
-                    wpdata = "{{wpdata}}"> 
-                </layer-waypoints>
 
             </div>
 
@@ -373,11 +385,11 @@
     scope.morestyles = "demo-styles.json";
 
     // Data-INIT
-    scope.indexurl = "index-handheld.json"; // list of available datasets
-    scope.basedataurl = ""; // list of available datasets
+    scope.indexurl = "index-handheld-1.json"; // list of available datasets
+    scope.metadatasetslabel="Trackbooks"
     scope.metadataset = {}; // metadata of selected dataset
 
-    scope.metadatasetslabel="Trackbooks"
+    scope.basedataurl = ""; // list of available datasets
     scope.dataset = []; // collection 
     scope.datasetitem = {}; // track/route-object
 
@@ -389,6 +401,7 @@
     // STATE init
     scope.routemode = false; // true; // false
 
+    scope.trackdetailshow = false;
     scope.dragpointshow = false;
     scope.waypointshow = false;
     scope.styleselectshow = false;

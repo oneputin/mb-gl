@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-fab/paper-fab.html">
 
 <link rel="import" href="../google-chart/google-chart.html">
 <link rel="import" href="tracks-behavior.html">
@@ -41,7 +42,6 @@ container for presentation of track-properties (fi. elevations)
 
                 font: 0.8em Courier, Lucida;
                 /*background-color: rgba(255,64,129,0.8); */ /*#ff4081*/
-                background-color: rgba(255,255,255,0.3); /*#ff4081*/
                 color: white;  
                  
                 padding: 10px;
@@ -76,36 +76,52 @@ container for presentation of track-properties (fi. elevations)
             }
 
             #container {
-                /*position: relative;*/
-                /*width: 100%;
-                height: 100%;*/
+                display: block; /*none;*/
+                position: relative;
+                background-color: rgba(255,255,255,0.3); /*#ff4081*/
+            }
+            #control {
+                display: block;
+                position:absolute;
+                right:5px;
+                top:5px;
+                opacity: 0.8;                 
             }
 
         </style>
 
         <template is="dom-if" if="{{zdata}}">
-            
-            <!--<div id="container" class="flexchild">-->
-                <google-chart
-                    id="logchart"
-                    type="line"
-                    cols='[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
-                    selection="{{chartselection}}"
-                    options='[[chartoptions]]'
-                    rows='[[zdata]]'>
-                </google-chart>
-            <!--</div>-->
 
-            <div class="chartctrls">
-                <pre class="flexchild"><b>Checking TP-Index: </b>[[logindex]]</pre>
-                <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
-                <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
-            </div>
+            <template is="dom-if" if="{{!checked}}">
+                <paper-fab 
+                    id = "control" 
+                    class="fab" 
+                    icon="assessment" 
+                    title="heart" 
+                    on-tap="_toggleVisibility">
+                </paper-fab>
+            </template>
+
+            <template is="dom-if" if="{{checked}}">
+                <div id="container">
+                    <google-chart
+                        id="logchart"
+                        type="line"
+                        cols='[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
+                        selection="{{chartselection}}"
+                        options='[[chartoptions]]'
+                        rows='[[zdata]]'>
+                    </google-chart>
+
+                    <div class="chartctrls">
+                        <pre class="flexchild"><b>Checking TP-Index: </b>[[logindex]]</pre>
+                        <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
+                        <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
+                    </div>
+                </div>
+            </template>
 
         </template>
-
-        <div id="textcontent"> 
-        </div>
 
     </template>
 
@@ -166,7 +182,7 @@ container for presentation of track-properties (fi. elevations)
                 checked: {
                     type: Boolean,
                     value: false,
-                    observer: "_toggleVisibility",
+                    //observer: "_toggleVisibility",
                     notify : true
                 }
             },
@@ -185,15 +201,15 @@ container for presentation of track-properties (fi. elevations)
             },
 
             _closer : function() {
-                this.checked = false;
-                // this._toggleVisibility(false); 
+                // this.checked = false;
+                this._toggleVisibility(false); 
             },
 
             _toggle : function() {
                 this._maxsize = !this._maxsize;
             },
 
-            _toggleSize: function() { console.log("TOGGLE", this.chartoptions, this._maxsize); 
+            _toggleSize: function() { // console.log("TOGGLE", this.chartoptions, this._maxsize); 
                 
                 if (!this._maxsize) {
                     this.style.width = this.minsize + "px";
@@ -208,13 +224,27 @@ container for presentation of track-properties (fi. elevations)
                 }
             },    
 
-            // 
-            _toggleVisibility: function(checked) {
-                if (checked) {
-                    this.style.display = "block";
-                } else {
-                    this.style.display = "none";
+            // alternative visibility of control and container
+            _toggleVisibility: function(flag) {
+                
+                if (flag == null) flag = !this.checked; 
+                this.checked = flag;
+                return; 
+
+                // old 
+                var cont = this.$$("#container"),
+                    ctrl = this.$$("#control"); 
+                    //console.log(flag, cont.style, ctrl.style);
+                if (flag) { console.log("SHOW", flag);
+                    cont.style.display == "block";
+                    ctrl.style.display == "none"
+                    // this.style.display = "block";
+                } else { console.log("HIDE", flag);
+                    cont.style.display == "none";
+                    ctrl.style.display == "block"
+                    // this.style.display = "none";
                 }
+                this.updateStyles();
             },    
 
             getChartSelection: function(chartpoints){

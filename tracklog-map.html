@@ -252,7 +252,7 @@ Draggable mb-point with optional snapping to mb-theme features
                 }
 
                 function logPointReset(draggable){
-                    if (!draggable) draggable = scope.draggable; console.log("logPointReset. draggable=",draggable);
+                    if (!draggable) draggable = scope.draggable; //console.log("logPointReset. draggable=",draggable);
 
                     map.off('mousemove', mouseMove); 
                     map.off('mousedown', mouseDown); 
@@ -261,14 +261,14 @@ Draggable mb-point with optional snapping to mb-theme features
                     map.off('touchstart', touchStart); 
                     
                     // map.off('data', testStyleChange);
-                    console.log("dragpntEvents REMOVED");
+                    // console.log("dragpntEvents REMOVED");
 
                     if (!map.getSource('logpoint')) {
                         // var geojsonpnt = scope._logPointGeojson([0,0], "drag"); 
                         map.addSource('logpoint', { 
                             type: 'geojson', 
                             data: scope._logPointGeojson([0,0]) 
-                        }); console.log("logpnt SOURCE ADDED"); // , map.getSource('logpoint')); 
+                        }); //console.log("logpnt SOURCE ADDED"); // , map.getSource('logpoint')); 
                     }
 
                     if (!map.getLayer('logpoint')) {
@@ -303,7 +303,7 @@ Draggable mb-point with optional snapping to mb-theme features
                             map.on('mousemove', mouseMove);
                             map.on('mousedown', mouseDown, true);
                         }  
-                    } console.log("Refreshed logPoint-MAP-listeners ", map._listeners); 
+                    } // console.log("Refreshed logPoint-MAP-listeners ", map._listeners); 
                 }
 
                 // reset logPoint in new Style
