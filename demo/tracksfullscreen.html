@@ -17,8 +17,6 @@
     <link rel="import" href="../../paper-radio-button/paper-radio-button.html"> <!-- ctrls  -->
 
     <!-- app-components related to map-api --> 
-    
-    <link rel="import" href="../mb-api.html">
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
     <link rel="import" href="../mb-styles.html">
@@ -52,22 +50,23 @@
         }
         
         .content_area {
-            /*width: 60%;*/ 
-            top:0; bottom:0;
+            position:relative; top:0; bottom:0; width:100%; 
+            /*width: 800px; height: 670px;*/
         }
 
         .ctrls_area {
             /* itself flex layouted div */
-            width: 200px;
+            width: 0; 
+            /*width: 40%;x
             margin-left: 10px;
             @apply(--layout-vertical);
             /*@apply(--layout-start);*/
         }
 
         mb-map {
+            position:absolute; top:0; bottom:0; width:100%;
             /*width: 55%;*/
-            width: 800px;
-            height: 670px;
+            /*width: 800px; height: 670px;*/
         }
         
         .mapctrls-bottom {

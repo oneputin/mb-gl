@@ -1,3 +1,7 @@
+
+<!--<script src='assets/turf-mb.min.js'></script>-->
+<script src='//api.tiles.mapbox.com/mapbox.js/plugins/turf/v2.0.0/turf.min.js' charset='utf-8'></script>
+
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../kml-json/kml-json.html">
 <link rel="import" href="tracks-behavior.html">
@@ -219,19 +223,21 @@ Optional: create quick-preview-data
             }
 
             // append vec-gis-properties 
+            // bbox of every feature and of whole dataset
             function addbbox(jsondata) {
                 var bb, ffa, ffc=[];
                 jsondata.features.forEach(function(f){
                     ffa = [];
-                    f.geometry.coordinates.forEach(function(cc){
+                    f.geometry.coordinates.forEach(function(cc){ // console.log(cc);
                         ffa.push(turf.point(cc.slice(0,2)));
-                    })                        
+                    });  console.log(ffa);
                     bb = turf.bbox(turf.featureCollection(ffa)); // console.log("bb of:"+ffa.length, bb);
                     f.properties.bbox = bb;
+                    // collect
                     ffc = ffc.concat(ffa);
                 })
                 var bbox = turf.bbox(turf.featureCollection(ffc));
-                jsondata.bbox = bbox; // console.log("ADDBBOX", srcdata); 
+                jsondata.bbox = bbox; // console.log("ADDBBOX", jsondata); 
                 return jsondata;
             } 
 
