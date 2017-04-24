@@ -3,9 +3,14 @@
 wraps the mapbox-gl api (js and css)
 Versions: 0.32.1, 0.33.0
 -->
-<script src='//api.tiles.mapbox.com/mapbox.js/plugins/turf/v2.0.0/turf.min.js' charset='utf-8'></script>
+<!--<script src='//api.tiles.mapbox.com/mapbox.js/plugins/turf/v2.0.0/turf.min.js' charset='utf-8'></script>-->
 <!--<script src='assets/turf.min.js'></script>-->
-<!--<script src='assets/turf-mb.min.js'></script>-->
+<script src='assets/turf-mb.min.js'></script>
+<script>  // required for "reduced" turf-files: https://turfjs-builder.herokuapp.com/  
+  Object.keys(turf.helpers).forEach(function(k){
+      turf[k] = turf.helpers[k];
+  })      
+</script>    
 
 <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.js'></script>
 <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.css' rel='stylesheet' />

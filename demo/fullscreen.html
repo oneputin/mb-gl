@@ -45,11 +45,13 @@
 
     <style is="custom-style">
         .container {
+            top: 0; bottom: 0; /*height: 500px;*/
+            height: 100vh;
             @apply(--layout-horizontal);
             /*align-items: flex-start;*/
         }
         
-        .content_area {
+        .map_area {
             position:relative; top:0; bottom:0; width:100%; 
             /*width: 800px; height: 670px;*/
         }
@@ -168,7 +170,7 @@
     <div class="container">
 
         <!-- LEFT block: CONTENT (Map, diagram, list) -->
-        <div id="content" class="content_area flexchild">
+        <div id="content" class="map_area flexchild">
 
             <template is="dom-if" if="{{mapstyle}}">
                 
@@ -266,57 +268,10 @@
 
         </div>
 
+
         <!-- RIGHT Block: several external app-controls -->
         <div class="ctrls_area">
-            <!-- element with [n] visible features -->
-            <div id="radios">
-                
-                <template is="dom-if" if="{{!userouting}}">
-                    <!--<paper-radio-button checked="{{trackdetailshow}}">Track details</paper-radio-button>-->
-                    <paper-radio-button checked="{{draggable}}" class="drag">LogDrag enable</paper-radio-button>
-                </template>    
 
-                <template is="dom-if" if="{{mapstyle}}">
-                    <paper-radio-button checked="{{waypointshow}}">Waypoints</paper-radio-button>
-                    <paper-radio-button class="animate red" checked="{{routemode}}">Track Animation</paper-radio-button>
-                    <template is="dom-if" if="{{!userouting}}">
-                        <paper-radio-button class="style" checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
-                    </template>
-                    <paper-radio-button checked="{{mapmeasureshow}}">Measure Dist</paper-radio-button>
-                    <paper-radio-button checked="{{mousemode}}">GetMouseLocation</paper-radio-button>
-                </template>   
-
-                <paper-radio-button checked="{{mobilemode}}">Simulate Mobiles</paper-radio-button>
-
-            </div>
-
-            <!-- B. TRACK-APIs -->
-
-            <!-- B.1 TRACK-animation (ROUTING) --> 
-
-            <routing-api 
-                disable = "[[!userouting]]"
-                map = "[[map]]" 
-                timer = "{{timer}}"
-                trackctrl = "{{trackctrl}}"      
-
-                routedata = "[[trackdata]]" 
-
-                metadataset = "{{metadataset}}"
-                contentbox = "{{contentbox}}"               
-                mapcontent = "[[mapcontent]]"
-
-                routeselected ="{{datasetitem}}"> 
-                <!--trackdata = "{{trackdata}}"
-                trackinfo = "[[trackinfo]]">-->
-            </routing-api>
-
-            <timer-setup  
-                timer="{{timer}}"
-                starttimer="[[starttimer]]"
-                metadataset="[[metadataset]]">
-            </timer-setup>
-                
             <!-- B.2 TRACK-Explorer -->
             <tracks-api 
                 disable = "[[userouting]]"
@@ -362,31 +317,6 @@
                 featureselected="{{datasetitem}}">
             </mb-content-manager>
 
-            <!-- C. DATA-Supply INTERFACE -->
-            <div class="flexchild">
-                
-                <!--<mb-content-browser 
-                    indexurl="[[indexurl]]" 
-                    metadatasetslabel="[[metadatasetslabel]]" 
-                    metadataset="{{metadataset}}"
-
-                    dataset = "[[dataset]]" 
-                    selectitem="{{datasetitem}}"> 
-
-                    <tracks-load 
-                        routemode = "[[routemode]]"
-                        tracksetmeta = "[[metadataset]]" 
-                        trackdata = "{{trackdata}}"> 
-                    </tracks-load>
-                </mb-content-browser>-->
-                <!-- selectprop="id"--> 
-
-            </div>
-
-            <!-- C. DATA-LOG CTRL -->
-            <div class="flexchild">
-            </div>    
-
         </div>
 
     </div>
@@ -416,8 +346,9 @@
     // scope.lnglat = "13,52";
 
     // STATE init
+    scope.draggable = true; 
     scope.routemode = false; // true; // false
-
+    scope.mobilemode = false;
     scope.trackdetailshow = false;
     scope.dragpointshow = false;
     scope.waypointshow = false;
@@ -451,8 +382,9 @@
         }
 
         var r1 = document.querySelector("paper-radio-button.animate");
+        toggleRouting(r1); 
+
         if (r1) {
-            toggleRouting(r1); 
             // Inverse Toggling of RoutingFlag  
             r1.addEventListener("change", function(){  // console.log("R1-CHANGED", this.checked)
                 toggleRouting(this); 

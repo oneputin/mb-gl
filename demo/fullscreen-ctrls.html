@@ -1,0 +1,124 @@
+
+        <!-- RIGHT Block: several external app-controls -->
+        <div class="ctrls_area">
+            <!-- element with [n] visible features -->
+            <div id="radios">
+                
+                <template is="dom-if" if="{{!userouting}}">
+                    <!--<paper-radio-button checked="{{trackdetailshow}}">Track details</paper-radio-button>-->
+                    <paper-radio-button checked="{{draggable}}" class="drag">LogDrag enable</paper-radio-button>
+                </template>    
+
+                <template is="dom-if" if="{{mapstyle}}">
+                    <paper-radio-button checked="{{waypointshow}}">Waypoints</paper-radio-button>
+                    <paper-radio-button class="animate red" checked="{{routemode}}">Track Animation</paper-radio-button>
+                    <template is="dom-if" if="{{!userouting}}">
+                        <paper-radio-button class="style" checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
+                    </template>
+                    <paper-radio-button checked="{{mapmeasureshow}}">Measure Dist</paper-radio-button>
+                    <paper-radio-button checked="{{mousemode}}">GetMouseLocation</paper-radio-button>
+                </template>   
+
+                <paper-radio-button checked="{{mobilemode}}">Simulate Mobiles</paper-radio-button>
+
+            </div>
+
+            <!-- B. TRACK-APIs -->
+
+            <!-- B.1 TRACK-animation (ROUTING) --> 
+
+            <routing-api 
+                disable = "[[!userouting]]"
+                map = "[[map]]" 
+                timer = "{{timer}}"
+                trackctrl = "{{trackctrl}}"      
+
+                routedata = "[[trackdata]]" 
+
+                metadataset = "{{metadataset}}"
+                contentbox = "{{contentbox}}"               
+                mapcontent = "[[mapcontent]]"
+
+                routeselected ="{{datasetitem}}"> 
+                <!--trackdata = "{{trackdata}}"
+                trackinfo = "[[trackinfo]]">-->
+            </routing-api>
+
+            <timer-setup  
+                timer="{{timer}}"
+                starttimer="[[starttimer]]"
+                metadataset="[[metadataset]]">
+            </timer-setup>
+                
+            <!-- B.2 TRACK-Explorer -->
+            <tracks-api 
+                disable = "[[userouting]]"
+                maptoast = "{{maptoast}}"
+                rawcontent = "[[trackdata]]" 
+                metadata = "{{metadataset}}" 
+                contentbox = "{{contentbox}}" 
+                mapcontent = "[[mapcontent]]"
+                mapevents = "{{mapevents}}"
+                tracksall = "[[dataset]]"
+                trackselected = "{{datasetitem}}"
+                trackpntindex = "{{logindex}}">
+            </tracks-api>
+
+            <tracklog-map
+                disable = "[[userouting]]"
+                mbid = "[[mbid]]" 
+                mobilemode = "[[mobilemode]]"
+                draggable = "[[draggable]]"
+                indexedtarget = "[[datasetitem]]"
+                logdata = "{{logdata}}"
+                index = "{{logindex}}"
+                maptoast = "{{maptoast}}">
+            </tracklog-map>
+            <!-- lnglat = "[[lnglat]]"--> 
+
+            <layer-waypoints 
+                mbid = "[[mbid]]" 
+                visible = "[[waypointshow]]" 
+                querymeta = "[[metadataset]]"
+                wpdata = "{{wpdata}}"> 
+            </layer-waypoints>
+
+            <!-- SYNC mapcontent from contentbox -->
+            <mb-content-manager 
+                map = "[[map]]" 
+                mobilemode = "[[mobilemode]]"
+                mbid = "[[mbid]]" 
+                contentbox ="{{contentbox}}" 
+                mapevents = "[[mapevents]]"
+                mapcontent = "{{mapcontent}}"
+                dataset = "{{dataset}}"
+                featureselected="{{datasetitem}}">
+            </mb-content-manager>
+
+            <!-- C. DATA-Supply INTERFACE -->
+            <div class="flexchild">
+                
+                <!--<mb-content-browser 
+                    indexurl="[[indexurl]]" 
+                    metadatasetslabel="[[metadatasetslabel]]" 
+                    metadataset="{{metadataset}}"
+
+                    dataset = "[[dataset]]" 
+                    selectitem="{{datasetitem}}"> 
+
+                    <tracks-load 
+                        routemode = "[[routemode]]"
+                        tracksetmeta = "[[metadataset]]" 
+                        trackdata = "{{trackdata}}"> 
+                    </tracks-load>
+                </mb-content-browser>-->
+                <!-- selectprop="id"--> 
+
+            </div>
+
+            <!-- C. DATA-LOG CTRL -->
+            <div class="flexchild">
+            </div>    
+
+        </div>
+

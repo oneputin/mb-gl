@@ -1,6 +1,6 @@
 
 <!--<script src='assets/turf-mb.min.js'></script>-->
-<script src='//api.tiles.mapbox.com/mapbox.js/plugins/turf/v2.0.0/turf.min.js' charset='utf-8'></script>
+<!--<script src='//api.tiles.mapbox.com/mapbox.js/plugins/turf/v2.0.0/turf.min.js' charset='utf-8'></script>-->
 
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../kml-json/kml-json.html">
@@ -84,6 +84,10 @@ Optional: create quick-preview-data
         ],
 
         attached: function() {
+        /*     console.log(Object.keys(turf.helpers));
+            Object.keys(turf.helpers).forEach(function(k){
+                turf[k] = turf.helpers[k];
+            })*/
         },
 
         /**
@@ -230,10 +234,10 @@ Optional: create quick-preview-data
                     ffa = [];
                     f.geometry.coordinates.forEach(function(cc){ // console.log(cc);
                         ffa.push(turf.point(cc.slice(0,2)));
-                    });  console.log(ffa);
-                    bb = turf.bbox(turf.featureCollection(ffa)); // console.log("bb of:"+ffa.length, bb);
+                    });  // console.log(ffa);
+                    bb = turf.bbox(turf.featureCollection(ffa)); // console.log("bb of :"+ffa.length, bb);
                     f.properties.bbox = bb;
-                    // collect
+                    // collect all pt's
                     ffc = ffc.concat(ffa);
                 })
                 var bbox = turf.bbox(turf.featureCollection(ffc));
