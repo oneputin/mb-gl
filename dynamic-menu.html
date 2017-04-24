@@ -140,32 +140,39 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                         preselectitem = menudata[0];
 
                     if (menudata.length > 1) {
-                        var i = 0;
-                        menudata.some(function(rs) {
-                            if (rs.start) {
-                                preselectitem = rs;
-                                preselectindex = i;
-                                return true;
-                            }
-                            i = i + 1;
-                        });
-                        
+
                         if (this.allandnone) { 
                             menudata = enhanceMenu(menudata);
-                        } 
+                            // preselect the "all" - item
+                            preselectindex = menudata.length-2,
+                            preselectitem = menudata[preselectindex];
+                            
+                        } else {
+                            var i = 0;
+                            menudata.some(function(rs) {
+                                if (rs.start) {
+                                    preselectitem = rs;
+                                    preselectindex = i;
+                                    return true;
+                                }
+                                i = i + 1;
+                            });
+                        }
+                        
                         this._selectset = menudata;
 
                     } else { // NO menu but return of SELECTRESULT
                         this._selectset = null; // menu not required
-                        this.selectitem = preselectitem;                    
                     }
 
+                    this.selectitem = preselectitem;                    
                     this._selectindex = preselectindex;
 
                 } else {
                     this._selectset = null;
                     this.selectitem = null;
                 }
+
                 this._lastid = null;
                 // console.log("_updateMenu. selected, _selectset", selected, this._selectset);
             },

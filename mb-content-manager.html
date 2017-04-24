@@ -49,10 +49,10 @@ Refresh mb-contentbox features
                 },
 
                 // OUT: After selection by map-events defined on layers of contentbox 
-                featureselected : {
+                /*featureselected : {
                     type: Object,
                     notify: true
-                },
+                },*/
 
                 // IN new contentbox to be processed
                 contentbox: {
@@ -82,12 +82,10 @@ Refresh mb-contentbox features
                 Mbb.MapBehavior
             ],
 
-
             observers: [
                 'mbContentApply(contentbox.*, "NewContent")',
                 'contentToDataset(mapcontent.*)'
             ],
-
 
             ready: function() {
                 // console.log("READY: mb-content-manager");
@@ -140,7 +138,6 @@ Refresh mb-contentbox features
                     // from from actual map 
                     this._mbContentCheckOut();
                     scope.mapcontent = {};
-                    
 
                     // Push contentbox  
                     this._contentbox = contentbox;   
@@ -389,7 +386,6 @@ Refresh mb-contentbox features
                 return verifiedContent; 
             },
 
-
             // Insert all layers of contentbox 
             _mbContentChecker: function(contentbox, flag, map) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
@@ -627,7 +623,6 @@ Refresh mb-contentbox features
                 } 
             },
 
-
             /**
              * Create a linear LIST(array) of all features  
              * of the mapcontent-layer (marked with flag 'usefeatures' if more layers) 
@@ -661,7 +656,7 @@ Refresh mb-contentbox features
                     this.dataset = dataset; // NOTIFIES  !!
                     // console.log("GUI-IN dataset from contentBox-entry ["+usedkey+"]", dataset);
                 }
-            },
+            }
 
         })
     </script>

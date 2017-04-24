@@ -47,8 +47,7 @@ the map-object can be ctrld from outside
                 insertlayer: 'water'
             },
 
-            cbox: "12,52",
-            
+            cbox: "12, 52",
             zoom: 7
 
         };
@@ -98,7 +97,7 @@ the map-object can be ctrld from outside
                     type: String,
                     value: "13.5, 52.5",
                     notify: true,
-                    observer: 'centerthemap'
+                    observer: '_mbMapCenter'
                 },
                 /**
                  *  boundingbox of visible mapview : LL,UR as Lon,Lat-csv
@@ -111,24 +110,29 @@ the map-object can be ctrld from outside
                 zoom: {
                     type: Number,
                     value: 8,
-                    observer: 'zoomthemap'
+                    observer: '_mbMapZoom'
                 }
             },
 
             observers: [
-                'changeMapStyle(mapstyle, map)'
+                '_changeMapStyle(mapstyle, map)'
             ],
 
             attached: function() {
                 mapscope = this;
-                // console.log("mb-map setup", setup);
-                // 
-                if (!this.mapapikey) this.mapapikey = setup.mapapikey;
 
+                if (!this.mapapikey) this.mapapikey = setup.mapapikey;
+                
+                this._setupMap(); 
+            },
+
+            // setup mapClient (generic)
+            _setupMap : function() {    
                 // ************************************
                 // Compile map-parameters from (default)setup, external parameters 
                 // and the local container-object !!
-                var context = { container: this.$.map }; // get container as dom-element                    
+                var context = { container: this.$.map }; // get container as dom-element   
+
                 if (this.zoom) context["zoom"] = this.zoom;
                 if (this.cbox) context["center"] = this.cbox.split(",");
 
@@ -136,32 +140,31 @@ the map-object can be ctrld from outside
                 // ************************************
 
                 if (!this.cbox) this.cbox = setup.cbox;
+
                 if (this.cbox) mapctrl.center = this.cbox.split(",");
 
                 // 
                 this.mapctrl = mapctrl;  // console.log("map attached", this.mapapikey, this.mapctrl);
 
-                this.installmap(mapctrl);
+                this._mbMapInstall(mapctrl);
             },
 
-            zoomthemap: function(zoom) { // console.log("zoomthemap", zoom, map);
-                if (map) { map.setZoom(zoom);}
-            },
+            // component-event-action
+            _changeMapStyle: function(mapstyle, map){
+                if (map && mapstyle) {  // console.log("CHANGE to mapstyle", mapstyle, map);
+                    map.on('data', this._mbMapStyleOnChange); // set map-event-action  
+                    map.setStyle(mapstyle); // trigger map-event "setStyle""
+                }    
+            },                
 
-            centerthemap: function(cbox) { // console.log("centerthemap", cbox, map);
-                if (map) {
-                    cbox = cbox.split(",");
-                    cbox = new mapboxgl.LngLat(cbox[0], cbox[1]);
-                    map.setCenter(cbox);
-                }
-            },
             /**
              * setup a mb-gl-map 
              */
-            installmap: function(mapctrl) {
+            _mbMapInstall: function(mapctrl) {
                 // 
                 var that = this;
 
+                // Property of global object
                 mapboxgl.accessToken = this.mapapikey;
 
                 map = new mapboxgl.Map(mapctrl);  // console.log("create map using", this.mapctrl, mapboxgl, map);
@@ -190,25 +193,29 @@ the map-object can be ctrld from outside
                     //});
 
                     // console.log("mapbox map is loaded");                
-                    // LOAD of json-themes will be triggered by changeMapStyle 
+                    // LOAD of json-themes will be triggered by _changeMapStyle 
                     // if this.map is set
                     that.map = map;
-
                 });
             },
 
-            // app-event-action
-            changeMapStyle: function(mapstyle, map){
-                if (map && mapstyle) {  // console.log("CHANGE to mapstyle", mapstyle, map);
-                    map.on('data', this.onStyleChange); // set map-event-action  
-                    map.setStyle(mapstyle); // trigger map-event "setStyle""
-                }    
+
+            _mbMapZoom: function(zoom) { // console.log("_mbMapZoom", zoom, map);
+                if (map) { map.setZoom(zoom);}
             },
 
-            // 
-            onStyleChange: function(e){ 
-                if (e.dataType == "style") { // console.log("onStyleChange", e);
-                    var mapstyleurl = mapscope.mapstyle; // console.log("onStyleChange", mapstyleurl);
+            _mbMapCenter: function(cbox) { // console.log("_mbMapCenter", cbox, map);
+                if (map) {
+                    cbox = cbox.split(",");
+                    cbox = new mapboxgl.LngLat(cbox[0], cbox[1]);
+                    map.setCenter(cbox);
+                }
+            },
+
+            // mapbox-event-action
+            _mbMapStyleOnChange: function(e){ 
+                if (e.dataType == "style") { // console.log("_mbMapStyleOnChange", e);
+                    var mapstyleurl = mapscope.mapstyle; // console.log("_mbMapStyleOnChange", mapstyleurl);
                     if (!mapstyleurl) {
                         return;
                     }  
@@ -219,7 +226,7 @@ the map-object can be ctrld from outside
                     var stylesheet = e.style.stylesheet,
                         newstyleid = stylesheet.id,
                         oldstyleid = mapscope.mbid;
-                    // console.log("onStyleChange", newstyleid, oldstyleid, e); // return;   
+                    // console.log("_mbMapStyleOnChange", newstyleid, oldstyleid, e); // return;   
 
                     if (newstyleid != oldstyleid)  {
                         if (mapstyleurl.indexOf(newstyleid) < 0 ) {
@@ -227,7 +234,7 @@ the map-object can be ctrld from outside
                             console.log("MAPSTYLE-CHANGE: [" + oldstyleid+"]", "to ["+ newstyleid +"]")
                             // console.log("BUT LAST requested style is:", mapstyleurl );
                         } else {
-                            map.off("data", mapscope.onStyleChange); // console.log("onStyleChange OFF");
+                            map.off("data", mapscope._mbMapStyleOnChange); // console.log("_mbMapStyleOnChange OFF");
                             mapscope.mbid = newstyleid;  
                             console.log("TRIGGER (Re)Integration of json-themes(contentbox, track, waypoint) into new style"); 
                         }

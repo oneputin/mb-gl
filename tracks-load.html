@@ -169,7 +169,7 @@ component loads tracking data
                
                 } else if (routemode) {  // derive structures for mb-based animation of 'suitable' tracks
                     
-                    var trackSet = this.createRouteSet(trackdata); // .features);
+                    var trackSet = this._createRouteSet(trackdata); // .features);
                     if (trackSet && trackSet.length) {  // console.log("RAW route-data (gpx)",  trackSet);
                         trackdata = trackSet;
                     } else {
@@ -178,7 +178,7 @@ component loads tracking data
 
                 } else {  // derive features for mb-visualization of rawTracks
                     // console.log("prepare quickmap of ", rawTracks);  
-                    var trackLogs = this.createTrackSet(trackdata); // console.log("RAW track-data (gpx)", trackLogs);
+                    var trackLogs = this._createTrackSet(trackdata); // console.log("RAW track-data (gpx)", trackLogs);
                     if (trackLogs) {  
                         trackdata = trackLogs;
                     } else {
@@ -193,7 +193,7 @@ component loads tracking data
 
             // Combine rawdata and metadata into contentObj 
             // (with mb-preview-properties) 
-            createTrackSet: function(rawdata) {
+            _createTrackSet: function(rawdata) {
                 // Create geojson-object for quickview of raw trackdata 
                 // with "short as possible" id-entification of features 
                 function trackLogCreate(srcdata, title) {
@@ -224,12 +224,11 @@ component loads tracking data
                 var trackLogObject = trackLogCreate(rawdata, title); 
                 
                 return trackLogObject;
-
             },
 
             // Derive contentObj usable by animatation-api 
             // !! id of features = "first coord-time"
-            createRouteSet: function(rawdata, minTrackLength) {
+            _createRouteSet: function(rawdata, minTrackLength) {
                 if (!minTrackLength) minTrackLength = 5; 
                 // var minlength = this.srcemetax.minlength;
 

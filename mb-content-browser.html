@@ -116,12 +116,14 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                 // EXPORTEd DatasetMetaObject to be processed by app-specific IF
                 // Triggers return of dataset for levels2-menu 
 
+                // collection of meta-data-records
+                // every describing a collection of app-data 
                 metadataset: {
                     type: Array,
                     notify: true
                 },
 
-                // dataset used to create menu2 
+                // collection of app-data 
                 dataset: {
                     type: Array   //, notify: true
                 },
@@ -130,7 +132,6 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                     type: String,
                     value: "Dataset items"
                 },
-
 
                 // LEVEL 3
                 // Management of dataselection
@@ -171,11 +172,12 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
              *
              */
             _checkObject: function(obj) {
-                if (!obj)  return; 
+                if (!obj)  return;
                 if (typeof obj == "string") obj = JSON.parse(obj); 
                 if (obj.id == "all") {
                     obj.items = this._dataset;
-                    //console.log("Select ALL-Item, id=" + obj.id, obj);
+                    // console.log("Select ALL-Item, id=" + obj.id, obj);
+                } else if (obj.id == "none")  { // ??? 
                 }
             },
 

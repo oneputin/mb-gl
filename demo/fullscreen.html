@@ -130,13 +130,6 @@
             @apply(--layout-vertical);
             @apply(--layout-start);
         }*/
-
-        /* .mapctrl-log {
-            display: inline-block;
-            position: absolute;
-            top: 12px;
-            right: 12px;
-        }*/
         
         #radios {
             padding: 10px;
@@ -176,7 +169,7 @@
                 
                 <mb-map 
                     map="{{map}}" 
-                    mobilemode = "[[mobilemode]]"
+                    mobilemode = "[[ctrl.mobilemode]]"
                     mapapikey="[[mbkey]]" 
                     mapstyle="[[mapstyle]]" 
                     mbid="{{mbid}}" 
@@ -194,7 +187,7 @@
                         selectitem="{{datasetitem}}"> 
 
                         <tracks-load 
-                            routemode = "[[routemode]]"
+                            routemode = "[[ctrl.userouting]]"
                             tracksetmeta = "[[metadataset]]" 
                             trackdata = "{{trackdata}}"> 
                         </tracks-load>
@@ -204,7 +197,7 @@
                     <!-- placed here to overlay the map -->
                     <tracklog-view
                         disable = "[[userouting]]"
-                        checked = "{{trackdetailshow}}"
+                        checked = "{{ctrl.trackdetailshow}}"
                         metadata ="[[metadataset]]"
                         logdata ="[[logdata]]"
                         logindex = "{{logindex}}">
@@ -213,14 +206,15 @@
                     <!-- (menulike)ctrl of single log-points  
                     <tracklog-ctrl
                         class = "mapctrl-log"
-                        visible = "[[trackdetailshow]]"
+                        visible = "[[ctrl.trackdetailshow]]"
                         metadata = "[[metadataset]]"
                         logdata = "[[logdata]]"
                         logindex = "{{logindex}}">
                     </tracklog-ctrl>-->
 
+                    <!-- Select-menu of map-styles -->
                     <mb-styles 
-                        checked = "{{styleselectshow}}"
+                        checked = "{{ctrl.styleselectshow}}"
                         styleset ="[[morestyles]]"
                         selectable = "{{styleselectable}}"
                         mapstyle = "{{mapstyle}}"> 
@@ -228,18 +222,18 @@
 
                     <!-- TOOL to measure user-generated lines -->
                     <mb-distance 
-                        checked="[[mapmeasureshow]]"
+                        checked="[[ctrl.mapmeasureshow]]"
                         distance="{{distance}}" 
                         map="[[map]]"> 
                     </mb-distance>
 
+                    <!-- Indicator of mapclient-coordinates (mapcenter,mouse) -->
                     <mb-location-log 
                         checked
                         lnglat="{{lnglat}}" 
                         map="[[map]]"
-                        mousemode="[[mousemode]]"> 
+                        mousemode="[[ctrl.mousemode]]"> 
                     </mb-location-log>
-
                     <!-- not implemented 
                     <tracks-info 
                         metadataset = "[[metadataset]]" 
@@ -247,7 +241,7 @@
                         trackdata = "{{trackdata}}">
                     </tracks-info>
                     -->
-
+                    <!-- animation-ctrls -->
                     <template is="dom-if" if="{{userouting}}">
                         <div class="mapctrls-bottom">
                             <!-- ctrl of animation-progress  -->
@@ -255,17 +249,14 @@
                                 timerctrl="{{trackctrl}}"
                                 timer="{{timer}}">
                             </timer-ctrl>
-                            <!-- ctrl of map-orientation -->
+                            <!-- ctrlflag of map-orientation -->
                             <mb-orientation-ctrl 
                                 trackmap="[[trackalignmap]]">
                             </mb-orientation-ctrl>
                         </div>
                     </template>
-
                 </mb-map>
-
             </template>    
-
         </div>
 
 
@@ -289,18 +280,17 @@
             <tracklog-map
                 disable = "[[userouting]]"
                 mbid = "[[mbid]]" 
-                mobilemode = "[[mobilemode]]"
-                draggable = "[[draggable]]"
+                mobilemode = "[[ctrl.mobilemode]]"
+                draggable = "[[ctrl.trackdraggable]]"
                 indexedtarget = "[[datasetitem]]"
                 logdata = "{{logdata}}"
                 index = "{{logindex}}"
                 maptoast = "{{maptoast}}">
             </tracklog-map>
-            <!-- lnglat = "[[lnglat]]"--> 
 
             <layer-waypoints 
                 mbid = "[[mbid]]" 
-                visible = "[[waypointshow]]" 
+                visible = "[[ctrl.waypointshow]]" 
                 querymeta = "[[metadataset]]"
                 wpdata = "{{wpdata}}"> 
             </layer-waypoints>
@@ -308,13 +298,12 @@
             <!-- SYNC mapcontent from contentbox -->
             <mb-content-manager 
                 map = "[[map]]" 
-                mobilemode = "[[mobilemode]]"
+                mobilemode = "[[ctrl.mobilemode]]"
                 mbid = "[[mbid]]" 
-                contentbox ="{{contentbox}}" 
+                contentbox = "{{contentbox}}" 
                 mapevents = "[[mapevents]]"
                 mapcontent = "{{mapcontent}}"
-                dataset = "{{dataset}}"
-                featureselected="{{datasetitem}}">
+                dataset = "{{dataset}}">
             </mb-content-manager>
 
         </div>
@@ -325,8 +314,7 @@
 <script>
     // 
     var scope = document.querySelector('#app');
-
-    scope.mobilemode = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+    // scope.mobilemode = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
     scope.mapstyle = 'mapbox://styles/mapbox/light-v9';
     scope.morestyles = "demo-styles.json";
@@ -341,20 +329,22 @@
     scope.datasetitem = {}; // track/route-object
 
     // Map-INIT
-    scope.cbox = "13,52";
+    // scope.cbox = "13,53"; // Berlin
+    scope.cbox = "122 , 0"; // Sulawesi
     scope.zoom = 8;
-    // scope.lnglat = "13,52";
 
     // STATE init
-    scope.draggable = true; 
-    scope.routemode = false; // true; // false
-    scope.mobilemode = false;
-    scope.trackdetailshow = false;
-    scope.dragpointshow = false;
-    scope.waypointshow = false;
-    scope.styleselectshow = false;
-    scope.mousemode = false; // 
-    
+    scope.ctrl = {
+        mobilemode : (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1),
+        mousemode : false,
+        userouting : false,
+        waypointshow : true,
+        trackdraggable : true, 
+        trackdetailshow : false,
+        styleselectshow : false,
+        mapmeasureshow : false
+    };
+
     // Animation- INIT
     scope.trackalignmap; // 
     scope.timer = {}; //
@@ -367,10 +357,6 @@
 
     // SHELL-actions
     scope.mapctrl = {};
-
-    /*scope.addEventListener('dom-change', function() {
-        console.log("DOM-CHANGED", scope.trackctrl, scope.timer);
-    });*/
 
     document.addEventListener('WebComponentsReady', function() {
         
@@ -392,69 +378,6 @@
         }
 
     });
-
-    /*
-        // B. events resulting from scope-property-changes 
-        r1.addEventListener("change", function(){  // console.log("R1-CHANGED", this.checked)
-            if (this.checked) {
-                toggleRoutingControls(false);
-            } else {
-                toggleRoutingControls(true);
-            }
-        });
-
-
-        // testfunction 
-        function toggleTestElement(r1, flag) {
-            var elname = "paper-radio-button",
-                x, t ;
-            if (flag) {
-                x = document.createElement(elname), 
-                t = document.createTextNode("Test button");    
-                x.setAttribute("class", "red");
-                x.classList.add("test");
-                // x.classList.add( "red");
-                x.setAttribute("checked", "true");
-                x.appendChild(t);  
-                r1.parentElement.appendChild(x); 
-            } else {
-                var p = r1.parentElement;
-                x = document.querySelector(elname + ".test");
-                console.log("parent", p, x )
-                r1.parentElement.removeChild(x);
-            }
-        }
-        // testfunction 
-        function toggleRoutingControls(flag) {
-            var el,
-                parent = document.querySelector("div.mapctrls-bottom");
-            if (!parent) {
-                return; 
-            }     
-            if (flag) {
-                // animation-progress-ctrl
-                el = document.createElement("timer-ctrl"), 
-                el.setAttribute("timer", "{{timer}}");
-                el.setAttribute("trackctrl", "{{trackctrl}}");
-                parent.appendChild(el); 
-                // Polymer.dom(scope).appendChild(el); // NOPE 
-
-                // map-orientation
-                el = document.createElement("mb-orientation-ctrl"),
-                el.setAttribute("trackmapmode", "{{trackmode}}");
-                parent.appendChild(el); 
-                scope.render(); 
-            } else {
-
-                el = document.querySelector("timer-ctrl");
-                if (el && (el.parentNode == parent)) parent.removeChild(el);
-
-                el = document.querySelector("mb-orientation-ctrl");
-                if (el && (el.parentNode == parent)) parent.removeChild(el);
-            }
-        }
-
-    });*/
 
 </script>
 

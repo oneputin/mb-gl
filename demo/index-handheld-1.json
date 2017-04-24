@@ -2,6 +2,7 @@
     {
         "start": 1,
         "title": "jana-sulawesi",
+        "datasetlabel" : "Sulawesi tracks",
         "key": "sulawesi",
         "type": "gpx",
         "url": "wp-data/foretrex20170223.gpx",

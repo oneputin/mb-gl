@@ -2,6 +2,7 @@
     {
         "title": "jana-world",
         "key": "world",
+        "datasetlabel" : "World tracks",
         "type": "gpx",
         "url": "http://iimaps.de/data/gps/world/gpx/Current.gpx",
         "query": {

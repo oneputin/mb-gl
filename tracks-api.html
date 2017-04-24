@@ -54,7 +54,7 @@ display as decorated route (fi with commented endpoints)
                     type: Object,
                 },
                 /**
-                 * Container for available mapdata
+                 * Container for mapdata of track (rawcontent)
                  */
                 mapcontent: {
                     type: Object,
@@ -90,8 +90,8 @@ display as decorated route (fi with commented endpoints)
 
             observers: [
                 'transfer(rawcontent.*, disable)', // , metadata)'
-                'onMapdataLoad(mapcontent.*)',
-                'trackActivate(trackselected.id)' //,
+                // 'onMapdataLoad(mapcontent.*)',
+                'trackActivate(trackselected.id, tracksall)' //,
             ],
 
             ready: function() {
@@ -111,6 +111,7 @@ display as decorated route (fi with commented endpoints)
 
                     this.set("metadata.datasetlabel",  this.datasetlabel);
                     this.contentbox = rawcontent;
+
                 }, 200);
             },
 
@@ -126,6 +127,7 @@ display as decorated route (fi with commented endpoints)
                         selectid = tilecontent.id.replace(/-/g,'_'),
                         allcontent = scope.contentbox[layerid].srcdata.features,
                         srccontent; 
+                    
                     // console.log("map-selected content", selectid, tilecontent, allcontent);
                     allcontent.some(function(f){
                         // console.log(f.properties.id==selectid); 
@@ -200,11 +202,13 @@ display as decorated route (fi with commented endpoints)
 
                     // B. get SRC-feture 
                     var trackselected = srcFeatureContent(features[0], layerid, eventscope); 
+
                     if (!trackselected) return;  // console.log("srcContent:", srcContent);
                     
                     if (scope.trackselected.id != trackselected.id) {  
 
                         trackselected.lnglat = e.lngLat;    // where track was selected
+
                         scope.trackselected = trackselected; 
                     
                     } else {
@@ -239,21 +243,20 @@ display as decorated route (fi with commented endpoints)
 
             // (Basic) MAP-Action(s) to run after a trackContent is selected
             // further actions may run in separate elements
-            trackActivate: function(fid) { // console.log("ACTIVATE track, ID=", fid);
+            trackActivate: function(fid, tracksall) { // console.log("ACTIVATE track, ID=", fid, tracksall);
                 if (!fid || this.disable) return; 
-
 
                 // Operate on ALL features (tracks)
                 if (fid == "all") {
-                    var msg = "Zoom to ALL tracks";  // console.log("DEBUG", msg, this.tracksall); 
+
+                    var msg = "Zoom to ALL tracks";  // console.log("DEBUG", msg, tracksall); 
                     this.maptoast = msg;
                     
                     var ff = [];
-                    this.tracksall.forEach(function(item){
+                    tracksall.forEach(function(item){
                         ff.push(item.feature)
                     });
                     this.setFeatureBounds(ff, 10);
-
                     return;
                 } 
 
@@ -289,7 +292,6 @@ display as decorated route (fi with commented endpoints)
                 }     
                 // console.log("processedTrack", selectObj); 
             },    
-
 
             // Special "permanent" HILITE of selected tracks
             // by HILITE-TRACE + "commented" end-nodes  
@@ -398,7 +400,6 @@ display as decorated route (fi with commented endpoints)
 
             // Get app-specific Info about the "complete json-feature", 
             // the selected json-tile belongs to
-
             trackInfoCollect: function(trackident ) {
                 var scope = this, 
                     trackInfo={}, trackLine, selectPnt, dragpnt, trackTimes, tpTime, trackZ, tpZ;    
@@ -488,7 +489,7 @@ display as decorated route (fi with commented endpoints)
                     trackInfo.html += "<br>TP's: " + trackInfo.count;
                 } 
                 return trackInfo;
-            },
+            }
 
         });
 
