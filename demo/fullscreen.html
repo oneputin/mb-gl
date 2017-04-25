@@ -194,13 +194,12 @@
                         </tracks-load>
                     </mb-content-browser>
 
-
                     <!-- placed here to overlay the map -->
                     <tracklog-view
-                        disable = "[[userouting]]"
+                        disable = "[ctrl.userouting]]"
                         checked = "{{ctrl.trackdetailshow}}"
-                        metadata ="[[metadataset]]"
-                        logdata ="[[logdata]]"
+                        metadata = "[[metadataset]]"
+                        logdata = "[[logdata]]"
                         logindex = "{{logindex}}">
                     </tracklog-view>    
 
@@ -243,7 +242,7 @@
                     </tracks-info>
                     -->
                     <!-- animation-ctrls -->
-                    <template is="dom-if" if="{{userouting}}">
+                    <template is="dom-if" if="{{ctrl.userouting}}">
                         <div class="mapctrls-bottom">
                             <!-- ctrl of animation-progress  -->
                             <timer-ctrl 
@@ -266,7 +265,7 @@
 
             <!-- B.2 TRACK-Explorer -->
             <tracks-api 
-                disable = "[[userouting]]"
+                disable = "[[ctrl.userouting]]"
                 maptoast = "{{maptoast}}"
                 rawcontent = "[[trackdata]]" 
                 metadata = "{{metadataset}}" 
@@ -279,7 +278,7 @@
             </tracks-api>
 
             <tracklog-map
-                disable = "[[userouting]]"
+                disable = "[[ctrl.userouting]]"
                 mbid = "[[mbid]]" 
                 mobilemode = "[[ctrl.mobilemode]]"
                 draggable = "[[ctrl.trackdraggable]]"
@@ -373,9 +372,9 @@
         
         // Switch "visibility" of elements related with routing-api- and routing-gui  
         function toggleRouting(radio) {
-            if (!radio) scope.userouting = false;
-            else if (radio.checked)  scope.userouting = true;
-            else scope.userouting = false;
+            if (!radio) scope.ctrl.userouting = false;
+            else if (radio.checked)  scope.ctrl.userouting = true;
+            else scope.ctrl.userouting = false;
         }
 
         var r1 = document.querySelector("paper-radio-button.animate");

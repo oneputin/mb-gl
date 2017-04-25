@@ -451,7 +451,7 @@
             if (!prec) prec = 0;
             dd = parseFloat(dd);
             if (dd < 0) dd = 0 - dd;
-            let d = Math.floor(dd), // console.log("dd,d=", dd, d)
+            var d = Math.floor(dd), // console.log("dd,d=", dd, d)
                 mm = (dd - d) * 60, // [minutes]
                 m = Math.floor(mm), // [minutes]
                 ss = ((mm - m) * 60).toFixed(prec);
@@ -477,7 +477,7 @@
             // lon and lat
             if (dd < 0) dd = 0 - dd;
 
-            let d = Math.floor(dd), // console.log("dd,d=", dd, d)
+            var d = Math.floor(dd), // console.log("dd,d=", dd, d)
                 mm = (dd - d) * 60; // [minutes]
             m = mm.toFixed(3);
 

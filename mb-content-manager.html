@@ -319,7 +319,7 @@ Refresh mb-contentbox features
                         selectTemplates = layerObject['selectlayer'];
 
                     // Compile collection of     
-                    var layerTemplates = [];
+                    var layerTemplates = [], hoverTemplate, selectTemplate;
 
                     if (basicTemplate) layerTemplates.push(basicTemplate);
 
@@ -341,11 +341,11 @@ Refresh mb-contentbox features
                         //    wenn keine speziellen vordefiniert waren 
                         
                         // Layer that occurs during "mouse-hover"
-                        let hoverTemplate = createHiliteLayer(basicTemplate, "hover");
+                        hoverTemplate = createHiliteLayer(basicTemplate, "hover");
                         if (hoverTemplate) layerTemplates.push(hoverTemplate);
 
                         // Layer that occurs after "selection"
-                        let selectTemplate = createHiliteLayer(basicTemplate, "select");
+                        selectTemplate = createHiliteLayer(basicTemplate, "select");
                         if (selectTemplate) layerTemplates.push(selectTemplate);
 
                         var isLine = true; 

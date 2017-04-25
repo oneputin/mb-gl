@@ -296,9 +296,9 @@ container for presentation of track-properties (fi. elevations)
                 //};   
 
                 // B.2 Create TimeChart-data with argument in datetime-format
-                var zdata = [];
+                var zdata = [], utc1970;
                 times.forEach(function(t, j){
-                    let utc1970 = scope.utcTime(scope.trackTime(t)); 
+                    utc1970 = scope.utcTime(scope.trackTime(t)); 
                     zitem = [
                         new Date(utc1970),
                         elevs[j]                        

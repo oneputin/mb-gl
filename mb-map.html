@@ -173,7 +173,7 @@ the map-object can be ctrld from outside
                     
                     // inform app about new center after any move
                     map.on('moveend', function() {
-                        let cb = map.getCenter(),
+                        var cb = map.getCenter(),
                             bb = map.getBounds(),
                             z = map.getZoom();
 
