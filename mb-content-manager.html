@@ -319,7 +319,10 @@ Refresh mb-contentbox features
                         selectTemplates = layerObject['selectlayer'];
 
                     // Compile collection of     
-                    var layerTemplates = [], hoverTemplate, selectTemplate;
+                    var layerTemplates = [], 
+                        hoverTemplate, 
+                        selectTemplate,
+                        nodeTemplate;
 
                     if (basicTemplate) layerTemplates.push(basicTemplate);
 
@@ -349,16 +352,14 @@ Refresh mb-contentbox features
                         if (selectTemplate) layerTemplates.push(selectTemplate);
 
                         var isLine = true; 
-                        if (isLine) {
-                            // additional commented NODES at LINE-ends
-                            let nodeTemplate = createHiliteLayer(basicTemplate, "nodes");
+                        if (isLine) { // additional commented NODES at LINE-ends
+                            nodeTemplate = createHiliteLayer(basicTemplate, "nodes");
                             if (nodeTemplate) layerTemplates.push(nodeTemplate);
                         }  
                     }
 
                     return layerTemplates;
                 }
-
 
                 var contentboxLayers = Object.keys(contentbox);   // console.log("Refreshing quickmap-layers", contentboxLayers);
 

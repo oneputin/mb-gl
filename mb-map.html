@@ -149,7 +149,12 @@ the map-object can be ctrld from outside
                 this._mbMapInstall(mapctrl);
             },
 
-            // component-event-action
+            /**
+             * @function {function name}
+             * @param  {type} mapstyle {description}
+             * @param  {type} map      {description}
+             * @return {type} {description}
+             */
             _changeMapStyle: function(mapstyle, map){
                 if (map && mapstyle) {  // console.log("CHANGE to mapstyle", mapstyle, map);
                     map.on('data', this._mbMapStyleOnChange); // set map-event-action  
@@ -158,7 +163,9 @@ the map-object can be ctrld from outside
             },                
 
             /**
-             * setup a mb-gl-map 
+             * @function {function name}
+             * @param  {type} mapctrl {description}
+             * @return {type} {description}
              */
             _mbMapInstall: function(mapctrl) {
                 // 
