@@ -19,8 +19,8 @@
 
     <style is="custom-style">
         mb-map {
-            width: 50%;
-            height: 400px;
+            width: 100%;
+            height: 100%;
         }
         
         mb-info-lnglat {
@@ -36,7 +36,14 @@
         .flexchild {
             @apply(--layout-flex);
         }
-        
+
+        .container {
+            top: 0; bottom: 0; /*height: 500px;*/
+            height: 100vh;
+            @apply(--layout-horizontal);
+            /*align-items: flex-start;*/
+        }
+
         div.ctrlbox {
             background-color: cyan;
             padding: 5px;
@@ -59,11 +66,10 @@
 
 <body>
 
-    <h1>element-demo: mb-slide</h1>
 
     <template is="dom-bind" id="app-demo">
         
-        <div class="container flex-horizontal">
+        <div class="container">
         
             <!-- LEFT container: Map -->
             <!--zoom="[[zoom]]"-->
@@ -100,30 +106,7 @@
             </mb-map>
 
             <!-- RIGHT container: Info -->
-            <div class="ctrlbox flexchild">
-
-                <!-- A. external map-zoom-ctrl -->
-                <mb-zoom map="{{map}}" title="External mapZoom"></mb-zoom>
-                <hr>
-                <!-- B. external input to change map-center -->
-                <paper-input 
-                    class="slidecenter"
-                    label="actual target(lngLat) = [[target]]" 
-                    value="{{cboxinput}}" 
-                    always-float-label 
-                    on-focused-changed="focuschanged">
-                </paper-input>
-
-                <!-- C. Quer-data-viewer -->
-                <ul>
-                    <li>the slides-query-action can be toggled with the central  <b>target marker</b>
-                        <br><ul><li>RED: selecting</li><li>BLACK: inert</li></ul>
-                    </li> 
-                    <li>The FAB (buttun) forces a zoom to the actually selected slide (disables center-selection).</li>
-                </ul>
-                <h4>SlideLog</h4>
-                <p>[[slideinfo]]</p>
-
+            <div class="ctrlbox">
             </div>
             
         </div>
