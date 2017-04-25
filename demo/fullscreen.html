@@ -184,6 +184,7 @@
                         metadataset="{{metadataset}}"
 
                         dataset = "[[dataset]]" 
+                        ctrlitems = "[[ctrlitems]]"
                         selectitem="{{datasetitem}}"> 
 
                         <tracks-load 
@@ -344,7 +345,17 @@
         styleselectshow : false,
         mapmeasureshow : false
     };
-
+    // Additional (specific) ctrl-items 
+    scope.ctrlitems = [
+        {
+            id: "all",
+            title: "All tracks"
+        },
+        {
+            id: "waypoints",
+            title: "All waypoints"
+        }
+    ];
     // Animation- INIT
     scope.trackalignmap; // 
     scope.timer = {}; //

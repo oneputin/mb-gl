@@ -83,9 +83,8 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
 
 
                 // INPUT(opt): FLAG ctrls adding all/clear items to the items of menu2
-                allandnone: {
-                    type: String,
-                    value: 0
+                ctrlitems: {
+                    type: String , // value: 0
                 },
 
                 // TEMP: Base of dynamic items-creationcreated from menudata if menudata.length > 1
@@ -109,72 +108,75 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
             ],
 
             /**
-             * Update the Menu-Content (List of menu-items)
+             * Update the Menu-Content (List of menu-items & preselected item )
              * 
              * @param      {object}  menudata  The menudata to 
              */
             _updateMenu: function(menudata) {
-                // console.log("_updateMenu. menudata=", menudata);
-                if (!menudata || !menudata.length) return; 
-
-                // optional standard-Items adding
-                function enhanceMenu(menudata) {
-                    var dset = [];
-                    menudata.forEach(function(d) {
-                        dset.push(d);
-                    })
-                    
-                    dset.push({
-                        id: "all",
-                        title: "Select all"
-                    });
-                    dset.push({
-                        id: "clear",
-                        title: "Clear all"
-                    });
-                    return dset; 
-                };
-
-                if (menudata && menudata.length) {
-                    var preselectindex = 0,
-                        preselectitem = menudata[0];
-
-                    if (menudata.length > 1) {
-
-                        if (this.allandnone) { 
-                            menudata = enhanceMenu(menudata);
-                            // preselect the "all" - item
-                            preselectindex = menudata.length-2,
-                            preselectitem = menudata[preselectindex];
-                            
-                        } else {
-                            var i = 0;
-                            menudata.some(function(rs) {
-                                if (rs.start) {
-                                    preselectitem = rs;
-                                    preselectindex = i;
-                                    return true;
-                                }
-                                i = i + 1;
-                            });
-                        }
-                        
-                        this._selectset = menudata;
-
-                    } else { // NO menu but return of SELECTRESULT
-                        this._selectset = null; // menu not required
-                    }
-
-                    this.selectitem = preselectitem;                    
-                    this._selectindex = preselectindex;
-
-                } else {
+                // console.log("_update Menu. menudata=", menudata);
+                if (!menudata || !menudata.length) {
                     this._selectset = null;
                     this.selectitem = null;
+                    return;
+                }     
+
+                // optional standard-Items adding
+                function enhanceMenu(menudata, enhanceitems) {
+                    var defaultitems = [
+                        {
+                            id: "all",
+                            title: "Select all"
+                        },
+                        {
+                            id: "clear",
+                            title: "Clear all"
+                        }
+                    ];
+                    if (!Array.isArray(enhanceitems)) {
+                        enhanceitems = defaultitems; 
+                    } 
+                    enhanceitems.forEach(function(item){
+                        menudata.push(item);
+                    })
+                    return menudata; 
+                };
+
+                // A. (Default) Preselect = first item 
+                var preselectindex = 0,
+                    preselectitem = menudata[0],
+                    itemcount = menudata.length;
+
+                if (itemcount > 1) {
+
+                    if (this.ctrlitems) { 
+                        menudata = enhanceMenu(menudata, this.ctrlitems);
+                        // B. Preselect the "first" ctrlitem
+                        preselectindex = itemcount;
+                        preselectitem = menudata[preselectindex];
+                    } 
+            
+                    // C. (option) Preselect = 'original item' marked by property start
+                    var i = 0;
+                    menudata.some(function(rs) {
+                        if (rs.start) {
+                            preselectitem = rs;
+                            preselectindex = i;
+                            return true;
+                        }
+                        i = i + 1;
+                    });
+                    
+                    this._selectset = menudata;
+
+                } else { // NO menu but return of SELECTRESULT
+
+                    this._selectset = null; // menu not required
                 }
 
+                this.selectitem = preselectitem;                    
+                this._selectindex = preselectindex;
                 this._lastid = null;
-                // console.log("_updateMenu. selected, _selectset", selected, this._selectset);
+                // console.log("_update Menu. selected, _selectset", selected, this._selectset);
             },
 
             // Translate external selection into index of meun-item 
