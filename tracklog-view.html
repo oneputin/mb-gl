@@ -184,7 +184,6 @@ container for presentation of track-properties (fi. elevations)
                 checked: {
                     type: Boolean,
                     value: false,
-                    //observer: "_toggleVisibility",
                     notify : true
                 }
             },
@@ -242,22 +241,6 @@ container for presentation of track-properties (fi. elevations)
                 }
                 this.checked = flag;
                 return; 
-
-                /* old approach
-                    var cont = this.$$("#container"),
-                        ctrl = this.$$("#control"); 
-                        //console.log(flag, cont.style, ctrl.style);
-                    if (flag) { console.log("SHOW", flag);
-                        cont.style.display == "block";
-                        ctrl.style.display == "none"
-                        // this.style.display = "block";
-                    } else { console.log("HIDE", flag);
-                        cont.style.display == "none";
-                        ctrl.style.display == "block"
-                        // this.style.display = "none";
-                    }
-                    this.updateStyles(); 
-                */
             },    
 
             getChartSelection: function(chartpoints){

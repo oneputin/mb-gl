@@ -56,31 +56,45 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
             on-response="_refreshMetadatasets">
         </iron-ajax>
 
-        <div class="vertical">
-            <!-- get a datasetMeta -->
-            <div class="flexchild">
-                <dynamic-menu
-                    id="menu2"
-                    class="transparent"
-                    menulabel = "[[datasetlabel]]"
-                    menuitems = "[[_dataset]]"
-                    ctrlitems = "[[ctrlitems]]"
-                    selectitem = "{{selectitem}}">
-                </dynamic-menu>
+        <template is="dom-if" if="{{!checked}}">
+            <paper-fab 
+                id = "control" 
+                class="fab" 
+                icon="folder-open" 
+                title="heart" 
+                on-tap="_toggleVisibility">
+            </paper-fab>
+        </template>
+
+        <template is="dom-if" if="{{checked}}">
+
+            <div class="vertical">
+                <!-- get a datasetMeta -->
+                <div class="flexchild">
+                    <dynamic-menu
+                        id="menu2"
+                        class="transparent"
+                        menulabel = "[[datasetlabel]]"
+                        menuitems = "[[_dataset]]"
+                        ctrlitems = "[[ctrlitems]]"
+                        selectitem = "{{selectitem}}">
+                    </dynamic-menu>
+                </div>
+                
+                <!-- present dataset-items to select one -->
+                <!--<div class="flexchild">-->
+                <div>
+                    <dynamic-menu 
+                        id = "menu1"
+                        class="metadata"
+                        menulabel="[[metadatasetslabel]]"
+                        menuitems="[[metadatasets]]"
+                        selectitem="{{metadataset}}">
+                    </dynamic-menu>
+                </div>
             </div>
-            
-            <!-- present dataset-items to select one -->
-            <!--<div class="flexchild">-->
-            <div>
-                <dynamic-menu 
-                    id = "menu1"
-                    class="metadata"
-                    menulabel="[[metadatasetslabel]]"
-                    menuitems="[[metadatasets]]"
-                    selectitem="{{metadataset}}">
-                </dynamic-menu>
-            </div>
-        </div>
+
+        </template>
 
         <content>    
         </content>
@@ -154,12 +168,21 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                     observer: '_checkObject'
                 },
 
+                checked : {
+                    type: Boolean,
+                    value : true
+                }
+
             },
 
             observers: [
                 '_refreshMetadata(metadataset.*)',
-                '_refreshDataset(dataset.*)'      
+                '_loadDataset(dataset.*)'      
             ],
+
+            attached: function() {
+                // this.checked = false;
+            },
 
             /**
              * Load datagroup-metas from ajax-response
@@ -183,11 +206,13 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
             _checkObject: function(obj) {
                 if (!obj)  return;
                 if (typeof obj == "string") obj = JSON.parse(obj); 
-                if (obj.id == "all") {
+                if (!obj.id) return; 
+                if (obj.id == "all") {  // console.log("Select ALL-Item, id=" + obj.id, obj);
                     obj.items = this._dataset;
-                    // console.log("Select ALL-Item, id=" + obj.id, obj);
                 } else if (obj.id == "none")  { // ??? 
                 }
+                // console.log("SelectedItem=" + obj.id);
+                this._toggleVisibility(false); 
             },
 
             // refresh menu of metadata
@@ -203,16 +228,19 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                 } 
             },
 
+            // load/refresh menu-data
+            _loadDataset: function(dataset){
+                dataset = dataset.value;    // console.log("_refres Dataset", dataset); 
+                this._refreshDataset(dataset);
+            },
+
             // refresh menu of app-data
             _refreshDataset: function(dataset){
 
-                dataset = dataset.value;    // console.log("_refres Dataset", dataset); 
-                
                 function readableItem(title) {
                     var newtitle = title.replace(/-/g,""); // console.log("COMPARE",title, newtitle); 
                     return newtitle;
                 }
-
                 function checkMenu(dataset) {
                     var dset = [];
                     dataset.forEach(function(d) {
@@ -231,7 +259,26 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                     }
                 } else this._dataset = null;
                 // console.log("_refres Dataset as _dataset", this._dataset);
+            },
+
+            // alternative visibility of control and container
+            _toggleVisibility: function(flag) {                
+                
+                if (flag == null) flag = !this.checked; 
+                if (!flag)  {
+                    this._toggleSize(50);
+                } else {
+                    this._issized = true;
+                    this._issized = false;
+                }
+                this.checked = flag;
+                return; 
+            },    
+
+            _toggleSize: function(tsize) {                
+                // console.log("new size", tsize);
             }
+
         })
     </script>
 </dom-module>
