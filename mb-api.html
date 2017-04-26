@@ -5,12 +5,43 @@ Versions: 0.32.1, 0.33.0
 -->
 <!--<script src='//api.tiles.mapbox.com/mapbox.js/plugins/turf/v2.0.0/turf.min.js' charset='utf-8'></script>-->
 <!--<script src='assets/turf.min.js'></script>-->
-<script src='assets/turf-mb.min.js'></script>
-<script>  // required for "reduced" turf-files: https://turfjs-builder.herokuapp.com/  
-  Object.keys(turf.helpers).forEach(function(k){
-      turf[k] = turf.helpers[k];
-  })      
-</script>    
+
+<!--<script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>-->
+
+<script src='https://clouds.iimaps.de/js/turf-mb.min.js'></script>
+
+<!--<script src='assets/turf-mb.min.js'></script>-->
+<!--<script src='https://drive.google.com/open?id=0B8PwJedJvqjvVFJjZlc1ejBuZVE&alt=media'></script>-->
+<!--<script src='https://firebasestorage.googleapis.com/v0/b/intense-heat-7852.appspot.com/o/turf-mb.min.js?alt=media&token=02be167f-ed56-4285-8a52-ed14f7f9e38c';-->
+
+<script>  
+    function getHelpers () {
+      // required for "reduced" turf-files created with: https://turfjs-builder.herokuapp.com/  
+      // console.log("turf =", turf ); 
+      if ((typeof turf != 'undefined') && turf.helpers && !turf.point) {
+        console.log("EXTENDING ourTurf"); 
+        Object.keys(turf.helpers).forEach(function(k){
+            turf[k] = turf.helpers[k];
+        })      
+      } 
+    }
+
+    /* Try to load ourTurf "mittelbar"
+      var script = document.createElement("script");
+      script.type = "text/javascript";
+      // script.src = "https://www.dropbox.com/s/yeoasv2glsve0za/tut.js?raw=1";
+      // script.src = "https://www.dropbox.com/s/fuizw3ag2etousv/turf-mb.min.js?raw=1";
+      script.src = "https://dl.dropboxusercontent.com/s/fuizw3ag2etousv/turf-mb.min.js?raw=1";
+      script.onload = function(){
+        console.log("Agent_Calculator Loaded");
+        getHelpers(); 
+      };
+      // document.head.appendChild(script);
+    */
+
+    getHelpers(); 
+
+</script>
 
 <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.js'></script>
 <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.css' rel='stylesheet' />

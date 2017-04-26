@@ -5,7 +5,7 @@
         "datasetlabel" : "Sulawesi tracks",
         "key": "sulawesi",
         "type": "gpx",
-        "url": "wp-data/foretrex20170223.gpx",
+        "url": "https://dl.dropboxusercontent.com/s/fcbd0xcm1aoju2y/foretrex20170223.gpx?raw=1",
         "query": {
             "geometry": "Track",
             "start": "2017-02-01",
