@@ -34,8 +34,13 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
         
         <!--<template is="dom-if" if="{{menuitems}}">-->
         <template is="dom-if" if="{{_selectset}}">
-            <paper-dropdown-menu class="dataitems" label="{{menulabel}}">
-                <paper-listbox id="listbox" class="dropdown-content" 
+            <paper-dropdown-menu 
+                id = "dropDown"
+                class = "dataitems" 
+                label = "{{menulabel}}">
+                <paper-listbox 
+                    id="listbox" 
+                    class="dropdown-content" 
                     on-iron-items-changed="_menuChanged" 
                     on-iron-select="_menuSelected" 
                     attr-for-selected="select">
@@ -106,6 +111,10 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                 '_updateMenu(menuitems)',
                 '_syncSelection(selectitem.id)'
             ],
+
+            open : function() {
+                this.$$('#dropDown').open();
+            },
 
             /**
              * Update the Menu-Content (List of menu-items & preselected item )

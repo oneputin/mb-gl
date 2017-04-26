@@ -72,8 +72,8 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                 <!-- get a datasetMeta -->
                 <div class="flexchild">
                     <dynamic-menu
-                        id="menu2"
-                        class="transparent"
+                        id = "menu2"
+                        class = "transparent"
                         menulabel = "[[datasetlabel]]"
                         menuitems = "[[_dataset]]"
                         ctrlitems = "[[ctrlitems]]"
@@ -181,7 +181,6 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
             ],
 
             attached: function() {
-                // this.checked = false;
             },
 
             /**
@@ -263,16 +262,18 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
 
             // alternative visibility of control and container
             _toggleVisibility: function(flag) {                
-                
                 if (flag == null) flag = !this.checked; 
                 if (!flag)  {
                     this._toggleSize(50);
                 } else {
-                    this._issized = true;
-                    this._issized = false;
+                    var scope = this;   
+                    setTimeout(function() { 
+                        // var m2 = scope.$$('#menu2');
+                        scope.$$('#menu2').open();                
+                    }, 500);
                 }
                 this.checked = flag;
-                return; 
+                // return; 
             },    
 
             _toggleSize: function(tsize) {                
