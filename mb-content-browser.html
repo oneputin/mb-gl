@@ -96,7 +96,8 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                 // LEVEL 1
                 // 
                 indexurl: {
-                    type: String
+                    type: String,
+                    observer: '_checkUrl'
                 },
 
                 /** Array of datasets Metas 
@@ -166,10 +167,14 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
              *
              * @param      {<type>}  ajaxresponse  The ajaxresponse
              */
-            _refreshMetadatasets: function(ajaxresponse) {
-                var datasetmetas = ajaxresponse.detail.response;
+            _refreshMetadatasets: function(ajaxresponse) { 
+                var datasetmetas = ajaxresponse.detail.response; // console.log(ajaxresponse, datasetmetas);
                 // optionally do some modification
                 this.metadatasets = datasetmetas;  
+            },
+
+            _checkUrl : function(url){
+                // if (url) console.log("request catalog with", url);  
             },
 
             /**
@@ -193,7 +198,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                 }]; // 
                 // 
                 meta = meta.value;  // console.log("meta in browser", meta); 
-                if (meta["datasetlabel"]) {
+                if (meta && meta["datasetlabel"]) {
                     this.datasetlabel = meta["datasetlabel"];
                 } 
             },
