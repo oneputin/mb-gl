@@ -137,6 +137,11 @@ container for presentation of track-properties (fi. elevations)
                     type: Object
                 },
 
+                trackfeature:{
+                    type: Object,
+                    observer: 'getQuickInfo'
+                },
+
                 logdata: {
                     type: Array // , observer: 'checkindata'
                 },
@@ -200,6 +205,10 @@ container for presentation of track-properties (fi. elevations)
                 this._toggleSize(50); 
             },
 
+            getQuickInfo: function(f){
+                
+            },
+            
             _closer : function() {
                 // this.checked = false;
                 this._toggleVisibility(false); 

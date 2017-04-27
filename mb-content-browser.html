@@ -267,13 +267,11 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                     this._toggleSize(50);
                 } else {
                     var scope = this;   
-                    setTimeout(function() { 
-                        // var m2 = scope.$$('#menu2');
+                    setTimeout(function() { // open the items-list of data-menu
                         scope.$$('#menu2').open();                
                     }, 500);
                 }
                 this.checked = flag;
-                // return; 
             },    
 
             _toggleSize: function(tsize) {                

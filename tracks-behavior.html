@@ -191,6 +191,100 @@
             var tempNumber = number * factor;
             var roundedTempNumber = Math.round(tempNumber);
             return roundedTempNumber / factor;
+        },
+
+        // Get track-specific Info about the "complete json-feature", 
+        // the selected json-tile belongs to
+        trackInfoCollect: function(trackident ) {
+            var scope = this, 
+                trackInfo={}, 
+                trackLine, selectPnt, dragpnt, trackTimes, tpTime, trackZ, tpZ;    
+            // console.log("trackInfoCollect", trackident); 
+
+            // A. APP-SPECIFIC: derive line-specific props
+            if (trackident.snap) {
+                // 
+                selectPnt = trackident.query; // features[1];
+                dragpnt   = trackident.snap; // features[2];
+                trackLine = trackident.track; // features[0];
+
+                trackInfo = trackLine.properties;
+            
+            } else if (trackident.srcfeature) {
+
+                trackInfo = trackident; 
+                trackInfo.coords = trackident.srcfeature.geometry.coordinates; // **!!!** 
+                trackInfo.fromnode = trackident.coords[0];
+                trackInfo.tonode = trackident.coords[trackident.coords.length - 1];
+                trackInfo.bbox = this.setFeatureBounds([trackident.srcfeature]);
+                trackInfo.length = this.deltaL(trackident.srcfeature);
+            }
+
+            trackInfo.html = "Track LOG <hr>" + trackInfo.time;
+            trackInfo.toast = "";
+
+            // B. SPECIFIC: derive tracklog-specific time-parameters 
+            if (trackInfo.coordTimes) { 
+                trackTimes = trackInfo.coordTimes;  // console.log("trackTimes", typeof trackTimes, trackTimes);
+                
+                if (typeof trackTimes == "string") {
+                    trackTimes = JSON.parse(trackTimes);
+                    trackInfo.coordTimes = trackTimes;
+                }   // console.log(trackInfo, trackTimes);
+                
+                var n = trackTimes.length, // equal to number of coords
+                    tvon = scope.trackTime(trackTimes[0]);
+                    tbis = scope.trackTime(trackTimes[n - 1])
+                    von = scope.utcTime(tvon, "h"),
+                    bis = scope.utcTime(tbis, "h"),
+                    dt = bis - von;
+                // console.log(trackTimes[0],trackTimes[n-1], tvon, tbis, von, bis, dt);
+
+                trackInfo.duration = scope.deltaT(dt);
+                trackInfo.count = n;
+                trackInfo.von = scope.logTime(von, "h", "t");
+                trackInfo.bis = scope.logTime(bis, "h", "t");
+
+                // E. SPECIFIC: compile some parameters as HTML 
+                var vonbis = " [ " + trackInfo.von +" to " + trackInfo.bis + "] ";
+                trackInfo.html  += "<br>Duration: " 
+                                + trackInfo.duration
+                                + "<br>" + vonbis; 
+                // trackInfo.toast += vonbis;
+            }
+            
+            if (dragpnt) { 
+                var tpinfo = dragpnt.properties,
+                    coords = dragpnt.geometry.coordinates;
+                trackInfo.html += "<hr>TP-Index: "+ tpinfo.index; 
+                
+                trackInfo.lnglat = new mapboxgl.LngLat(coords[0],coords[1]);
+
+                if (trackTimes) {
+                    tpTime = scope.trackTime(trackTimes[tpinfo.index]);
+                    tpTime = scope.utcTime(tpTime, "h");
+                    tpTime = scope.logTime(tpTime, "h", "t");
+                    tpTime = tpTime + " [UTC]" ;
+                
+                    trackInfo.html  += "<br>Time: " + tpTime; 
+                    trackInfo.toast += tpTime ; // + trackInfo.toast;
+                }    
+
+                if (trackInfo.coordElevs) {
+                    trackZ = trackInfo.coordElevs;  // console.log("trackTimes", typeof trackTimes, trackTimes);
+                    if (typeof trackZ == "string") {
+                        trackZ = JSON.parse(trackZ);
+                    }
+                    trackZ = trackZ[tpinfo.index] + " m";
+                    trackInfo.html += "<br>Elev : " + trackZ + " m NN"; 
+                    trackInfo.toast += "  :  z = "+ trackZ ; 
+                }    
+                // console.log("TP:", dragpnt, trackLine); // , trackInfo);
+            } else {
+                trackInfo.html += "<br>Length: " + trackInfo.length
+                trackInfo.html += "<br>TP's: " + trackInfo.count;
+            } 
+            return trackInfo;
         }
 
     };

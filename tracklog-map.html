@@ -386,23 +386,13 @@ alternative demos : routingtracks.html, fullscreen.html
                 properties.forEach(function(prop){
                     indexedData[prop] = indexedFeature.properties[prop];
                 }.bind(this));
+
                 // z.B.
                 //"elevs": indexedFeature.properties.coordElevs,
                 //"times": indexedFeature.properties.coordTimes
 
                 this.logdata = indexedData;
         
-                // B. Initialize logPoint on trackLine 
-                /*if (target.lnglat) { 
-                    var snapSet = this.logPointGet(target.lnglat);
-                    if (snapSet.index) { console.log("Start with targetPoint at index=" + snapSet.index, snapSet);
-                        scope.index = snapSet.index;
-                        //var trackInfo =  scope.trackInfoCollect(snapSet); // snapped.properties);
-                        //if (trackInfo.toast) scope.maptoast = trackInfo.toast; 
-                        // eventscope.popupOnMap(trackInfo);
-                    } 
-                }*/
-
             },
 
             // appShell around indexPointSnap
