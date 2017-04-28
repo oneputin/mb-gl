@@ -433,21 +433,29 @@ alternative demos : routingtracks.html, fullscreen.html
             logPointGet : function(lngLat) {
                 if (!lngLat) return;
                 var target = this.indexedtarget;
+                var mapToast = ""; 
                 if (target) {
 
                     var snapSet = this._indexedPointSnap(lngLat, target),
                         snapPnt = snapSet['snap'],
                         target = snapSet['target'],
                         index = snapPnt.properties.index;
-                        console.log("logPointGet: snapSet at " + index, snapSet); 
+                        // console.log("logPointGet: snapSet at " + index, snapSet); 
 
                     // MAIN Trigger: SYNC of target-use in external apps
                     this.index = index;
 
                     // Additional UI-info 
-                    var t = target.properties["coordTimes"][index],
-                        s = this.toFixed(snapPnt.properties.dist, 2)+" km";
-                    mapToast = 's= ' + s + ' from start, (t= ' + t+')';
+                    var s = "nn",t = "nn" ;
+                    if (target.properties["coordTimes"]) {
+                        t = target.properties["coordTimes"][index]; 
+                        t = this.logTime(this.utcTime(this.trackTime(t)),null,"/");
+                    }
+                    if (snapPnt.properties.location) {
+                        s = this.toFixed(snapPnt.properties.location, 2)+"km";
+                    }    
+                    
+                    mapToast = 't= ' + t + ',s= ' + s + ' from start';
   
                 } else {
                     // MAIN Trigger 
@@ -457,7 +465,7 @@ alternative demos : routingtracks.html, fullscreen.html
 
                     // Additional UI-info 
                     mapToast = "FREE drag to ???"; 
-                }
+                } //console.log(mapToast);
 
                 return mapToast;
             },        

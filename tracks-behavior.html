@@ -123,7 +123,7 @@
             var logtime = new Date(ms1970);
             // console.log("logTime",ms1970,logtime);
             if (!sep) return logtime;
-
+ 
             var D = logtime.getDate(),
                 M = logtime.getMonth() + 1,
                 h = logtime.getHours(),
@@ -153,7 +153,7 @@
                         var logdate = D + "." + M,
                             daytime = h + ":" + m;
                         // 
-                        if (sep=="t") logtime = daytime;
+                        if  (sep=="t") logtime = daytime;
                         else logtime = logdate + sep + daytime;
                     }
             }
