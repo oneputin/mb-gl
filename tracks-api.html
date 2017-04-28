@@ -76,6 +76,11 @@ display as decorated route (fi with commented endpoints)
                     notify: true
                 },
 
+                popupflag : {
+                    type: Boolean,
+                    value: false
+                },
+
                 maptoast: {
                     type: String,
                     notify: true
@@ -90,7 +95,7 @@ display as decorated route (fi with commented endpoints)
 
             observers: [
                 'transfer(rawcontent.*, disable)', // , metadata)'
-                'trackActivate(trackselected.id, tracksall)' //,
+                'trackActivate(trackselected.id, popupflag)' //,
                 // 'onMapdataLoad(mapcontent.*)',
             ],
 
@@ -119,28 +124,21 @@ display as decorated route (fi with commented endpoints)
             setTrackEvents: function(){
                 var mapevents = {};
                 var scope = this;
-                var deltatap = 5; // half-width(px) of event-querybox 
+                var tapPrecision = 5; // half-width(px) of event-querybox 
 
-                // Get content of tilefeature selected	
-                function srcFeatureContent(tileFeature, layerid, eventscope) {
-                    var tilecontent = eventscope.tileFeatureContent(tileFeature, layerid, "src"),
-                        selectid = tilecontent.id.replace(/-/g,'_'),
-                        allcontent = scope.contentbox[layerid].srcdata.features,
-                        srccontent; 
-                    
-                    // console.log("map-selected content", selectid, tilecontent, allcontent);
-                    allcontent.some(function(f){
-                        // console.log(f.properties.id==selectid); 
-                        if (f.properties.id == selectid) {
-                            srccontent = {
-                                layer: layerid,
-                                id : selectid,
-                                feature : f
-                            }    
-                            return false;
-                        }
-                    });
-                    return srccontent;
+                // Get comprensive content of track-tile selected
+                // 	
+                function srcTrackSelected(tileFeature, layerid, eventscope) {
+                    var featureAbout = eventscope.tileFeatureAbout(tileFeature, layerid, "src"),
+                        selectid = featureAbout.id.replace(/-/g,'_'),
+                        srcfeature = featureAbout.srcfeature;
+
+                    var srcTrack = {
+                        layer: layerid,
+                        id : selectid,
+                        feature : srcfeature
+                    };   // console.log("Selected track ", srcTrack);
+                    return srcTrack; 
                 }
 
                 // Generic HILITE-function based on "id-Filter"	
@@ -150,9 +148,10 @@ display as decorated route (fi with commented endpoints)
                     if (!map.getLayer(layerid)) return;
                     if (!map.getLayer(layerid + "-hover")) return;
                     var hilayerid, hifilter;
-                    var hidelta = 5;
+                    var delta = tapPrecision;
+
                     //var selgeo = e.point;
-                    var selgeo = [[e.point.x - hidelta, e.point.y - hidelta], [e.point.x + hidelta, e.point.y + hidelta]];
+                    var selgeo = [[e.point.x - delta, e.point.y - delta], [e.point.x + delta, e.point.y + delta]];
 
                     var features = map.queryRenderedFeatures(selgeo, {
                         layers: [layerid]
@@ -163,11 +162,11 @@ display as decorated route (fi with commented endpoints)
 
                     if (features.length) {  // Apply HILITE-FILTER  
 
-                        var fkeys = scope.guessFeatureKeys(features[0]); 
+                        var fkeys = scope.guessFeatureIdent(features[0]); 
 
                         if (!fkeys) {
 
-                            console.log("HILITING in " + layerid + ":", features[0]);
+                            console.log("Cannot HILITE in " + layerid + ":", features[0]);
                         
                         } else {    // Filtering the HOVER-Layer
                             
@@ -190,11 +189,13 @@ display as decorated route (fi with commented endpoints)
                 //  - supplies info-object of selected feature 
                 mapevents["select"] =  function featureSelect(e, layerid, eventscope) {
                     if (!map.getLayer(layerid)) return; // console.log("featureSelect in ", layerid, e.point); 
+                    // console.log(e); e.originalEvent.stopPropagation();
 
                     // A. Get visible feature 
                     //var selgeo = e.point;
+                    var delta = tapPrecision;
 
-                    var selgeo = [[e.point.x - deltatap, e.point.y - deltatap], [e.point.x + deltatap, e.point.y + deltatap]];
+                    var selgeo = [[e.point.x - delta, e.point.y - delta], [e.point.x + delta, e.point.y + delta]];
                     
                     var features = map.queryRenderedFeatures(selgeo, {
                         layers: [layerid]
@@ -203,8 +204,7 @@ display as decorated route (fi with commented endpoints)
                     if (!features || !features.length) return;  // console.log("featureSelect. tiles", features); 
 
                     // B. get (first)selected SRC-feature 
-                    var trackselected = srcFeatureContent(features[0], layerid, eventscope); 
-
+                    var trackselected = srcTrackSelected(features[0], layerid, eventscope); 
                     if (!trackselected) return;  // console.log("srcContent:", srcContent);
                     
                     if (scope.trackselected.id != trackselected.id) {  // activate ANOTHER track
@@ -214,9 +214,10 @@ display as decorated route (fi with commented endpoints)
                         scope.trackselected = trackselected; 
                         //**********************************
                     
-                    } else {  // already active track was selected                    
-                        // modify lnglat-property of 
-                        scope.set("trackselected.lnglat", e.lngLat);    
+                    } else {  // refresh properties of already active track                    
+                        // 1. lnglat-property of selectPnt 
+                        scope.set("trackselected.lnglat", e.lngLat);
+                        // 2.     
                     }
 
                 };
@@ -246,7 +247,7 @@ display as decorated route (fi with commented endpoints)
 
             // (Basic) MAP-Action(s) to run after a new track is selected
             //  further actions may run in separate elements
-            trackActivate: function(fid, tracksall) { 
+            trackActivate: function(fid, popupflag) { 
                 if (!fid || this.disable) return; 
                 // Activate SINGLE track(-object)
                 var f = this.trackselected; // console.log("ACTIVATE track, ID=", fid, f, this.disable); // , tracksall);
@@ -256,16 +257,16 @@ display as decorated route (fi with commented endpoints)
                     // A. Operations on ALL features (tracks)
                     if (fid == "all") {
 
-                        // A. DeActivate active track (if any was )
+                        // A. DeActivate active track (if there was any )
                         this.trackDecorate();
-                        this.trackdata = null; // {};
+                        // this.trackdata = null; // {};
 
                         // B. ZoomTo
                         var msg = "Zoom to ALL tracks";  // console.log("DEBUG", msg, tracksall); 
                         this.maptoast = msg;
                         
                         var ff = [];
-                        tracksall.forEach(function(item){
+                        this.tracksall.forEach(function(item){
                             ff.push(item.feature)
                         });
                         this.setFeatureBounds(ff, 10);
@@ -273,19 +274,16 @@ display as decorated route (fi with commented endpoints)
                     } 
 
                     var trackInfo = this.getTrackInfo(f);
-
                     if (!trackInfo) return;  // console.log("trackInfo", trackInfo); 
 
                     // C. Activate trackObject in "the suitable context"" (fi. as map-element) 
                     
                     if (map) {
-
                         // C.1 Optional: Assign Single popupAction 
                         //     bound to MoveEnd-Event related to following "panZoom"
-                        var flag = false; // this.map...  
-                        if (flag) {
+                        if (popupflag) {
                             map.once('moveend', function(e) { 
-                                console.log("track ACTIVATED&ZOOMED at ", e, trackInfo); 
+                                // console.log("track ACTIVATED&ZOOMED at ", e, trackInfo); 
                                 this.popupOnMap(trackInfo, {center: true});
                             }.bind(this));
                         }
@@ -308,11 +306,9 @@ display as decorated route (fi with commented endpoints)
 
             },    
 
-            //
+            // 
             getTrackInfo : function(f) {    
-                var feature = f;
-                if (f.feature) feature = f.feature; // console.log("ACTIVATE track", fid, f); 
-
+                
                 // 
                 var layerid; 
                 if (typeof f.layer == "string") {
@@ -322,11 +318,15 @@ display as decorated route (fi with commented endpoints)
                 }
                 if (!layerid) return;
 
+                var feature = f;
+                if (f.feature) feature = f.feature; // console.log("ACTIVATE track", fid, f); 
+
+
                 // B. Compile Data of selected track 
                 //    for use inside&outside element
 
-                var trackContent = this.tileFeatureContent(feature, layerid, "tile"); // map-behavior                       
-                var trackInfo    =  this.trackInfoCollect(trackContent);
+                var trackAbout = this.tileFeatureAbout(feature, layerid, "tile"); // map-behavior                       
+                var trackInfo  = this.trackInfoCollect(trackAbout);
                 if (!trackInfo) return;  // console.log("trackInfo", trackInfo);
 
                 trackInfo["layerid"] = layerid;

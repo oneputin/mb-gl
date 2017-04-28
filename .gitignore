@@ -1,6 +1,7 @@
 bower_components
 trash
 test
+log
 demo/gpx-data
 debug.log
 x-*

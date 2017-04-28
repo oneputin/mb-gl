@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-fab/paper-fab.html">
 
@@ -72,16 +73,20 @@ container for presentation of track-properties (fi. elevations)
                 @apply(--layout-flex);
             }
 
-            #metaxa {
-                color: blue;
+
+            .red {
+                color: red;
             }
 
             #container {
-                display: block; /*none;*/
-                position: relative;
+                /*display: block; /*none;*/
+                /*position: relative;*/
                 background-color: rgba(255,255,255,0.3); /*#ff4081*/
+                @apply(--layout-horizontal);
+
             }
-            #control {
+
+            #fab {
                 display: block;
                 position:absolute;
                 right:5px;
@@ -95,31 +100,36 @@ container for presentation of track-properties (fi. elevations)
 
             <template is="dom-if" if="{{!checked}}">
                 <paper-fab 
-                    id = "control" 
-                    class="fab" 
-                    icon="assessment" 
-                    title="heart" 
-                    on-tap="_toggleVisibility">
+                    id = "fab" 
+                    class = "fab" 
+                    icon = "assessment" 
+                    title = "heart" 
+                    on-tap = "_toggleVisibility">
                 </paper-fab>
             </template>
 
             <template is="dom-if" if="{{checked}}">
+                
                 <div id="container">
+
                     <google-chart
-                        id="logchart"
-                        type="line"
-                        cols='[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
+                        id = "logchart"
+                        type = "line"
+                        cols = '[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
                         selection="{{chartselection}}"
                         options='[[chartoptions]]'
                         rows='[[zdata]]'>
                     </google-chart>
 
                     <div class="chartctrls">
-                        <pre class="flexchild"><b>Checking TP-Index: </b>[[logindex]]</pre>
+                        <!--<pre class="flexchild"><b>Checking TP-Index: </b>[[logindex]]</pre>-->
+                        <pre class="flexchild red"> [[logindex]] </pre>
                         <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
                         <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
                     </div>
+
                 </div>
+            
             </template>
 
         </template>
@@ -171,6 +181,7 @@ container for presentation of track-properties (fi. elevations)
                     type: Number,
                     value: 200
                 },
+
                 maxsize : {
                     type: Number,
                     value: 600
@@ -203,6 +214,8 @@ container for presentation of track-properties (fi. elevations)
 
             attached: function() {
                 this._toggleSize(50); 
+                var w = Polymer.dom(this).parentNode.offsetWidth; // console.log(w);// window.innerWidth
+                this.maxsize = w * 0.8; // + "px"; // 80vw"; // window.innerWidth * 0.8 
             },
 
             getQuickInfo: function(f){
@@ -222,6 +235,7 @@ container for presentation of track-properties (fi. elevations)
             _toggleSize: function(size) { 
                 // debounce to enable _issized-flipflop
                 this.debounce("size", function(){ // console.log("TOGGLESIZE", typeof size, size,  this._issized); // , typethis.chartoptions);                 
+                  
                     if (typeof size == "number") {
                         this.style.width = size + "px";
                         this.style.height = size + "px";
@@ -234,8 +248,10 @@ container for presentation of track-properties (fi. elevations)
                         this.style.height = this.maxsize + "px";
                         size = this.maxsize;
                     }
+
                     this.set('chartoptions.width', size);
                     this.set('chartoptions.height', size);
+
                 }, 50);
             },    
 

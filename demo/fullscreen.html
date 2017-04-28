@@ -178,32 +178,33 @@
                     mapctrl = "[[mapctrl]]"
                     maptoast = "[[maptoast]]">
 
-                    <mb-content-browser 
-                        indexurl="[[indexurl]]" 
-                        metadatasetslabel="[[metadatasetslabel]]" 
-                        metadataset="{{metadataset}}"
+                    <div>
+                        <mb-content-browser 
+                            indexurl="[[indexurl]]" 
+                            metadatasetslabel="[[metadatasetslabel]]" 
+                            metadataset="{{metadataset}}"
 
-                        dataset = "[[dataset]]" 
-                        ctrlitems = "[[ctrlitems]]"
-                        selectitem="{{datasetitem}}"> 
+                            dataset = "[[dataset]]" 
+                            ctrlitems = "[[ctrlitems]]"
+                            selectitem="{{datasetitem}}"> 
 
-                        <tracks-load 
-                            routemode = "[[ctrl.userouting]]"
-                            tracksetmeta = "[[metadataset]]" 
-                            trackdata = "{{trackdata}}"> 
-                        </tracks-load>
-                    </mb-content-browser>
+                            <tracks-load 
+                                routemode = "[[ctrl.userouting]]"
+                                tracksetmeta = "[[metadataset]]" 
+                                trackdata = "{{trackdata}}"> 
+                            </tracks-load>
+                        </mb-content-browser>
 
-                    <!-- placed here to overlay the map -->
-                    <tracklog-view
-                        disable = "[[ctrl.userouting]]"
-                        checked = "{{ctrl.trackdetailshow}}"
-                        metadata = "[[metadataset]]"
-                        trackfeature = "[[datasetitem]]"
-                        logdata = "[[logdata]]"
-                        logindex = "{{logindex}}">
-                    </tracklog-view>    
-
+                        <!-- placed here to overlay the map -->
+                        <tracklog-view
+                            disable = "[[ctrl.userouting]]"
+                            checked = "{{ctrl.trackdetailshow}}"
+                            metadata = "[[metadataset]]"
+                            trackfeature = "[[datasetitem]]"
+                            logdata = "[[logdata]]"
+                            logindex = "{{logindex}}">
+                        </tracklog-view>    
+                    </div>    
                     <!-- (menulike)ctrl of single log-points  
                     <tracklog-ctrl
                         class = "mapctrl-log"

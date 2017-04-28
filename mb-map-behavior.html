@@ -287,76 +287,76 @@
             return rr;
         },
 
-
-        /** Get info about sourceFeature "below" a tile-feature
+        /** Get info about the "sourceFeature" behind a "tileFeature"
          *   - the geometry 
          *   - the identification used 
          */  
-        getSourceFeatureInfo:  function (layerid, tileFeature) {
+        getVectorFeature:  function (layerid, tileFeature) {
 
-            var srcLayer = map.getLayer(layerid),
-                srcInfo = {}, keyname, keyvalue ; 
-            // console.log("START getSourceFeature Info of", layerid, tileFeature, srcLayer);
-
-            if (srcLayer) {
-
-                var keys = this.guessFeatureKeys(tileFeature);
-                if (keys.length) {
-                    keyname  = keys[0];  
-                    keyvalue = keys[1];  
-                }
-
-                var theSource = map.getSource(srcLayer.source),
-                    srcFeatures = theSource._data.features;
-
-                srcFeatures.some(function(f){
-                    if (f.properties[keyname] == keyvalue) {   // console.log("DETECTED", f);
-                        srcInfo.srcfeature = f;
-                        srcInfo.keyname  = keyname;  
-                        srcInfo.keyvalue = keyvalue;  
-                        srcInfo.id = keyvalue;
-                        return true;
-                    }
-                });
-                //console.log("OK getSourceFeature Info of", layerid, tileFeature, srcInfo);
-            } else {
+            var srcLayer = map.getLayer(layerid);
+            var keys = this.guessFeatureIdent(tileFeature);
+                 
+            if (!srcLayer || !keys) {
                 //console.log("BREAK getSourceFeature Info of", layerid, tileFeature);
+                return {}; 
             }
+
+            // console.log("START getSourceFeature Info of", layerid, tileFeature, srcLayer);
+            var srcInfo = {},
+                keyname  = keys[0],  
+                keyvalue = keys[1];  
+
+            var theSource = map.getSource(srcLayer.source),
+                srcFeatures = theSource._data.features;
+
+            srcFeatures.some(function(f){
+                if (f.properties[keyname] == keyvalue) {   // console.log("DETECTED", f);
+                    srcInfo.srcfeature = f;
+                    srcInfo.tilefeature = tileFeature;
+                    srcInfo.id = keyvalue;
+                    // to know the 
+                    srcInfo.keyname  = keyname;  
+                    srcInfo.keyvalue = keyvalue;  
+                    return true;
+                }
+            });
+            //console.log("OK getSourceFeature Info of", layerid, tileFeature, srcInfo);
             return srcInfo; 
         }, 
 
         // Append srcInfo to (tile)Feature.properties
-        tileFeatureContent: function(tileFeature, layerid, flag) {
+        tileFeatureAbout: function(tileFeature, layerid, flag) {
             if (!map) return; 
             //if (!this.map) return; // not declared in behavior !! 
 
             // A. GENERIC: Get SOURCE-properties for identified feature !!!
-            var tileFeatureProperties = this.objectClone(tileFeature.properties);
+            var aboutFeature = this.objectClone(tileFeature.properties);
 
             // B. GENERIC: SOURCE FEATURE (untiled)
-            var srcInfo = this.getSourceFeatureInfo(layerid, tileFeature);  // console.log("srcInfo of ", layerid, srcInfo);  
+            var srcInfo = this.getVectorFeature(layerid, tileFeature);  // console.log("srcInfo of ", layerid, srcInfo);  
 
             Object.keys(srcInfo).forEach(function(k){
-                tileFeatureProperties[k] = srcInfo[k];
+                aboutFeature[k] = srcInfo[k];
             }); 
-            return tileFeatureProperties;
+
+            return aboutFeature;
         },     
 
         // Get Info about "complete track", not only features in actually "visible" tile(s)
-        guessFeatureKeys: function(feature, keyNames) {
+        guessFeatureIdent: function(feature, keyNames) {
             // Heuristik to identify suitable filter-key  
             if (!feature) return; 
             if (!keyNames) keyNames = ["id", "name", "key", "time"];
 
             var fInfo = feature.properties, // console.log("trackInfo", trackInfo, srcFeatures); 
-                keyname
+                keyname = "";
             keyNames.some(function(nom) {
                 if (fInfo[nom]) {
                     keyname = nom;
                     return true;
                 }
             });
-            if (!keyname) return; 
+            if (!keyname) return []; 
 
             return [keyname, fInfo[keyname]]; 
         },    
