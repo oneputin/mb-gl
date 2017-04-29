@@ -139,7 +139,7 @@ the map-object can be ctrld from outside
             },
 
             showToast: function(t){
-                //console.log("log toast",t);
+                if (!t) return; //console.log("log toast",t);
                 this.$.toast.open();
             },
 

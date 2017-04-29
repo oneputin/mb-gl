@@ -30,43 +30,16 @@ container for presentation of track-properties (fi. elevations)
             :host {
                 display: block;
                 position: absolute;
-                font: 0.8em Courier, Lucida;
-                color: white;                   
-
-                /*background-color: rgba(255,64,129,0.8); */ /*#ff4081*/
-                /*
-                top: 0;
-                right: 0; 
-                z-index: 9;
-                padding: 10px;*/
-
-                /* if to center 
-                height: 50%;
-                width: 50%;
-                left: 50%;
-                margin-right: -50%;
-                transform: translate(-50%, 0); */
-
             }
 
-            #logchart  {
-                position : absolute;
-                width: 100px;
-                height: 100px;
+            #container {
+                background-color: rgba(255,255,255,0.3); /*#ff4081*/
+                @apply(--layout-vertical);
+
             }
 
             .chartctrls {
-                display: block;
-                /*display: inline-block;
-                position: absolute;*/
                 @apply(--layout-horizontal);
-                @apply(--layout-center);
-                /*top: 12px;*/
-                bottom : 5px;
-                color : black;
-                /*height : 50px;*/
-                width: 100%;
-                z-index: 99;
             }
 
             .flexchild {
@@ -76,14 +49,14 @@ container for presentation of track-properties (fi. elevations)
 
             .red {
                 color: red;
+                text-align: center;
+                vertical-align: middle;
+                height: 100%;
             }
 
-            #container {
-                /*display: block; /*none;*/
-                /*position: relative;*/
-                background-color: rgba(255,255,255,0.3); /*#ff4081*/
-                @apply(--layout-horizontal);
-
+            #chart {
+                width: 100%;
+                height: 100%;
             }
 
             #fab {
@@ -112,8 +85,15 @@ container for presentation of track-properties (fi. elevations)
                 
                 <div id="container">
 
+                    <div class="chartctrls">
+                        <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
+                        <div class="flexchild red">[[logindex]]</div>
+                        <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
+                    </div>
+
                     <google-chart
-                        id = "logchart"
+                        id = "chart"
+                        class = "flexchild"
                         type = "line"
                         cols = '[{"label": "Time", "type": "datetime"},{"label": "Elev", "type": "number"}]'
                         selection="{{chartselection}}"
@@ -121,12 +101,6 @@ container for presentation of track-properties (fi. elevations)
                         rows='[[zdata]]'>
                     </google-chart>
 
-                    <div class="chartctrls">
-                        <!--<pre class="flexchild"><b>Checking TP-Index: </b>[[logindex]]</pre>-->
-                        <pre class="flexchild red"> [[logindex]] </pre>
-                        <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
-                        <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
-                    </div>
 
                 </div>
             
@@ -234,24 +208,18 @@ container for presentation of track-properties (fi. elevations)
 
             _toggleSize: function(size) { 
                 // debounce to enable _issized-flipflop
+                var gchrt = this.$$("google-chart"); 
+                
                 this.debounce("size", function(){ // console.log("TOGGLESIZE", typeof size, size,  this._issized); // , typethis.chartoptions);                 
-                  
                     if (typeof size == "number") {
-                        this.style.width = size + "px";
-                        this.style.height = size + "px";
+                        // use this size for chart
                     } else if (!this._issized) {
-                        this.style.width = this.minsize + 40 + "px";
-                        this.style.height = this.minsize + "px";
                         size = this.minsize;
                     } else {
-                        this.style.width = this.maxsize + 40 + "px";
-                        this.style.height = this.maxsize + "px";
                         size = this.maxsize;
                     }
-
                     this.set('chartoptions.width', size);
                     this.set('chartoptions.height', size);
-
                 }, 50);
             },    
 

@@ -3,7 +3,8 @@
 <head>
     <title>routing-tracks demo</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=no"><!-- user-scalable=no" -->
+    <!--<meta name="viewport" content="initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,width=device-width,user-scalable=no" />-->
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
    
     <!-- web-components required for dev-gui --> 
@@ -19,9 +20,9 @@
     <!-- app-components related to map-api --> 
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
-    <link rel="import" href="../mb-styles.html">
-    <link rel="import" href="../mb-distance.html">
-    <link rel="import" href="../mb-orientation-ctrl.html">
+   <!--<link rel="import" href="../mb-styles.html">-->
+   <!--<link rel="import" href="../mb-distance.html">-->
+   <!--<link rel="import" href="../mb-orientation-ctrl.html">-->
 
     <!-- generic components for app-content-ctrl -->
     <link rel="import" href="../mb-content-browser.html"> 
@@ -29,9 +30,9 @@
     <!--<link rel="import" href="../mb-content-select.html">-->
 
     <!-- generic animation components -->
-    <link rel="import" href="../routing-api.html">
+    <!--<link rel="import" href="../routing-api.html">
     <link rel="import" href="../timer-ctrl.html">
-    <link rel="import" href="../timer-setup.html">
+    <link rel="import" href="../timer-setup.html">-->
 
     <!-- specific animation components for some datasources -->
     <link rel="import" href="../tracks-info.html">
@@ -215,19 +216,19 @@
                     </tracklog-ctrl>-->
 
                     <!-- Select-menu of map-styles -->
-                    <mb-styles 
+                    <!--<mb-styles 
                         checked = "{{ctrl.styleselectshow}}"
                         styleset ="[[morestyles]]"
                         selectable = "{{styleselectable}}"
                         mapstyle = "{{mapstyle}}"> 
-                    </mb-styles>
+                    </mb-styles>-->
 
                     <!-- TOOL to measure user-generated lines -->
-                    <mb-distance 
+                    <!--<mb-distance 
                         checked="[[ctrl.mapmeasureshow]]"
                         distance="{{distance}}" 
                         map="[[map]]"> 
-                    </mb-distance>
+                    </mb-distance>-->
 
                     <!-- Indicator of mapclient-coordinates (mapcenter,mouse) -->
                     <mb-location-log 
