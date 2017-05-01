@@ -255,6 +255,7 @@ container for presentation of track-properties (fi. elevations)
             // Refresh data and/or parameters of chart-element <google-chart>
             refreshLogChart: function(chartdata, chartoptions){
                 if (this.disable || !chartdata) return;  // console.log("CHARTOPTIONS ::: ", chartdata, chartoptions); 
+               
                 var scope = this,
                     times = chartdata["coordTimes"],
                     elevs = chartdata["coordElevs"];

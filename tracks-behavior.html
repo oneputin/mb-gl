@@ -14,22 +14,26 @@
     Mbb.TracksBehavior = {
 
         // 
-        deltaL : function(aLine, unit) {
-          // aLine must be an element of src-data (!!!) , here   
+        trackLength : function(aLine, unit, decimals) {
+          // aLine must be geojsonFeature (type, geometry)    
           var unitshort ;
           if (!unit) unit="kilometers";
+          if (!decimals) decimals = 3; 
+          
           if (unit=="kilometers") unitshort ="km";
           if (unit=="miles") unitshort ="mi";
           if (unit=="nautic") {
-              unit="kilometers";
+              unit="kilometers"; // calculate later !!
               unitshort ="nm";
           }    
           var dl = 1;
           if (typeof turf !== "undefined") dl = turf.lineDistance(aLine, unit);
+          else dl = 999; // ??? 
+
           if (typeof dl == "number") {
               if (unitshort=="nm") dl = dl / 1.856; 
-              dl = this.toFixed(dl, 3) + unitshort;
-          }    
+              dl = this.toFixed(dl, decimals) + unitshort;
+          }  // console.log("trackLength", dl);  
           return dl;
         },
 
@@ -196,49 +200,51 @@
 
         // Get track-specific Info about the "geoJson-src-feature", 
         // the selected json-tile belongs to
-        trackInfoCollect: function(trackident ) { // console.log("trackInfoCollect", trackident); 
+        trackLogAddDetails: function(trackident, lnglat) { //console.log("trackLogAddDetails", trackident, lnglat); 
             var scope = this, 
-                trackInfo = {}, 
+                trackLog = {}, 
                 trackLine, selectPnt, dragPnt, 
                 trackTimes, trackElevs,
                 tpTime, trackZ;    
 
             // A. APP-SPECIFIC: derive line-specific props
             
-            if (trackident.snap) {   // 
+            if (trackident.snap) {   // Sonderfall ? ? ?
 
                 selectPnt = trackident.query; // features[1];
                 dragPnt   = trackident.snap; // features[2];
                 trackLine = trackident.track; // features[0];
 
-                trackInfo = trackLine.properties;
+                trackLog = trackLine.properties;
             
-            } else if (trackident.srcfeature) { // 
+            } else if (trackident.geometry) { // 
 
-                trackInfo = trackident; 
+                trackLog = trackident; 
+                trackLog.bbox = this.setFeatureBounds([trackident]);
+                trackLog.length = this.trackLength(trackident);
                 
-                trackInfo.coords = trackident.srcfeature.geometry.coordinates; // **!!!** 
-                trackInfo.fromnode = trackident.coords[0];
-                trackInfo.tonode = trackident.coords[trackident.coords.length - 1];
-                trackInfo.bbox = this.setFeatureBounds([trackident.srcfeature]);
-                trackInfo.length = this.deltaL(trackident.srcfeature);
+                trackLog.coords = trackident.geometry.coordinates; // **!!!** 
+                trackLog.fromnode = trackident.coords[0];
+                trackLog.tonode = trackident.coords[trackident.coords.length - 1];
             }
 
-            trackInfo.html = "Track LOG <hr>" + trackInfo.time;
+            if (lnglat) trackLog.lnglat = lnglat; 
 
-            trackInfo.toast = "";
+            trackLog.html = "Track LOG <hr>" + trackLog.time;
+
+            trackLog.toast = "";
 
 
             // B. SPECIFIC: derive tracklog-specific parameterArrays 
 
-            if (trackInfo.coordTimes) { 
+            if (trackLog.coordTimes) { 
 
-                trackTimes = trackInfo.coordTimes;  // console.log("trackTimes", typeof trackTimes, trackTimes);
+                trackTimes = trackLog.coordTimes;  // console.log("trackTimes", typeof trackTimes, trackTimes);
                 
                 if (typeof trackTimes == "string") {
                     trackTimes = JSON.parse(trackTimes);
-                    trackInfo.coordTimes = trackTimes;
-                }   // console.log(trackInfo, trackTimes);
+                    trackLog.coordTimes = trackTimes;
+                }   // console.log(trackLog, trackTimes);
                 
                 var n = trackTimes.length, // equal to number of coords
                     tvon = scope.trackTime(trackTimes[0]);
@@ -248,39 +254,38 @@
                     dt = bis - von;
                 // console.log(trackTimes[0],trackTimes[n-1], tvon, tbis, von, bis, dt);
 
-                trackInfo.duration = scope.deltaT(dt);
-                trackInfo.count = n;
-                trackInfo.von = scope.logTime(von, "h", "t");
-                trackInfo.bis = scope.logTime(bis, "h", "t");
+                trackLog.duration = scope.deltaT(dt);
+                trackLog.count = n;
+                trackLog.von = scope.logTime(von, "h", "t");
+                trackLog.bis = scope.logTime(bis, "h", "t");
 
                 // E. SPECIFIC: add some parameters to quickInfo-HTML 
-                var vonbis = " [ " + trackInfo.von +" to " + trackInfo.bis + "] ";
-                trackInfo.html  += "<br>Duration: " 
-                                + trackInfo.duration
+                var vonbis = " [ " + trackLog.von +" to " + trackLog.bis + "] ";
+                trackLog.html  += "<br>Duration: " 
+                                + trackLog.duration
                                 + "<br>" + vonbis; 
-                // trackInfo.toast += vonbis;
+                // trackLog.toast += vonbis;
             }
 
-
-            if (trackInfo.coordElevs) {
+            // C. 
+            if (trackLog.coordElevs) {
                 
-                trackElevs = trackInfo.coordElevs;  // console.log("trackTimes", typeof trackTimes, trackTimes);
+                trackElevs = trackLog.coordElevs;  // console.log("trackTimes", typeof trackTimes, trackTimes);
                 
                 if (typeof trackElevs == "string") {
                     trackElevs = JSON.parse(trackZ);
                 }
             }    
-            // console.log("TP:", dragPnt, trackLine); // , trackInfo);
+            // console.log("TP:", dragPnt, trackLine); // , trackLog);
 
-            // C. 
+            // D. Add dragpnt - data 
 
             if (dragPnt) { 
-
                 var tpinfo = dragPnt.properties,
                     coords = dragPnt.geometry.coordinates;
-                trackInfo.lnglat = new mapboxgl.LngLat(coords[0],coords[1]);
+                trackLog.lnglat = new mapboxgl.LngLat(coords[0],coords[1]);
 
-                trackInfo.html += "<hr>TP-Index: "+ tpinfo.index; 
+                trackLog.html += "<hr>TP-Index: "+ tpinfo.index; 
 
                 if (trackTimes) {
                     tpTime = scope.trackTime(trackTimes[tpinfo.index]);
@@ -288,27 +293,26 @@
                     tpTime = scope.logTime(tpTime, "h", "t");
                     tpTime = tpTime + " [UTC]" ;
                 
-                    trackInfo.html  += "<br>Time: " + tpTime; 
-                    trackInfo.toast += tpTime ; // + trackInfo.toast;
+                    trackLog.html  += "<br>Time: " + tpTime; 
+                    trackLog.toast += tpTime ; // + trackLog.toast;
                 }    
 
                 if (trackElevs) {
 
                     trackZ = trackZ[tpinfo.index] + " m";
 
-                    trackInfo.html += "<br>Elev : " + trackZ + " m NN"; 
-                    trackInfo.toast += "  :  z = "+ trackZ ; 
+                    trackLog.html += "<br>Elev : " + trackZ + " m NN"; 
+                    trackLog.toast += "  :  z = "+ trackZ ; 
                 }    
-                // console.log("TP:", dragPnt, trackLine); // , trackInfo);
+                // console.log("TP:", dragPnt, trackLine); // , trackLog);
           
             } else {
-        
-                trackInfo.html += "<br>Length: " + trackInfo.length
-                trackInfo.html += "<br>TP's: " + trackInfo.count;
+                trackLog.html += "<br>Length: " + trackLog.length
+                trackLog.html += "<br>TP's: " + trackLog.count;
 
-            } 
+            } // console.log("trackLog",trackLog); 
             
-            return trackInfo;
+            return trackLog;
         }
 
     };

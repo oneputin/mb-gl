@@ -80,14 +80,13 @@ alternative demos : routingtracks.html, fullscreen.html
                 },
 
                 // 
-                indexedtarget: {
-                    type: Object // ,   observer : 'logDataBuild'
+                tracklogged: {
+                    type: Object
                 },
 
                 // Array of indexed data
                 logdata: {
-                    type: Object,
-                    notify : true
+                    type: Object
                 },
 
                 // 
@@ -112,8 +111,8 @@ alternative demos : routingtracks.html, fullscreen.html
             ],
 
             observers: [
-                'logDataBuild(indexedtarget.feature)',
-                'logPointGet(indexedtarget.lnglat)',
+                //'logDataBuild(tracklogged.feature)',
+                //'logPointGet(tracklogged.lnglat)',
                 '_toggleMode(draggable, mobilemode)'
             ],
 
@@ -236,10 +235,10 @@ alternative demos : routingtracks.html, fullscreen.html
 
                     // Set a UI indicator for dragging ? 
                     // canvas.style.cursor = 'grabbing';
-                    var trackLine = scope.indexedtarget;
+                    var trackLine = scope.tracklogged;
                     if (trackLine) { // Update the "nearest" point on active target(fi. track) 
                         
-                        var snapSet = scope._indexedPointSnap(lngLat, trackLine); // , scope.indexedtarget);
+                        var snapSet = scope._indexedPointSnap(lngLat, trackLine); // , scope.tracklogged);
                         
                         if (snapSet.index != null) {
                             // A. SYNC location and all related elements
@@ -426,15 +425,15 @@ alternative demos : routingtracks.html, fullscreen.html
                 //"times": indexedFeature.properties.coordTimes
 
                 this.logdata = indexedData;
-        
             },
 
             // appShell around indexPointSnap
             logPointGet : function(lngLat) {
-                if (!lngLat) return;
-                var target = this.indexedtarget;
+                if (!lngLat) return; 
+                var target = this.tracklogged;
+
                 var mapToast = ""; 
-                if (target) {
+                if (target) {   // A. 
 
                     var snapSet = this._indexedPointSnap(lngLat, target),
                         snapPnt = snapSet['snap'],
@@ -457,8 +456,8 @@ alternative demos : routingtracks.html, fullscreen.html
                     
                     mapToast = 't= ' + t + ',s= ' + s + ' from start';
   
-                } else {
-                    // MAIN Trigger 
+                } else {        // MAIN Trigger 
+                    
                     logPointRefresh([lngLat.lng, lngLat.lat]);
                     // OR with export-options 
                     // this.coords = [lngLat.lng, lngLat.lat];
@@ -542,7 +541,7 @@ alternative demos : routingtracks.html, fullscreen.html
 
             // 
             _indexedPointSnap : function(queryPnt, target) { // , elemscope) {
-                if (!target) return; // target = this.indexedtarget; 
+                if (!target) return; // target = this.tracklogged; 
                 // console.log("queryPnt, target", queryPnt, target);
 
                 var indexedFeature = target.feature; 

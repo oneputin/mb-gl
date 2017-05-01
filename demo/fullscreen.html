@@ -269,27 +269,28 @@
             <!-- B.2 TRACK-Explorer -->
             <tracks-api 
                 disable = "[[ctrl.userouting]]"
-                maptoast = "{{maptoast}}"
                 rawcontent = "[[trackdata]]" 
                 metadata = "{{metadataset}}" 
                 contentbox = "{{contentbox}}" 
                 mapcontent = "[[mapcontent]]"
-                mapevents = "{{mapevents}}"
+                trackevents = "{{trackevents}}"
                 tracksall = "[[dataset]]"
-                trackselected = "{{datasetitem}}"
-                trackpntindex = "{{logindex}}">
+                trackitem = "{{datasetitem}}"
+                tracklog = "{{logdata}}"
+                maptoast = "{{maptoast}}">
             </tracks-api>
+            <!--trackpntindex = "{{logindex}}">-->
 
             <tracklog-map
                 disable = "[[ctrl.userouting]]"
                 mbid = "[[mbid]]" 
                 mobilemode = "[[ctrl.mobilemode]]"
                 draggable = "[[ctrl.trackdraggable]]"
-                indexedtarget = "[[datasetitem]]"
-                logdata = "{{logdata}}"
+                logdata = "[[logdata]]"
                 index = "{{logindex}}"
                 maptoast = "{{maptoast}}">
             </tracklog-map>
+            <!--tracklogged = "[[datasetitem]]"-->
 
             <layer-waypoints 
                 mbid = "[[mbid]]" 
@@ -304,7 +305,7 @@
                 mobilemode = "[[ctrl.mobilemode]]"
                 mbid = "[[mbid]]" 
                 contentbox = "{{contentbox}}" 
-                mapevents = "[[mapevents]]"
+                mapevents = "[[trackevents]]"
                 mapcontent = "{{mapcontent}}"
                 dataset = "{{dataset}}">
             </mb-content-manager>

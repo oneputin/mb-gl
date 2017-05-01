@@ -66,12 +66,17 @@ display as decorated route (fi with commented endpoints)
                 },
 
                 // 
-                trackselected: {
+                trackitem: {
+                    type: Object,
+                    notify: true
+                },
+                // 
+                tracklogged: {
                     type: Object,
                     notify: true
                 },
 
-                mapevents: {
+                trackevents: {
                     type: Object,
                     notify: true
                 },
@@ -95,7 +100,9 @@ display as decorated route (fi with commented endpoints)
 
             observers: [
                 'transfer(rawcontent.*, disable)', // , metadata)'
-                'trackActivate(trackselected.id, popupflag)' //,
+                'trackActivate(trackitem.id, popupflag)', //,
+                'trackLogActivate(tracklog.lnglat)'
+                
                 // 'onMapdataLoad(mapcontent.*)',
             ],
 
@@ -122,28 +129,13 @@ display as decorated route (fi with commented endpoints)
 
             // Setup events related to UserInteractions with track-lines
             setTrackEvents: function(){
-                var mapevents = {};
+                var trackevents = {};
                 var scope = this;
                 var tapPrecision = 5; // half-width(px) of event-querybox 
 
-                // Get comprensive content of track-tile selected
-                // 	
-                function srcTrackSelected(tileFeature, layerid, eventscope) {
-                    var featureAbout = eventscope.tileFeatureAbout(tileFeature, layerid, "src"),
-                        selectid = featureAbout.id.replace(/-/g,'_'),
-                        srcfeature = featureAbout.srcfeature;
-
-                    var srcTrack = {
-                        layer: layerid,
-                        id : selectid,
-                        feature : srcfeature
-                    };   // console.log("Selected track ", srcTrack);
-                    return srcTrack; 
-                }
-
                 // Generic HILITE-function based on "id-Filter"	
                 // 
-                mapevents["hilite"] = function featureHilite(e, layerid, scope) {
+                trackevents["hilite"] = function featureHilite(e, layerid, scope) {
                     // console.log("featureHilite in ", layerid, e.point); 
                     if (!map.getLayer(layerid)) return;
                     if (!map.getLayer(layerid + "-hover")) return;
@@ -187,43 +179,42 @@ display as decorated route (fi with commented endpoints)
                 //  - Zoom to trackLine-BBOX  
                 //  - SYNC of map-selection with item-selection in content-browser    
                 //  - supplies info-object of selected feature 
-                mapevents["select"] =  function featureSelect(e, layerid, eventscope) {
-                    if (!map.getLayer(layerid)) return; // console.log("featureSelect in ", layerid, e.point); 
-                    // console.log(e); e.originalEvent.stopPropagation();
+                trackevents["select"] =  function featureSelect(e, layerid, eventscope) {
+                    if (!map.getLayer(layerid)) return; 
+                    // e.originalEvent.stopPropagation();
 
                     // A. Get visible feature 
-                    //var selgeo = e.point;
-                    var delta = tapPrecision;
-
-                    var selgeo = [[e.point.x - delta, e.point.y - delta], [e.point.x + delta, e.point.y + delta]];
-                    
-                    var features = map.queryRenderedFeatures(selgeo, {
+                    var selectGeometry = e.point;
+                    if (tapPrecision) {
+                        var delta = tapPrecision;
+                        selectGeometry = [[e.point.x - delta, e.point.y - delta], [e.point.x + delta, e.point.y + delta]];                    
+                    }
+                    var features = map.queryRenderedFeatures(selectGeometry, {
                         layers: [layerid]
                     }); 
-                   
-                    if (!features || !features.length) return;  // console.log("featureSelect. tiles", features); 
+                    if (!features || !features.length) return;  
 
-                    // B. get (first)selected SRC-feature 
-                    var trackselected = srcTrackSelected(features[0], layerid, eventscope); 
-                    if (!trackselected) return;  // console.log("srcContent:", srcContent);
+                    // B. Refresh TrackItem 
+                    var trackitem = eventscope.mapFeatureGet(features[0]); 
+                    if (!trackitem) return;   console.log("SELECTED trackFeature:", trackitem);
                     
-                    if (scope.trackselected.id != trackselected.id) {  // activate ANOTHER track
+                    if (scope.trackitem.id != trackitem.id) {  // activate ANOTHER track
+                        scope.trackitem = trackitem; 
+                        //***************
+                    } 
 
-                        trackselected.lnglat = e.lngLat;    // where track was selected
+                    // C. Refresh LOG of TrackItem
+                    scope.tracklog = scope.getTrackLog(features[0], layerid);
+                    //**************
+                    console.log("LOG of SELECTED trackFeature", scope.tracklog);
 
-                        scope.trackselected = trackselected; 
-                        //**********************************
-                    
-                    } else {  // refresh properties of already active track                    
-                        // 1. lnglat-property of selectPnt 
-                        scope.set("trackselected.lnglat", e.lngLat);
-                        // 2.     
-                    }
-
+                    // D. Refresh lnglat-property of TrackItem 
+                    scope.set("tracklog.lnglat", e.lngLat);
+                    //************************  
                 };
                
                 /*     
-                mapevents["mousemove"] =  function mouseMove(e) {
+                trackevents["mousemove"] =  function mouseMove(e) {
                     var layerid = 'dragpnt-glow';
                     var features = map.queryRenderedFeatures(e.point, { layers: [layerid] });
                     // Change point and cursor style as a UI indicator
@@ -241,16 +232,15 @@ display as decorated route (fi with commented endpoints)
                         map.dragPan.enable();
                     }
                 }*/
-
-                this.mapevents = mapevents; 
+                this.trackevents = trackevents; 
             },
 
             // (Basic) MAP-Action(s) to run after a new track is selected
             //  further actions may run in separate elements
             trackActivate: function(fid, popupflag) { 
                 if (!fid || this.disable) return; 
+
                 // Activate SINGLE track(-object)
-                var f = this.trackselected; // console.log("ACTIVATE track, ID=", fid, f, this.disable); // , tracksall);
 
                 this.debounce("activate", function() {
 
@@ -273,65 +263,62 @@ display as decorated route (fi with commented endpoints)
                         return;
                     } 
 
-                    var trackInfo = this.getTrackInfo(f);
-                    if (!trackInfo) return;  // console.log("trackInfo", trackInfo); 
-
                     // C. Activate trackObject in "the suitable context"" (fi. as map-element) 
                     
-                    if (map) {
+                    if (map) { 
+                        var trackitem = this.trackitem,  
+                            tracklog = this.tracklog;
+                        if (!tracklog || (trackitem.id != tracklog.id)) {
+                            console.log("ACTIVATE track, ID="+fid, trackitem, tracklog); // , tracksall);
+                            tracklog = this.getTrackLog(trackitem);                          
+                            this.tracklog = tracklog;
+                        }
+
                         // C.1 Optional: Assign Single popupAction 
                         //     bound to MoveEnd-Event related to following "panZoom"
-                        if (popupflag) {
+                        if (popupflag && tracklog.html) {
                             map.once('moveend', function(e) { 
                                 // console.log("track ACTIVATED&ZOOMED at ", e, trackInfo); 
-                                this.popupOnMap(trackInfo, {center: true});
+                                this.popupOnMap(tracklog.html, {center: true});
                             }.bind(this));
                         }
                     
                         // C.2 Start PanZoom to activated track
-                        if (trackInfo.bbox && trackInfo.bbox.bounds) {
-                            map.fitBounds(trackInfo.bbox.bounds, {
+                        if (tracklog.bbox && tracklog.bbox.bounds) {
+                            map.fitBounds(tracklog.bbox.bounds, {
                                 padding: 40
                             });
                         } 
 
-                        this.trackDecorate(trackInfo.layerid, trackInfo); // , [feature]); 
+                        this.trackDecorate(tracklog.layerid, tracklog); // , [feature]); 
 
-                    } else {   console.log("TRACK activated", feature); // in non-map-mode
+                    } else {   console.log("TRACK activated", f); // in non-map-mode
 
-                        this.setFeatureBounds([feature]);
+                        this.setFeatureBounds([f]);
                     } 
 
-                }, 200);   
+                }, 300);   
 
             },    
 
-            // 
-            getTrackInfo : function(f) {    
+            trackLogActivate: function(lnglat){
+                if (this.tracklogged && lnglat) { // console.log("trackLogActivate", lnglat, this.tracklogged); 
+                    this.trackActivate(this.tracklogged.id);
+                } 
+            },
+
+            // Compile a bunch of data 
+            //  - based on gpx-track data  and 
+            //  - useful for use in a mapclient
+            getTrackLog : function(trackitem) {   // console.log("getTrackLog track", trackitem); 
+
+                // A. Compile basic Data of selected track-vector
+                var trackLog = this.mapFeatureGetlog(trackitem); // map-behavior                       
                 
-                // 
-                var layerid; 
-                if (typeof f.layer == "string") {
-                    layerid = f.layer;
-                } else if (f.layer) {
-                    layerid = f.layer.id; 
-                }
-                if (!layerid) return;
+                // B. Append app-specific details
+                trackLog = this.trackLogAddDetails(trackLog);
 
-                var feature = f;
-                if (f.feature) feature = f.feature; // console.log("ACTIVATE track", fid, f); 
-
-
-                // B. Compile Data of selected track 
-                //    for use inside&outside element
-
-                var trackAbout = this.tileFeatureAbout(feature, layerid, "tile"); // map-behavior                       
-                var trackInfo  = this.trackInfoCollect(trackAbout);
-                if (!trackInfo) return;  // console.log("trackInfo", trackInfo);
-
-                trackInfo["layerid"] = layerid;
-
-                return trackInfo; 
+                return trackLog; 
             },
 
             // Special "permanent" HILITE of selected track(s)
