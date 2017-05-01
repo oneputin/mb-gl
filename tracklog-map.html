@@ -111,8 +111,8 @@ alternative demos : routingtracks.html, fullscreen.html
             ],
 
             observers: [
-                //'logDataBuild(tracklogged.feature)',
-                //'logPointGet(tracklogged.lnglat)',
+                'logTargetBuild(logdata.geometry)',
+                'logPointGet(logdata.lnglat)',
                 '_toggleMode(draggable, mobilemode)'
             ],
 
@@ -407,24 +407,30 @@ alternative demos : routingtracks.html, fullscreen.html
             },
 
             // 
-            logDataBuild: function(indexedFeature) { //, properties) {
-                if (!indexedFeature) return; 
+            logTargetBuild: function(targetgeometry) { //, properties) {
+                if (!targetgeometry) return; 
 
                 // A. Collect 
-                var indexedData = { 
-                    "coords": indexedFeature.geometry.coordinates
-                };     
-
-                var properties = this.logitems;  // console.log("logDataBuild from", indexedFeature, properties);
-                properties.forEach(function(prop){
-                    indexedData[prop] = indexedFeature.properties[prop];
-                }.bind(this));
-
-                // z.B.
-                //"elevs": indexedFeature.properties.coordElevs,
-                //"times": indexedFeature.properties.coordTimes
-
-                this.logdata = indexedData;
+                var targetSource = map.getSource('target');
+                if (targetSource) {
+                    targetSource.setData(targetgeometry^);
+                } else {
+                    map.addSource('target', { 
+                        type: 'geojson', 
+                        data: {
+                            type: "Feature",
+                            properties : {},
+                            geometry: targetgeometry
+                        }
+                    }); 
+                    targetSource = map.getSource('target');
+                    var targetLayer = map.addLayer({
+                        "id": "target",
+                        "type": "line",
+                        "source": "target"
+                    });
+                    this._logtarget = targetLayer;
+                }//console.log("targetSource", targetSource); 
             },
 
             // appShell around indexPointSnap
