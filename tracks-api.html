@@ -271,7 +271,7 @@ display as decorated route (fi with commented endpoints)
                         if (!tracklog || (trackitem.id != tracklog.id)) {
                             tracklog = this.getTrackLog(trackitem);                          
                             this.tracklog = tracklog;
-                            console.log("ACTIVATED track. ID="+fid, trackitem, tracklog); // , tracksall);
+                            // console.log("ACTIVATED track. ID="+fid, trackitem, tracklog); // , tracksall);
                         }
 
                         // C.1 Optional: Assign Single popupAction 
@@ -328,7 +328,7 @@ display as decorated route (fi with commented endpoints)
             trackDecorate: function(layerid, trackInfo) {
                 // by now for 1-feature-selection only
                
-                if (!trackInfo) { console.log("remove track-decoration ???")
+                if (!trackInfo) { // console.log("remove track-decoration ???")
                     showTrackNodes(layerid);
                     showTrackLine(layerid);
                     return;

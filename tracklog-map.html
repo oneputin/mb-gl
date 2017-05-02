@@ -270,7 +270,7 @@ alternative demos : routingtracks.html, fullscreen.html
                 }
 
                 function logPointReset(draggable){
-                    if (!draggable) draggable = scope.draggable; console.log("logPointReset. draggable=",draggable);
+                    if (!draggable) draggable = scope.draggable; // console.log("logPointReset. draggable=",draggable);
                     
                     // map.off('data', testStyleChange);
                     // console.log("dragpntEvents REMOVED");
@@ -280,7 +280,7 @@ alternative demos : routingtracks.html, fullscreen.html
                         map.addSource('logpoint', { 
                             type: 'geojson', 
                             data: logFeature 
-                        }); console.log("logpnt SOURCE ADDED", logFeature);  
+                        }); // console.log("logpnt SOURCE ADDED", logFeature);  
                     }
 
                     if (!map.getLayer('logpoint')) {
