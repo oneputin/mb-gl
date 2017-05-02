@@ -100,8 +100,8 @@ display as decorated route (fi with commented endpoints)
 
             observers: [
                 'transfer(rawcontent.*, disable)', // , metadata)'
-                'trackActivate(trackitem.id, popupflag)', //,
-                'trackLogActivate(tracklog.lnglat)'
+                'trackActivate(trackitem.id, popupflag)' //,
+                // 'trackLogActivate(tracklog.lnglat)'
                 
                 // 'onMapdataLoad(mapcontent.*)',
             ],
@@ -239,7 +239,6 @@ display as decorated route (fi with commented endpoints)
             //  further actions may run in separate elements
             trackActivate: function(fid, popupflag) { 
                 if (!fid || this.disable) return; 
-
                 // Activate SINGLE track(-object)
 
                 this.debounce("activate", function() {
@@ -266,6 +265,7 @@ display as decorated route (fi with commented endpoints)
                     // C. Activate trackObject in "the suitable context"" (fi. as map-element) 
                     
                     if (map) { 
+
                         var trackitem = this.trackitem,  
                             tracklog = this.tracklog;
                         if (!tracklog || (trackitem.id != tracklog.id)) {
@@ -301,9 +301,10 @@ display as decorated route (fi with commented endpoints)
 
             },    
 
+            // Optional: 
             trackLogActivate: function(lnglat){
-                if (this.tracklog && lnglat) { // console.log("trackLogActivate", lnglat, this.tracklog); 
-                    this.trackActivate(this.tracklog.id);
+                if (this.tracklog && lnglat) {  // console.log("trackLogActivate", lnglat, this.tracklog); 
+                    // this.trackActivate(this.tracklog.id);
                 } 
             },
 
@@ -413,6 +414,7 @@ display as decorated route (fi with commented endpoints)
 
                 // Option: APPLY trace-overlay (gestrichelt) on track
                 showTrackLine(layerid, trackInfo); 
+
             }
 
         });
