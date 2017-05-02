@@ -111,22 +111,21 @@ alternative demos : routingtracks.html, fullscreen.html
             observers: [
                 '_snapTargetBuild(logdata.geometry)',
                 'logPointGet(logdata.lnglat)',
-                '_toggleMode(draggable, mobilemode)'
+                // '_toggleMode(draggable, mobilemode)'
             ],
 
             ready : function() {
-                this.logPointSymbolSetup();
+                this.logPointSymbolDefine();
             },
 
             _install : function(mbid, mbidbefore) { // console.log("TRACKLOG _install", mbid, mbidbefore);
                 if (mbidbefore) return; 
-                this.logPointSetup();
+                this.logPointSetup(this.draggable, this.mobilemode);
             },
 
             // map-entity 
-            logPointSetup : function(draggable, mobilemode) {  // console.log("ADD logPoint into ["+mbid+"], was ["+mbid_old+"] mobilemode=" + mobilemode);
-                if (draggable == null) draggable = this.draggable;
-                if (mobilemode == null) mobilemode = this.mobilemode;
+            logPointSetup : function(draggable, mobilemode) {  
+                // console.log("Setup logPoint into ["+this.mbid+"]","mobilemode=" + mobilemode, "draggable=" + draggable);
 
                 var scope = this;
                 var logid = 'logpoint',
@@ -135,10 +134,12 @@ alternative demos : routingtracks.html, fullscreen.html
                 var isMobile = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1),
                     isCursorOverPoint,
                     isDragging;
+                
+                mobilemode = mobilemode || isMobile;
 
                 // Change point and cursor style as a UI indicator
                 // and set a flag to enable other mouse events.
-                function logPointToggle(flag, msg) { //console.log("logPointToggle", flag, msg)
+                function logPointToggle(flag, msg) { 
 
                     if (flag) {
                         map.setPaintProperty(dragid, 'circle-color', '#f00'); // '#3bb2d0');
@@ -149,44 +150,51 @@ alternative demos : routingtracks.html, fullscreen.html
                         map.dragPan.disable();
 
                     } else {
-                        
                         map.setPaintProperty(dragid, 'circle-color', '#ff0');
                         map.setLayoutProperty(logid, 'icon-image', 'toilet-15'); // '#3bb2d0');
 
                         isCursorOverPoint = false;
 
                         map.dragPan.enable();
-                    }
+                    } 
+                    // console.log("logPointToggle", "flag="+flag, "msg="+msg, "isCursorOverPoint:" + isCursorOverPoint);
                 }
 
-                function dragPointActivate() {     
-                    if (!isCursorOverPoint) {
-                        return;
-                    }  
+                function dragPointDragEvents() {
+                    if (!mobilemode && !isCursorOverPoint) return;
+                    if (!map.getLayer(dragid)) return; 
+                    // console.log("dragPointDragEvents. mobile flags:", mobilemode, isMobile)
 
-                    // A. Set Drag-Status
-                    isDragging = true; // console.log("start dragging");
+                    // A. Setup Events on logPoint
+                    
+                    if (mobilemode) {    
+                
+                        if (isMobile) { // Real TouchActions
+                            //map.on('touchmove', dragid, onDragMove);
+                            map.on('touchmove', onDragMove);
 
-                    // B. Setup Events on logPoint
-                    if (map.getLayer(dragid)) { // console.log("dragPointActivate. mobile flags:", mobilemode, isMobile)
-                        if (mobilemode) {    
-                            if (isMobile) { // Real TouchActions
-                                //map.on('touchmove', dragid, onDragMove);
-                                map.on('touchmove', onDragMove);
-                                map.once('touchend', dragid, onDragStop);
-                            } else {        // Simulates TouchActions
-                                //map.on('mousemove', dragid, onDragMove);
-                                map.on('mousemove', onDragMove);
-                                map.once('mouseup', onDragStop);
-                            }
-                        } else { // Purely Desktop: MouseActions
+                            // map.once('touchend', dragid, onDragStop);
+                            map.once('touchend', onDragStop);
+
+                        } else {        // Simulates TouchActions
+
                             //map.on('mousemove', dragid, onDragMove);
-                            //map.on('mouseup', dragid, onDragStop);
-                            map.on('mousemove', onDragMove);
-                            //map.on('mouseup', onDragStop);
+                            if (isCursorOverPoint)  map.on('mousemove', onDragMove);
+                            
                             map.once('mouseup', onDragStop);
                         }
-                    }    
+
+                    } else { // Purely Desktop: MouseActions
+    
+                        //map.on('mousemove', dragid, onDragMove);
+                        //map.on('mouseup', dragid, onDragStop);
+                        map.on('mousemove', onDragMove);
+                        //map.on('mouseup', onDragStop);
+                        map.once('mouseup', onDragStop);
+                    }
+
+                    // B. Set Drag-Status
+                    isDragging = true; // console.log("start dragging");
 
                 }
 
@@ -204,48 +212,40 @@ alternative demos : routingtracks.html, fullscreen.html
                 
                 function mouseDown(e) {
                     // e.originalEvent.stopPropagation();
-                    dragPointActivate();
+                    dragPointDragEvents();
                 }
 
                 // Combines action of desktop-events 'mousemove' and 'mousedown' 
                 function touchStart(e){
                     if (!map.getLayer(dragid)) return;
                     // e.originalEvent.stopPropagation();
-
-                    var features = map.queryRenderedFeatures(e.point, { layers: [dragid] });
-
-                    logPointToggle(features.length, "touchStart");
-
-                    dragPointActivate(); 
+                    var features = map.queryRenderedFeatures(e.point, { layers: [dragid] });  // console.log("touchStart", e, features);
+                    if (features.length) {
+                        logPointToggle(features.length, "touchStart");
+                        dragPointDragEvents(); 
+                    } 
                 } 
 
                 // event-actions when point was "activated"
-                function onDragMove(e) { // console.log("onDragMove isDragging=", isDragging);
-                    if (!isDragging) return;
-                    // e.originalEvent.stopPropagation();
+                function onDragMove(e) {        // console.log("onDragMove isDragging=", isDragging);
+                    if (!isDragging) return;    // e.originalEvent.stopPropagation();
 
                     var lngLat = e.lngLat,
                         coords = [lngLat.lng, lngLat.lat],
                         index;   // console.log("onDragMove", coords);     
 
                     if (scope._snapTarget) { // Update the "nearest" point on active target(fi. track) 
-                        
                         var snapPnt = scope._snapPointQuery(lngLat, scope._snapTarget);
-                    
                         index = snapPnt.properties.index; 
-                        
                         // coords = ????
                     }    
                     
                     if (index != null) {
                         // A. Trigger index in all related elements
                         // scope.index = snapSet.index;
-
                         // B. Refresh dragPnt on map only 
                         scope.logPointRefresh(index);
-                        
                     } else {
-                        
                         scope.logPointRefresh(null, coords);
                     }
 
@@ -270,20 +270,21 @@ alternative demos : routingtracks.html, fullscreen.html
                 }
 
                 function logPointReset(draggable){
-                    if (!draggable) draggable = scope.draggable; // console.log("logPointReset. draggable=",draggable);
+                    if (!draggable) draggable = scope.draggable; 
+                    // console.log("logPointReset. draggable=",draggable);
                     
                     // map.off('data', testStyleChange);
                     // console.log("dragpntEvents REMOVED");
 
-                    if (!map.getSource('logpoint')) {
+                    if (!map.getSource(logid)) {
                         var logFeature = scope.logPointFeature([0,0]); 
-                        map.addSource('logpoint', { 
+                        map.addSource(logid, { 
                             type: 'geojson', 
                             data: logFeature 
                         }); // console.log("logpnt SOURCE ADDED", logFeature);  
                     }
 
-                    if (!map.getLayer('logpoint')) {
+                    if (!map.getLayer(logid)) {
 
                         scope._dragPntLayers.forEach(function(layer){
                             map.addLayer(layer);
@@ -302,10 +303,14 @@ alternative demos : routingtracks.html, fullscreen.html
                         map.setLayoutProperty(layer.id, 'visibility', vis);
                     });    
 
+
                     // reset draglayer-events 
+                    var dragLayer = map.getLayer(dragid);
 
-                    if (map.getLayer(dragid)) {
-
+                    if (dragLayer) {
+                        // console.log("logPointReset. set EVENTS for", "dragLayer:", dragLayer, "draggable=" + draggable);
+                        
+                        // A. OFF
                         //map.off('mousemove', mouseMove); 
                         map.off('mouseover', dragid,  mouseToggle); 
                         map.off('mouseout', dragid,  mouseToggle); 
@@ -314,22 +319,31 @@ alternative demos : routingtracks.html, fullscreen.html
 
                         map.off('mousedown', dragid, touchStart);
                         map.off('touchstart', dragid, touchStart); 
-                        // 
+                        
+                        // Init !!
+                        map.dragPan.disable();
+                        map.dragPan.enable();
+
+                        // B. ON
                         if (draggable) {
+
                             // Set `true` to dispatch start-events (mousedown, touchstart) before other functions call it. 
                             // This is necessary for disabling the default map dragging behaviour.
-                            if (mobilemode) { 
-                                if (isMobile) {
+
+                            if (mobilemode) {   // ctrlOption to test mobileMode on PC 
+                                // 
+                                if (isMobile) { //console.log("logPointReset", "setup REAL  'mobile touchstart-action'");  
                                     map.on('touchstart', dragid, touchStart);  // true
-                                } else {                    
+                                } else {        //console.log("logPointReset", "setup FAKED 'mobile touchstart-action'");            
                                     map.on('mousedown', dragid, touchStart);   // true
                                 }
+                            
                             } else { 
                                 // map.on('mousemove', mouseMove);
                                 // map.on('mousemove', dragid, mouseMove);
+                                map.on('mousedown', dragid, mouseDown);  // true
                                 map.on('mouseover', dragid,  mouseToggle); 
                                 map.on('mouseout', dragid,  mouseToggle); 
-                                map.on('mousedown', dragid, mouseDown);  // true
                             }  
                         } // console.log("Refreshed logPoint-MAP-listeners ", map._listeners); 
 
@@ -360,7 +374,7 @@ alternative demos : routingtracks.html, fullscreen.html
             },
 
             // 
-            logPointSymbolSetup : function() {
+            logPointSymbolDefine : function() {
                 // symbolLayers-1 (permanent)
                 this._logPntLayers = [
                     {
@@ -410,21 +424,24 @@ alternative demos : routingtracks.html, fullscreen.html
 
                 if (this._snapTarget) {   // A. 
 
-                    var snapPnt = this._snapPointQuery(lngLat, this._snapTarget);
-
-                    // MAIN Trigger: SYNC of target-use in external apps
-                    this.index = snapPnt.properties.index;
-                    //**********
-
-                    mapToast = this._snapPointInfo(snapPnt, this.logdata); 
+                    var snapPnt = this._snapPointQuery(lngLat, this._snapTarget),
+                        index = snapPnt.properties.index;
+                    if (index != null) {
+                        // MAIN Trigger: SYNC of target-use in external apps
+                        // ************
+                        this.index = index;
+                        mapToast = this._snapPointInfo(snapPnt, this.logdata); 
+                        // dragPointDragEvents(); 
+                    }    
 
                 } else {       // FREE logPoint 
 
-                    var coords =  [lngLat.lng, lngLat.lat];
+                    var coords = [lngLat.lng, lngLat.lat];
                     
                     this.logPointRefresh(null, coords);  // console.log("Refreshing logPoint", ix);
                     // Additional UI-info 
                     mapToast = "FREE. Dragged to " + coords; 
+
                 } //console.log(mapToast);
 
                 return mapToast;
@@ -432,7 +449,7 @@ alternative demos : routingtracks.html, fullscreen.html
 
             // Refresh coords of dragPnt (= refresh Source)
             logPointRefresh: function(index, coords, title, logsymbol) {
-                // A meaningful logPointSymbolSetup built from 3 symbol(Layer)s 
+                // A meaningful logPointSymbolDefine built from 3 symbol(Layer)s 
                 if (index < 0) index = null; 
                 if (!map) return; 
 

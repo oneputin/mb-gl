@@ -256,6 +256,7 @@
                             <mb-orientation-ctrl 
                                 trackmap="[[trackalignmap]]">
                             </mb-orientation-ctrl>
+
                         </div>
                     </template>
                 </mb-map>
@@ -279,7 +280,6 @@
                 tracklog = "{{logdata}}"
                 maptoast = "{{maptoast}}">
             </tracks-api>
-            <!--trackpntindex = "{{logindex}}">-->
 
             <tracklog-map
                 disable = "[[ctrl.userouting]]"
@@ -290,7 +290,6 @@
                 index = "{{logindex}}"
                 maptoast = "{{maptoast}}">
             </tracklog-map>
-            <!--tracklogged = "[[datasetitem]]"-->
 
             <layer-waypoints 
                 mbid = "[[mbid]]" 
@@ -345,9 +344,10 @@
     scope.zoom = 8;
 
     // STATE init
+    // mobilemode : (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1),
     scope.ctrl = {
-        mobilemode : (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1),
-        mousemode : false,
+        mobilemode : true,
+        mousemode : false, 
         userouting : false,
         waypointshow : true,
         trackdraggable : true, 

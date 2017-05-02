@@ -104,10 +104,10 @@ wraps a distance utility
                     this.style.display = "none";
                 }
             },
+            
             // 
             toggleMode : function(mousemode, checked) {
                 if (!this.map) return; 
-
                 // 1. always set (previous) events OFF (if existing) 
                 this.map.off('move', this.onMoveEvent);
                 this.map.off('mousemove', this.onMoveEvent);
