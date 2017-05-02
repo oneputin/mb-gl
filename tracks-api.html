@@ -71,7 +71,7 @@ display as decorated route (fi with commented endpoints)
                     notify: true
                 },
                 // 
-                tracklogged: {
+                tracklog: {
                     type: Object,
                     notify: true
                 },
@@ -193,20 +193,20 @@ display as decorated route (fi with commented endpoints)
                         layers: [layerid]
                     }); 
                     if (!features || !features.length) return;  
-
-                    // B. Refresh TrackItem 
-                    var trackitem = eventscope.mapFeatureGet(features[0]); 
-                    if (!trackitem) return;   console.log("SELECTED trackFeature:", trackitem);
                     
-                    if (scope.trackitem.id != trackitem.id) {  // activate ANOTHER track
-                        scope.trackitem = trackitem; 
-                        //***************
+                    var mbfeature = features[0];
+                    var mapFeature = eventscope.mapFeatureGet(mbfeature); 
+                    if (!mapFeature) return;   // console.log("SELECTED trackFeature:", trackitem);
+                    
+                    if (scope.trackitem.id != mapFeature.id) {  // activate ANOTHER track
+                        // B. Refresh TrackItem 
+                        scope.trackitem = mapFeature; 
+                        //*************
+                        // C. Refresh LOG of TrackItem
+                        scope.tracklog = scope.getTrackLog(mbfeature, layerid);
+                        //**************
+                        // console.log("MAP-SELECTED trackFeature", scope.tracklog);
                     } 
-
-                    // C. Refresh LOG of TrackItem
-                    scope.tracklog = scope.getTrackLog(features[0], layerid);
-                    //**************
-                    console.log("LOG of SELECTED trackFeature", scope.tracklog);
 
                     // D. Refresh lnglat-property of TrackItem 
                     scope.set("tracklog.lnglat", e.lngLat);
@@ -269,9 +269,9 @@ display as decorated route (fi with commented endpoints)
                         var trackitem = this.trackitem,  
                             tracklog = this.tracklog;
                         if (!tracklog || (trackitem.id != tracklog.id)) {
-                            console.log("ACTIVATE track, ID="+fid, trackitem, tracklog); // , tracksall);
                             tracklog = this.getTrackLog(trackitem);                          
                             this.tracklog = tracklog;
+                            console.log("ACTIVATED track. ID="+fid, trackitem, tracklog); // , tracksall);
                         }
 
                         // C.1 Optional: Assign Single popupAction 
@@ -302,8 +302,8 @@ display as decorated route (fi with commented endpoints)
             },    
 
             trackLogActivate: function(lnglat){
-                if (this.tracklogged && lnglat) { // console.log("trackLogActivate", lnglat, this.tracklogged); 
-                    this.trackActivate(this.tracklogged.id);
+                if (this.tracklog && lnglat) { // console.log("trackLogActivate", lnglat, this.tracklog); 
+                    this.trackActivate(this.tracklog.id);
                 } 
             },
 
@@ -313,7 +313,7 @@ display as decorated route (fi with commented endpoints)
             getTrackLog : function(trackitem) {   // console.log("getTrackLog track", trackitem); 
 
                 // A. Compile basic Data of selected track-vector
-                var trackLog = this.mapFeatureGetlog(trackitem); // map-behavior                       
+                var trackLog = this.mapFeatureGetlog(trackitem); // generic mb-behavior                       
                 
                 // B. Append app-specific details
                 trackLog = this.trackLogAddDetails(trackLog);

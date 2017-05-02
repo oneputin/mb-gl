@@ -3,8 +3,7 @@
 
 <!--
 `tracklog`
-Draggable mb-point with optional snapping to mb-theme features 
-(or vice-versa), 
+Draggable mb-point with optional snapping to mb-theme features (or vice-versa), 
 alternative demos : routingtracks.html, fullscreen.html
 
 @demo demo/fullscreen.html 
@@ -27,8 +26,7 @@ alternative demos : routingtracks.html, fullscreen.html
                 }, 
 
                 lnglat: {
-                    type: Object,
-                    observer: 'logPointGet'
+                    type: Object //, observer: 'logPointGet'
                 },
 
                 // property-items to be used for decription, charting etc
@@ -57,19 +55,19 @@ alternative demos : routingtracks.html, fullscreen.html
                     value: false //, observer: 'toggleVis'
                 },
 
-                // externally available
-                coords: {
+                // externally available coords
+                /*coords: {
                     type: Array,
                     value : [0,0],
                     observer: 'logPointRefresh',
                     notify: true                    
-                },
+                },*/
 
                 // 
                 index: {
                     type: Number,
                     value : -1,
-                    observer: '_indexedPointRefresh',
+                    observer: 'logPointRefresh',
                     notify: true
                 },
 
@@ -80,7 +78,7 @@ alternative demos : routingtracks.html, fullscreen.html
                 },
 
                 // 
-                tracklogged: {
+                _snapTarget: {
                     type: Object
                 },
 
@@ -111,7 +109,7 @@ alternative demos : routingtracks.html, fullscreen.html
             ],
 
             observers: [
-                'logTargetBuild(logdata.geometry)',
+                '_snapTargetBuild(logdata.geometry)',
                 'logPointGet(logdata.lnglat)',
                 '_toggleMode(draggable, mobilemode)'
             ],
@@ -124,7 +122,6 @@ alternative demos : routingtracks.html, fullscreen.html
                 if (mbidbefore) return; 
                 this.logPointSetup();
             },
-
 
             // map-entity 
             logPointSetup : function(draggable, mobilemode) {  // console.log("ADD logPoint into ["+mbid+"], was ["+mbid_old+"] mobilemode=" + mobilemode);
@@ -167,13 +164,10 @@ alternative demos : routingtracks.html, fullscreen.html
                         return;
                     }  
 
-                    // A. Set Drg-Status
+                    // A. Set Drag-Status
                     isDragging = true; // console.log("start dragging");
 
-                    // B. Set a cursor indicator ?? 
-                    // canvas.style.cursor = 'grab';
-
-                    // C. Setup Events on logPoint
+                    // B. Setup Events on logPoint
                     if (map.getLayer(dragid)) { // console.log("dragPointActivate. mobile flags:", mobilemode, isMobile)
                         if (mobilemode) {    
                             if (isMobile) { // Real TouchActions
@@ -231,28 +225,31 @@ alternative demos : routingtracks.html, fullscreen.html
                     // e.originalEvent.stopPropagation();
 
                     var lngLat = e.lngLat,
-                        coords = [lngLat.lng, lngLat.lat];   // console.log("onDragMove", coords);     
+                        coords = [lngLat.lng, lngLat.lat],
+                        index;   // console.log("onDragMove", coords);     
 
-                    // Set a UI indicator for dragging ? 
-                    // canvas.style.cursor = 'grabbing';
-                    var trackLine = scope.tracklogged;
-                    if (trackLine) { // Update the "nearest" point on active target(fi. track) 
+                    if (scope._snapTarget) { // Update the "nearest" point on active target(fi. track) 
                         
-                        var snapSet = scope._indexedPointSnap(lngLat, trackLine); // , scope.tracklogged);
+                        var snapPnt = scope._snapPointQuery(lngLat, scope._snapTarget);
+                    
+                        index = snapPnt.properties.index; 
                         
-                        if (snapSet.index != null) {
-                            // A. SYNC location and all related elements
-                            // scope.index = snapSet.index;
+                        // coords = ????
+                    }    
+                    
+                    if (index != null) {
+                        // A. Trigger index in all related elements
+                        // scope.index = snapSet.index;
 
-                            // B. refresh dragPnt only 
-                            scope.logPointLocate(snapSet.index);
-                        }
-
+                        // B. Refresh dragPnt on map only 
+                        scope.logPointRefresh(index);
+                        
                     } else {
                         
-                        scope.logPointLocate(null, coords);
-                        // scope.coords = coords;
+                        scope.logPointRefresh(null, coords);
                     }
+
+                    // scope.coords = coords;
                 }
 
                 function onDragStop(e) {  
@@ -273,17 +270,17 @@ alternative demos : routingtracks.html, fullscreen.html
                 }
 
                 function logPointReset(draggable){
-                    if (!draggable) draggable = scope.draggable; //console.log("logPointReset. draggable=",draggable);
+                    if (!draggable) draggable = scope.draggable; console.log("logPointReset. draggable=",draggable);
                     
                     // map.off('data', testStyleChange);
                     // console.log("dragpntEvents REMOVED");
 
                     if (!map.getSource('logpoint')) {
-                        // var geojsonpnt = scope._logPointGeojson([0,0], "drag"); 
+                        var logFeature = scope.logPointFeature([0,0]); 
                         map.addSource('logpoint', { 
                             type: 'geojson', 
-                            data: scope._logPointGeojson([0,0]) 
-                        }); //console.log("logpnt SOURCE ADDED"); // , map.getSource('logpoint')); 
+                            data: logFeature 
+                        }); console.log("logpnt SOURCE ADDED", logFeature);  
                     }
 
                     if (!map.getLayer('logpoint')) {
@@ -406,84 +403,37 @@ alternative demos : routingtracks.html, fullscreen.html
                 ];
             },
 
-            // 
-            logTargetBuild: function(targetgeometry) { //, properties) {
-                if (!targetgeometry) return; 
-
-                // A. Collect 
-                var targetSource = map.getSource('target');
-                if (targetSource) {
-                    targetSource.setData(targetgeometry^);
-                } else {
-                    map.addSource('target', { 
-                        type: 'geojson', 
-                        data: {
-                            type: "Feature",
-                            properties : {},
-                            geometry: targetgeometry
-                        }
-                    }); 
-                    targetSource = map.getSource('target');
-                    var targetLayer = map.addLayer({
-                        "id": "target",
-                        "type": "line",
-                        "source": "target"
-                    });
-                    this._logtarget = targetLayer;
-                }//console.log("targetSource", targetSource); 
-            },
-
-            // appShell around indexPointSnap
-            logPointGet : function(lngLat) {
-                if (!lngLat) return; 
-                var target = this.tracklogged;
-
+            // AppShell around indexPointSnap
+            logPointGet : function(lngLat) { 
+                if (!lngLat) return; // console.log("logPointGet START", lngLat, this.logdata);
                 var mapToast = ""; 
-                if (target) {   // A. 
 
-                    var snapSet = this._indexedPointSnap(lngLat, target),
-                        snapPnt = snapSet['snap'],
-                        target = snapSet['target'],
-                        index = snapPnt.properties.index;
-                        // console.log("logPointGet: snapSet at " + index, snapSet); 
+                if (this._snapTarget) {   // A. 
+
+                    var snapPnt = this._snapPointQuery(lngLat, this._snapTarget);
 
                     // MAIN Trigger: SYNC of target-use in external apps
-                    this.index = index;
+                    this.index = snapPnt.properties.index;
+                    //**********
 
-                    // Additional UI-info 
-                    var s = "nn",t = "nn" ;
-                    if (target.properties["coordTimes"]) {
-                        t = target.properties["coordTimes"][index]; 
-                        t = this.logTime(this.utcTime(this.trackTime(t)),null,"/");
-                    }
-                    if (snapPnt.properties.location) {
-                        s = this.toFixed(snapPnt.properties.location, 2)+"km";
-                    }    
-                    
-                    mapToast = 't= ' + t + ',s= ' + s + ' from start';
-  
-                } else {        // MAIN Trigger 
-                    
-                    logPointRefresh([lngLat.lng, lngLat.lat]);
-                    // OR with export-options 
-                    // this.coords = [lngLat.lng, lngLat.lat];
+                    mapToast = this._snapPointInfo(snapPnt, this.logdata); 
 
+                } else {       // FREE logPoint 
+
+                    var coords =  [lngLat.lng, lngLat.lat];
+                    
+                    this.logPointRefresh(null, coords);  // console.log("Refreshing logPoint", ix);
                     // Additional UI-info 
-                    mapToast = "FREE drag to ???"; 
+                    mapToast = "FREE. Dragged to " + coords; 
                 } //console.log(mapToast);
 
                 return mapToast;
             },        
 
-            // 
-            logPointRefresh: function(coords) { // console.log("DRAGGED to", coords); 
-                this.logPointLocate(null, coords);  // console.log("Refreshing logPoint", ix);
-            },
-
             // Refresh coords of dragPnt (= refresh Source)
-            logPointLocate: function(index, coords, title, logsymbol) {
+            logPointRefresh: function(index, coords, title, logsymbol) {
                 // A meaningful logPointSymbolSetup built from 3 symbol(Layer)s 
-                if (index == null); 
+                if (index < 0) index = null; 
                 if (!map) return; 
 
                 var scope = this; 
@@ -508,26 +458,27 @@ alternative demos : routingtracks.html, fullscreen.html
                     }  
                     return title;   
                 }
-
                 var logPointSrc = map.getSource("logpoint");
                 if (!logPointSrc) return; 
                 
-                if (!coords) {
-                    if (!this.logdata) return;
+                // A. 
+                if (index && this.logdata) {
                     coords = this.logdata["coords"][index].slice(0,2);  // console.log(coords[0],typeof coords[0]);
                 } 
+
                 if (!coords) return; // console.log("DEBUG-1", index, this.logdata, coords, title );
                 
+                // B. 
                 if (!title && this.titleitem && this.logdata) {
                     title = _logdataTitle(index, this.titleitem, this.logdata); 
                 }
 
                 // Update LogPoint-srcData 
-                logPointSrc.setData(this._logPointGeojson(coords, title));
+                logPointSrc.setData(this.logPointFeature(coords, title));
             },
 
             // 
-            _logPointGeojson: function(coords, title) {
+            logPointFeature: function(coords, title) {
                 if (title == null) title = "drag"; 
                 var logPoint = {
                     "type": "FeatureCollection",
@@ -545,13 +496,51 @@ alternative demos : routingtracks.html, fullscreen.html
                 return logPoint; 
             },
 
+
             // 
-            _indexedPointSnap : function(queryPnt, target) { // , elemscope) {
-                if (!target) return; // target = this.tracklogged; 
-                // console.log("queryPnt, target", queryPnt, target);
+            _toggleMode : function(draggable, mobilemode) { 
+                if (!this.mbid || (draggable == null)) return;   
+                console.log("logModes: ", "draggable="+draggable, "mobilemode="+mobilemode);
+                this.logPointSetup(draggable, mobilemode); 
+                
+            },
 
-                var indexedFeature = target.feature; 
+            // 
+            _snapTargetBuild: function(targetgeometry) { 
+                if (!targetgeometry) return; // console.log("targetgeometry", targetgeometry);
 
+                this._snapTarget = turf.feature(targetgeometry);
+
+                return;
+
+                // A. Collect 
+                var targetSource = map.getSource('snaptarget');
+                if (targetSource) {
+                    targetSource.setData(targetgeometry);
+                } else {
+                    map.addSource('snaptarget', { 
+                        type: 'geojson', 
+                        data: {
+                            type: "Feature",
+                            properties : {},
+                            geometry: targetgeometry
+                        }
+                    }); 
+                    targetSource = map.getSource('snaptarget');
+                    var targetLayer = map.addLayer({
+                        "id": "snaptarget",
+                        "type": "line",
+                        "source": "snaptarget"
+                    });
+
+                    this._snapTarget = targetLayer;
+                }
+            },
+
+            // 
+            _snapPointQuery : function(queryPnt, snapTarget) { // , elemscope) {
+                if (!snapTarget) return; // target = this._snapTarget; 
+                
                 queryPnt = { 
                     "type": "Feature",
                     "properties": {},
@@ -562,31 +551,33 @@ alternative demos : routingtracks.html, fullscreen.html
                 };  
 
                 // B.2 Find/Eval nearest point on target
-                var snapPnt = turf.pointOnLine(indexedFeature, queryPnt, 'kilometers');
-                if (!snapPnt) return {}; 
+                var snapPnt = turf.pointOnLine(snapTarget, queryPnt, 'kilometers');
+                if (!snapPnt) return queryPnt; // console.log("snapPnt", snapPnt );
 
-                return {
-                    "index" : snapPnt.properties.index,
-                    "target": indexedFeature, 
-                    "query": queryPnt, 
-                    "snap": snapPnt
-                };
+                return snapPnt; 
             },
 
-            // 
-            _indexedPointRefresh: function(ix) { 
-                if (ix >= 0) { // console.log("RELOCATE LOGPNT at indexedFeature: " + ix);
-                    this.logPointLocate(ix);  
-                }
+            // UX-support
+            _snapPointInfo: function(snapPnt, logdata) { // console.log(snapPnt); 
+                    var index = snapPnt.properties.index,
+                        location = snapPnt.properties.location;
+
+                    // Additional UI-info 
+                    var s = "nn",t = "nn" ;
+                    
+                    if (logdata["coordTimes"]) {
+                        t = logdata["coordTimes"][index]; 
+                        t = this.logTime(this.utcTime(this.trackTime(t)),null,"/");
+                    }
+
+                    if (location) {
+                        s = this.toFixed(snapPnt.properties.location, 2)+"km";
+                    }    
+                    
+                    var mapToast = 'At = [' + t + '] ,  dist = [' + s + ']  from start';
+                    return mapToast; 
             },
 
-            // 
-            _toggleMode : function(draggable, mobilemode) { 
-                if (!this.mbid || (draggable == null)) return;   
-                console.log("logModes: ", "draggable="+draggable, "mobilemode="+mobilemode);
-                this.logPointSetup(draggable, mobilemode); 
-                
-            }
         })
     </script>
 </dom-module>                  

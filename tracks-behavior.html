@@ -230,7 +230,7 @@
 
             if (lnglat) trackLog.lnglat = lnglat; 
 
-            trackLog.html = "Track LOG <hr>" + trackLog.time;
+            trackLog.html = "ID: <span style='color: red;'>" + trackLog.time +"</span><hr>";
 
             trackLog.toast = "";
 
@@ -261,7 +261,7 @@
 
                 // E. SPECIFIC: add some parameters to quickInfo-HTML 
                 var vonbis = " [ " + trackLog.von +" to " + trackLog.bis + "] ";
-                trackLog.html  += "<br>Duration: " 
+                trackLog.html  += "Duration: " 
                                 + trackLog.duration
                                 + "<br>" + vonbis; 
                 // trackLog.toast += vonbis;
@@ -307,6 +307,7 @@
                 // console.log("TP:", dragPnt, trackLine); // , trackLog);
           
             } else {
+
                 trackLog.html += "<br>Length: " + trackLog.length
                 trackLog.html += "<br>TP's: " + trackLog.count;
 
