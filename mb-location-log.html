@@ -50,7 +50,7 @@ wraps a distance utility
                 /**
                  *  map-object of related mb-gl-map
                  */
-                map: {
+                mbid: {
                     type: Object,
                     observer: 'setupTool'
                 },
@@ -60,7 +60,8 @@ wraps a distance utility
                  */
                 lnglat: {
                     type: String,
-                    notify: true
+                    notify: true,
+                    observer: '_centerPointRefresh'
                 },
 
                 mousemode: {
@@ -79,6 +80,15 @@ wraps a distance utility
                     type: Boolean,
                     value: true,
                     observer: "toggleVisibility"
+                },
+
+                _centerPntLayers : {
+                    type: Array
+                },
+
+                _centervisible : {
+                    type: Boolean,
+                    value: false
                 }
             },
 
@@ -90,14 +100,17 @@ wraps a distance utility
                 'toggleMode(mousemode, checked)'
             ],
 
+            listeners: {
+                'tap': '_centerPointVisibility'
+            },
+
             attached: function() {
                 if (typeof this.checked == 'undefined') this.toggleVisibility(true);
                 logscope = this;  //console.log("logscope", logscope);
             },
-
-            // 
+            // externally controled visibility of 
             toggleVisibility: function(checked) {
-                if (!this.map) return;
+                if (!map) return;
                 if (checked) {
                     this.style.display = "block";                    
                 } else {   // console.log("toggleVisibility NONE");  
@@ -107,17 +120,17 @@ wraps a distance utility
             
             // 
             toggleMode : function(mousemode, checked) {
-                if (!this.map) return; 
+                if (!map) return; 
                 // 1. always set (previous) events OFF (if existing) 
-                this.map.off('move', this.onMoveEvent);
-                this.map.off('mousemove', this.onMoveEvent);
+                map.off('move', this.onMoveEvent);
+                map.off('mousemove', this.onMoveEvent);
 
                 // 2. set ON specific event only if log-element is checked TRUE
                 if (checked) {
                     if (mousemode) {
-                        this.map.on('mousemove', this.onMoveEvent);
+                        map.on('mousemove', this.onMoveEvent);
                     } else {
-                        this.map.on('move', this.onMoveEvent);
+                        map.on('move', this.onMoveEvent);
                     }
                 } 
             },
@@ -127,17 +140,110 @@ wraps a distance utility
                 if (logscope.mousemode) {
                     logscope.lnglat = e.lngLat;
                 } else {
-                    logscope.lnglat = logscope.map.getCenter();
+                    logscope.lnglat = map.getCenter();
                 } 
             },
 
             // 
-            setupTool: function(map) {
-                if (map) { // console.log("FIRST locationLogMode" , this.mousemode);
+            setupTool: function(mbid) {
+                if (map && mbid) {  // console.log("SETUP locationLogMode" , map, mbid);
                     this.toggleMode(this.mousemode, this.checked); 
-                    this.lnglat = this.map.getCenter(); // INITIAL location
+                    
+                    this.lnglat = map.getCenter(); // INITIAL location
+
+                    this._centerPointSetup(this.lnglat);
                 }
             },
+
+            // Refresh coords of dragPnt (= refresh Source)
+            _centerPointRefresh: function(lngLat) {
+                if (!lngLat) return; // console.log("logPointGet START", lngLat, this.logdata);
+                var logPointSrc = map.getSource("centerpoint");
+                if (!logPointSrc) return; 
+
+                var coords = [lngLat.lng, lngLat.lat];
+                logPointSrc.setData(this._centerPointFeature(coords));
+            },
+
+            // Update LogPoint-srcData 
+            _centerPointFeature : function(coords) {
+                var logPoint = {
+                    "type": "FeatureCollection",
+                    "features": [{
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": coords
+                        }
+                    }]
+                };
+                return logPoint;    
+            },
+
+            // 
+            _centerPointVisibility: function() {
+                if (!map) return;
+
+                var vis = "visible";
+                this._centervisible = !this._centervisible;
+                if (!this._centervisible) vis = "none";
+
+                // console.log("Toggle visibility of centerpoint to", vis, this._centerPntLayers); // return;  
+                
+                this._centerPntLayers.forEach(function(layer){ 
+                    if (map.getLayer(layer.id)) {
+                        map.setLayoutProperty(layer.id, 'visibility', vis);
+                    } 
+                });    
+            },
+           
+
+            // 
+            _centerPointSetup: function(lnglat) {
+                var coords = [lnglat.lng,lnglat.lat],
+                    feat = this._centerPointFeature(coords);
+
+                function rgb(red, green, blue) {
+                    var decColor =0x1000000+ blue + 0x100 * green + 0x10000 *red ;
+                    return '#'+decColor.toString(16).substr(1);
+                }
+                var glowcolor = rgb(255,64,129); 
+
+                map.addSource("centerpoint", { 
+                    type: 'geojson', 
+                    data: feat 
+                });
+                // 
+                var centerPntLayers = [
+                    {
+                        "id": "centerpoint-glow",
+                        "type": "circle",
+                        "source": "centerpoint",
+                        "paint": {
+                            "circle-radius": 18,
+                            "circle-color": glowcolor, 
+                            "circle-opacity": 0.4
+                        }
+                    }, 
+                    {
+                        "id": "centerpoint",
+                        "type": "symbol",
+                        "source": "centerpoint",
+                        "layout": {
+                            "icon-image": "hospital-15",
+                            "icon-rotate": 0
+                        }
+                    }
+                ];
+
+                centerPntLayers.forEach(function(layer){
+                    map.addLayer(layer);
+                    map.setLayoutProperty(layer.id, 'visibility', "none");
+                }); 
+
+                this._centerPntLayers = centerPntLayers;
+
+            },    
 
         });
     </script>
