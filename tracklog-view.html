@@ -97,8 +97,8 @@ container for presentation of track-properties (fi. elevations)
                     <div class="chartctrls">
                         <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
                         <!--<div class="flexchild red">[[logindex]]</div>-->
+                        <button on-click="toggleAbout">About</button>
                         <div class="flexchild"></div>
-                        <button on-click="toggleAbout">About track</button>
                         <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
                     </div>
 
@@ -197,13 +197,21 @@ container for presentation of track-properties (fi. elevations)
             ],                
 
             observers: [
-                'refreshLogView(logdata, chartoptions)'
+                'refreshLogView(logdata, chartoptions)',
+                'forceView(logdata.id)'
             ],
 
             attached: function() {
                 this._toggleSize(50); 
                 var w = Polymer.dom(this).parentNode.offsetWidth; // console.log(w);// window.innerWidth
                 this.maxsize = w * 0.8; // + "px"; // 80vw"; // window.innerWidth * 0.8 
+            },
+
+            forceView: function(id) {
+                // triggers show of viewer-area
+                // usable to "remove" the browser-header
+                this.checked = true;
+                this._toggleVisibility(true);
             },
 
             toggleAbout: function() {
