@@ -202,12 +202,11 @@ display as decorated route (fi with commented endpoints)
                         // B. Refresh TrackItem 
                         scope.trackitem = mapFeature; 
                         //*************
-                        // C. Refresh LOG of TrackItem
+                        // C. Refresh LOG (of TrackItem)
                         scope.tracklog = scope.getTrackLog(mbfeature, layerid);
-                        //**************
+                        //************
                         // console.log("MAP-SELECTED trackFeature", scope.tracklog);
-                    } 
-
+                    }  // console.log("e.lngLat", e.lngLat); 
                     // D. Refresh lnglat-property of TrackItem 
                     scope.set("tracklog.lnglat", e.lngLat);
                     //************************  
@@ -268,7 +267,9 @@ display as decorated route (fi with commented endpoints)
 
                         var trackitem = this.trackitem,  
                             tracklog = this.tracklog;
+
                         if (!tracklog || (trackitem.id != tracklog.id)) {
+
                             tracklog = this.getTrackLog(trackitem);                          
                             this.tracklog = tracklog;
                             // console.log("ACTIVATED track. ID="+fid, trackitem, tracklog); // , tracksall);
@@ -290,7 +291,19 @@ display as decorated route (fi with commented endpoints)
                             });
                         } 
 
-                        this.trackDecorate(tracklog.layerid, tracklog); // , [feature]); 
+                        // ALTERNATIV 
+                        var startmode = true;
+                        if (startmode) { // Trigger DRAGPNT at START 
+                           var p1 = tracklog.coords[0],
+                               c1 = {"lng":p1[0],"lat":p1[1]};  //  console.log("START track at ", p1, c1);  
+                       
+                           this.set("tracklog.lnglat", c1); 
+                       
+                        } else {
+
+                            this.trackDecorate(tracklog); // , [feature]); 
+                        }
+
 
                     } else {   console.log("TRACK activated", f); // in non-map-mode
 
@@ -311,7 +324,7 @@ display as decorated route (fi with commented endpoints)
             // Compile a bunch of data 
             //  - based on gpx-track data  and 
             //  - useful for use in a mapclient
-            getTrackLog : function(trackitem) {   // console.log("getTrackLog track", trackitem); 
+            getTrackLog : function(trackitem) {   // console.log("get TrackLog track", trackitem); 
 
                 // A. Compile basic Data of selected track-vector
                 var trackLog = this.mapFeatureGetlog(trackitem); // generic mb-behavior                       
@@ -326,27 +339,27 @@ display as decorated route (fi with commented endpoints)
             // by HILITE-TRACE + "commented" end-nodes  
             //   - zooms to the feature
             //   - show start/stop based on "id-Filter"	
-            trackDecorate: function(layerid, trackInfo) {
-                // by now for 1-feature-selection only
+            trackDecorate: function(trackInfo, layerid) {
+                // by now for "1-feature-selection" only
+                if (!layerid) layerid = "track";
                
                 if (!trackInfo) { // console.log("remove track-decoration ???")
-                    showTrackNodes(layerid);
-                    showTrackLine(layerid);
+                    showTrackNodes();
+                    showTrackLine();
                     return;
-                }  // console.log("tiledata", tiledata); 
+                }  console.log("decorate track", trackInfo); 
 
                 // var scope = this;
 
                 // 1. Create/Refresh the layer of track's endMarkers
-                function showTrackNodes(layerid, trackInfo) {
+                function showTrackNodes(trackInfo) {
                     // layer of nodes symbols with text in HALO
-                    if (!layerid) layerid = "track";
                     var hilayerid = layerid + "-nodes",
                         hilayer = map.getLayer(hilayerid),
-                        src = map.getSource(hilayerid); 
+                        src = map.getSource(hilayerid); // console.log("showTrackNodes:", hilayerid, hilayer, src); 
 
                     if (!hilayer) return;  
-                    if (!trackInfo && src) { // clear nodeLayer
+                    if (src && !trackInfo) { // clear nodeLayer
                         src.setData({});
                         return;
                     }  
@@ -391,8 +404,7 @@ display as decorated route (fi with commented endpoints)
                 } 
 
                 // 2. HILITE the optional "TRACE"-layer of the track (Filtering-Layer)
-                function showTrackLine(layerid, trackInfo) {
-                    if (!layerid) layerid = "track";
+                function showTrackLine(trackInfo) {
                     var hilayerid = layerid + "-trace", // ?
                         hilayer = map.getLayer(hilayerid);  
 
@@ -410,10 +422,10 @@ display as decorated route (fi with commented endpoints)
                 } 
 
                 // APPLY start- and stop-nodes of track
-                showTrackNodes(layerid, trackInfo); 
+                showTrackNodes(trackInfo); 
 
                 // Option: APPLY trace-overlay (gestrichelt) on track
-                showTrackLine(layerid, trackInfo); 
+                showTrackLine(trackInfo); 
 
             }
 

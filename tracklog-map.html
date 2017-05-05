@@ -425,24 +425,23 @@ alternative demos : routingtracks.html, fullscreen.html
                 if (this._snapTarget) {   // A. 
 
                     var snapPnt = this._snapPointQuery(lngLat, this._snapTarget),
-                        index = snapPnt.properties.index;
+                        index = snapPnt.properties.index; 
                     if (index != null) {
                         // MAIN Trigger: SYNC of target-use in external apps
                         // ************
                         this.index = index;
                         mapToast = this._snapPointInfo(snapPnt, this.logdata); 
+                        return mapToast; 
                         // dragPointDragEvents(); 
                     }    
 
-                } else {       // FREE logPoint 
+                } 
 
-                    var coords = [lngLat.lng, lngLat.lat];
-                    
-                    this.logPointRefresh(null, coords);  // console.log("Refreshing logPoint", ix);
-                    // Additional UI-info 
-                    mapToast = "FREE. Dragged to " + coords; 
-
-                } //console.log(mapToast);
+                var coords = [lngLat.lng, lngLat.lat];
+                
+                this.logPointRefresh(null, coords);  // console.log("Refreshing logPoint", ix);
+                // Additional UI-info 
+                mapToast = "FREE. Dragged to " + coords; 
 
                 return mapToast;
             },        
@@ -475,11 +474,12 @@ alternative demos : routingtracks.html, fullscreen.html
                     }  
                     return title;   
                 }
+
                 var logPointSrc = map.getSource("logpoint");
-                if (!logPointSrc) return; 
-                
+                if (!logPointSrc) return; // console.log("logPointRefresh", index, coords);
+
                 // A. 
-                if (index && this.logdata) {
+                if ((index!=null) && this.logdata) {
                     coords = this.logdata["coords"][index].slice(0,2);  // console.log(coords[0],typeof coords[0]);
                 } 
 
@@ -492,6 +492,7 @@ alternative demos : routingtracks.html, fullscreen.html
 
                 // Update LogPoint-srcData 
                 logPointSrc.setData(this.logPointFeature(coords, title));
+
             },
 
             // 
