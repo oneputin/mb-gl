@@ -18,15 +18,17 @@
     <link rel="import" href="../mb-zoom.html">
 
     <style is="custom-style">
-        mb-map {
-            width: 100%;
-            height: 100%;
+
+        .container {
+            top: 0; bottom: 0; /*height: 500px;*/
+            width: 100%; height: 100vh;
+            @apply(--layout-horizontal);
+            /*align-items: flex-start;*/
         }
-        
-        mb-info-lnglat {
-            left: 50%;
-            margin-right: -50%;
-            transform: translate(-50%, 0)
+
+        mb-map {
+            position:absolute; top:0; bottom:0; width:100%;
+            /*width: 100%; height: 100%;*/
         }
         
         .flex-horizontal {
@@ -35,13 +37,6 @@
         
         .flexchild {
             @apply(--layout-flex);
-        }
-
-        .container {
-            top: 0; bottom: 0; /*height: 500px;*/
-            height: 100vh;
-            @apply(--layout-horizontal);
-            /*align-items: flex-start;*/
         }
 
         div.ctrlbox {
@@ -75,13 +70,13 @@
             <!--zoom="[[zoom]]"-->
             <mb-map 
                 mapapikey="[[mbkey]]"
-                map="{{map}}"
+                mapstyle="[[mapstyle]]" 
+                mbid = "{{mbid}}"
                 cbox="{{cbox}}"
                 zoom="{{zoom}}"
                 mapctrl="[[mapctrl]]">
 
                 <mb-slide
-                    map="[[map]]"
                     serviceparams="[[serviceparams]]"
                     target="[[target]]"
                     slidectrl="[[slidectrl]]" 
@@ -90,17 +85,16 @@
                 </mb-slide>
                 
                 <mb-target 
-                    map = [[map]]
-                    target={{target}}
+                    mbid = "[[mbid]]"
+                    target = "{{target}}"
                     targetarea="[[targetarea]]"
                     serviceflag="{{serviceflag}}">
                 </mb-target>
 
                 <mb-location-log 
-                    map="{{map}}" 
-                    lnglat="{{lnglat}}" 
-                    centermode="true" 
-                    checked>
+                    checked
+                    mbid = "[[mbid]]"
+                    lnglat="{{lnglat}}"> 
                 </mb-location-log>
 
             </mb-map>
@@ -128,6 +122,8 @@
         scope.cbox = "13.5,52.5"; // Home
         scope.cboxinput = "";
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+        scope.mapstyle = 'mapbox://styles/mapbox/streets-v9'; // light-v9';
+
         scope.mapctrl = {
             center: [10,52],
         };

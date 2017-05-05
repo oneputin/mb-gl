@@ -58,7 +58,7 @@ The visual signature can be toogled in sync with the value of the exported servi
 
             properties: {
 
-                map: {
+                mbid: {
                     type: Object,
                     observer: 'setupTargetTrigger'
                     // notify: true
@@ -151,7 +151,7 @@ The visual signature can be toogled in sync with the value of the exported servi
                 
                 this.target = target.toString();   
 
-                this.map.setCenter(target);   
+                map.setCenter(target);   
             },
 
             /**
@@ -172,17 +172,17 @@ The visual signature can be toogled in sync with the value of the exported servi
             /**
              *  setting up the 
              */
-            setupTargetTrigger: function(newmap) { // console.log("setupTargetTrigger", newmap);
+            setupTargetTrigger: function(mbid) { // console.log("setupTargetTrigger", newmap);
                 
-                if (newmap) {
+                if (mbid) {
                     // var that = this;
-                    this.map.on('moveend', function() {
+                    map.on('moveend', function() {
                         // trigger overlay-request after every "map-move" 
                         // if (this.serviceflag) this.targetTrigger();
                         this.targetTrigger();
                     }.bind(this));
 
-                    // console.log("trigger initial service-request on", this.map);
+                    // console.log("trigger initial service-request on", map);
                     this.serviceflag = true;
                     this.targetTrigger();
                 }

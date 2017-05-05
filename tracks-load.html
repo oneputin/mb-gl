@@ -43,6 +43,7 @@ component loads tracking data
 
     <!--tagname="Track"-->
     <geotags-from-gpx 
+        tagname="Track"
         srcmeta="[[srcmetax]]"
         tagdata="{{_trackdata}}">
     </geotags-from-gpx>    
@@ -84,6 +85,11 @@ component loads tracking data
                     type: Object
                 },
 
+                maptoast : {
+                    type: String,
+                    notify: true
+                }
+
             },
 
             behaviors: [
@@ -111,7 +117,7 @@ component loads tracking data
                     if (srcmeta.path == 'tracksetmeta') {
                         if (Object.keys(srcmeta.value).length === 0) return; 
                         srcmeta = srcmeta.value;
-                    } console.log("TRACK REQUEST", srcmeta); 
+                    } // console.log("TRACK REQUEST", srcmeta); 
 
                     var srcurl = srcmeta.url,      // 
                         srctype = srcmeta.type,    // 
@@ -145,8 +151,7 @@ component loads tracking data
                         if (srcmeta.query) {  
                             srcmeta.xmlquery = Object.assign(srcmeta.xmlquery, srcmeta.query);
                         } 
-                    }
-                    console.log("REQUEST to, type="+srctype, srcurl);
+                    } // console.log("REQUEST to, type="+srctype, srcurl);
 
                     // console.log("tracksetmeta. AFTER", srcmeta);
                     // this.tracksetmeta = srcmeta;
@@ -159,6 +164,8 @@ component loads tracking data
                         this.srcmetax = null;
                     }   
 
+                    this.maptoast = "loading logbook of tracks";
+
                 }, 100);     
             },
 
@@ -166,8 +173,9 @@ component loads tracking data
              * Postprocess raw tracks into alternative Formats 
              */    
             _responseManager : function(rawdata, routemode, srcmetad) { 
-                if (!rawdata) return; 
-                console.log("TRACKRESPONSE", rawdata, routemode, srcmetad);
+                this.maptoast = "";
+
+                if (!rawdata) return; // console.log("TRACKRESPONSE", rawdata, routemode, srcmetad);
                 var trackdata;
                 // 
                 if (srcmetad) {
@@ -193,7 +201,8 @@ component loads tracking data
                     }    
                 }  
 
-                if (!trackdata) return;  console.log("CHECKOUT TrackData (routemode="+routemode+")", trackdata); 
+
+                if (!trackdata) return;  // console.log("CHECKOUT TrackData (routemode="+routemode+")", trackdata); 
                 this.trackdata = trackdata;
                 // this._trackdata = null;
             },

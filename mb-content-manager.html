@@ -113,8 +113,8 @@ Refresh mb-contentbox features
                 //console.log("Content:", contentbox); 
                 if (!contentbox || !Object.keys(contentbox).length) return;
 
-                var scope = this,
-                    map = this.map; 
+                var scope = this;
+
                 this.debounce("apply", function(){
                     // POLYMER-feature 
                     var cp = contentbox.path; 

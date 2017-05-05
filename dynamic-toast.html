@@ -1,0 +1,119 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
+<link rel="import" href="../paper-spinner/paper-spinner-lite.html">
+
+<!--
+`dynamic-toast`  
+Container for paper-toast with variable behavior
+- detecting need for spinner from text
+-->
+
+<dom-module id="dynamic-toast">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+
+            #toast {
+                --paper-toast-background-color: blue;
+                --paper-toast-color: white;
+            } 
+            #toast.wait {
+                --paper-toast-background-color: red;
+            }
+               
+            #spinner {
+                display: none;
+                --paper-spinner-color: cyan; /*var(--paper-pink-500);*/
+                opacity: 1; 
+                margin-left: 15px;
+            }   
+            #spinner.wait {
+                display: inline-block;
+            }
+
+        </style>
+
+        <paper-toast 
+            id = "toast" 
+            duration = "{{duration}}"
+            class = "fit-bottom" 
+            text = "[[text]]">
+            <paper-spinner-lite 
+                id="spinner" 
+                class="wait"
+                active>
+            </paper-spinner-lite>
+        </paper-toast>
+
+    </template>
+
+    <script>
+        Polymer({
+            is: 'dynamic-toast',
+
+            properties: {
+
+                duration : {
+                    type: Number,
+                    value: 3000
+                },
+
+                text: {
+                    type: String,
+                    value: "",
+                    observer: 'toggleToast'
+                }, 
+
+                waiters : {
+                    type: Array,
+                    value : [
+                        "load",
+                        "save",
+                        "wait"
+                    ]
+                }
+                
+            },
+
+            observers:[
+                'toggleToast(text, duration)'
+            ],
+
+            toggleToast: function(text){ 
+                
+                this.debounce("toast", function(){
+                    var t = this.$.toast,
+                        s = this.$.spinner;
+
+                    if (!text) {
+                        t.toggle(); 
+                        return; 
+                    }    
+
+                    // remove wait-class
+                    if (t.classList.contains("wait")) t.classList.toggle('wait'); 
+                    if (s.classList.contains("wait")) s.classList.toggle('wait'); 
+
+                    // setup new toast
+                    var waitflag = false;
+                    this.waiters.some(function(w){ // console.log("? w=["+w+"] in: ", t);
+                        if (text.includes(w)) {
+                            waitflag = true;
+                            return true;
+                        }
+                    });  
+
+                    if (waitflag) {
+                        t.classList.add('wait');
+                        s.classList.add('wait');
+                    }   // console.log("toastevent for", text, waitflag, t.classList);
+    
+                    t.open();
+                }, 100);
+            },
+
+        });
+    </script>
+</dom-module>

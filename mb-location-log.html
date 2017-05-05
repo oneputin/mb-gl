@@ -48,20 +48,26 @@ wraps a distance utility
 
             properties: {
                 /**
-                 *  map-object of related mb-gl-map
-                 */
-                mbid: {
-                    type: Object,
-                    observer: 'setupTool'
-                },
-
-                /**
                  * LonLat in csv-format
                  */
                 lnglat: {
                     type: String,
                     notify: true,
                     observer: '_centerPointRefresh'
+                },
+
+                checked: {
+                    type: Boolean,
+                    value: true,
+                    observer: "toggleVisibility"
+                },
+
+                /**
+                 *  map-object of related mb-gl-map
+                 */
+                mbid: {
+                    type: Object,
+                    observer: 'setupTool'
                 },
 
                 mousemode: {
@@ -74,12 +80,6 @@ wraps a distance utility
                 info: {
                     type: String,
                     computed: 'formatlonlat(lnglat)'
-                },
-
-                checked: {
-                    type: Boolean,
-                    value: true,
-                    observer: "toggleVisibility"
                 },
 
                 _centerPntLayers : {
@@ -145,24 +145,25 @@ wraps a distance utility
             },
 
             // 
-            setupTool: function(mbid) {
-                if (map && mbid) {  // console.log("SETUP locationLogMode" , map, mbid);
+            setupTool: function(mbid) { 
+                if (map && mbid) {  //console.log("SETUP locationTrackMode" , mbid, map, this.mousemode);
                     this.toggleMode(this.mousemode, this.checked); 
-                    
-                    this.lnglat = map.getCenter(); // INITIAL location
-
-                    this._centerPointSetup(this.lnglat);
+                    this._centerPointRefresh(map.getCenter())
                 }
             },
 
             // Refresh coords of dragPnt (= refresh Source)
             _centerPointRefresh: function(lngLat) {
                 if (!lngLat) return; // console.log("logPointGet START", lngLat, this.logdata);
-                var logPointSrc = map.getSource("centerpoint");
-                if (!logPointSrc) return; 
+                this.lnglat = lngLat; // INITIAL location
 
-                var coords = [lngLat.lng, lngLat.lat];
-                logPointSrc.setData(this._centerPointFeature(coords));
+                var logPointSrc = map.getSource("centerpoint");
+                if (!logPointSrc) {
+                    this._centerPointSetup(lngLat);
+                } else {
+                    var coords = [lngLat.lng, lngLat.lat];
+                    logPointSrc.setData(this._centerPointFeature(coords));
+                }     
             },
 
             // Update LogPoint-srcData 

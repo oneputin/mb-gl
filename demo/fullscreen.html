@@ -18,6 +18,7 @@
     <link rel="import" href="../../paper-radio-button/paper-radio-button.html"> <!-- ctrls  -->
 
     <!-- app-components related to map-api --> 
+    <link rel="import" href="../dynamic-toast.html">
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
    <!--<link rel="import" href="../mb-styles.html">-->
@@ -45,6 +46,7 @@
     <link rel="import" href="../tracklog-ctrl.html">
 
     <style is="custom-style">
+
         .container {
             top: 0; bottom: 0; /*height: 500px;*/
             height: 100vh;
@@ -176,12 +178,11 @@
                     mbid="{{mbid}}" 
                     cbox="{{cbox}}" 
                     zoom="{{zoom}}" 
-                    mapctrl = "[[mapctrl]]"
-                    maptoast = "[[maptoast]]">
+                    mapctrl = "[[mapctrl]]">
 
                     <div>
+
                         <mb-content-browser 
-                            
                             indexurl="[[indexurl]]" 
                             metadatasetslabel="[[metadatasetslabel]]" 
                             metadataset="{{metadataset}}"
@@ -191,10 +192,12 @@
                             selectitem="{{datasetitem}}"> 
 
                             <tracks-load 
+                                maptoast = "{{maptoast}}"
                                 routemode = "[[ctrl.userouting]]"
                                 tracksetmeta = "[[metadataset]]" 
                                 trackdata = "{{trackdata}}"> 
                             </tracks-load>
+
                         </mb-content-browser>
 
                         <!-- placed here to overlay the map -->
@@ -261,7 +264,12 @@
                         </div>
                     </template>
                 </mb-map>
-            </template>    
+            </template>  
+
+            <dynamic-toast 
+                text = "[[maptoast]]">
+            </dynamic-toast>
+  
         </div>
 
 
@@ -270,6 +278,7 @@
 
             <!-- B.2 TRACK-Explorer -->
             <tracks-api 
+                maptoast = "{{maptoast}}"
                 disable = "[[ctrl.userouting]]"
                 rawcontent = "[[trackdata]]" 
                 metadata = "{{metadataset}}" 
@@ -278,18 +287,17 @@
                 trackevents = "{{trackevents}}"
                 tracksall = "[[dataset]]"
                 trackitem = "{{datasetitem}}"
-                tracklog = "{{logdata}}"
-                maptoast = "{{maptoast}}">
+                tracklog = "{{logdata}}">
             </tracks-api>
 
             <tracklog-map
+                maptoast = "{{maptoast}}"
                 disable = "[[ctrl.userouting]]"
                 mobilemode = "[[ctrl.mobilemode]]"
                 draggable = "[[ctrl.trackdraggable]]"
                 mbid = "[[mbid]]" 
                 logdata = "[[logdata]]"
-                index = "{{logindex}}"
-                maptoast = "{{maptoast}}">
+                index = "{{logindex}}">
             </tracklog-map>
 
             <layer-waypoints 

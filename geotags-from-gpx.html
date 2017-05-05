@@ -49,8 +49,7 @@ Optional: create quick-preview-data
             },
 
             tagname: {
-                type: String,
-                value: "Track"
+                type: String
             },
 
             tagdata : {
@@ -102,27 +101,31 @@ Optional: create quick-preview-data
             }  
             
             // Join the xmlquery from basic and variable query-items
-            var xmlquery = {
-                "tags": this.tagname,
-                "structure": "doc"
-            };
+            var xmlquery = {};
+            if (this.tagname) {
+                xmlquery = {     
+                    "tags": this.tagname,
+                    "structure": "doc"
+                };
+            }
 
             if (srcmeta.xmlquery && Object.keys(srcmeta.xmlquery).length) {
-               Object.assign(xmlquery, srcmeta.xmlquery);
-            }  // console.log("gpx-Query (meta)", srcmeta, xmlquery) ;
+               xmlquery = Object.assign({}, srcmeta.xmlquery, xmlquery);
+            }  
             
             // Trigger action 
             this._tagname = xmlquery.tags;
             this._xmlquery = xmlquery; 
             this._xmlurl = srcmeta.url; // !! TRIGGER !!
+            // console.log("gpx-Query (meta)", xmlquery, srcmeta.url) ;
         },
         
         // Convert raw gpx-json-data into 
-        _processRawData: function(rawdata, srcmeta) { console.log("_processRawData", rawdata, srcmeta); // return;
-            var _tagdata ; 
-            this.debounce("raw", function() {
-                if (!rawdata || !Object.keys(rawdata).length) return; 
+        _processRawData: function(rawdata, srcmeta) { 
+            if (!rawdata || !Object.keys(rawdata).length) return;  // console.log("_processRawData: CALL:", rawdata, srcmeta); // return;
+            this.debounce("raw", function() { // console.log("_processRawData: PROCESS:", rawdata, srcmeta); // return;
                 // console.log("GPX-data, rawTracks", rawdata); // return;
+                var _tagdata ; 
     
                 if (this._tagname == "Waypoint") {
 

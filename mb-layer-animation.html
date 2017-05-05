@@ -108,7 +108,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             if (mode == "slide") {
                 // animation as translation-sliding-in/out
                 // starting from an OFF-pont (dx0, dy0)  
-                var bb = this.map.getBounds();
+                var bb = map.getBounds();
                 animation.dx0 = (bb.getEast() - bb.getWest()) / 2;
                 animation.dy0 = (bb.getNorth() - bb.getSouth()) / 2;
                 animation.dx = 0 - (animation.dx0 / animation.count);
@@ -161,7 +161,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 }
 
                 // 2. make layer visible 
-                this.map.setLayoutProperty(animation.layer, 'visibility', 'visible');
+                map.setLayoutProperty(animation.layer, 'visibility', 'visible');
 
                 // 3. start show-animation  
                 updateFrame();
@@ -171,7 +171,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 updateFrame();
                 
                 // 2. make layer invisible 
-                this.map.setLayoutProperty(animation.layer, 'visibility', 'none');
+                map.setLayoutProperty(animation.layer, 'visibility', 'none');
             }
 
         },
@@ -193,7 +193,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             if (!dx) dx = anim.dx;
             if (!dy) dy = anim.dy;
             if (!dx && !dy) {
-                that.map.getSource(layerctrl.source).setData(layerdata);
+                map.getSource(layerctrl.source).setData(layerdata);
                 return;
             }
 
@@ -215,7 +215,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             })
 
             // console.log("AFTER locate of:", layerdata, Date.now());
-            that.map.getSource(layerctrl.source).setData(layerdata);
+            map.getSource(layerctrl.source).setData(layerdata);
         },
         /*
          *  moves geojson-layer along a path 
@@ -232,7 +232,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             var ampl = 0.02,
                 p1, p2, dx, dy,
-                bb = that.map.getBounds(),
+                bb = map.getBounds(),
                 bbdx = bb.getEast() - bb.getWest(),
                 bbdy = bb.getNorth() - bb.getSouth();
 
@@ -275,7 +275,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 opacity = countopacity < 1 ? countopacity : 1;
             }
 
-            that.map.setPaintProperty(animation.layer, 'fill-opacity', opacity);
+            map.setPaintProperty(animation.layer, 'fill-opacity', opacity);
         }
     };
 

@@ -17,6 +17,7 @@ the map-object can be ctrld from outside
             :host {
                 display: block;
             }
+
             #map {
                 position: absolute;
                 width: 100%;
@@ -26,17 +27,13 @@ the map-object can be ctrld from outside
                 position: relative;
                 width: 100%;
                 height: 100%;
-            }    
+            }  
+
         </style>
 
         <div class="container">
             <div id='map'></div>
             <content></content>
-            <paper-toast 
-                id = "toast" 
-                class = "fit-bottom" 
-                text = "[[maptoast]]">
-            </paper-toast>
         </div>
 
     </template>
@@ -119,11 +116,7 @@ the map-object can be ctrld from outside
                     value: 8,
                     observer: '_mbMapZoom'
                 },
-                maptoast: {
-                    type: String,
-                    value: "",
-                    observer: 'showToast'
-                }
+
             },
 
             observers: [
@@ -134,13 +127,8 @@ the map-object can be ctrld from outside
                 mapscope = this;
 
                 if (!this.mapapikey) this.mapapikey = setup.mapapikey;
-                
+                //                 
                 this._setupMap(); 
-            },
-
-            showToast: function(t){
-                if (!t) return; //console.log("log toast",t);
-                this.$.toast.open();
             },
 
             // setup mapClient (generic)
