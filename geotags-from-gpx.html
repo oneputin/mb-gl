@@ -118,7 +118,7 @@ Optional: create quick-preview-data
         },
         
         // Convert raw gpx-json-data into 
-        _processRawData: function(rawdata, srcmeta) { // console.log("GPX-data, raw", rawdata); // return;
+        _processRawData: function(rawdata, srcmeta) { console.log("_processRawData", rawdata, srcmeta); // return;
             var _tagdata ; 
             this.debounce("raw", function() {
                 if (!rawdata || !Object.keys(rawdata).length) return; 

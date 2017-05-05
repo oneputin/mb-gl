@@ -181,6 +181,7 @@
 
                     <div>
                         <mb-content-browser 
+                            
                             indexurl="[[indexurl]]" 
                             metadatasetslabel="[[metadatasetslabel]]" 
                             metadataset="{{metadataset}}"
@@ -301,8 +302,8 @@
             <!-- SYNC mapcontent from contentbox -->
             <mb-content-manager 
                 map = "[[map]]" 
-                mobilemode = "[[ctrl.mobilemode]]"
                 mbid = "[[mbid]]" 
+                mobilemode = "[[ctrl.mobilemode]]"
                 contentbox = "{{contentbox}}" 
                 mapevents = "[[trackevents]]"
                 mapcontent = "{{mapcontent}}"
@@ -330,7 +331,6 @@
     // scope.indexurl = "https://dl.dropboxusercontent.com/s/s0x5j8d90unz9rd/index-sulawesi.json?raw=1";
     // scope.indexurl = "https://dl.dropboxusercontent.com/s/dlcaahtl4r9ay79/index-handheld-1.json?raw=1";
     scope.indexurl = "https://clouds.iimaps.de/assets/data/index-sulawesi.json";
-   
     scope.metadatasetslabel="Trackbooks"
     scope.metadataset = {}; // metadata of selected dataset
 
@@ -355,6 +355,7 @@
         styleselectshow : false,
         mapmeasureshow : false
     };
+    
     // Additional (specific) ctrl-items 
     scope.ctrlitems = [
         {
@@ -366,6 +367,7 @@
             title: "All waypoints"
         }
     ];
+
     // Animation- INIT
     scope.trackalignmap; // 
     scope.timer = {}; //

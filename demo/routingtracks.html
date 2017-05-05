@@ -103,15 +103,9 @@
         }
         
         mb-content-browser {
-            padding: 10px;
-            top : 0px;
-            left : 0px;
-            z-index: 9;
-            background-color: rgba(255,255,255,0.3); /*#ff4081*/
-            color: white;  
-            /*display: inline-block;*/
-            /*@apply(--layout-vertical);
-            @apply(--layout-start);*/
+            display: inline-block;
+            @apply(--layout-vertical);
+            @apply(--layout-start);
         }
 
         tracklog-view {
@@ -184,11 +178,13 @@
                     mapctrl = "[[mapctrl]]"
                     maptoast = "[[maptoast]]">
 
+                    <!--
                     <mb-content-browser 
                         indexurl="[[indexurl]]" 
                         metadatasetslabel="[[metadatasetslabel]]" 
                         metadataset="{{metadataset}}"
 
+                        ctrlitems = "[[ctrlitems]]"
                         dataset = "[[dataset]]" 
                         selectitem="{{datasetitem}}"> 
 
@@ -198,7 +194,7 @@
                             trackdata = "{{trackdata}}"> 
                         </tracks-load>
                     </mb-content-browser>
-
+                    -->
 
                     <!-- placed here to overlay the map -->
                     <tracklog-view
@@ -235,7 +231,7 @@
                     <mb-location-log 
                         checked
                         lnglat="{{lnglat}}" 
-                        map="[[map]]"
+                        mbid="[[mbid]]"
                         mousemode="[[mousemode]]"> 
                     </mb-location-log>
 
@@ -326,10 +322,10 @@
                 metadata = "{{metadataset}}" 
                 contentbox = "{{contentbox}}" 
                 mapcontent = "[[mapcontent]]"
-                mapevents = "{{mapevents}}"
+                trackevents = "{{trackevents}}"
                 tracksall = "[[dataset]]"
-                trackselected = "{{datasetitem}}"
-                trackpntindex = "{{logindex}}">
+                tracklog = "{{logdata}}"
+                trackitem = "{{datasetitem}}">
             </tracks-api>
 
             <tracklog-map
@@ -337,12 +333,10 @@
                 mbid = "[[mbid]]" 
                 mobilemode = "[[mobilemode]]"
                 draggable = "[[draggable]]"
-                tracklogged = "[[datasetitem]]"
                 logdata = "{{logdata}}"
                 index = "{{logindex}}"
                 maptoast = "{{maptoast}}">
             </tracklog-map>
-            <!-- lnglat = "[[lnglat]]"--> 
 
             <layer-waypoints 
                 mbid = "[[mbid]]" 
@@ -354,38 +348,39 @@
             <!-- SYNC mapcontent from contentbox -->
             <mb-content-manager 
                 map = "[[map]]" 
-                mobilemode = "[[mobilemode]]"
                 mbid = "[[mbid]]" 
+                mobilemode = "[[mobilemode]]"
                 contentbox ="{{contentbox}}" 
-                mapevents = "[[mapevents]]"
+                mapevents = "[[trackevents]]"
                 mapcontent = "{{mapcontent}}"
-                dataset = "{{dataset}}"
-                featureselected="{{datasetitem}}">
+                dataset = "{{dataset}}">
             </mb-content-manager>
 
             <!-- C. DATA-Supply INTERFACE -->
             <div class="flexchild">
-                
-                <!--<mb-content-browser 
+            
+                <mb-content-browser 
+                    checked="open"
                     indexurl="[[indexurl]]" 
                     metadatasetslabel="[[metadatasetslabel]]" 
                     metadataset="{{metadataset}}"
 
                     dataset = "[[dataset]]" 
+                    ctrlitems = "[[ctrlitems]]"
                     selectitem="{{datasetitem}}"> 
 
                     <tracks-load 
-                        routemode = "[[routemode]]"
+                        routemode = "[[userouting]]"
                         tracksetmeta = "[[metadataset]]" 
                         trackdata = "{{trackdata}}"> 
                     </tracks-load>
-                </mb-content-browser>-->
-                <!-- selectprop="id"--> 
+                </mb-content-browser>
 
             </div>
 
             <!-- C. DATA-LOG CTRL -->
             <div class="flexchild">
+
             </div>    
 
         </div>
@@ -403,18 +398,29 @@
     scope.morestyles = "demo-styles.json";
 
     // Data-INIT
-    scope.indexurl = "index-handheld-1.json"; // list of available datasets
+    // scope.indexurl = "index-handheld-1.json"; // list of available datasets
+    scope.indexurl = "https://clouds.iimaps.de/assets/data/index-sulawesi.json";
     scope.metadatasetslabel="Trackbooks"
     scope.metadataset = {}; // metadata of selected dataset
+
+    scope.ctrlitems = [
+        {
+            id: "all",
+            title: "All tracks"
+        },
+        {
+            id: "waypoints",
+            title: "All waypoints"
+        }
+    ];
 
     scope.basedataurl = ""; // list of available datasets
     scope.dataset = []; // collection 
     scope.datasetitem = {}; // track/route-object
 
     // Map-INIT
-    scope.cbox = "13,52";
+    scope.cbox = "13 , 52"; // Berlin
     scope.zoom = 8;
-    // scope.lnglat = "13,52";
 
     // STATE init
     scope.routemode = false; // true; // false
@@ -458,7 +464,10 @@
             r1.addEventListener("change", function(){  // console.log("R1-CHANGED", this.checked)
                 toggleRouting(this); 
             });
+        } else {
+            scope.userouting = false;
         }
+        console.log("start with routinganimation=",scope.userouting, r1);
 
     });
 

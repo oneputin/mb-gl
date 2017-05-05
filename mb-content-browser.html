@@ -107,6 +107,12 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
 
             properties: {
 
+                checked : {
+                    // type: Boolean,
+                    value : true,
+                    observer: '_toggleVisibility'
+                },
+
                 // LEVEL 1
                 // 
                 indexurl: {
@@ -168,11 +174,6 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                     observer: '_checkObject'
                 },
 
-                checked : {
-                    type: Boolean,
-                    value : true
-                }
-
             },
 
             observers: [
@@ -181,6 +182,8 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
             ],
 
             attached: function() {
+                //console.log("this.checked",this.checked);
+                //this._toggleVisibility(this.checked);
             },
 
             /**
@@ -261,14 +264,19 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
             },
 
             // alternative visibility of control and container
-            _toggleVisibility: function(flag) {                
+            _toggleVisibility: function(flag) {   
+                // toggle only if checked was not explicitely set 
+                // a string-value (fi, 'open') in parent !!       
+                var t1 = (typeof flag == "string"), t2 = (typeof this.checked == "string");  // console.log(flag, t1, t2 );   
+                if (t1 || t2) return; 
+      
                 if (flag == null) flag = !this.checked; 
+                var menu2 = this.$$('#menu2');
                 if (!flag)  {
                     this._toggleSize(50);
-                } else {
-                    var scope = this;   
+                } else if (menu2) {
                     setTimeout(function() { // open the items-list of data-menu
-                        scope.$$('#menu2').open();                
+                        menu2.open();                
                     }, 500);
                 }
                 this.checked = flag;

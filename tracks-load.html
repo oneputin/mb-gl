@@ -106,8 +106,12 @@ component loads tracking data
              */
             _requestManager: function(srcmeta) {
 
-                this.debounce("request", function() {  //console.log(srcmeta, routemode);
-                    if (srcmeta.path == 'tracksetmeta') srcmeta = srcmeta.value;
+                this.debounce("request", function() {  
+                    
+                    if (srcmeta.path == 'tracksetmeta') {
+                        if (Object.keys(srcmeta.value).length === 0) return; 
+                        srcmeta = srcmeta.value;
+                    } console.log("TRACK REQUEST", srcmeta); 
 
                     var srcurl = srcmeta.url,      // 
                         srctype = srcmeta.type,    // 
@@ -117,7 +121,6 @@ component loads tracking data
                     if (!srcurl) {
                         return;
                     } 
-
                     if (this.tracksetmeta && (srcurl != this.tracksetmeta.url)) {
                         //this.routecontent = [];
                         //this.trackdata = [];
@@ -143,6 +146,7 @@ component loads tracking data
                             srcmeta.xmlquery = Object.assign(srcmeta.xmlquery, srcmeta.query);
                         } 
                     }
+                    console.log("REQUEST to, type="+srctype, srcurl);
 
                     // console.log("tracksetmeta. AFTER", srcmeta);
                     // this.tracksetmeta = srcmeta;
@@ -161,15 +165,17 @@ component loads tracking data
             /** 
              * Postprocess raw tracks into alternative Formats 
              */    
-            _responseManager : function(trackdata, routemode, srcmetad) { // console.log("TRACKRESPONSE", trackdata, routemode, this._trackdata);
-                if (!trackdata) return; 
-
+            _responseManager : function(rawdata, routemode, srcmetad) { 
+                if (!rawdata) return; 
+                console.log("TRACKRESPONSE", rawdata, routemode, srcmetad);
+                var trackdata;
+                // 
                 if (srcmetad) {
-                    console.log("Pass TrackData unchanged", trackdata); 
-               
+                    console.log("Pass TrackData unchanged", rawdata); 
+                    trackdata = rawdata;
                 } else if (routemode) {  // derive structures for mb-based animation of 'suitable' tracks
                     
-                    var trackSet = this._createRouteSet(trackdata); // .features);
+                    var trackSet = this._createRouteSet(rawdata); // .features);
                     if (trackSet && trackSet.length) {  // console.log("RAW route-data (gpx)",  trackSet);
                         trackdata = trackSet;
                     } else {
@@ -178,7 +184,8 @@ component loads tracking data
 
                 } else {  // derive features for mb-visualization of rawTracks
                     // console.log("prepare quickmap of ", rawTracks);  
-                    var trackLogs = this._createTrackSet(trackdata); // console.log("RAW track-data (gpx)", trackLogs);
+                    var trackLogs = this._createTrackSet(rawdata); // console.log("RAW track-data (gpx)", trackLogs);
+                    
                     if (trackLogs) {  
                         trackdata = trackLogs;
                     } else {
@@ -186,7 +193,7 @@ component loads tracking data
                     }    
                 }  
 
-                if (!trackdata) return;  // console.log("CHECKOUT TrackData (routemode="+routemode+")", trackdata); 
+                if (!trackdata) return;  console.log("CHECKOUT TrackData (routemode="+routemode+")", trackdata); 
                 this.trackdata = trackdata;
                 // this._trackdata = null;
             },

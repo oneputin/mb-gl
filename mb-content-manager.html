@@ -31,7 +31,18 @@ Refresh mb-contentbox features
                     type: Object,
                     observer: "onMapSetup"
                 },
+
+                // IN: id of mb-mapstyle (basemap) triggers content-redraw when changed
+                mbid: {
+                    type: String,
+                    observer: 'onStyleChanged'
+                },
                 
+                // IN: events added to "content"
+                mapevents : {
+                    type : Object 
+                },
+
                 mobilemode : {
                     type: Boolean
                 },
@@ -59,17 +70,6 @@ Refresh mb-contentbox features
                 contentbox: {
                     type: Object,
                     notify: true
-                },
-
-                // IN: events added to "content"
-                mapevents : {
-                    type : Object 
-                },
-
-                // IN: id of mb-mapstyle (basemap) triggers content-redraw when changed
-                mbid: {
-                    type: String,
-                    observer: 'onStyleChanged'
                 },
 
                 // Cached (Old) content 
@@ -462,17 +462,15 @@ Refresh mb-contentbox features
                     var layerSource = map.getSource(layerName);  // console.log(layerName, layerData, layerSource) 
 
                     if (!layerSource ) {   // 1.A. Add(create) mapSource 
-                        // console.log("ADD source: "+layerName, layerData);
+                        console.log("ADD source: "+layerName, layerData, layerObject);
                         map.addSource(layerName, {
                             "type": "geojson",
                             "data": layerData
                         });
-
                         layerSource = map.getSource(layerName);
 
-                    } else {   
-                                   // 1.B  Update data of existing mapSource  
-                       layerSource.setData(layerData);
+                    } else {               // 1.B  Update data of existing mapSource  
+                        layerSource.setData(layerData);
                     }  // console.log("SET SRC", layerName, layerData, layerSource._data);
 
 
@@ -577,14 +575,15 @@ Refresh mb-contentbox features
                     // Option 
                     if (flag == "IN") { // ADD/REFRESH a contentbox object 
                         var layerData = layerObject.srcdata;
+
                         if (layerData) {   // Check/Get all source-features of the basic layer 
                             contentfeatures = getFeatureList(layerData, layerName);
-                            // console.log("CHECKED-"+flag+" ["+layerName+"].", "feat.cnt=" + contentfeatures.length); // , contentfeatures);
-                        }                        
+                        }                    
+                        
                         if (typeof map != "undefined")  { // console.log("MAP:", typeof map, map); 
                             layerData = addMapContent(layerName, layerObject);
-                            // console.log("MAP ADDed content for " + layerName, layerData); // , layerObject);
                         } 
+
                     } else {        // REMOVE object (on demand)
                         if (map) {  // console.log("CHECKED-"+flag+" [" + layerName+"]", layerObject); 
                             removeMapContent(layerObject); 
@@ -618,7 +617,9 @@ Refresh mb-contentbox features
 
             // Add/Insert layers according contentbox
             _mbContentCheckIn: function(contentbox, reason) { 
+                
                 var mapcontent = this._mbContentChecker(contentbox, "IN", map) ;
+                
                 if (mapcontent)  {
                     console.log("MAP-IN Usercontent. Reason=", reason, contentbox, mapcontent);
                     return mapcontent; 
