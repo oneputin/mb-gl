@@ -113,7 +113,7 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
             ],
 
             open : function() {
-                this.$$('#dropDown').open();
+                if (this.$$('#dropDown')) this.$$('#dropDown').open();
             },
 
             /**
@@ -121,8 +121,8 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
              * 
              * @param      {object}  menudata  The menudata to 
              */
-            _updateMenu: function(menudata) {
-                // console.log("_update Menu. menudata=", menudata);
+            _updateMenu: function(menudata) { // console.log("_update Menu. menudata=", menudata);
+                
                 if (!menudata || !menudata.length) {
                     this._selectset = null;
                     this.selectitem = null;
@@ -174,15 +174,13 @@ Container for paper-dropdown-menu reducing variable properties to main dynamic e
                         }
                         i = i + 1;
                     });
-                    
-                    this._selectset = menudata;
-
-                } else { // NO menu but return of SELECTRESULT
-
-                    this._selectset = null; // menu not required
+                    //this._selectset = menudata;
+                } else { // ??? NO menu but return of SELECTRESULT
+                    //this._selectset = null; // menu not required
                 }
 
                 this.selectitem = preselectitem;                    
+                this._selectset = menudata;
                 this._selectindex = preselectindex;
                 this._lastid = null;
                 // console.log("_update Menu. selected, _selectset", selected, this._selectset);

@@ -117,7 +117,7 @@ component loads tracking data
                     if (srcmeta.path == 'tracksetmeta') {
                         if (Object.keys(srcmeta.value).length === 0) return; 
                         srcmeta = srcmeta.value;
-                    } // console.log("TRACK REQUEST", srcmeta); 
+                    }  // console.log("TRACK REQUEST", srcmeta); 
 
                     var srcurl = srcmeta.url,      // 
                         srctype = srcmeta.type,    // 
@@ -151,7 +151,7 @@ component loads tracking data
                         if (srcmeta.query) {  
                             srcmeta.xmlquery = Object.assign(srcmeta.xmlquery, srcmeta.query);
                         } 
-                    } // console.log("REQUEST to, type="+srctype, srcurl);
+                    } 
 
                     // console.log("tracksetmeta. AFTER", srcmeta);
                     // this.tracksetmeta = srcmeta;
@@ -162,7 +162,7 @@ component loads tracking data
                     } else {
                         this.srcmetad = srcmeta;
                         this.srcmetax = null;
-                    }   
+                    }   console.log("REQUEST to, type="+srctype, srcurl, this.srcmetax);
 
                     this.maptoast = "loading logbook of tracks";
 
@@ -173,9 +173,9 @@ component loads tracking data
              * Postprocess raw tracks into alternative Formats 
              */    
             _responseManager : function(rawdata, routemode, srcmetad) { 
-                this.maptoast = "";
+                this.maptoast = ""; console.log("TRACKRESPONSE", rawdata, routemode, srcmetad);
 
-                if (!rawdata) return; // console.log("TRACKRESPONSE", rawdata, routemode, srcmetad);
+                if (!rawdata) return;  
                 var trackdata;
                 // 
                 if (srcmetad) {

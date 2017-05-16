@@ -45,3 +45,6 @@ OPTIONAL-tool to measure distances on mb-map
 ### \<mb-location-log\>
 OPTIONAL-tool to query/view/supply mouse-map-location (lonlat)
  
+### \<geotags-from-gpx\>
+Tool to organize tracks 
+ 
