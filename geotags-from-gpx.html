@@ -123,16 +123,26 @@ Optional: create quick-preview-data
         // Convert raw gpx-json-data into 
         _processRawData: function(rawdata, srcmeta) { 
             if (!rawdata || !Object.keys(rawdata).length) return;  // console.log("_processRawData: CALL:", rawdata, srcmeta); // return;
+            
+            function createLocationTracks(locdata) {
+                                
+                return locdata; 
+            }
+
             this.debounce("raw", function() { // console.log("_processRawData: PROCESS:", rawdata, srcmeta); // return;
                 // console.log("GPX-data, rawTracks", rawdata); // return;
                 var _tagdata ; 
-    
+               
+
                 if (this._tagname == "Waypoint") {
 
                     _tagdata = this._normalizeWaypoints(rawdata);
 
                 } else {
-                    // 1. "Simplify" into list of "simple" tracks 
+                    // 1. 
+                    if (rawdata.locations) rawdata = createLocationTracks(rawdata);  
+    
+                    // 2. "Normalize" into set of "simple" tracks 
                     _tagdata = this._normalizeTracks(rawdata);
                     // console.log("GPX-data, rawTracks", rawTracks); // return;
                 }    
@@ -164,7 +174,7 @@ Optional: create quick-preview-data
 
             // Split multiLine-Tracks into tracktrackdata 
             // that can be identified by "own" start-time 
-            function jsonTrackSimplify(rawdata) {
+            function trackLinesCreate(rawdata) {
 
                 var disdata=[], trackdata = [],
                     coordinates, tracktimes, coordElevs, 
@@ -333,8 +343,10 @@ Optional: create quick-preview-data
             // enable processing of different input structures
             if (rawdata.features) rawdata = rawdata.features; 
 
+            
+
             // 1. Simplify
-            var trackdata = jsonTrackSimplify(rawdata);
+            var trackdata = trackLinesCreate(rawdata);
 
             // 2. SET basic vec-props
             addbbox(trackdata); 

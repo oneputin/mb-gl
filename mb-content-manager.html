@@ -67,13 +67,13 @@ Refresh mb-contentbox features
                 },*/
 
                 // IN new contentbox to be processed
-                contentbox: {
+                contentcase: {
                     type: Object,
                     notify: true
                 },
 
                 // Cached (Old) content 
-                _contentbox: {
+                _contentcase: {
                     type: Object
                 }
             },
@@ -84,7 +84,7 @@ Refresh mb-contentbox features
             ],
 
             observers: [
-                'mbContentApply(contentbox.*, "NewContent")',
+                'mbContentApply(contentcase.*, "NewContent")',
                 'contentToDataset(mapcontent.*)'
             ],
 
@@ -94,57 +94,57 @@ Refresh mb-contentbox features
 
             // rarely used 
             onMapSetup: function(map) {
-                // if (!map || !this.contentbox) return;
-                // console.log("FIRST prepare mapcontent from", this.contentbox);
-                this.mbContentApply(this.contentbox, "NewMap");
+                // if (!map || !this.contentcase) return;
+                // console.log("FIRST prepare mapcontent from", this.contentcase);
+                this.mbContentApply(this.contentcase, "NewMap");
             },
 
-            // refresh contentbox on changed basemap
+            // refresh contentcase on changed basemap
             onStyleChanged: function(mbid) {
-                this.mbContentApply(this.contentbox, "NewMapStyle("+mbid+")");
+                this.mbContentApply(this.contentcase, "NewMapStyle("+mbid+")");
             },
 
             /**
              * Create/Update all mbContent items 
-             * related to newly selected contentbox
+             * related to newly selected contentcase
              */
-            mbContentApply: function(contentbox, reason) { 
+            mbContentApply: function(contentcase, reason) { 
                 //console.log("mbContentApply ["+reason+"]"); 
-                //console.log("Content:", contentbox); 
-                if (!contentbox || !Object.keys(contentbox).length) return;
+                if (!contentcase || !Object.keys(contentcase).length) return;
+                // console.log("mbContentApply:", contentcase); 
 
                 var scope = this;
 
                 this.debounce("apply", function(){
                     // POLYMER-feature 
-                    var cp = contentbox.path; 
-                    if (cp && (cp.indexOf('contentbox') >= 0)) { 
-                        contentbox = contentbox.base;
+                    var cp = contentcase.path; 
+                    if (cp && (cp.indexOf('contentcase') >= 0)) { 
+                        contentcase = contentcase.base;
                     } 
 
-                    // Verify contentbox
+                    // Verify contentcase
                     // Check weather new content(at least some) is "well defined"
                     if (map) {
                         var mapevents = this.mapevents,
                             mobilemode = this.mobilemode;
-                        contentbox = scope._mbContentVerify(contentbox, mapevents, mobilemode); // , map);
+                        contentcase = scope._mbContentVerify(contentcase, mapevents, mobilemode); // , map);
                     }
 
-                    if (!contentbox || !Object.keys(contentbox).length)  {
+                    if (!contentcase || !Object.keys(contentcase).length)  {
                         console.log("NO content to apply for", reason);
                         return; 
                     }
 
-                    // REMOVE "actual" contentbox (= _contentbox) 
+                    // REMOVE "actual" contentcase (= _contentcase) 
                     // from from actual map 
                     this._mbContentCheckOut();
                     scope.mapcontent = {};
 
-                    // Push contentbox  
-                    this._contentbox = contentbox;   
+                    // Push contentcase  
+                    this._contentcase = contentcase;   
 
-                    // INSERT new contentbox into map
-                    var mapcontent = this._mbContentCheckIn(contentbox, reason); 
+                    // INSERT new contentcase into map
+                    var mapcontent = this._mbContentCheckIn(contentcase, reason); 
 
                     scope.mapcontent = mapcontent;
                     // **************************
@@ -391,11 +391,10 @@ Refresh mb-contentbox features
             // Insert all layers of contentbox 
             _mbContentChecker: function(contentbox, flag, map) {    
                 if (!contentbox || !Object.keys(contentbox).length) return; 
-                if (!flag) flag = "IN";
+                if (!flag)  flag = "IN";
 
                 var scope = this;
-                // if (!map) map = scope.map;
-                if (!map) return; 
+                if (!map) return; // map = scope.map;
 
                 //var before = "admin_country";
                 var before = "country_label";
@@ -455,7 +454,7 @@ Refresh mb-contentbox features
                 // 
                 function addMapContent(layerName, layerObject){
                     var layerData = layerObject.srcdata;    
-                    if (!layerData) return ;  // console.log(layerData, map);
+                    if (!layerData) return ;  console.log("addMapContent", layerName, layerObject);
 
                     layerData.type = "FeatureCollection";
 
@@ -564,11 +563,12 @@ Refresh mb-contentbox features
                 var mapcontent = {},
                     layerObject, contentfeatures ;
                 
-                var contentboxKeys = Object.keys(contentbox);   // console.log("Refreshing contentboxkeys", contentboxKeys, contentbox);
+                var contentKeys = Object.keys(contentbox);   // console.log("Refreshing contentKeys", contentKeys, contentbox);
 
-                contentboxKeys.forEach(function(layerName, j) {
+                contentKeys.forEach(function(layerName, j) {
 
                     layerObject = contentbox[layerName];
+
                     contentfeatures = [];
                     // console.log("CHECK-CONTENT-"+flag+" of " + layerName, layerObject);
 
@@ -610,18 +610,18 @@ Refresh mb-contentbox features
 
             // Remove previous Content-layers
             _mbContentCheckOut: function() { 
-                if (this._contentbox) console.log("MAP-OUT: previous usercontent", this._contentbox); 
-                var oldcontent = this._mbContentChecker(this._contentbox, "OUT", map) ;    
+                if (this._contentcase) console.log("MAP-OUT: previous usercontent", this._contentcase); 
+                var oldcontent = this._mbContentChecker(this._contentcase, "OUT", map) ;    
                 // if (oldcontent)  console.log("MAP-OUT-features", oldcontent);
             },
 
             // Add/Insert layers according contentbox
-            _mbContentCheckIn: function(contentbox, reason) { 
+            _mbContentCheckIn: function(contentcase, reason) { 
                 
-                var mapcontent = this._mbContentChecker(contentbox, "IN", map) ;
+                var mapcontent = this._mbContentChecker(contentcase, "IN", map) ;
                 
                 if (mapcontent)  {
-                    console.log("MAP-IN Usercontent. Reason=", reason, contentbox, mapcontent);
+                    console.log("MAP-IN Usercontent. Reason=", reason, contentcase, mapcontent);
                     return mapcontent; 
                 } 
             },

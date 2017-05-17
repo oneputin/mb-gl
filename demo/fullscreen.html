@@ -189,14 +189,7 @@
 
                             dataset = "[[dataset]]" 
                             ctrlitems = "[[ctrlitems]]"
-                            selectitem="{{datasetitem}}"> 
-
-                            <tracks-load 
-                                maptoast = "{{maptoast}}"
-                                routemode = "[[ctrl.userouting]]"
-                                tracksetmeta = "[[metadataset]]" 
-                                trackdata = "{{trackdata}}"> 
-                            </tracks-load>
+                            selectitem ="{{datasetitem}}"> 
 
                         </mb-content-browser>
 
@@ -209,6 +202,7 @@
                             logdata = "[[logdata]]"
                             logindex = "{{logindex}}">
                         </tracklog-view>    
+
                     </div>    
                     <!-- (menulike)ctrl of single log-points  
                     <tracklog-ctrl
@@ -275,13 +269,20 @@
         <!-- RIGHT Block: several external app-controls -->
         <div class="ctrls_area">
 
+            <tracks-load 
+                maptoast = "{{maptoast}}"
+                routemode = "[[ctrl.userouting]]"
+                tracksetmeta = "[[metadataset]]" 
+                trackdata = "{{trackdata}}"> 
+            </tracks-load>
+
             <!-- B.2 TRACK-Explorer -->
             <tracks-api 
                 maptoast = "{{maptoast}}"
                 disable = "[[ctrl.userouting]]"
                 rawcontent = "[[trackdata]]" 
                 metadata = "{{metadataset}}" 
-                contentbox = "{{contentbox}}" 
+                contentcase = "{{contentcase}}" 
                 mapcontent = "[[mapcontent]]"
                 trackevents = "{{trackevents}}"
                 tracksall = "[[dataset]]"
@@ -306,12 +307,12 @@
                 wpdata = "{{wpdata}}"> 
             </layer-waypoints>
 
-            <!-- SYNC mapcontent from contentbox -->
+            <!-- SYNC mapcontent from contentcase -->
             <mb-content-manager 
                 map = "[[map]]" 
                 mbid = "[[mbid]]" 
                 mobilemode = "[[ctrl.mobilemode]]"
-                contentbox = "{{contentbox}}" 
+                contentcase = "{{contentcase}}" 
                 mapevents = "[[trackevents]]"
                 mapcontent = "{{mapcontent}}"
                 dataset = "{{dataset}}">
@@ -354,6 +355,7 @@
     // STATE init
     // mobilemode : (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1),
     scope.ctrl = {
+        // mobilemode : mobilemode,
         mobilemode : true,
         mousemode : false, 
         userouting : false,

@@ -42,7 +42,7 @@ display as decorated route (fi with commented endpoints)
                 /**
                  * Container for animation-data
                  */
-                contentbox: {
+                contentcase: {
                     type: Object,
                     notify: true
                 },
@@ -102,7 +102,6 @@ display as decorated route (fi with commented endpoints)
                 'transfer(rawcontent.*, disable)', // , metadata)'
                 'trackActivate(trackitem.id, popupflag)' //,
                 // 'trackLogActivate(tracklog.lnglat)'
-                
                 // 'onMapdataLoad(mapcontent.*)',
             ],
 
@@ -114,15 +113,15 @@ display as decorated route (fi with commented endpoints)
             transfer: function(rawcontent, disabled) { // , metadata) {
                 
                 this.debounce("transfer", function(){
-                    // console.log("TRANSFER TRACK into contentBox", disabled, rawcontent);
+                    // console.log("TRANSFER TRACK into contentcase", disabled, rawcontent);
                     if (disabled) return;   
 
                     rawcontent = rawcontent.value; 
                     if (!rawcontent || !Object.keys(rawcontent).length) return; 
-                    // console.log("SETUP contentbox from raw tracks.", rawcontent); 
+                    // console.log("SETUP contentcase from raw tracks.", rawcontent); 
 
                     this.set("metadata.datasetlabel",  this.datasetlabel);
-                    this.contentbox = rawcontent;
+                    this.contentcase = rawcontent;
 
                 }, 200);
             },
@@ -162,8 +161,8 @@ display as decorated route (fi with commented endpoints)
                         
                         } else {    // Filtering the HOVER-Layer
                             
-                            hifilter = ["==", fkeys[0], fkeys[1]] ; // trackInfo[keyname]];
-                            // console.log("hi " + layerid + ":", trackInfo.length+" km");
+                            hifilter = ["==", fkeys[0], fkeys[1]] ; // tracklog[keyname]];
+                            // console.log("hi " + layerid + ":", tracklog.length+" km");
 
                             hilayerid = layerid + "-hover";
                         
@@ -238,31 +237,31 @@ display as decorated route (fi with commented endpoints)
             //  further actions may run in separate elements
             trackActivate: function(fid, popupflag) { 
                 if (!fid || this.disable) return; 
-                // Activate SINGLE track(-object)
 
+                // Activate SINGLE track(-object)
                 this.debounce("activate", function() {
 
                     // A. Operations on ALL features (tracks)
                     if (fid == "all") {
 
-                        // A. DeActivate active track (if there was any )
+                        // A. DeActivate activeTrack-Styling (if there was any )
                         this.trackDecorate();
-                        // this.trackdata = null; // {};
 
-                        // B. ZoomTo
-                        var msg = "Zoomed to ALL tracks!";  // console.log("DEBUG", msg, tracksall); 
-                        this.maptoast = msg;
-                        
-                        var ff = [];
-                        this.tracksall.forEach(function(item){
-                            ff.push(item.feature)
-                        });
-                        this.setFeatureBounds(ff, 10);
+                        // B. Optional:  ZoomTo All
+                        if (this.zoomall) {
+                            var msg = "Zoomed to ALL tracks!";  // console.log("DEBUG", msg, tracksall); 
+                            this.maptoast = msg;
+                            
+                            var ff = [];
+                            this.tracksall.forEach(function(item){
+                                ff.push(item.feature)
+                            });
+                            this.setFeatureBounds(ff, 10);
+                        }
                         return;
                     } 
 
-                    // C. Activate trackObject in "the suitable context"" (fi. as map-element) 
-                    
+                    // B. Activate trackObject in "the suitable context"" (fi. as map-element) 
                     if (map) { 
 
                         var trackitem = this.trackitem,  
@@ -275,35 +274,23 @@ display as decorated route (fi with commented endpoints)
                             // console.log("ACTIVATED track. ID="+fid, trackitem, tracklog); // , tracksall);
                         }
 
-                        // C.1 Optional: Assign Single popupAction 
-                        //     bound to MoveEnd-Event related to following "panZoom"
+                        // C.1 Optional: Assign a "Single popup"-Action 
+                        //     bound to the MoveEnd-Event following a "panZoom"
                         if (popupflag && tracklog.html) {
                             map.once('moveend', function(e) { 
-                                // console.log("track ACTIVATED&ZOOMED at ", e, trackInfo); 
+                                // console.log("track ACTIVATED&ZOOMED at ", e, tracklog); 
                                 this.popupOnMap(tracklog.html, {center: true});
                             }.bind(this));
                         }
                     
-                        // C.2 Start PanZoom to activated track
+                        // C.2 Start PanZoom to activated track ( + 40 px padding)
                         if (tracklog.bbox && tracklog.bbox.bounds) {
                             map.fitBounds(tracklog.bbox.bounds, {
                                 padding: 40
                             });
                         } 
 
-                        // ALTERNATIV 
-                        var startmode = true;
-                        if (startmode) { // Trigger DRAGPNT at START 
-                           var p1 = tracklog.coords[0],
-                               c1 = {"lng":p1[0],"lat":p1[1]};  //  console.log("START track at ", p1, c1);  
-                       
-                           this.set("tracklog.lnglat", c1); 
-                       
-                        } else {
-
-                            this.trackDecorate(tracklog); // , [feature]); 
-                        }
-
+                        this.trackDecorate(tracklog); // , [feature]); 
 
                     } else {   console.log("TRACK activated", f); // in non-map-mode
 
@@ -339,40 +326,85 @@ display as decorated route (fi with commented endpoints)
             // by HILITE-TRACE + "commented" end-nodes  
             //   - zooms to the feature
             //   - show start/stop based on "id-Filter"	
-            trackDecorate: function(trackInfo, layerid) {
+            trackDecorate: function(tracklog, decoratemode, layerid) {
                 // by now for "1-feature-selection" only
-                if (!layerid) layerid = "track";
-               
-                if (!trackInfo) { // console.log("remove track-decoration ???")
-                    showTrackNodes();
-                    showTrackLine();
-                    return;
-                }  console.log("decorate track", trackInfo); 
+                if (!decoratemode) decoratemode = "drag";
+                if (!layerid) {
+                    var ccase = this.contentcase,
+                        ckeys = Object.keys(ccase);
+                    if (ckeys.length) layerid = ccase[ckeys[0]].layer.id;
+                    else layerid = "tracks"; 
+                    // console.log("trackDecorate, layerid=", layerid);
+                }
 
-                // var scope = this;
+                var hiliteid = layerid + '-select',
+                    tracklayer = map.getLayer(layerid),
+                    hilitelayer = map.getLayer(hiliteid); 
+
+                // A: RESET
+                if (!tracklog) {  console.log("remove track-decoration on layer", tracklayer);
+                    if (tracklayer)  map.setLayoutProperty(layerid, 'visibility', 'visible');
+                    showTrackNodes(null, layerid);
+                    showTrackLine(null, layerid);
+                    return;
+                }  
+
+                // Set the filter to populate features into the layer.
+                
+                if (tracklayer && hilitelayer) {
+                    // console.log("decoratelayers for",tracklog ,layerid, hilitelayer, tracklayer);
+                    // A. UNIQUE filter-value
+                    map.setFilter(hiliteid, ['in', 'id', tracklog.id]);
+                    
+                    // B. MULTIPLE filter-values
+                    /* filtered = []; // [id1,id2,id3] 
+                    map.setFilter('tracks-highlighted', ['in', 'id'].concat(filtered.map(function(feature) {
+                        return feature.properties.id;
+                    })));*/
+
+                    // Optional: Additional map-elements related to  selected track
+                    // ALTERNATIV : "DragPoint at Start" or "Track-Endpoints"
+
+                    // C: 
+                    map.setLayoutProperty(layerid, 'visibility', 'none');
+                    console.log("decorate track based on:", tracklog, tracklayer); 
+                }
+
+                // Trigger DRAGPNT-presentation at Track-START 
+                // INDIRECTLY  through  tracklog.lnglat  
+                if (decoratemode == "drag") { 
+                    var p1 = tracklog.coords[0],
+                        c1 = {"lng":p1[0],"lat":p1[1]};  //  console.log("START track at ", p1, c1);  
+                
+                    this.set("tracklog.lnglat", c1); 
+                    return; 
+                } 
 
                 // 1. Create/Refresh the layer of track's endMarkers
-                function showTrackNodes(trackInfo) {
+                function showTrackNodes(tracklog, layerid) {
                     // layer of nodes symbols with text in HALO
                     var hilayerid = layerid + "-nodes",
                         hilayer = map.getLayer(hilayerid),
                         src = map.getSource(hilayerid); // console.log("showTrackNodes:", hilayerid, hilayer, src); 
-
                     if (!hilayer) return;  
-                    if (src && !trackInfo) { // clear nodeLayer
-                        src.setData({});
+
+                    if (src && !tracklog) { // clear nodeLayer
+                        src.setData({
+                            "type": "FeatureCollection",
+                            "features" : []
+                        });
                         return;
                     }  
 
-                    // console.log("Show NODES of "+ layerid, hilayer, trackInfo);                 
+                    // console.log("Show NODES of "+ layerid, hilayer, tracklog);                 
                     var fromIcon = "monument",
                         toIcon   = "harbor";
 
-                    var fromNode = trackInfo.fromnode.slice(0,2),
-                        toNode   = trackInfo.tonode.slice(0,2);
+                    var fromNode = tracklog.fromnode.slice(0,2),
+                        toNode   = tracklog.tonode.slice(0,2);
 
-                    var fromTitle = trackInfo.von ? trackInfo.von : "", 
-                        toTitle   = trackInfo.bis ? trackInfo.bis : "";
+                    var fromTitle = tracklog.von ? tracklog.von : "", 
+                        toTitle   = tracklog.bis ? tracklog.bis : "";
 
                     var nodes_json = { // for nodes-source = 2 points
                         "type": "FeatureCollection",
@@ -404,28 +436,30 @@ display as decorated route (fi with commented endpoints)
                 } 
 
                 // 2. HILITE the optional "TRACE"-layer of the track (Filtering-Layer)
-                function showTrackLine(trackInfo) {
+                function showTrackLine(tracklog, layerid) {
                     var hilayerid = layerid + "-trace", // ?
                         hilayer = map.getLayer(hilayerid);  
 
                     if (!hilayer) return ;
-                    if (!trackInfo) { // remove filter
+                    if (!tracklog) { // remove filter
                         map.setFilter(hilayerid, ""); // hifilter);
+                        return; 
                     }
 
                     //
-                    var keyname = trackInfo.keyname,
-                        hifilter = ["==", keyname, trackInfo[keyname]];
-                    console.log("TRACE-filter of " + hilayerid, hifilter, hilayer); 
+                    var keyname = tracklog.keyname,
+                        hifilter = ["==", keyname, tracklog[keyname]];
+                    console.log("Set TRACE-filter of: " + hilayerid, hifilter, hilayer); 
 
                     map.setFilter(hilayerid, hifilter);
                 } 
 
                 // APPLY start- and stop-nodes of track
-                showTrackNodes(trackInfo); 
+                showTrackNodes(tracklog, layerid); 
 
                 // Option: APPLY trace-overlay (gestrichelt) on track
-                showTrackLine(trackInfo); 
+                showTrackLine(tracklog, layerid); 
+                    // 
 
             }
 
