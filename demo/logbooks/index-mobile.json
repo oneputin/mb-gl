@@ -1,0 +1,19 @@
+[    
+    {
+        "start": 1,
+        "title": "wolf-mobile",
+        "datasetlabel" : "wolf-mobile",
+        "key": "",
+        "type": "kml",
+        "url": "https://clouds.iimaps.de/assets/data/track-mobile.kml",
+        "device": {
+            "name": "mymobile",
+            "user" : "wolf",
+            "dop" : 10
+        },
+        "timer":{
+            "timescalemax": 120  
+        },    
+        "symbol": "toilet-11"
+    }
+]

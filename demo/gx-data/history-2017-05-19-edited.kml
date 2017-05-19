@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>history2017-05-19-edited</name>
+    <Style id="line-009D57-27350-normal">
+      <LineStyle>
+        <color>ff579d00</color>
+        <width>27.35</width>
+      </LineStyle>
+    </Style>
+    <Style id="line-009D57-27350-highlight">
+      <LineStyle>
+        <color>ff579d00</color>
+        <width>41.025</width>
+      </LineStyle>
+    </Style>
+    <StyleMap id="line-009D57-27350">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-009D57-27350-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-009D57-27350-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="line-4186F0-1200-normal">
+      <LineStyle>
+        <color>fff08641</color>
+        <width>1.2</width>
+      </LineStyle>
+    </Style>
+    <Style id="line-4186F0-1200-highlight">
+      <LineStyle>
+        <color>fff08641</color>
+        <width>1.8</width>
+      </LineStyle>
+    </Style>
+    <StyleMap id="line-4186F0-1200">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-4186F0-1200-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-4186F0-1200-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="line-A61B4A-6425-normal">
+      <LineStyle>
+        <color>ff4a1ba6</color>
+        <width>6.425</width>
+      </LineStyle>
+    </Style>
+    <Style id="line-A61B4A-6425-highlight">
+      <LineStyle>
+        <color>ff4a1ba6</color>
+        <width>9.6375</width>
+      </LineStyle>
+    </Style>
+    <StyleMap id="line-A61B4A-6425">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-A61B4A-6425-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-A61B4A-6425-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Placemark>
+      <name>Koserower Str. 9</name>
+      <description><![CDATA[Beschreibung: from 2017-05-18T20:30:39.539Z to 2017-05-19T06:29:16.507Z. Distance 0m<br>Email: wgpagenkopf@googlemail.com<br>Category: <br>Distance: 0]]></description>
+      <styleUrl>#line-009D57-27350</styleUrl>
+      <ExtendedData>
+        <Data name="Beschreibung">
+          <value>from 2017-05-18T20:30:39.539Z to 2017-05-19T06:29:16.507Z. Distance 0m</value>
+        </Data>
+        <Data name="Email">
+          <value>wgpagenkopf@googlemail.com</value>
+        </Data>
+        <Data name="Category">
+          <value/>
+        </Data>
+        <Data name="Distance">
+          <value>0</value>
+        </Data>
+      </ExtendedData>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          13.58427,52.51672,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Cycling</name>
+      <description><![CDATA[Beschreibung: Cycling from 2017-05-19T06:29:16.507Z to 2017-05-19T07:01:33.136Z. Distance 6914m<br>Email: wgpagenkopf@googlemail.com<br>Category: Cycling<br>Distance: 6914]]></description>
+      <styleUrl>#line-A61B4A-6425</styleUrl>
+      <ExtendedData>
+        <Data name="Beschreibung">
+          <value>Cycling from 2017-05-19T06:29:16.507Z to 2017-05-19T07:01:33.136Z. Distance 6914m</value>
+        </Data>
+        <Data name="Email">
+          <value>wgpagenkopf@googlemail.com</value>
+        </Data>
+        <Data name="Category">
+          <value>Cycling</value>
+        </Data>
+        <Data name="Distance">
+          <value>6914</value>
+        </Data>
+      </ExtendedData>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          13.58427,52.51672,0
+          13.584022,52.516528,0
+          13.584396,52.516399,0
+          13.584507,52.51601,0
+          13.583806,52.515642,0
+          13.58303,52.515462,0
+          13.582306,52.515199,0
+          13.581516,52.514757,0
+          13.580645,52.514399,0
+          13.579853,52.513962,0
+          13.57903,52.513597,0
+          13.578398,52.513337,0
+          13.576993,52.513345,0
+          13.575216,52.513286,0
+          13.574231,52.513272,0
+          13.574239,52.512818,0
+          13.574198,52.51221,0
+          13.573322,52.512025,0
+          13.572952,52.51137,0
+          13.572916,52.510667,0
+          13.57331,52.510001,0
+          13.57385,52.509347,0
+          13.574398,52.508748,0
+          13.575082,52.508218,0
+          13.575775,52.507784,0
+          13.576435,52.507189,0
+          13.576911,52.506634,0
+          13.57757,52.506053,0
+          13.578097,52.505526,0
+          13.578526,52.505316,0
+          13.57843,52.504972,0
+          13.578072,52.504596,0
+          13.577815,52.504291,0
+          13.577503,52.503677,0
+          13.577337,52.503104,0
+          13.577176,52.502577,0
+          13.577189,52.50202,0
+          13.576972,52.501513,0
+          13.576396,52.501264,0
+          13.575588,52.501147,0
+          13.574728,52.500878,0
+          13.573803,52.500839,0
+          13.572957,52.500765,0
+          13.572123,52.500478,0
+          13.571564,52.499963,0
+          13.570908,52.499448,0
+          13.569997,52.499085,0
+          13.569272,52.49868,0
+          13.568739,52.498197,0
+          13.568385,52.497648,0
+          13.568097,52.497068,0
+          13.567768,52.496451,0
+          13.567626,52.4959,0
+          13.567707,52.495287,0
+          13.567882,52.494736,0
+          13.568166,52.494083,0
+          13.568188,52.493407,0
+          13.568052,52.492949,0
+          13.568657,52.492813,0
+          13.569414,52.492677,0
+          13.569238,52.492165,0
+          13.568776,52.491753,0
+          13.568335,52.49126,0
+          13.567981,52.490748,0
+          13.567424,52.490163,0
+          13.566751,52.489563,0
+          13.566444,52.488681,0
+          13.56633,52.488146,0
+          13.566117,52.487491,0
+          13.565776,52.48688,0
+          13.565296,52.486226,0
+          13.564902,52.485762,0
+          13.564706,52.485436,0
+          13.56426,52.485479,0
+          13.563623,52.485032,0
+          13.562969,52.484552,0
+          13.562214,52.484096,0
+          13.561782,52.483523,0
+          13.56166,52.482776,0
+          13.561541,52.48213,0
+          13.561432,52.481442,0
+          13.561534,52.480705,0
+          13.561862,52.480054,0
+          13.562686,52.479584,0
+          13.563144,52.479069,0
+          13.563592,52.478541,0
+          13.56416,52.478184,0
+          13.564848,52.47784,0
+          13.565614,52.477422,0
+          13.566404,52.477006,0
+          13.566972,52.476571,0
+          13.567292,52.476017,0
+          13.567431,52.475458,0
+          13.567463,52.474848,0
+          13.566946,52.47423,0
+          13.5666,52.473706,0
+          13.5666,52.473244,0
+          13.56656,52.472727,0
+          13.565907,52.472376,0
+          13.565525,52.471813,0
+          13.565477,52.471185,0
+          13.565388,52.470595,0
+          13.565412,52.469978,0
+          13.565456,52.469366,0
+          13.565143,52.468932,0
+          13.564239,52.468904,0
+          13.563835,52.468892,0
+          13.563835,52.46885,0
+          13.563835,52.468849,0
+          13.563855,52.468791,0
+          13.56388,52.468762,0
+          13.563881,52.468763,0
+          13.563882,52.468763,0
+          13.563883,52.468763,0
+          13.563884,52.468764,0
+          13.563886,52.468764,0
+          13.563887,52.468765,0
+          13.563889,52.468765,0
+          13.56389,52.468766,0
+          13.564334,52.468772,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Anax Bautest GmbH</name>
+      <description><![CDATA[Beschreibung: Baugutachter from 2017-05-19T07:01:33.136Z to 2017-05-19T09:22:17.553Z. Distance 0m<br>Email: wgpagenkopf@googlemail.com<br>Category: Baugutachter<br>Distance: 0]]></description>
+      <styleUrl>#line-4186F0-1200</styleUrl>
+      <ExtendedData>
+        <Data name="Beschreibung">
+          <value>Baugutachter from 2017-05-19T07:01:33.136Z to 2017-05-19T09:22:17.553Z. Distance 0m</value>
+        </Data>
+        <Data name="Email">
+          <value>wgpagenkopf@googlemail.com</value>
+        </Data>
+        <Data name="Category">
+          <value>Baugutachter</value>
+        </Data>
+        <Data name="Distance">
+          <value>0</value>
+        </Data>
+      </ExtendedData>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          13.564334,52.468772,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

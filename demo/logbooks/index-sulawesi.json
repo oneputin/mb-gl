@@ -1,0 +1,25 @@
+[    
+    {
+        "start": 1,
+        "title": "jana-sulawesi",
+        "datasetlabel" : "Sulawesi tracks",
+        "key": "sulawesi",
+        "type": "gpx",
+        // "url": "foretrex20170223.gpx",
+        "url": "https://clouds.iimaps.de/assets/data/foretrex20170223.gpx",
+        "query": {
+            "geometry": "Track",
+            "start": "2017-02-01",
+            "stop": "2017-02-20"
+        },
+        "device": {
+            "name": "foretrex",
+            "user" : "jana",
+            "dop" : 10
+        },
+        "timer":{
+            "timescalemax": 120  
+        },    
+        "symbol": "toilet-11"
+    }
+]

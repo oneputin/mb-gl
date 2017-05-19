@@ -280,7 +280,7 @@
                         <paper-radio-button class="style" checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
                     </template>
                     <paper-radio-button checked="{{mapmeasureshow}}">Measure Dist</paper-radio-button>
-                    <paper-radio-button checked="{{mousemode}}">GetMouseLocation</paper-radio-button>
+                    <paper-radio-button checked="{{mousemode}}">Pointer Location</paper-radio-button>
                 </template>   
 
                 <paper-radio-button checked="{{mobilemode}}">Simulate Mobiles</paper-radio-button>
@@ -399,7 +399,9 @@
 
     // Data-INIT
     // scope.indexurl = "index-handheld-1.json"; // list of available datasets
-    scope.indexurl = "https://clouds.iimaps.de/assets/data/index-sulawesi.json";
+    // scope.indexurl = "https://clouds.iimaps.de/assets/data/index-sulawesi.json";
+    // scope.indexurl = "https://clouds.iimaps.de/assets/data/index-mobile.json";
+    scope.indexurl = "logbooks/index-history.json";
     scope.metadatasetslabel="Trackbooks"
     scope.metadataset = {}; // metadata of selected dataset
 

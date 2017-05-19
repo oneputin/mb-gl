@@ -124,7 +124,10 @@ component loadswaypoint data
 
             // Toggle layer-visibility
             _layerVisibility : function(flag){ // console.log("SET _layerVisibility", flag);
-                if (!map) return;  
+                if (!map || !map.getLayer(this.layerid)) {
+                    console.log("waypoint-layer n.a.") ;
+                    return;
+                }  
                 if (flag)  map.setLayoutProperty(this.layerid, 'visibility', 'visible');
                 else       map.setLayoutProperty(this.layerid, 'visibility', 'none');
             },

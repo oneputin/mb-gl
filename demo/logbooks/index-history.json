@@ -1,0 +1,19 @@
+[    
+    {
+        "start": 1,
+        "title": "wolf-mobile",
+        "datasetlabel" : "wolf-mobile",
+        "key": "",
+        "type": "kml",
+        "url": "gx-data/history-0519.kml",
+        "device": {
+            "name": "mymobile",
+            "user" : "wolf",
+            "dop" : 10
+        },
+        "timer":{
+            "timescalemax": 120  
+        },    
+        "symbol": "toilet-11"
+    }
+]

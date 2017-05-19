@@ -180,7 +180,8 @@ Optional: create quick-preview-data
                     coordinates, tracktimes, coordElevs, 
                     starttime;
 
-                function createSegment(cc,tt,cz) {
+                function createSegment(cc,tt,cz, id) {
+                    if (!id) id = tt[0];
                     var seg = {
                         "type": "Feature",
                         "geometry": {
@@ -190,8 +191,8 @@ Optional: create quick-preview-data
                         "properties": {
                             "coordTimes": tt,
                             "coordElevs": cz,
-                            "id": tt[0],
-                            "name": tt[0],
+                            "id": id,
+                            "name": id,
                             "time": tt[0],
                             "color": getRandomColor()
                         }
@@ -233,17 +234,44 @@ Optional: create quick-preview-data
                     return time.split("T")[0];
                 } 
 
-                // A. DISSOLVE "multiline" recording    
-                rawdata.forEach(function(f, i) {
+                /**
+                 *  Interpolation "needed" 
+                 */
+                function timesInterpolate(f) {
+                    var TS = f.properties.timespan;
+                    var cc = f.geometry.coordinates,
+                        // ct = [TS.begin, TS.end];
+                        ct = [];
+                    if (!TS) return ct;    
 
-                    // All property-arrays are structured identical
-                    coordinates = f.geometry.coordinates;
-                    tracktimes = f.properties.coordTimes;
-                    coordz = f.properties.coordElevs;
-                    // console.log(f.geometry.type, i, f); // coordinates, tracktimes, coordz); 
+                    var t = new Date(),
+                        ti = new Date(),
+                        t0 = new Date(TS.begin),
+                        tN = new Date(TS.end),
+                        Dt = tN - t0,
+                        dt = parseInt(Dt / (cc.length - 1)); 
+                    // console.log("interpolate "+cc.length+" times from timespan", TS, Dt, dt);
+
+                    cc.forEach(function(c,i) {
+                        ti = t0.getTime() + (i * dt);
+                        t = new Date(ti); // console.log(i, ti, t)
+                        ct.push(t.toISOString());
+                    }); // console.log("ct", ct);
+
+                    f.properties.coordTimes = ct;
+                    f.properties.msg = "times interpolated";
+                    return ct; 
+                }
+
+                function createRawTrack(f) {
 
                     type = f.geometry.type;
-                    
+
+                    coordinates = f.geometry.coordinates;
+                    coordz = f.properties.coordElevs;
+                    tracktimes = f.properties.coordTimes;
+                    // console.log(f.geometry.type, i, f); // coordinates, tracktimes, coordz); 
+
                     if (type == "MultiLineString") {
 
                         coordinates.forEach(function(coords, j) {
@@ -262,6 +290,9 @@ Optional: create quick-preview-data
 
                     } else {
 
+                        if (!tracktimes || !tracktimes.length) {
+                            tracktimes = timesInterpolate(f);
+                        }
                         if (!starttime) starttime = tracktimes[0];
 
                         f.properties.id = tracktimes[0];
@@ -269,9 +300,34 @@ Optional: create quick-preview-data
 
                         disdata.push(f);
                     }
+                }    
+
+                function createWayPoint(f) {
+                    console.log("waypoint", f); 
+                }
+
+                console.log("rawdata", rawdata);
+
+                // A. DISSOLVE "multiline" recording    
+                rawdata.forEach(function(f, i) {
+
+                    // All property-arrays are structured identical
+                    coordinates = f.geometry.coordinates;
+                    if (coordinates.length > 1) {
+                        createRawTrack(f);
+                    } else {
+                        createWayPoint(f); 
+                    }
                 })
 
+                if (!disdata.length) {
+                    console.log("BREAK: NO disdata"); 
+                    return;
+                }
+
                 // B. SPLIT "multiday"" records  
+                var trackdata = [];
+
                 disdata.forEach(function(f,i) {
                     // All property-arrays are structured identical
                     coordinates = f.geometry.coordinates;
@@ -300,7 +356,7 @@ Optional: create quick-preview-data
                                 cz.reverse();
                             }
 
-                            var seg =  createSegment(cc,tt,cz);  // console.log(day, tt);
+                            var seg =  createSegment(cc,tt,cz, day);  // console.log(day, tt);
                             trackdata.push(seg); 
                         }
 
@@ -308,7 +364,7 @@ Optional: create quick-preview-data
                         trackdata.push(f);
                     }
 
-                }); // console.log(disdata, trackdata);
+                });  console.log("dissolved data", starttime, trackdata);
 
                 var trackdata = {
                     "time": starttime, // rawdata.time (probably time of gpxToJson-conversion)

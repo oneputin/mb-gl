@@ -1,7 +1,9 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <link rel="import" href="geotags-from-gpx.html">
-<link rel="import" href="tracks-from-pnts.html">
+<link rel="import" href="geotags-from-history.html">
+<link rel="import" href="tracks-from-vomue.html">
+
 <link rel="import" href="tracks-behavior.html">
 
 <!--
@@ -35,11 +37,11 @@ component loads tracking data
     </style>
 
     <!-- IF's to alternatively formatted srces -->
-    <tracks-from-pnts 
+    <tracks-from-vomue 
         srcmeta="[[srcmetad]]"        
         routemode="[[routemode]]"
         trackdata="{{_trackdata}}">
-    </tracks-from-pnts>    
+    </tracks-from-vomue>    
 
     <!--tagname="Track"-->
     <geotags-from-gpx 
@@ -47,6 +49,13 @@ component loads tracking data
         srcmeta="[[srcmetax]]"
         tagdata="{{_trackdata}}">
     </geotags-from-gpx>    
+
+    <!--tagname="Track"-->
+    <geotags-from-history 
+        tagname="Track"
+        srcmeta="[[srcmetaj]]"
+        tagdata="{{_trackdata}}">
+    </geotags-from-history>    
 
     <content>
     </content>    
