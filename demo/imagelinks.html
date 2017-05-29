@@ -1,0 +1,270 @@
+<!doctype html>
+<html>
+<head>
+    <title>routing-tracks demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+   
+    <!-- web-components required for dev-gui --> 
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../../paper-styles/demo-pages.html">
+   
+    <!-- web-components applied for app-gui --> 
+    <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+    <link rel="import" href="../../iron-collapse/iron-collapse.html"><!--  -->
+    <link rel="import" href="../../paper-radio-button/paper-radio-button.html"> <!-- ctrls  -->
+
+    <!-- app-components related to map-api --> 
+    
+    <link rel="import" href="../mb-api.html">
+    <link rel="import" href="../mb-map.html">
+    <link rel="import" href="../mb-location-log.html">
+    <link rel="import" href="../mb-styles.html">
+    <link rel="import" href="../mb-distance.html">
+    <link rel="import" href="../layer-waypoints.html">
+    
+
+    <link rel="import" href="../image-links.html">
+
+    <style is="custom-style">
+        .container {
+            @apply(--layout-horizontal);
+            /*align-items: flex-start;*/
+        }
+        
+        .content_area {
+            /*width: 60%;*/ 
+            top:0; bottom:0;
+        }
+
+        .ctrls_area {
+            /* itself flex layouted div */
+            width: 200px;
+            margin-left: 10px;
+            @apply(--layout-vertical);
+            /*@apply(--layout-start);*/
+        }
+
+        mb-map {
+            /*width: 55%;*/
+            width: 800px;
+            height: 670px;
+        }
+        
+        .mapctrls-bottom {
+            display: inline-block;
+            position: absolute;
+            @apply(--layout-horizontal);
+            @apply(--layout-center);
+            bottom: 12px;
+            width: 100%;
+        }
+
+
+        .flexchild {
+            @apply(--layout-flex);
+        }
+        
+        timer-ctrl {
+            @apply(--layout-flex);
+        }
+        
+        mb-orientation-ctrl {
+            /*@apply(--layout-flex);*/
+        }
+        
+        timer-setup {
+            display: none;
+            border-style: solid;
+            border-width: 1px;
+            padding: 10px;
+            /*position: absolute;
+              top: 40px;
+              right: 20px; */
+        }
+        
+        mb-content-browser {
+            display: inline-block;
+            @apply(--layout-vertical);
+            @apply(--layout-start);
+        }
+
+        image-links {
+            position: absolute;
+            top: 0;
+            right: 0; 
+            z-index: 9;
+            padding: 10px;
+        }
+
+        #imageform {
+            position: relative;
+            display : "block";
+            top: 0; left: 0; 
+            width : 300px;
+            height: 300px;
+            z-index: 9;
+            padding: 10px;
+        }
+
+        #imageform img {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+        }
+
+        #radios {
+            padding: 10px;
+            display: inline-block;
+            @apply(--layout-vertical);
+            @apply(--layout-start);
+        }
+        
+        paper-radio-button {
+            /*align-self: center;*/
+            border: 1px solid var(--paper-green-200);
+            padding: 8px 16px;
+            margin: 8px 0px;
+        }
+        
+        paper-radio-button.red {
+            --paper-radio-button-checked-color: var(--paper-red-500);
+            --paper-radio-button-checked-ink-color: var(--paper-red-500);
+            --paper-radio-button-unchecked-color: var(--paper-red-900);
+            --paper-radio-button-unchecked-ink-color: var(--paper-red-900);
+            --paper-radio-button-label-color: var(--paper-red-500);
+        }
+
+    </style>
+</head>
+
+<body>
+
+<template is="dom-bind" id="app">
+
+    <div class="container">
+
+        <!-- LEFT block: CONTENT (Map, diagram, list) -->
+        <div id="content" class="content_area flexchild">
+
+            <template is="dom-if" if="{{mapstyle}}">
+                
+                <mb-map 
+                    map="{{map}}" 
+                    mobilemode = "[[mobilemode]]"
+                    mapapikey="[[mbkey]]" 
+                    mapstyle="[[mapstyle]]" 
+                    mbid="{{mbid}}" 
+                    cbox="{{cbox}}" 
+                    zoom="{{zoom}}" 
+                    mapctrl = "[[mapctrl]]"
+                    maptoast = "[[maptoast]]">
+
+                    <div id="imageform">
+                        <p>imageviewer</p>
+                        <img src="[[imgsrc]]">
+                    </div>    
+
+                    <!-- placed here to overlay the map -->
+                    <image-links
+                        checked = "{{formshow}}"
+                        imgsrc = "{{imgsrc}}">
+                    </images-links>    
+
+                    <mb-styles 
+                        checked = "{{styleselectshow}}"
+                        styleset ="[[morestyles]]"
+                        selectable = "{{styleselectable}}"
+                        mapstyle = "{{mapstyle}}"> 
+                    </mb-styles>
+
+                    <mb-location-log 
+                        checked
+                        lnglat="{{lnglat}}" 
+                        mbid="[[mbid]]"
+                        mousemode="[[mousemode]]"> 
+                    </mb-location-log>
+
+                    <!-- not implemented 
+                    <tracks-info 
+                        metadataset = "[[metadataset]]" 
+                        trackinfo = "[[trackinfo]]" 
+                        trackdata = "{{trackdata}}">
+                    </tracks-info>
+                    -->
+
+                </mb-map>
+
+            </template>    
+
+        </div>
+
+        <!-- RIGHT Block: several external app-controls -->
+        <div class="ctrls_area">
+            <!-- element with [n] visible features -->
+            <div id="radios">
+                
+                <template is="dom-if" if="{{mapstyle}}">
+                    <paper-radio-button checked="{{waypointshow}}">Waypoints</paper-radio-button>
+                    <template is="dom-if" if="{{!userouting}}">
+                        <paper-radio-button class="style" checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
+                    </template>
+                    <paper-radio-button checked="{{mousemode}}">Pointer Location</paper-radio-button>
+                </template>   
+
+            </div>
+
+
+        </div>
+
+    </div>
+</template>
+
+<script>
+    // 
+    var scope = document.querySelector('#app');
+
+    scope.mobilemode = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+    scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+    scope.mapstyle = 'mapbox://styles/mapbox/light-v9';
+    scope.morestyles = "demo-styles.json";
+
+    // Data-INIT
+    // scope.indexurl = "index-handheld-1.json"; // list of available datasets
+    // scope.indexurl = "https://clouds.iimaps.de/assets/data/index-sulawesi.json";
+    // scope.indexurl = "https://clouds.iimaps.de/assets/data/index-mobile.json";
+    scope.indexurl = "logbooks/index-history.json";
+    scope.metadatasetslabel="Trackbooks"
+    scope.metadataset = {}; // metadata of selected dataset
+
+    scope.basedataurl = ""; // list of available datasets
+    scope.dataset = []; // collection 
+    scope.datasetitem = {}; // track/route-object
+
+    // Map-INIT
+    scope.cbox = "13 , 52"; // Berlin
+    scope.zoom = 8;
+
+    // STATE init
+    scope.routemode = false; // true; // false
+
+    scope.formshow = false;
+    scope.styleselectshow = false;
+    scope.mousemode = false; // 
+    
+    // SHELL-actions
+    scope.mapctrl = {};
+
+
+    document.addEventListener('WebComponentsReady', function() {
+
+
+    });
+
+</script>
+
+</body>
+
+</html>

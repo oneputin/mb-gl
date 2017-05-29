@@ -104,10 +104,14 @@ wraps a distance utility
                 'tap': '_centerPointVisibility'
             },
 
-            attached: function() {
-                if (typeof this.checked == 'undefined') this.toggleVisibility(true);
+            ready : function() {
                 logscope = this;  //console.log("logscope", logscope);
             },
+
+            attached: function() {
+                if (typeof this.checked == 'undefined') this.toggleVisibility(true);
+            },
+
             // externally controled visibility of 
             toggleVisibility: function(checked) {
                 if (!map) return;
@@ -137,6 +141,7 @@ wraps a distance utility
 
             // derive location-info from mouse or map-center
             onMoveEvent: function(e) {
+                if (!logscope) logscope = {}; 
                 if (logscope.mousemode) {
                     logscope.lnglat = e.lngLat;
                 } else {

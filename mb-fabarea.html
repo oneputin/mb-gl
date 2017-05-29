@@ -1,0 +1,222 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+
+<link rel="import" href="../paper-fab/paper-fab.html">
+
+<!--
+`mb-fabarea`
+container for toggling gui-area
+
+@demo demo/imagelinks.html 
+-->
+
+<dom-module id="mb-fabarea">
+
+    <template>
+
+        <style>
+
+            :host {
+                display: block;
+                position: absolute;
+            }
+
+            #container {
+                background-color: rgba(255,255,255,0.3); /*#ff4081*/
+                @apply(--layout-vertical);
+
+            }
+
+            .areactrls {
+                @apply(--layout-horizontal);
+            }
+
+            .flexchild {
+                @apply(--layout-flex);
+            }
+
+
+            .red {
+                color: red;
+                text-align: center;
+                vertical-align: middle;
+                height: 100%;
+            }
+
+            #chart {
+                width: 100%;
+                height: 100%;
+            }
+
+            #fab {
+                display: block;
+                position:absolute;
+                right:5px;
+                top:5px;
+                opacity: 0.8;                 
+            }
+
+            #abstract div {
+                padding-left: 10px;
+                padding-bottom: 5px;
+                color: white;
+                background-color: black;
+                font-family: Verdana, Geneva, sans-serif;
+            }
+
+
+        </style>
+
+        <!-- FAB (if fabArea is not visible) -->
+        <template is="dom-if" if="{{!checked}}">
+            <paper-fab 
+                id = "fab" 
+                class = "fab" 
+                icon = "assessment" 
+                title = "heart" 
+                on-tap = "_toggleVisibility">
+            </paper-fab>
+        </template>
+
+        <!-- FAB AREA -->
+        <template is="dom-if" if="{{checked}}">
+            
+            <div id="container">
+
+                <div class="areactrls">
+                    <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
+                    <button on-click="toggleAbout">CTRL</button>
+                    <div class="flexchild"></div>
+                    <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
+                </div>
+
+                <iron-collapse id="abstract">
+                    <content select=".ctrl"></content>
+                </iron-collapse>
+
+                <content select=".content"></content>
+
+            </div>
+        
+        </template>
+
+    </template>
+
+    
+    <script>
+        
+        Polymer({
+            is: 'mb-fabarea',
+
+            properties: {
+
+                minsize : {
+                    type: Number,
+                    value: 200
+                },
+
+                maxsize : {
+                    type: Number,
+                    value: 600
+                },
+
+                _issized: {
+                    type: Boolean,
+                    value : false,
+                    observer : '_toggleSize'
+                },
+
+                disable: {
+                    type: Boolean
+                },
+
+                checked: {
+                    type: Boolean,
+                    value: true,
+                    notify : true,
+                    observer: 'logchecked'
+                }
+            },
+
+            behaviors: [
+            ],           
+
+            observers: [
+            ],
+
+            logchecked : function(checked) {
+                console.log("checked", checked);
+            },
+
+            attached: function() {
+                this._toggleSize(50); 
+                var w = Polymer.dom(this).parentNode.offsetWidth; // console.log(w);// window.innerWidth
+                this.maxsize = w * 0.8; // + "px"; // 80vw"; // window.innerWidth * 0.8 
+            },
+
+            forceView: function(id) {
+                // triggers show of viewer-area
+                // usable to "remove" the browser-header
+                this.checked = true;
+                this._toggleVisibility(true);
+            },
+
+            // 
+            toggleAbout: function() {
+                var html = "<h5>Some statistics</h5>";
+                // var html = this.logdata.html; // console.log("collapse content", html)
+                this.$$('#abstract div').innerHTML = html;
+                this.$$('#abstract').toggle();
+            },
+
+            _closer : function() {
+                // this.checked = false;
+                this._toggleVisibility(false); 
+                this._issized = false;
+            },
+
+            _toggle : function() {
+                this._issized = !this._issized;
+            },
+
+            _toggleSize: function(size) { 
+                // debounce to enable _issized-flipflop
+                var gchrt = this.$$("google-chart"); 
+                if (!gchrt) return; 
+                 
+                this.debounce("size", function(){ // console.log("TOGGLESIZE", typeof size, size,  this._issized); // , typethis.chartoptions);                 
+                    if (typeof size == "number") {
+                        // use this size for chart
+                    } else if (!this._issized) {
+                        size = this.minsize;
+                    } else {
+                        size = this.maxsize;
+                    }
+
+                    this.set('chartoptions.width', size);
+                    this.set('chartoptions.height', size);
+                }, 50);
+            },    
+
+            // alternative visibility of control and container
+            _toggleVisibility: function(flag) {                
+                
+                if (flag == null) flag = !this.checked; 
+                if (!flag)  {
+                    this._toggleSize(50);
+                } else {
+                    this._issized = true;
+                    this._issized = false;
+                }
+                this.checked = flag;
+                return; 
+            },    
+
+        });
+
+    </script>
+
+</dom-module>

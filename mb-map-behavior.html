@@ -615,14 +615,16 @@
             return keys;
         },
 
-        // analysing slide-geometries
+        // analysing bbox of slide-geometries
+        // polygons optionally with multiple segments
         getBoundingBox: function(data) {
             
             if (data.features) data = data.features; //console.log(data); // return
-            if (!data.length) return; //console.log(data); 
+            if (!data.length) return; console.log(data); 
 
             var segments, coords, pnt, latitude, longitude, bb = {};
             for (var i = 0; i < data.length; i++) {
+
                 if (data[i].geometry.geometries) {
                     segments = data[i].geometry.geometries; //console.log("segments", segments);
                 } else {
