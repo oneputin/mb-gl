@@ -1,0 +1,718 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml 
+    xmlns="http://www.opengis.net/kml/2.2" 
+    xmlns:gx="http://www.google.com/kml/ext/2.2">
+    <Document>
+        <name> Location history from 2017-05-18 to 2017-05-18 </name>
+        <open>1</open>
+        <description></description>
+        <StyleMap id="multiTrack">
+            <Pair>
+                <key>normal</key>
+                <styleUrl>#multiTrack_n</styleUrl>
+            </Pair>
+            <Pair>
+                <key>highlight</key>
+                <styleUrl>#multiTrack_h</styleUrl>
+            </Pair>
+        </StyleMap>
+        <Style id="multiTrack_n">
+            <IconStyle>
+                <Icon>
+                    <href>https://earth.google.com/images/kml-icons/track-directional/track-0.png</href>
+                </Icon>
+            </IconStyle>
+            <LineStyle>
+                <color>99ffac59</color>
+                <width>6</width>
+            </LineStyle>
+        </Style>
+        <Style id="multiTrack_h">
+            <IconStyle>
+                <scale>1.2</scale>
+                <Icon>
+                    <href>https://earth.google.com/images/kml-icons/track-directional/track-0.png</href>
+                </Icon>
+            </IconStyle>
+            <LineStyle>
+                <color>99ffac59</color>
+                <width>8</width>
+            </LineStyle>
+        </Style>
+        <Placemark>
+            <name>Kaulsdorf</name>
+            <address>Berlin</address>
+            <ExtendedData>
+                <Data name="Email">
+                    <value>wgpagenkopf@googlemail.com</value>
+                </Data>
+                <Data name="Category">
+                    <value></value>
+                </Data>
+                <Data name="Distance">
+                    <value>0</value>
+                </Data>
+            </ExtendedData>
+            <description>  from 2017-05-18T05:54:08.624Z to 2017-05-18T06:11:07.000Z. Distance 0m </description>
+            <Point>
+                <coordinates></coordinates>
+            </Point>
+            <gx:Track>
+                <altitudeMode>clampToGround</altitudeMode>
+                <gx:coord>13.5876963 52.502869399999994 0</gx:coord>
+            </gx:Track>
+            <TimeSpan>
+                <begin>2017-05-18T05:54:08.624Z</begin>
+                <end>2017-05-18T06:11:07.000Z</end>
+            </TimeSpan>
+        </Placemark>
+        <Placemark>
+            <name>Home-IPW</name>
+            <address></address>
+            <ExtendedData>
+                <Data name="Email">
+                    <value>wgpagenkopf@googlemail.com</value>
+                </Data>
+                <Data name="Category">
+                    <value>Cycling</value>
+                </Data>
+                <Data name="Distance">
+                    <value>6877</value>
+                </Data>
+            </ExtendedData>
+            <description> Cycling from 2017-05-18T06:11:07.000Z to 2017-05-18T06:43:00.000Z. Distance 6877m </description>
+            <Point>
+                <coordinates></coordinates>
+            </Point>
+            <gx:Track>
+                <altitudeMode>clampToGround</altitudeMode>
+                <gx:coord>13.584245193907982 52.51667466578619 0</gx:coord>
+                <gx:coord>13.584245193907982 52.51667466578619 0</gx:coord>
+                <gx:coord>13.5845008 52.5159773 0</gx:coord>
+                <gx:coord>13.5836848 52.5156159 0</gx:coord>
+                <gx:coord>13.582775 52.5153747 0</gx:coord>
+                <gx:coord>13.582594 52.5152957 0</gx:coord>
+                <gx:coord>13.5818815 52.515005 0</gx:coord>
+                <gx:coord>13.5809622 52.5145768 0</gx:coord>
+                <gx:coord>13.5800738 52.5141272 0</gx:coord>
+                <gx:coord>13.5792085 52.5137265 0</gx:coord>
+                <gx:coord>13.5786779 52.5133381 0</gx:coord>
+                <gx:coord>13.5774225 52.5133011 0</gx:coord>
+                <gx:coord>13.5757638 52.5132995 0</gx:coord>
+                <gx:coord>13.5742915 52.513291 0</gx:coord>
+                <gx:coord>13.5742083 52.5129396 0</gx:coord>
+                <gx:coord>13.5742303 52.5126538 0</gx:coord>
+                <gx:coord>13.5734986 52.51208 0</gx:coord>
+                <gx:coord>13.5729757 52.5114854 0</gx:coord>
+                <gx:coord>13.5729429 52.5108247 0</gx:coord>
+                <gx:coord>13.5732124 52.5101471 0</gx:coord>
+                <gx:coord>13.5737633 52.5095312 0</gx:coord>
+                <gx:coord>13.5742523 52.5089813 0</gx:coord>
+                <gx:coord>13.5748928 52.5084568 0</gx:coord>
+                <gx:coord>13.5756279 52.5079994 0</gx:coord>
+                <gx:coord>13.5762481 52.5074481 0</gx:coord>
+                <gx:coord>13.5768175 52.5069198 0</gx:coord>
+                <gx:coord>13.5773547 52.5063982 0</gx:coord>
+                <gx:coord>13.5778791 52.5057657 0</gx:coord>
+                <gx:coord>13.5783991 52.5053676 0</gx:coord>
+                <gx:coord>13.5785459 52.5051793 0</gx:coord>
+                <gx:coord>13.5783519 52.5046233 0</gx:coord>
+                <gx:coord>13.5778388 52.5045578 0</gx:coord>
+                <gx:coord>13.5775814 52.5039688 0</gx:coord>
+                <gx:coord>13.5773926 52.5032753 0</gx:coord>
+                <gx:coord>13.5772518 52.5026938 0</gx:coord>
+                <gx:coord>13.577194 52.5020708 0</gx:coord>
+                <gx:coord>13.5769671 52.5014635 0</gx:coord>
+                <gx:coord>13.5762088 52.5011968 0</gx:coord>
+                <gx:coord>13.5752942 52.5009669 0</gx:coord>
+                <gx:coord>13.5743366 52.5008377 0</gx:coord>
+                <gx:coord>13.5734042 52.5007734 0</gx:coord>
+                <gx:coord>13.572433 52.5006934 0</gx:coord>
+                <gx:coord>13.5718136 52.5002161 0</gx:coord>
+                <gx:coord>13.571251 52.4996362 0</gx:coord>
+                <gx:coord>13.570443 52.4992405 0</gx:coord>
+                <gx:coord>13.5695449 52.4988088 0</gx:coord>
+                <gx:coord>13.5688634 52.498362 0</gx:coord>
+                <gx:coord>13.5684344 52.4977609 0</gx:coord>
+                <gx:coord>13.5681492 52.4972706 0</gx:coord>
+                <gx:coord>13.5677885 52.4965479 0</gx:coord>
+                <gx:coord>13.5676286 52.4959549 0</gx:coord>
+                <gx:coord>13.5677081 52.4952864 0</gx:coord>
+                <gx:coord>13.5679565 52.494663 0</gx:coord>
+                <gx:coord>13.5681692 52.4938866 0</gx:coord>
+                <gx:coord>13.568129 52.4932089 0</gx:coord>
+                <gx:coord>13.5682699 52.4928778 0</gx:coord>
+                <gx:coord>13.5690961 52.4927938 0</gx:coord>
+                <gx:coord>13.5693335 52.4924631 0</gx:coord>
+                <gx:coord>13.569025 52.4918875 0</gx:coord>
+                <gx:coord>13.5684835 52.4913649 0</gx:coord>
+                <gx:coord>13.568018 52.490757 0</gx:coord>
+                <gx:coord>13.5675879 52.490225 0</gx:coord>
+                <gx:coord>13.5669012 52.4896365 0</gx:coord>
+                <gx:coord>13.5666311 52.4890006 0</gx:coord>
+                <gx:coord>13.5663928 52.4882829 0</gx:coord>
+                <gx:coord>13.5661715 52.4875153 0</gx:coord>
+                <gx:coord>13.5659106 52.4869779 0</gx:coord>
+                <gx:coord>13.5654546 52.4863933 0</gx:coord>
+                <gx:coord>13.5649577 52.4857512 0</gx:coord>
+                <gx:coord>13.5646692 52.4853556 0</gx:coord>
+                <gx:coord>13.5641263 52.4854273 0</gx:coord>
+                <gx:coord>13.5635394 52.4849603 0</gx:coord>
+                <gx:coord>13.5627072 52.4843616 0</gx:coord>
+                <gx:coord>13.5619523 52.4837961 0</gx:coord>
+                <gx:coord>13.56167 52.4831178 0</gx:coord>
+                <gx:coord>13.5615922 52.4824463 0</gx:coord>
+                <gx:coord>13.5615221 52.4817006 0</gx:coord>
+                <gx:coord>13.5614378 52.4810231 0</gx:coord>
+                <gx:coord>13.5616379 52.4803448 0</gx:coord>
+                <gx:coord>13.5621931 52.4798457 0</gx:coord>
+                <gx:coord>13.56303 52.4793084 0</gx:coord>
+                <gx:coord>13.5634341 52.4787814 0</gx:coord>
+                <gx:coord>13.564107 52.4782895 0</gx:coord>
+                <gx:coord>13.5649511 52.4778215 0</gx:coord>
+                <gx:coord>13.5657808 52.4773632 0</gx:coord>
+                <gx:coord>13.5665532 52.4768911 0</gx:coord>
+                <gx:coord>13.567171 52.4763215 0</gx:coord>
+                <gx:coord>13.5673839 52.4756311 0</gx:coord>
+                <gx:coord>13.5675326 52.474962 0</gx:coord>
+                <gx:coord>13.5671021 52.4743829 0</gx:coord>
+                <gx:coord>13.5666317 52.4737707 0</gx:coord>
+                <gx:coord>13.5665622 52.4732122 0</gx:coord>
+                <gx:coord>13.5665072 52.472599 0</gx:coord>
+                <gx:coord>13.5656584 52.4721252 0</gx:coord>
+                <gx:coord>13.5655247 52.4714492 0</gx:coord>
+                <gx:coord>13.5654984 52.4708532 0</gx:coord>
+                <gx:coord>13.5654645 52.4702569 0</gx:coord>
+                <gx:coord>13.5654536 52.4696287 0</gx:coord>
+                <gx:coord>13.5654823 52.4689746 0</gx:coord>
+                <gx:coord>13.5645837 52.4688679 0</gx:coord>
+                <gx:coord>13.5637873 52.4688541 0</gx:coord>
+                <gx:coord>13.563813 52.4688055 0</gx:coord>
+                <gx:coord>13.5638213 52.4687901 0</gx:coord>
+                <gx:coord>13.563829 52.468781 0</gx:coord>
+                <gx:coord>13.5638271 52.4687766 0</gx:coord>
+                <gx:coord>13.5638489 52.4687553 0</gx:coord>
+                <gx:coord>13.5639252 52.4687697 0</gx:coord>
+                <gx:coord>13.5639656 52.4687759 0</gx:coord>
+                <gx:coord>13.5639677 52.4687756 0</gx:coord>
+                <gx:coord>13.5639687 52.4687762 0</gx:coord>
+                <gx:coord>13.5639693 52.4687764 0</gx:coord>
+                <gx:coord>13.5639696 52.4687768 0</gx:coord>
+                <gx:coord>13.5639699 52.4687767 0</gx:coord>
+                <gx:coord>13.5639701 52.4687767 0</gx:coord>
+                <gx:coord>13.56397 52.4687768 0</gx:coord>
+                <gx:coord>13.56397 52.4687768 0</gx:coord>
+                <gx:coord>13.5639701 52.4687769 0</gx:coord>
+                <gx:coord>13.5639701 52.4687768 0</gx:coord>
+                <gx:coord>13.5639684 52.4687842 0</gx:coord>
+                <gx:coord>13.5639683 52.4687846 0</gx:coord>
+                <gx:coord>13.5639626 52.468799 0</gx:coord>
+                <gx:coord>13.563949729311918 52.46873860684383 0</gx:coord>
+                <gx:coord>13.563949729311918 52.46873860684383 0</gx:coord>
+            </gx:Track>
+            <TimeSpan>
+                <begin>2017-05-18T06:11:07.000Z</begin>
+                <end>2017-05-18T06:43:00.000Z</end>
+            </TimeSpan>
+        </Placemark>
+        <Placemark>
+            <name>Köpenicker Str. 325</name>
+            <address>12555 Berlin</address>
+            <ExtendedData>
+                <Data name="Email">
+                    <value>wgpagenkopf@googlemail.com</value>
+                </Data>
+                <Data name="Category">
+                    <value></value>
+                </Data>
+                <Data name="Distance">
+                    <value>0</value>
+                </Data>
+            </ExtendedData>
+            <description>  from 2017-05-18T06:43:00.000Z to 2017-05-18T13:28:13.000Z. Distance 0m </description>
+            <Point>
+                <coordinates></coordinates>
+            </Point>
+            <gx:Track>
+                <altitudeMode>clampToGround</altitudeMode>
+                <gx:coord>13.5636456 52.4683342 0</gx:coord>
+            </gx:Track>
+            <TimeSpan>
+                <begin>2017-05-18T06:43:00.000Z</begin>
+                <end>2017-05-18T13:28:13.000Z</end>
+            </TimeSpan>
+        </Placemark>
+        <Placemark>
+            <name>IPW-rewe</name>
+            <address></address>
+            <ExtendedData>
+                <Data name="Email">
+                    <value>wgpagenkopf@googlemail.com</value>
+                </Data>
+                <Data name="Category">
+                    <value>Cycling</value>
+                </Data>
+                <Data name="Distance">
+                    <value>4049</value>
+                </Data>
+            </ExtendedData>
+            <description> Cycling from 2017-05-18T13:28:13.000Z to 2017-05-18T13:44:36.000Z. Distance 4049m </description>
+            <Point>
+                <coordinates></coordinates>
+            </Point>
+            <gx:Track>
+                <altitudeMode>clampToGround</altitudeMode>
+                <gx:coord>13.563949729311918 52.46873860684383 0</gx:coord>
+                <gx:coord>13.563949729311918 52.46873860684383 0</gx:coord>
+                <gx:coord>13.5629695 52.4687635 0</gx:coord>
+                <gx:coord>13.562216 52.4683921 0</gx:coord>
+                <gx:coord>13.5614679 52.4680655 0</gx:coord>
+                <gx:coord>13.5607998 52.4686451 0</gx:coord>
+                <gx:coord>13.5600676 52.4690939 0</gx:coord>
+                <gx:coord>13.5594488 52.4695862 0</gx:coord>
+                <gx:coord>13.5586073 52.4697933 0</gx:coord>
+                <gx:coord>13.5575177 52.4694924 0</gx:coord>
+                <gx:coord>13.5565571 52.469412 0</gx:coord>
+                <gx:coord>13.5555894 52.4694338 0</gx:coord>
+                <gx:coord>13.5546908 52.4694582 0</gx:coord>
+                <gx:coord>13.553825 52.4694869 0</gx:coord>
+                <gx:coord>13.5534222 52.4692667 0</gx:coord>
+                <gx:coord>13.5529784 52.4691342 0</gx:coord>
+                <gx:coord>13.5528285 52.4685835 0</gx:coord>
+                <gx:coord>13.5531764 52.4683696 0</gx:coord>
+                <gx:coord>13.5526877 52.4690402 0</gx:coord>
+                <gx:coord>13.5518055 52.4688134 0</gx:coord>
+                <gx:coord>13.550954 52.4685035 0</gx:coord>
+                <gx:coord>13.5501085 52.4682741 0</gx:coord>
+                <gx:coord>13.5495813 52.4684928 0</gx:coord>
+                <gx:coord>13.5484514 52.4686524 0</gx:coord>
+                <gx:coord>13.5473561 52.4687016 0</gx:coord>
+                <gx:coord>13.5461605 52.4687283 0</gx:coord>
+                <gx:coord>13.5451657 52.4687892 0</gx:coord>
+                <gx:coord>13.5441364 52.4688394 0</gx:coord>
+                <gx:coord>13.5430217 52.4687621 0</gx:coord>
+                <gx:coord>13.5419642 52.4685955 0</gx:coord>
+                <gx:coord>13.5409707 52.4684654 0</gx:coord>
+                <gx:coord>13.5399551 52.4685146 0</gx:coord>
+                <gx:coord>13.5388801 52.4683034 0</gx:coord>
+                <gx:coord>13.5380121 52.4679412 0</gx:coord>
+                <gx:coord>13.5370739 52.4681127 0</gx:coord>
+                <gx:coord>13.5359536 52.4683343 0</gx:coord>
+                <gx:coord>13.5350089 52.4685444 0</gx:coord>
+                <gx:coord>13.5340318 52.4686661 0</gx:coord>
+                <gx:coord>13.5331489 52.4685821 0</gx:coord>
+                <gx:coord>13.5323229 52.4683629 0</gx:coord>
+                <gx:coord>13.5315182 52.4682972 0</gx:coord>
+                <gx:coord>13.5308823 52.4679277 0</gx:coord>
+                <gx:coord>13.5303199 52.4675935 0</gx:coord>
+                <gx:coord>13.5296438 52.4670327 0</gx:coord>
+                <gx:coord>13.5288234 52.4665478 0</gx:coord>
+                <gx:coord>13.5279721 52.466233 0</gx:coord>
+                <gx:coord>13.5270147 52.4664604 0</gx:coord>
+                <gx:coord>13.5261192 52.466672 0</gx:coord>
+                <gx:coord>13.5250839 52.4669709 0</gx:coord>
+                <gx:coord>13.5240383 52.4672761 0</gx:coord>
+                <gx:coord>13.523052 52.4676029 0</gx:coord>
+                <gx:coord>13.5220611 52.4679498 0</gx:coord>
+                <gx:coord>13.5209701 52.468257 0</gx:coord>
+                <gx:coord>13.5200314 52.4685202 0</gx:coord>
+                <gx:coord>13.5192194 52.4687213 0</gx:coord>
+                <gx:coord>13.5179807 52.469081 0</gx:coord>
+                <gx:coord>13.516896 52.4692194 0</gx:coord>
+                <gx:coord>13.5158822 52.4688613 0</gx:coord>
+                <gx:coord>13.5149432 52.4687623 0</gx:coord>
+                <gx:coord>13.5145781 52.4684819 0</gx:coord>
+                <gx:coord>13.514586 52.4685032 0</gx:coord>
+                <gx:coord>13.5145858 52.4685034 0</gx:coord>
+                <gx:coord>13.5145858 52.4685033 0</gx:coord>
+                <gx:coord>13.5145703 52.4685206 0</gx:coord>
+                <gx:coord>13.514278 52.4686552 0</gx:coord>
+                <gx:coord>13.5137663 52.4688546 0</gx:coord>
+                <gx:coord>13.51284579432827 52.46930564797254 0</gx:coord>
+                <gx:coord>13.51284579432827 52.46930564797254 0</gx:coord>
+            </gx:Track>
+            <TimeSpan>
+                <begin>2017-05-18T13:28:13.000Z</begin>
+                <end>2017-05-18T13:44:36.000Z</end>
+            </TimeSpan>
+        </Placemark>
+        <Placemark>
+            <name>Oberschöneweide</name>
+            <address>Berlin</address>
+            <ExtendedData>
+                <Data name="Email">
+                    <value>wgpagenkopf@googlemail.com</value>
+                </Data>
+                <Data name="Category">
+                    <value></value>
+                </Data>
+                <Data name="Distance">
+                    <value>0</value>
+                </Data>
+            </ExtendedData>
+            <description>  from 2017-05-18T13:44:36.000Z to 2017-05-18T13:51:53.000Z. Distance 0m </description>
+            <Point>
+                <coordinates></coordinates>
+            </Point>
+            <gx:Track>
+                <altitudeMode>clampToGround</altitudeMode>
+                <gx:coord>13.523242199999999 52.4669278 0</gx:coord>
+            </gx:Track>
+            <TimeSpan>
+                <begin>2017-05-18T13:44:36.000Z</begin>
+                <end>2017-05-18T13:51:53.000Z</end>
+            </TimeSpan>
+        </Placemark>
+        <Placemark>
+            <name>Rewe-stralau</name>
+            <address></address>
+            <ExtendedData>
+                <Data name="Email">
+                    <value>wgpagenkopf@googlemail.com</value>
+                </Data>
+                <Data name="Category">
+                    <value>Cycling</value>
+                </Data>
+                <Data name="Distance">
+                    <value>6282</value>
+                </Data>
+            </ExtendedData>
+            <description> Cycling from 2017-05-18T13:51:53.000Z to 2017-05-18T14:31:12.752Z. Distance 6282m </description>
+            <Point>
+                <coordinates></coordinates>
+            </Point>
+            <gx:Track>
+                <altitudeMode>clampToGround</altitudeMode>
+                <gx:coord>13.51284579432827 52.46930564797254 0</gx:coord>
+                <gx:coord>13.51284579432827 52.46930564797254 0</gx:coord>
+                <gx:coord>13.5124204 52.4703722 0</gx:coord>
+                <gx:coord>13.5119192 52.4707399 0</gx:coord>
+                <gx:coord>13.5113746 52.4713179 0</gx:coord>
+                <gx:coord>13.5105636 52.4718985 0</gx:coord>
+                <gx:coord>13.5098495 52.4726297 0</gx:coord>
+                <gx:coord>13.5090644 52.4733535 0</gx:coord>
+                <gx:coord>13.50831 52.4740268 0</gx:coord>
+                <gx:coord>13.5075827 52.474752 0</gx:coord>
+                <gx:coord>13.5069445 52.4754178 0</gx:coord>
+                <gx:coord>13.5061659 52.4760976 0</gx:coord>
+                <gx:coord>13.5053387 52.4768102 0</gx:coord>
+                <gx:coord>13.5045873 52.4775231 0</gx:coord>
+                <gx:coord>13.5040165 52.4781773 0</gx:coord>
+                <gx:coord>13.5035135 52.4789375 0</gx:coord>
+                <gx:coord>13.5031399 52.4796425 0</gx:coord>
+                <gx:coord>13.5026197 52.4803968 0</gx:coord>
+                <gx:coord>13.5022625 52.4811667 0</gx:coord>
+                <gx:coord>13.5018489 52.4819212 0</gx:coord>
+                <gx:coord>13.5013573 52.4827216 0</gx:coord>
+                <gx:coord>13.5007305 52.4833808 0</gx:coord>
+                <gx:coord>13.4999612 52.4840046 0</gx:coord>
+                <gx:coord>13.4992861 52.4847104 0</gx:coord>
+                <gx:coord>13.4985009 52.4852954 0</gx:coord>
+                <gx:coord>13.4980487 52.4859016 0</gx:coord>
+                <gx:coord>13.4973448 52.4864364 0</gx:coord>
+                <gx:coord>13.4967919 52.4870249 0</gx:coord>
+                <gx:coord>13.4960288 52.487724 0</gx:coord>
+                <gx:coord>13.4952422 52.4884365 0</gx:coord>
+                <gx:coord>13.4947228 52.489239 0</gx:coord>
+                <gx:coord>13.4939259 52.4898548 0</gx:coord>
+                <gx:coord>13.4931822 52.4904761 0</gx:coord>
+                <gx:coord>13.4925409 52.4911173 0</gx:coord>
+                <gx:coord>13.4918999 52.4916555 0</gx:coord>
+                <gx:coord>13.4910213 52.4914113 0</gx:coord>
+                <gx:coord>13.4904777 52.4912862 0</gx:coord>
+                <gx:coord>13.4899471 52.4916824 0</gx:coord>
+                <gx:coord>13.4898489 52.4916959 0</gx:coord>
+                <gx:coord>13.4889661 52.4915532 0</gx:coord>
+                <gx:coord>13.4884463 52.4911786 0</gx:coord>
+                <gx:coord>13.4879695 52.4912696 0</gx:coord>
+                <gx:coord>13.4875384 52.4918063 0</gx:coord>
+                <gx:coord>13.4871184 52.4922692 0</gx:coord>
+                <gx:coord>13.48629 52.4926332 0</gx:coord>
+                <gx:coord>13.4854648 52.4930787 0</gx:coord>
+                <gx:coord>13.4849239 52.4934348 0</gx:coord>
+                <gx:coord>13.4836895 52.4936876 0</gx:coord>
+                <gx:coord>13.4827814 52.4940623 0</gx:coord>
+                <gx:coord>13.4825992 52.4946125 0</gx:coord>
+                <gx:coord>13.4819353 52.4950224 0</gx:coord>
+                <gx:coord>13.4813759 52.4954401 0</gx:coord>
+                <gx:coord>13.4804924 52.4963638 0</gx:coord>
+                <gx:coord>13.4798089 52.4967655 0</gx:coord>
+                <gx:coord>13.478881 52.4969555 0</gx:coord>
+                <gx:coord>13.4783116 52.4974894 0</gx:coord>
+                <gx:coord>13.4778929 52.4980282 0</gx:coord>
+                <gx:coord>13.4778905 52.4985972 0</gx:coord>
+                <gx:coord>13.4773345 52.4989689 0</gx:coord>
+                <gx:coord>13.4762735 52.4994654 0</gx:coord>
+                <gx:coord>13.4753502 52.4998372 0</gx:coord>
+                <gx:coord>13.4743928 52.5002647 0</gx:coord>
+                <gx:coord>13.4734085 52.5007011 0</gx:coord>
+                <gx:coord>13.4721283 52.5006668 0</gx:coord>
+                <gx:coord>13.4711416 52.5002148 0</gx:coord>
+                <gx:coord>13.4702585 52.5004282 0</gx:coord>
+                <gx:coord>13.4697996 52.4999919 0</gx:coord>
+                <gx:coord>13.4693619 52.4992923 0</gx:coord>
+                <gx:coord>13.4696643 52.4986857 0</gx:coord>
+                <gx:coord>13.4693892 52.4981844 0</gx:coord>
+                <gx:coord>13.4688426 52.4975508 0</gx:coord>
+                <gx:coord>13.4691864 52.4972637 0</gx:coord>
+                <gx:coord>13.4697998 52.4969709 0</gx:coord>
+                <gx:coord>13.469346 52.4963881 0</gx:coord>
+                <gx:coord>13.4690544 52.4961302 0</gx:coord>
+                <gx:coord>13.4689891 52.496108 0</gx:coord>
+                <gx:coord>13.469313099999999 52.503156399999995 0</gx:coord>
+                <gx:coord>13.469313099999999 52.503156399999995 0</gx:coord>
+            </gx:Track>
+            <TimeSpan>
+                <begin>2017-05-18T13:51:53.000Z</begin>
+                <end>2017-05-18T14:31:12.752Z</end>
+            </TimeSpan>
+        </Placemark>
+        <Placemark>
+            <name>Ostkreuz</name>
+            <address>10317 Berlin</address>
+            <ExtendedData>
+                <Data name="Email">
+                    <value>wgpagenkopf@googlemail.com</value>
+                </Data>
+                <Data name="Category">
+                    <value>Bahnhof</value>
+                </Data>
+                <Data name="Distance">
+                    <value>0</value>
+                </Data>
+            </ExtendedData>
+            <description> Bahnhof from 2017-05-18T14:31:12.752Z to 2017-05-18T19:14:47.308Z. Distance 0m </description>
+            <Point>
+                <coordinates></coordinates>
+            </Point>
+            <gx:Track>
+                <altitudeMode>clampToGround</altitudeMode>
+                <gx:coord>13.469313099999999 52.503156399999995 0</gx:coord>
+            </gx:Track>
+            <TimeSpan>
+                <begin>2017-05-18T14:31:12.752Z</begin>
+                <end>2017-05-18T19:14:47.308Z</end>
+            </TimeSpan>
+        </Placemark>
+        <Placemark>
+            <name>Stralau-home</name>
+            <address></address>
+            <ExtendedData>
+                <Data name="Email">
+                    <value>wgpagenkopf@googlemail.com</value>
+                </Data>
+                <Data name="Category">
+                    <value>Cycling</value>
+                </Data>
+                <Data name="Distance">
+                    <value>11266</value>
+                </Data>
+            </ExtendedData>
+            <description> Cycling from 2017-05-18T19:14:47.308Z to 2017-05-18T20:30:39.000Z. Distance 11266m </description>
+            <Point>
+                <coordinates></coordinates>
+            </Point>
+            <gx:Track>
+                <altitudeMode>clampToGround</altitudeMode>
+                <gx:coord>13.469313099999999 52.503156399999995 0</gx:coord>
+                <gx:coord>13.469313099999999 52.503156399999995 0</gx:coord>
+                <gx:coord>13.4695368 52.4961124 0</gx:coord>
+                <gx:coord>13.4688555 52.4961699 0</gx:coord>
+                <gx:coord>13.4692534 52.4961779 0</gx:coord>
+                <gx:coord>13.4696537 52.4965341 0</gx:coord>
+                <gx:coord>13.4699552 52.4969466 0</gx:coord>
+                <gx:coord>13.4693712 52.4972098 0</gx:coord>
+                <gx:coord>13.4688028 52.497523 0</gx:coord>
+                <gx:coord>13.4693363 52.498035 0</gx:coord>
+                <gx:coord>13.4697311 52.498484 0</gx:coord>
+                <gx:coord>13.469493 52.4988953 0</gx:coord>
+                <gx:coord>13.4693733 52.4993146 0</gx:coord>
+                <gx:coord>13.4697463 52.4996829 0</gx:coord>
+                <gx:coord>13.4700063 52.5001173 0</gx:coord>
+                <gx:coord>13.4707629 52.5002233 0</gx:coord>
+                <gx:coord>13.4717607 52.5003502 0</gx:coord>
+                <gx:coord>13.4724565 52.5006533 0</gx:coord>
+                <gx:coord>13.4731748 52.5007051 0</gx:coord>
+                <gx:coord>13.4739345 52.5005583 0</gx:coord>
+                <gx:coord>13.4746482 52.5001786 0</gx:coord>
+                <gx:coord>13.4754608 52.4998243 0</gx:coord>
+                <gx:coord>13.4761807 52.499507 0</gx:coord>
+                <gx:coord>13.4769441 52.4991859 0</gx:coord>
+                <gx:coord>13.4777271 52.4988161 0</gx:coord>
+                <gx:coord>13.4785019 52.4984516 0</gx:coord>
+                <gx:coord>13.4792388 52.4981733 0</gx:coord>
+                <gx:coord>13.4798841 52.4984785 0</gx:coord>
+                <gx:coord>13.4804418 52.4989237 0</gx:coord>
+                <gx:coord>13.4812201 52.4992789 0</gx:coord>
+                <gx:coord>13.4819018 52.4995724 0</gx:coord>
+                <gx:coord>13.4827047 52.499991 0</gx:coord>
+                <gx:coord>13.4834968 52.4996713 0</gx:coord>
+                <gx:coord>13.4845241 52.4992334 0</gx:coord>
+                <gx:coord>13.4854103 52.4988635 0</gx:coord>
+                <gx:coord>13.486216 52.4985043 0</gx:coord>
+                <gx:coord>13.4874896 52.4979812 0</gx:coord>
+                <gx:coord>13.4884973 52.4975993 0</gx:coord>
+                <gx:coord>13.4894559 52.4972733 0</gx:coord>
+                <gx:coord>13.4905027 52.4968801 0</gx:coord>
+                <gx:coord>13.4914726 52.4965148 0</gx:coord>
+                <gx:coord>13.4925872 52.4960347 0</gx:coord>
+                <gx:coord>13.493524 52.4957296 0</gx:coord>
+                <gx:coord>13.4943546 52.4954008 0</gx:coord>
+                <gx:coord>13.4953234 52.4950846 0</gx:coord>
+                <gx:coord>13.496284 52.4947313 0</gx:coord>
+                <gx:coord>13.4974475 52.4942884 0</gx:coord>
+                <gx:coord>13.4983489 52.4937976 0</gx:coord>
+                <gx:coord>13.4992882 52.4933883 0</gx:coord>
+                <gx:coord>13.5003353 52.4933553 0</gx:coord>
+                <gx:coord>13.5013218 52.4931298 0</gx:coord>
+                <gx:coord>13.5022346 52.4929078 0</gx:coord>
+                <gx:coord>13.5031247 52.4926945 0</gx:coord>
+                <gx:coord>13.5039674 52.4925182 0</gx:coord>
+                <gx:coord>13.5048873 52.4923323 0</gx:coord>
+                <gx:coord>13.5057554 52.4921299 0</gx:coord>
+                <gx:coord>13.5066367 52.4919419 0</gx:coord>
+                <gx:coord>13.5076291 52.491737 0</gx:coord>
+                <gx:coord>13.5086731 52.4915102 0</gx:coord>
+                <gx:coord>13.5096813 52.4912756 0</gx:coord>
+                <gx:coord>13.5107094 52.4912143 0</gx:coord>
+                <gx:coord>13.5117978 52.4913453 0</gx:coord>
+                <gx:coord>13.5127997 52.4914325 0</gx:coord>
+                <gx:coord>13.5138993 52.4917505 0</gx:coord>
+                <gx:coord>13.5148901 52.4920231 0</gx:coord>
+                <gx:coord>13.5159776 52.4923039 0</gx:coord>
+                <gx:coord>13.5168915 52.4925851 0</gx:coord>
+                <gx:coord>13.517842 52.4927821 0</gx:coord>
+                <gx:coord>13.5187824 52.4929956 0</gx:coord>
+                <gx:coord>13.5194218 52.4933377 0</gx:coord>
+                <gx:coord>13.5197269 52.4940162 0</gx:coord>
+                <gx:coord>13.5200439 52.494566 0</gx:coord>
+                <gx:coord>13.520579 52.4948752 0</gx:coord>
+                <gx:coord>13.5215981 52.4951525 0</gx:coord>
+                <gx:coord>13.5225143 52.4953852 0</gx:coord>
+                <gx:coord>13.5235065 52.4955459 0</gx:coord>
+                <gx:coord>13.5240178 52.4956289 0</gx:coord>
+                <gx:coord>13.5246846 52.4957918 0</gx:coord>
+                <gx:coord>13.5251696 52.495304 0</gx:coord>
+                <gx:coord>13.5256317 52.4945429 0</gx:coord>
+                <gx:coord>13.5264925 52.4945483 0</gx:coord>
+                <gx:coord>13.5275185 52.4948174 0</gx:coord>
+                <gx:coord>13.5286041 52.4950685 0</gx:coord>
+                <gx:coord>13.5295221 52.4953373 0</gx:coord>
+                <gx:coord>13.5306 52.4955924 0</gx:coord>
+                <gx:coord>13.5316208 52.4958368 0</gx:coord>
+                <gx:coord>13.5324729 52.4960381 0</gx:coord>
+                <gx:coord>13.5336324 52.4963144 0</gx:coord>
+                <gx:coord>13.5348052 52.4966235 0</gx:coord>
+                <gx:coord>13.5360409 52.4969193 0</gx:coord>
+                <gx:coord>13.5371897 52.4972045 0</gx:coord>
+                <gx:coord>13.5382627 52.4974789 0</gx:coord>
+                <gx:coord>13.5393354 52.4977536 0</gx:coord>
+                <gx:coord>13.5404268 52.4980354 0</gx:coord>
+                <gx:coord>13.5415599 52.4983168 0</gx:coord>
+                <gx:coord>13.5424841 52.4985223 0</gx:coord>
+                <gx:coord>13.543724 52.498648 0</gx:coord>
+                <gx:coord>13.544724 52.4982844 0</gx:coord>
+                <gx:coord>13.5458867 52.498556 0</gx:coord>
+                <gx:coord>13.5472688 52.4988814 0</gx:coord>
+                <gx:coord>13.5485332 52.4991767 0</gx:coord>
+                <gx:coord>13.5497206 52.4994832 0</gx:coord>
+                <gx:coord>13.5508937 52.4997761 0</gx:coord>
+                <gx:coord>13.5520566 52.5000726 0</gx:coord>
+                <gx:coord>13.5532722 52.5004526 0</gx:coord>
+                <gx:coord>13.554361 52.5007901 0</gx:coord>
+                <gx:coord>13.5554109 52.5011412 0</gx:coord>
+                <gx:coord>13.5562875 52.5015013 0</gx:coord>
+                <gx:coord>13.5571788 52.5018784 0</gx:coord>
+                <gx:coord>13.5580224 52.5022674 0</gx:coord>
+                <gx:coord>13.5588425 52.502666 0</gx:coord>
+                <gx:coord>13.5597191 52.5030871 0</gx:coord>
+                <gx:coord>13.5602391 52.5036007 0</gx:coord>
+                <gx:coord>13.5605063 52.5041603 0</gx:coord>
+                <gx:coord>13.5615712 52.5041778 0</gx:coord>
+                <gx:coord>13.561781 52.5047522 0</gx:coord>
+                <gx:coord>13.5618714 52.5054191 0</gx:coord>
+                <gx:coord>13.5619554 52.5060737 0</gx:coord>
+                <gx:coord>13.5618805 52.5066648 0</gx:coord>
+                <gx:coord>13.5617845 52.507347 0</gx:coord>
+                <gx:coord>13.5616855 52.5079003 0</gx:coord>
+                <gx:coord>13.5616215 52.5084164 0</gx:coord>
+                <gx:coord>13.5617489 52.5089986 0</gx:coord>
+                <gx:coord>13.5618831 52.5094254 0</gx:coord>
+                <gx:coord>13.5619775 52.5098194 0</gx:coord>
+                <gx:coord>13.5620613 52.5101917 0</gx:coord>
+                <gx:coord>13.562208 52.5105995 0</gx:coord>
+                <gx:coord>13.5622624 52.5110485 0</gx:coord>
+                <gx:coord>13.5635106 52.511436 0</gx:coord>
+                <gx:coord>13.5646314 52.5114066 0</gx:coord>
+                <gx:coord>13.565706 52.5113513 0</gx:coord>
+                <gx:coord>13.5667638 52.5113323 0</gx:coord>
+                <gx:coord>13.5677942 52.5113139 0</gx:coord>
+                <gx:coord>13.5680731 52.5118917 0</gx:coord>
+                <gx:coord>13.5681301 52.5124583 0</gx:coord>
+                <gx:coord>13.5682531 52.5127149 0</gx:coord>
+                <gx:coord>13.5684416 52.5131043 0</gx:coord>
+                <gx:coord>13.5695115 52.5132022 0</gx:coord>
+                <gx:coord>13.5707836 52.5132164 0</gx:coord>
+                <gx:coord>13.5719186 52.5132395 0</gx:coord>
+                <gx:coord>13.5729606 52.5132265 0</gx:coord>
+                <gx:coord>13.5739328 52.5132411 0</gx:coord>
+                <gx:coord>13.5748929 52.5132575 0</gx:coord>
+                <gx:coord>13.5757042 52.5132898 0</gx:coord>
+                <gx:coord>13.5764116 52.5133042 0</gx:coord>
+                <gx:coord>13.5770259 52.5132667 0</gx:coord>
+                <gx:coord>13.5776361 52.5132821 0</gx:coord>
+                <gx:coord>13.5783371 52.5133064 0</gx:coord>
+                <gx:coord>13.5790256 52.5134441 0</gx:coord>
+                <gx:coord>13.5796108 52.5138119 0</gx:coord>
+                <gx:coord>13.5803136 52.5141471 0</gx:coord>
+                <gx:coord>13.5808817 52.5144122 0</gx:coord>
+                <gx:coord>13.5815088 52.5146615 0</gx:coord>
+                <gx:coord>13.5820577 52.5149681 0</gx:coord>
+                <gx:coord>13.5825808 52.5152212 0</gx:coord>
+                <gx:coord>13.5832363 52.5153918 0</gx:coord>
+                <gx:coord>13.5838304 52.5155582 0</gx:coord>
+                <gx:coord>13.5843198 52.5158141 0</gx:coord>
+                <gx:coord>13.5848101 52.516138 0</gx:coord>
+                <gx:coord>13.5845173 52.5163759 0</gx:coord>
+                <gx:coord>13.5842785 52.5165764 0</gx:coord>
+                <gx:coord>13.5842687 52.5165724 0</gx:coord>
+                <gx:coord>13.584268 52.5165719 0</gx:coord>
+                <gx:coord>13.5842681 52.5165719 0</gx:coord>
+                <gx:coord>13.5842677 52.5165717 0</gx:coord>
+                <gx:coord>13.58427 52.51672 0</gx:coord>
+                <gx:coord>13.58427 52.51672 0</gx:coord>
+            </gx:Track>
+            <TimeSpan>
+                <begin>2017-05-18T19:14:47.308Z</begin>
+                <end>2017-05-18T20:30:39.000Z</end>
+            </TimeSpan>
+        </Placemark>
+        <Placemark>
+            <name>Koserower Str. 9</name>
+            <address>Koserower Str. 9, 12619 Berlin</address>
+            <ExtendedData>
+                <Data name="Email">
+                    <value>wgpagenkopf@googlemail.com</value>
+                </Data>
+                <Data name="Category">
+                    <value></value>
+                </Data>
+                <Data name="Distance">
+                    <value>0</value>
+                </Data>
+            </ExtendedData>
+            <description>  from 2017-05-18T20:30:39.000Z to 2017-05-19T06:29:16.000Z. Distance 0m </description>
+            <Point>
+                <coordinates></coordinates>
+            </Point>
+            <gx:Track>
+                <altitudeMode>clampToGround</altitudeMode>
+                <gx:coord>13.58427 52.51672 0</gx:coord>
+            </gx:Track>
+            <TimeSpan>
+                <begin>2017-05-18T20:30:39.000Z</begin>
+                <end>2017-05-19T06:29:16.000Z</end>
+            </TimeSpan>
+        </Placemark>
+    </Document>
+</kml>

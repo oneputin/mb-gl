@@ -81,7 +81,7 @@ container for toggling gui-area
             </paper-fab>
         </template>
 
-        <!-- FAB AREA -->
+        <!-- FAB AREA = vertical container -->
         <template is="dom-if" if="{{checked}}">
             
             <div id="container">
@@ -166,9 +166,9 @@ container for toggling gui-area
 
             // 
             toggleAbout: function() {
-                var html = "<h5>Some statistics</h5>";
+                // var html = "<h5>Some statistics</h5>";
                 // var html = this.logdata.html; // console.log("collapse content", html)
-                this.$$('#abstract div').innerHTML = html;
+                // this.$$('#abstract div').innerHTML = html;
                 this.$$('#abstract').toggle();
             },
 

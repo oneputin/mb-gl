@@ -1,11 +1,27 @@
 [    
     {
         "start": 1,
-        "title": "wolf-mobile",
-        "datasetlabel" : "wolf-mobile",
+        "title": "2017-05-18",
+        "datasetlabel" : "20170518",
         "key": "",
         "type": "kml",
-        "url": "gx-data/history-0519.kml",
+        "url": "track-data/history-2017-05-18.kml",
+        "device": {
+            "name": "mymobile",
+            "user" : "wolf",
+            "dop" : 10
+        },
+        "timer":{
+            "timescalemax": 120  
+        },    
+        "symbol": "toilet-11"
+    },
+    {
+        "title": "2017-05-19",
+        "datasetlabel" : "20170519",
+        "key": "",
+        "type": "kml",
+        "url": "track-data/history-2017-05-19.kml",
         "device": {
             "name": "mymobile",
             "user" : "wolf",
@@ -16,4 +32,5 @@
         },    
         "symbol": "toilet-11"
     }
+
 ]

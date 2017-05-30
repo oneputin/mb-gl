@@ -8,8 +8,9 @@
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
    
     <!-- web-components required for dev-gui --> 
-    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
-    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <!--<link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">-->
+    
     <link rel="import" href="../../paper-styles/demo-pages.html">
    
     <!-- web-components applied for app-gui --> 
@@ -92,9 +93,6 @@
             @apply(--layout-flex);
         }
         
-        mb-orientation-ctrl {
-            /*@apply(--layout-flex);*/
-        }
         
         timer-setup {
             display: none;
@@ -181,7 +179,6 @@
                     mapctrl = "[[mapctrl]]">
 
                     <div>
-
                         <mb-content-browser 
                             indexurl="[[indexurl]]" 
                             metadatasetslabel="[[metadatasetslabel]]" 
@@ -190,7 +187,6 @@
                             dataset = "[[dataset]]" 
                             ctrlitems = "[[ctrlitems]]"
                             selectitem ="{{datasetitem}}"> 
-
                         </mb-content-browser>
 
                         <!-- placed here to overlay the map -->
@@ -202,31 +198,7 @@
                             logdata = "[[logdata]]"
                             logindex = "{{logindex}}">
                         </tracklog-view>    
-
                     </div>    
-                    <!-- (menulike)ctrl of single log-points  
-                    <tracklog-ctrl
-                        class = "mapctrl-log"
-                        visible = "[[ctrl.trackdetailshow]]"
-                        metadata = "[[metadataset]]"
-                        logdata = "[[logdata]]"
-                        logindex = "{{logindex}}">
-                    </tracklog-ctrl>-->
-
-                    <!-- Select-menu of map-styles -->
-                    <!--<mb-styles 
-                        checked = "{{ctrl.styleselectshow}}"
-                        styleset ="[[morestyles]]"
-                        selectable = "{{styleselectable}}"
-                        mapstyle = "{{mapstyle}}"> 
-                    </mb-styles>-->
-
-                    <!-- TOOL to measure user-generated lines -->
-                    <!--<mb-distance 
-                        checked="[[ctrl.mapmeasureshow]]"
-                        distance="{{distance}}" 
-                        map="[[map]]"> 
-                    </mb-distance>-->
 
                     <!-- Indicator of mapclient-coordinates (mapcenter,mouse) -->
                     <mb-location-log 
@@ -235,28 +207,7 @@
                         mbid="[[mbid]]"
                         mousemode="[[ctrl.mousemode]]"> 
                     </mb-location-log>
-                    <!-- not implemented 
-                    <tracks-info 
-                        metadataset = "[[metadataset]]" 
-                        trackinfo = "[[trackinfo]]" 
-                        trackdata = "{{trackdata}}">
-                    </tracks-info>
-                    -->
-                    <!-- animation-ctrls -->
-                    <template is="dom-if" if="{{ctrl.userouting}}">
-                        <div class="mapctrls-bottom">
-                            <!-- ctrl of animation-progress  -->
-                            <timer-ctrl 
-                                timerctrl="{{trackctrl}}"
-                                timer="{{timer}}">
-                            </timer-ctrl>
-                            <!-- ctrlflag of map-orientation -->
-                            <mb-orientation-ctrl 
-                                trackmap="[[trackalignmap]]">
-                            </mb-orientation-ctrl>
 
-                        </div>
-                    </template>
                 </mb-map>
             </template>  
 

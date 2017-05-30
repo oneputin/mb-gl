@@ -7,8 +7,9 @@
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
    
     <!-- web-components required for dev-gui --> 
-    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
-    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <!--<link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">-->
+    
     <link rel="import" href="../../paper-styles/demo-pages.html">
    
     <!-- web-components applied for app-gui --> 
@@ -21,14 +22,11 @@
     <link rel="import" href="../mb-api.html">
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
-    <link rel="import" href="../mb-styles.html">
-    <link rel="import" href="../mb-distance.html">
-    <link rel="import" href="../layer-waypoints.html">
     
-
     <link rel="import" href="../image-links.html">
 
     <style is="custom-style">
+        
         .container {
             @apply(--layout-horizontal);
             /*align-items: flex-start;*/
@@ -71,10 +69,6 @@
             @apply(--layout-flex);
         }
         
-        mb-orientation-ctrl {
-            /*@apply(--layout-flex);*/
-        }
-        
         timer-setup {
             display: none;
             border-style: solid;
@@ -111,8 +105,8 @@
 
         #imageform img {
           position: absolute;
-          width: 100%;
-          height: 100%;
+          width: 300px; 
+          height: 300px;
         }
 
         #radios {
@@ -167,33 +161,17 @@
                         <img src="[[imgsrc]]">
                     </div>    
 
-                    <!-- placed here to overlay the map -->
                     <image-links
                         checked = "{{formshow}}"
                         imgsrc = "{{imgsrc}}">
-                    </images-links>    
-
-                    <mb-styles 
-                        checked = "{{styleselectshow}}"
-                        styleset ="[[morestyles]]"
-                        selectable = "{{styleselectable}}"
-                        mapstyle = "{{mapstyle}}"> 
-                    </mb-styles>
-
+                    </image-links>    
+                
                     <mb-location-log 
                         checked
                         lnglat="{{lnglat}}" 
                         mbid="[[mbid]]"
                         mousemode="[[mousemode]]"> 
                     </mb-location-log>
-
-                    <!-- not implemented 
-                    <tracks-info 
-                        metadataset = "[[metadataset]]" 
-                        trackinfo = "[[trackinfo]]" 
-                        trackdata = "{{trackdata}}">
-                    </tracks-info>
-                    -->
 
                 </mb-map>
 
@@ -207,10 +185,7 @@
             <div id="radios">
                 
                 <template is="dom-if" if="{{mapstyle}}">
-                    <paper-radio-button checked="{{waypointshow}}">Waypoints</paper-radio-button>
-                    <template is="dom-if" if="{{!userouting}}">
-                        <paper-radio-button class="style" checked="{{styleselectshow}}" disabled="{{!styleselectable}}">Style selection</paper-radio-button>
-                    </template>
+                    <paper-radio-button checked="{{infomode}}">Imageview</paper-radio-button>
                     <paper-radio-button checked="{{mousemode}}">Pointer Location</paper-radio-button>
                 </template>   
 

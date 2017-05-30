@@ -4,12 +4,10 @@
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../iron-collapse/iron-collapse.html">
 
-<link rel="import" href="../paper-fab/paper-fab.html">
+<link rel="import" href = "../files-input/files-input.html">
+<link rel="import" href = "../image-meta/exif-locations.html">
 
-<link rel="import" href="../files-input/files-input.html">
-<link rel="import" href="../image-meta/exif-locations.html">
-
-<link rel="import" href="mb-fabarea.html">
+<link rel="import" href = "mb-fabarea.html">
 
 <!--
 `image-links`
@@ -31,8 +29,7 @@ container for upload/presentation of geolocated images
 
         </style>
 
-        <mb-fabarea
-            checked = false>
+        <mb-fabarea  checked = false>
 
             <div class="ctrl">
                 <div> some statistics </div>
@@ -58,10 +55,6 @@ container for upload/presentation of geolocated images
 
         </mb-fabarea>
 
-        <div id="imgviewer">
-            <img src="[[imgsrc]]">
-        </div>     
-    
     </template>
 
     <script>
@@ -138,7 +131,7 @@ container for upload/presentation of geolocated images
             // generic click-listener
             _clickListener : function(e) {
                 var f = wpscope._eventListener(e); 
-                if (!f) return; 
+                if (!f) return; // console.log("clicked",f);
 
                 wpscope.clickAction(f);
             }, 
@@ -176,6 +169,7 @@ container for upload/presentation of geolocated images
             // Simple fitbounds for point-features
             _fitBounds : function(features, padding) {
                 if (padding== null) padding = 20;
+
                 if (features.features) features = features.features; // if featureset was passed
 
                 var coord0 = features[0].geometry.coordinates;
