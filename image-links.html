@@ -3,11 +3,14 @@
 
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
 
 <link rel="import" href = "../files-input/files-input.html">
 <link rel="import" href = "../image-meta/exif-locations.html">
 
-<link rel="import" href = "mb-fabarea.html">
+<link rel="import" href = "fab-area.html">
 
 <!--
 `image-links`
@@ -26,17 +29,30 @@ container for upload/presentation of geolocated images
                 display: block;
                 position: relative;
             }
+            paper-item : {
+                padding: 3px;
+                border: 1;
+            }
 
+            .content : {
+                @apply(--layout-horizontal);
+                @apply(--layout-justified);
+            }
         </style>
 
-        <mb-fabarea  checked = false>
+        <fab-area 
+            ctrllabel = "[[ctrllabel]]"
+            checked = false>
 
             <div class="ctrl">
-                <div> some statistics </div>
+                <paper-listbox>
+                    <template is="dom-repeat" items="{{nonlocated}}">
+                        <paper-item value="[[item]]" on-tap="locateimage">[[item]]</paper-item>
+                    </template>    
+                </paper-listbox>
             </div>        
 
             <div class="content">    
-
                 <!--  -->
                 <files-input
                     type="image"
@@ -48,12 +64,13 @@ container for upload/presentation of geolocated images
                 <exif-locations
                     imageset = "[[imageset]]"
                     locationmode = "geojson"
-                    locations = "{{featureset}}">
+                    locations = "{{featureset}}"
+                    nonlocated = "{{nonlocated}}">
                 </exif-locations>
             
             </div>
 
-        </mb-fabarea>
+        </fab-area>
 
     </template>
 
@@ -70,16 +87,26 @@ container for upload/presentation of geolocated images
                     type: Array //, observer: '_storeImages'
                 },
 
-                imgsrc : {
+                locateimg : {
+                    type: Object,
+                    notify : true
+                },
+
+                location : {
                     type: String,
-                    notify : true,
-                    observer: '_showImage'
+                    observer : 'testlocation'
                 },
 
                 // content of pointlayer
                 featureset : {
                     type: Object,
                     observer: '_refreshLayer'
+                },
+
+                // content of pointlayer
+                nonlocated : {
+                    type: Array,
+                    observer: '_createMenu'
                 },
 
                 // visibility of pointlayer
@@ -93,6 +120,11 @@ container for upload/presentation of geolocated images
                     value : "imglinks"
                 },
 
+                ctrllabel : {
+                    type : String,
+                    value : ''
+                }
+
             },
 
             behaviors: [
@@ -105,23 +137,32 @@ container for upload/presentation of geolocated images
                 wpscope = this;
             },
 
-            _getImage : function(imgname) {
+            locateimage : function(e) { 
+                var item = e.target;   // console.log("item-value", item.value); // , item.value);
+                this._supplyimage(item.value); 
+            },
+
+            _createMenu : function (nonlocated) {
+                if (nonlocated.length) this.ctrllabel = "not located"; // console.log("nonlocated", nonlocated);
+                else this.ctrllabel = ""
+            },
+
+            /**
+             * 
+             */            
+            _supplyimage : function(imgname) {
                 this.imageset.some(function(img){
-                    if (img.name == imgname) {
-                        console.log("selected img " + imgname); // , img.value);
-                        this.imgsrc = img.value;
+                    if (img.name == imgname) {  //console.log("selected img " + imgname, img); // , img.value);
+                        this.locateimg = img;
                         return;
                     } 
                 }.bind(this));   
             },
 
-            _showImage : function(dataurl) {
-                console.log("_showImage, length", dataurl.length)
-            },
-
-            clickAction : function (feature) { // console.log("clicked at ", feature); 
+            // 
+            mapclickAction : function (feature) { // console.log("clicked at ", feature); 
                 var id = feature.properties.name;
-                this._getImage(id); 
+                this._supplyimage(id); 
             },
 
             hoverAction : function (feature) {
@@ -129,22 +170,22 @@ container for upload/presentation of geolocated images
             },
 
             // generic click-listener
-            _clickListener : function(e) {
-                var f = wpscope._eventListener(e); 
+            _mapclickListener : function(e) {
+                var f = wpscope._mapeventListener(e); 
                 if (!f) return; // console.log("clicked",f);
 
-                wpscope.clickAction(f);
+                wpscope.mapclickAction(f);
             }, 
 
             // generic hover-listener
-            _hoverListener : function(e) {
-                var f = wpscope._eventListener(e); 
+            _maphoverListener : function(e) {
+                var f = wpscope._mapeventListener(e); 
                 if (!f) return; 
                 wpscope.hoverAction(features[0]);
             }, 
 
             // generic select-event-translator
-            _eventListener : function(e) {
+            _mapeventListener : function(e) {
                 var st = wpscope._layerStatus(); 
                 if (!st.layer) return ;  
 
@@ -226,10 +267,11 @@ container for upload/presentation of geolocated images
 
                 this._fitBounds(rawdata.features);
 
-                if (this.clickAction) {
-                     map.off('click', this._clickListener);
-                     map.on('click', this._clickListener);
+                if (this.mapclickAction) {
+                     map.off('click', this._mapclickListener);
+                     map.on('click', this._mapclickListener);
                 } 
+
                 if (this.hoverAction) {
                      map.off('hover', this.hoverListener);
                      map.on('hover', this.hoverListener);

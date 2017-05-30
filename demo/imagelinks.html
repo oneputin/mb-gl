@@ -18,12 +18,14 @@
     <link rel="import" href="../../paper-radio-button/paper-radio-button.html"> <!-- ctrls  -->
 
     <!-- app-components related to map-api --> 
+    <link rel="import" href="../mb-target.html">
     
     <link rel="import" href="../mb-api.html">
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
     
     <link rel="import" href="../image-links.html">
+    <link rel="import" href = "../image-card.html">
 
     <style is="custom-style">
         
@@ -93,21 +95,18 @@
             padding: 10px;
         }
 
-        #imageform {
+        #imagecard {
             position: relative;
             display : "block";
             top: 0; left: 0; 
-            width : 300px;
-            height: 300px;
+            width : 75% ;
             z-index: 9;
             padding: 10px;
         }
 
-        #imageform img {
-          position: absolute;
-          width: 300px; 
-          height: 300px;
-        }
+        /*#imagecard.hidden {
+            display: none;
+        }*/
 
         #radios {
             padding: 10px;
@@ -156,16 +155,25 @@
                     mapctrl = "[[mapctrl]]"
                     maptoast = "[[maptoast]]">
 
-                    <div id="imageform">
-                        <p>imageviewer</p>
-                        <img src="[[imgsrc]]">
-                    </div>    
+                    <image-card 
+                        id="imagecard"
+                        locateimg = "[[locateimg]]" 
+                        target = "[[target]]"
+                        locateflag="{{locateflag}}">
+                    </image-card>    
 
                     <image-links
                         checked = "{{formshow}}"
-                        imgsrc = "{{imgsrc}}">
+                        locateflag="[[locateflag]]"
+                        locateimg = "{{locateimg}}">
                     </image-links>    
-                
+
+                    <mb-target 
+                        mbid = "[[mbid]]"
+                        target = "{{target}}"
+                        serviceflag="{{locateflag}}">
+                    </mb-target>
+
                     <mb-location-log 
                         checked
                         lnglat="{{lnglat}}" 
@@ -185,9 +193,9 @@
             <div id="radios">
                 
                 <template is="dom-if" if="{{mapstyle}}">
-                    <paper-radio-button checked="{{infomode}}">Imageview</paper-radio-button>
+                    <paper-radio-button checked="{{infomode}}" on-change="toggleform">Imageviewer</paper-radio-button>
                     <paper-radio-button checked="{{mousemode}}">Pointer Location</paper-radio-button>
-                </template>   
+                </template>
 
             </div>
 
@@ -195,6 +203,7 @@
         </div>
 
     </div>
+
 </template>
 
 <script>
@@ -231,7 +240,14 @@
     
     // SHELL-actions
     scope.mapctrl = {};
+    scope.formflag = "hidden";
+    scope.locateflag = false;
 
+    scope.toggleform = function(e) { // console.log("toggleform ", e.target.checked);
+        var imagecard = document.querySelector('#imagecard'); // console.log("toggle-form", imagecard); 
+        if (e.target.checked) imagecard.classList.remove('hidden');
+        else imagecard.classList.add('hidden');
+    }
 
     document.addEventListener('WebComponentsReady', function() {
 

@@ -1,6 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
 
-<link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-button/paper-button.html">
@@ -12,7 +11,7 @@
 
 
 <!--
-`tracks-info`
+`image-card`
 
 OUT: RICH-content Info-card related to one selected feature,  
 -  absolutely positioned as (mapbox-)map-overlay   
@@ -26,18 +25,19 @@ To 'close'
 @demo demo/routingtracks.html 
 -->
 
-<dom-module id="tracks-info">
+<dom-module id="image-card">
 
     <template>
 
     <style is="custom-style">
         :host {
             position: absolute;
-            display: none; /*inline-block;*/
+            display: inline-block; /*none; */
             opacity: 1; 
-            top: 50%;
+            /*to place vertically centered */
+            /*top: 50%;
             margin-bottom: -50%;
-            transform: translate(0, -50%);
+            transform: translate(0, -50%);*/
 
             /*  */
             --paper-card-header-text: {
@@ -47,10 +47,29 @@ To 'close'
             }
         }
 
+        :host.hidden { /* can be ctrled from outside*/
+            display: none; 
+        }
+
         paper-card.info { 
             @apply(--layout-horizontal); 
             align-items: flex-start;
             --paper-card-header-color: #f00;
+        }
+
+        paper-card.edit { 
+            @apply(--layout-vertical-reverse); 
+            align-items: flex-start;
+            --paper-card-header-color: #f00;
+        }
+
+
+        .card-actions {
+            @apply(--layout-horizontal); 
+        }
+
+        .flex {
+            @apply(--layout-flex); 
         }
 
         #div0 {
@@ -59,8 +78,10 @@ To 'close'
             border-bottom: 1px solid #e8e8e8;
             padding: 2px 2px;
         }
+
         .info-content {
             @apply(--layout-flex);
+            width: 100%;
             float: left;
         }
 
@@ -86,25 +107,34 @@ To 'close'
 
     </style>
     <!--  -->
+        <!--image="{{cardimgurl}}" -->
     <paper-card 
-        heading="{{carddata.title}}" 
-        image="{{cardimgurl}}" 
-        class="info">
+        heading="[[editimg.name]]" 
+        image="[[editimg.src]]" 
+        class="edit">
+        <!--heading="{{carddata.title}}" -->
+        <!--class="info">-->
+
+        <!--<img class="" src="[[]]">-->
 
         <div class="info-content">
 
             <div class="card-content">
 
-                <div id="div0"></div>
+                <div id="div0">location : [[location]]</div>
 
                 <div id="div1" class="info-html">
-
+                    [[geojson]]
                 </div>
 
             </div>
 
             <div class="card-actions">
-                <paper-button class="info-link">more...</paper-button>
+                <paper-button id="locate" on-tap="_applylocation">Locate</paper-button>
+                <paper-button id="rotate" on-tap="_applyrotation">Rotate</paper-button>
+                <paper-button class="info-link" on-tap="_storetofb">STORE</paper-button>
+                <div class="flex"></div>
+                <paper-icon-button icon="close" on-click="_onBackClick"></paper-icon-button>
             </div>
 
         </div>
@@ -121,7 +151,7 @@ To 'close'
 
     <script>
         Polymer({
-            is: 'tracks-info',
+            is: 'image-card',
 
             properties: {
 
@@ -129,6 +159,18 @@ To 'close'
                     type: Object
                 },
 
+                locateimg: {
+                    type: Object
+                }, 
+
+                editimg: {
+                    type: Object
+                }, 
+                
+                target : {
+                    type: String,
+                    observer: '_applytarget'
+                }
             },
 
             behaviors: [
@@ -136,16 +178,73 @@ To 'close'
             ],
 
             observers: [
+                '_applyimage(locateimg.*)'
             ],
 
             attached: function() {
-                this.dataUsageChanged();
+                // this.dataUsageChanged();
                 // console.log("target attached");
             },
 
-            _checkPropObject : function(routedata) {
-                console.log("_checkPropObject", routedata); 
+            // A. Basic 
+
+            _applytarget : function(target) {
+                if (!this.locateimg || !this.locateimg.location) {
+                    this.location = target;
+                }
             },
+
+            _applyimage : function(img) { // console.log("_applyimage", img);
+                var editimg = img.base; 
+
+                var loc = "", geojson = "";
+                if (editimg.location) {
+                    geojson = JSON.stringify(editimg.location);
+                    loc = JSON.stringify(editimg.location.geometry.coordinates); 
+                    // disable the LOCATE button
+                    this.$.locate.disabled = true; 
+                } else {
+                    this.$.locate.disabled = false; 
+                    loc = this.target;
+                }
+                editimg.src = editimg.value;
+                this.editimg = editimg; 
+                this.geojson = geojson;
+                this.location = loc;
+            },
+
+            _applylocation : function() {
+                var imgname = this.editimg.name;
+                function createGeojson(longlat) {
+                    longlat = JSON.parse(longlat);
+
+                    var geojson = {
+                        "type" : "Feature",
+                        "geometry" : {
+                            "type" : "Point",
+                            "coordinates": longlat
+                        },
+                        "properties" : {
+                            "name": imgname 
+                        }
+                    };
+                    return geojson;
+                };
+                var geojson = createGeojson(this.location); console.log("apply gjson=", geojson); 
+                this.set('locateimg.location',geojson);
+            },
+
+            _storetofb : function() {
+                console.log("STORING",this.editimg) ; 
+            },
+
+            _onBackClick : function(e) { 
+                if (this.editimg.src)   this.set("editimg.src","");
+                else                    this.set("editimg.src", this.editimg.value);
+                // this.classList.add("hidden") 
+            },
+
+
 
             // B. COMPILE Feature-data for OUTPUT
             /**

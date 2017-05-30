@@ -105,7 +105,8 @@ The visual signature can be toogled in sync with the value of the exported servi
             },
 
             /**
-             * toggles the 'serviceflag' and the visual signature of the target 
+             * toggles the some status ('serviceflag' and the visual signature)
+             * of the target 
              */
             toggletarget: function(t) {
                 this.debounce('target', function() {
@@ -149,8 +150,10 @@ The visual signature can be toogled in sync with the value of the exported servi
                 }
                 var target = [x, y];
                 
-                this.target = target.toString();   
+                this.target = JSON.stringify(target);   
+                // this.target = target.toString();   
 
+                // 3. Re-Center the map with target
                 map.setCenter(target);   
             },
 
@@ -166,25 +169,25 @@ The visual signature can be toogled in sync with the value of the exported servi
                 this.debounce('triggering', function() {
                     var cbox = map.getCenter();
                     this.cbox = cbox.lng + ',' + cbox.lat;
+                    //************************************
                 }, 300);
             },
 
             /**
-             *  setting up the 
+             *  setting up the target-action 
              */
-            setupTargetTrigger: function(mbid) { // console.log("setupTargetTrigger", newmap);
+            setupTargetTrigger: function(mbid) {  // console.log("setupTargetTrigger", newmap);
                 
                 if (mbid) {
-                    // var that = this;
+                    // trigger overlay-request after every "map-move" 
                     map.on('moveend', function() {
-                        // trigger overlay-request after every "map-move" 
-                        // if (this.serviceflag) this.targetTrigger();
                         this.targetTrigger();
                     }.bind(this));
 
                     // console.log("trigger initial service-request on", map);
                     this.serviceflag = true;
                     this.targetTrigger();
+
                 }
             },
             
