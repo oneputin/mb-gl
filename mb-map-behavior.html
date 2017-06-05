@@ -88,7 +88,8 @@
                         return;
                     } else {
                         rnodes = JSON.parse(r.properties.nodes); 
-                    }       
+                    }      
+
                     var p0 = turf.point(rnodes[0].coords),
                         pn  = turf.point(rnodes[rnodes.length - 1].coords);
                         poly = turf.polygon([[
@@ -99,7 +100,8 @@
                             bbox.getSouthWest().toArray()
                         ]]); // console.log(r.properties.id, p0, pn, poly);
                     // console.log(turf.inside(p0, poly),turf.inside(pn, poly));
-                    return turf.inside(p0, poly) && turf.inside(pn, poly);
+                    var isInside = turf.inside(p0, poly) && turf.inside(pn, poly);
+                    return isInside;  
                 }
 
                 // Check FULL containment of feat-bbox in map-bbox

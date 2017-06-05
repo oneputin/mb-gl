@@ -417,7 +417,7 @@ alternative demos : routingtracks.html, fullscreen.html
                 ];
             },
 
-            // AppShell around indexPointSnap
+            // AppShell around logPointRefresh
             logPointGet : function(lngLat) { 
                 if (!lngLat) return; // console.log("logPointGet START", lngLat, this.logdata);
                 var mapToast = ""; 
@@ -426,6 +426,7 @@ alternative demos : routingtracks.html, fullscreen.html
 
                     var snapPnt = this._snapPointQuery(lngLat, this._snapTarget),
                         index = snapPnt.properties.index; 
+
                     if (index != null) {
                         // MAIN Trigger: SYNC of target-use in external apps
                         // ************
@@ -446,11 +447,11 @@ alternative demos : routingtracks.html, fullscreen.html
                 return mapToast;
             },        
 
-            // Refresh coords of dragPnt (= refresh Source)
+            // Refresh coords of dragPnt (= refresh Source of dragPnt-theme)
             logPointRefresh: function(index, coords, title, logsymbol) {
-                // A meaningful logPointSymbolDefine built from 3 symbol(Layer)s 
-                if (index < 0) index = null; 
                 if (!map) return; 
+                var logPointSrc = map.getSource("logpoint");
+                if (!logPointSrc) return; // console.log("logPointRefresh", index, coords);
 
                 var scope = this; 
                 function _logdataTitle(index, titleprop, logdata) {
@@ -475,23 +476,47 @@ alternative demos : routingtracks.html, fullscreen.html
                     return title;   
                 }
 
-                var logPointSrc = map.getSource("logpoint");
-                if (!logPointSrc) return; // console.log("logPointRefresh", index, coords);
+                // move map that actual bound-size 
+                // contains the point with [coords]
+                function moveMapToCoords(coords){
+                    var pcheck = turf.point(coords),
+                        bbox = map.getBounds(),
+                        bounds = turf.polygon([[
+                            bbox.getSouthWest().toArray(), 
+                            bbox.getNorthWest().toArray(), 
+                            bbox.getNorthEast().toArray(), 
+                            bbox.getSouthEast().toArray(), 
+                            bbox.getSouthWest().toArray()
+                        ]]); // console.log(coords, pcheck, bbox, bounds);
+                    if (!turf.inside(pcheck, bounds)) {
+                        map.flyTo({center: coords});
+                    }
+                }
 
-                // A. 
+                // A meaningful logPointSymbolDefine built from 3 symbol(Layer)s 
+                if (index < 0) index = null; 
+
+                // A. Recalculate coords of trackPnt, if index was supplied
                 if ((index!=null) && this.logdata) {
                     coords = this.logdata["coords"][index].slice(0,2);  // console.log(coords[0],typeof coords[0]);
                 } 
-
                 if (!coords) return; // console.log("DEBUG-1", index, this.logdata, coords, title );
                 
-                // B. 
+                // B. Refresh the logged title
                 if (!title && this.titleitem && this.logdata) {
                     title = _logdataTitle(index, this.titleitem, this.logdata); 
                 }
 
+                // C. Optionally Move mapextent to ensure 
+                //    the new trackPoint-location is inside  
+                moveMapToCoords(coords);
+
                 // Update LogPoint-srcData 
                 logPointSrc.setData(this.logPointFeature(coords, title));
+
+                // if (!turf.inside(logPoint, map.getBounds())) {
+                //     map.flyTo({center: coords});
+                // }
 
             },
 
