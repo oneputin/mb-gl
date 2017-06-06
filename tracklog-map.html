@@ -478,18 +478,54 @@ alternative demos : routingtracks.html, fullscreen.html
 
                 // move map that actual bound-size 
                 // contains the point with [coords]
-                function moveMapToCoords(coords){
-                    var pcheck = turf.point(coords),
-                        bbox = map.getBounds(),
-                        bounds = turf.polygon([[
+                function moveMapToCoords(coords, mode){
+                    if (!mode) mode = "bbox";
+                    var center = map.getCenter(),
+                        bbox = map.getBounds(), 
+                        bbarray = bbox.toArray(), // return SW and NE only
+                        bbcoords = [
                             bbox.getSouthWest().toArray(), 
                             bbox.getNorthWest().toArray(), 
                             bbox.getNorthEast().toArray(), 
                             bbox.getSouthEast().toArray(), 
                             bbox.getSouthWest().toArray()
-                        ]]); // console.log(coords, pcheck, bbox, bounds);
-                    if (!turf.inside(pcheck, bounds)) {
-                        map.flyTo({center: coords});
+                        ];  // console.log(coords, center, bbox, bbarray, bbcoords);
+
+                    var pcheck = turf.point(coords),
+                        pcenter = turf.point([center.lng, center.lat]),
+                        ppline = turf.lineString([coords, [center.lng, center.lat]]); 
+                        bbpoly = turf.polygon([bbcoords]);   // console.log(pcheck, pcenter, ppline, bbpoly);
+
+                    if (!turf.inside(pcheck, bbpoly)) {
+
+                        var target = coords; 
+                        // Line between Split-point on bbox and actual center
+                            // var l1 = turf.lineDistance(ppline, "km");
+                        
+                        // Connection between newP and actual center 
+                        var units = "miles",
+                            factor = 0.9;
+
+                        var pps, pp1, pp2, dist ;  
+                        if (mode=="bbox") {
+                            // place target inside bbox
+                            pps = turf.lineIntersect(ppline, bbpoly);  // console.log("intersection(s)", pps);
+                            if (pps.features.length) {
+                                pp1 = pps.features[0], 
+                                dist = turf.distance(pp1, pcenter, units) * factor,
+                                pp2 = turf.along(ppline, dist, units);
+                                target = pp2.geometry.coordinates;     
+                            }
+
+                        } else if (mode=="buffer") {
+                            // place on target on "innerbuffer"     
+
+
+                        } else if (mode=="circle") {
+
+                        }
+
+                        map.flyTo({center: target});
                     }
                 }
 
