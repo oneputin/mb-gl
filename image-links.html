@@ -84,10 +84,11 @@ container for upload/presentation of geolocated images
 
                 // content of pointlayer
                 imageset : {
-                    type: Array //, observer: '_storeImages'
+                    type: Array ,
+                    observer: '_checkinImages'
                 },
 
-                locateimg : {
+                locatedimg : {
                     type: Object,
                     notify : true
                 },
@@ -101,6 +102,16 @@ container for upload/presentation of geolocated images
                 featureset : {
                     type: Object,
                     observer: '_refreshLayer'
+                },
+
+
+                _imageset : {
+                    type: Array,
+                    value: []
+                },
+
+                _featureset : {
+                    type: Object
                 },
 
                 // content of pointlayer
@@ -137,6 +148,16 @@ container for upload/presentation of geolocated images
                 wpscope = this;
             },
 
+            // 
+            _checkinImages : function(imageset) { console.log("CheckIn images", imageset);
+                imageset.some( function(img){
+                    if (!this._imageset[img.name]) {
+                        this._imageset[img.name] = img; // .value;
+                    }     
+                }.bind(this));    
+            },
+
+            // 
             locateimage : function(e) { 
                 var item = e.target;   // console.log("item-value", item.value); // , item.value);
                 this._supplyimage(item.value); 
@@ -148,20 +169,22 @@ container for upload/presentation of geolocated images
             },
 
             /**
-             * 
+             *  Supply image to other APP-Components 
              */            
-            _supplyimage : function(imgname) {
-                this.imageset.some(function(img){
-                    if (img.name == imgname) {  //console.log("selected img " + imgname, img); // , img.value);
-                        this.locateimg = img;
+            _supplyimage : function(imgid) { 
+                var imgnames = Object.keys(this._imageset);  console.log("SUPPLY from", imgnames, imgid) ;
+                imgnames.some(function(imgname){
+                    if (imgid == imgname) {  
+                        var img = this._imageset[imgname]; console.log("Found img [" + imgname + "]"); // , img); // , img.value);
+                        this.locatedimg = img;
                         return;
                     } 
                 }.bind(this));   
             },
 
             // 
-            mapclickAction : function (feature) { // console.log("clicked at ", feature); 
-                var id = feature.properties.name;
+            mapclickAction : function (feature) {  
+                var id = feature.properties.name; // console.log("clicked at locator of  image " + id, feature.properties); 
                 this._supplyimage(id); 
             },
 
@@ -224,25 +247,49 @@ container for upload/presentation of geolocated images
                 }); 
             },     
 
+            // 
             _refreshLayer: function(rawdata) {
-                var st = this._layerStatus();  // console.log("CREATELAYER: " + st.id, st, rawdata); 
                 
-                if (!st.src) {
+                if (!rawdata || !rawdata.type) {
+                    console.log("BREAK. 1  no location data attached!");
+                    return;  
+                } 
 
+
+                // 1. 
+                var featureset = rawdata; 
+                if (!featureset.features) {
+                    featureset = {
+                        "type": "FeatureCollection",
+                        "features": [featureset]
+                    }
+                }    
+                if (!featureset.features.length) {
+                    console.log("BREAK. 2  no location data attached to ", rawdata);
+                    return;  
+                } 
+
+                // 2. Update dataSource
+                var st = this._layerStatus();  // console.log("_refresh Layer " + st.id, st, rawdata, featureset); 
+
+                if (!st.src) {
+                   
+                    this._featureset = featureset;
                     map.addSource(st.id, {
                         "type": "geojson",
-                        "data": {
-                            "type": "FeatureCollection",
-                            "features": rawdata.features
-                        }
+                        "data": featureset
                     });
 
                 } else { 
 
-                    map.getSource(st.id).setData(rawdata);
+                    this._featureset.features = this._featureset.features.concat(featureset.features); 
+                    // console.log("new, all features", featureset, this._featureset) ; 
+                    
+                    map.getSource(st.id).setData(this._featureset);
                     
                 } // console.log("UPDATED imglinks-src with ", rawdata);
                 
+                // 3. Check/Update "LinkLayer"
                 if (!st.layer) {
                     var vis = "none";
                     if (this.visible) vis = "visible";
@@ -265,8 +312,22 @@ container for upload/presentation of geolocated images
 
                 }    
 
-                this._fitBounds(rawdata.features);
+                // 4. Update viewPort to inculde last loaded locations  
+                //    HILITING the last linkPoint
+                var fitdata = this._featureset,
+                    ff = fitdata.features;
+                if (ff.length < 2) { // fit to a certain buffer around point !!
+                    var center = ff[0];
+                    var radius = 5;
+                    var steps = 10;
+                    var units = 'kilometers';
+                    var pp = turf.explode(turf.circle(center, radius, steps, units));
+                    ff = ff.concat(pp.features);   
+                } console.log("fitting to data:", ff); 
 
+                this._fitBounds(ff);
+
+                // 5. 
                 if (this.mapclickAction) {
                      map.off('click', this._mapclickListener);
                      map.on('click', this._mapclickListener);
