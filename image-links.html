@@ -42,14 +42,17 @@ container for upload/presentation of geolocated images
 
         <fab-area 
             ctrllabel = "[[ctrllabel]]"
+            ctrldisable = "[[ctrldisable]]"
             checked = false>
 
             <div class="ctrl">
+                <!-- Liste der nicht referenzierten -->
                 <paper-listbox>
-                    <template is="dom-repeat" items="{{nonlocated}}">
-                        <paper-item value="[[item]]" on-tap="locateimage">[[item]]</paper-item>
+                    <template is="dom-repeat" items="{{_sessionunset}}">
+                        <paper-item value="[[item]]" on-tap="_checkoutDocList">[[item]]</paper-item>
                     </template>    
                 </paper-listbox>
+                
             </div>        
 
             <div class="content">    
@@ -60,7 +63,9 @@ container for upload/presentation of geolocated images
                     loadedfiles="{{imageset}}">
                 </files-input>    
 
-                <!--  -->
+                <!--<button> STORE </button>-->
+                
+                <!-- invisible  -->
                 <exif-locations
                     imageset = "[[imageset]]"
                     locationmode = "geojson"
@@ -82,42 +87,53 @@ container for upload/presentation of geolocated images
 
             properties: {
 
-                // content of pointlayer
+                // checkIn: doc(img)Data collection
                 imageset : {
                     type: Array ,
-                    observer: '_checkinImages'
+                    observer: '_checkinDocs'
                 },
 
-                locatedimg : {
-                    type: Object,
-                    notify : true
-                },
-
-                location : {
-                    type: String,
-                    observer : 'testlocation'
-                },
-
-                // content of pointlayer
+                // checkIn: linkPoints
                 featureset : {
                     type: Object,
                     observer: '_refreshLayer'
                 },
 
+                // checkIn: names of NOT located docs(imgs) 
+                nonlocated : {
+                    type: Array,
+                    observer: '_checkInUnset'
+                },
 
-                _imageset : {
+                // checkOut : selected doc(img)
+                supplieddoc : {
+                    type: Object,
+                    notify : true
+                },
+
+                // 
+                location : {
+                    type: String,
+                    observer : 'testlocation'
+                },
+
+
+
+                _sessionset : {
                     type: Array,
                     value: []
                 },
 
-                _featureset : {
+                // set of locations 
+                _sessionfeatures : {
                     type: Object
                 },
 
-                // content of pointlayer
-                nonlocated : {
+                // set of docs(imgs) NOT located in actual session
+                _sessionunset : {
                     type: Array,
-                    observer: '_createMenu'
+                    value: []
+                    // observer: '_observeUnset'
                 },
 
                 // visibility of pointlayer
@@ -133,7 +149,12 @@ container for upload/presentation of geolocated images
 
                 ctrllabel : {
                     type : String,
-                    value : ''
+                    value : 'ToBeLocated'
+                },
+
+                ctrldisable : {
+                    type : Boolean,
+                    value : true
                 }
 
             },
@@ -142,6 +163,8 @@ container for upload/presentation of geolocated images
             ],           
 
             observers: [
+                'addFeature(supplieddoc.location)',
+                '_observeUnset(_sessionunset.length)'
             ],
 
             ready: function() {
@@ -149,47 +172,88 @@ container for upload/presentation of geolocated images
             },
 
             // 
-            _checkinImages : function(imageset) { console.log("CheckIn images", imageset);
-                imageset.some( function(img){
-                    if (!this._imageset[img.name]) {
-                        this._imageset[img.name] = img; // .value;
+            addFeature: function(locationFeature) { 
+                if (locationFeature) {  
+                    var docname = locationFeature.properties.name;  // console.log("Add Link to mapIndex for", docname);
+                    var featureset = {
+                        "type": "FeatureCollection",
+                        "features": [locationFeature]
+                    }
+                    this._refreshLayer(featureset);
+
+                    var index = this._sessionunset.indexOf(docname);
+                    if (index > -1) {
+                        this.splice('_sessionunset', index, 1);
+                        // console.log("sessionUnSet updated", this._sessionunset);
+                    }
+                    
+                }
+            },
+
+            // Update the session's collection of processed docs(imgs)
+            // from last added docs 
+            _checkinDocs : function(docset) { // console.log("CheckIn docs(imgs)", docset);
+                var firstDoc;
+
+                docset.some( function(img){
+                    if (!firstDoc) firstDoc = img;
+
+                    if (!this._sessionset[img.name]) {
+                        this._sessionset[img.name] = img; // .value;
                     }     
                 }.bind(this));    
+
+                if (firstDoc) { // console.log("activating doc(img) ", firstDoc.name, Object.keys(firstDoc)); 
+                    this._checkoutDoc(firstDoc.name); 
+                }    
             },
 
-            // 
-            locateimage : function(e) { 
+            // Checkout-1:  doc according to selected list-item
+            _checkoutDocList : function(e) { 
                 var item = e.target;   // console.log("item-value", item.value); // , item.value);
-                this._supplyimage(item.value); 
+                this._checkoutDoc(item.value); 
             },
 
-            _createMenu : function (nonlocated) {
-                if (nonlocated.length) this.ctrllabel = "not located"; // console.log("nonlocated", nonlocated);
-                else this.ctrllabel = ""
+            // Checkout-2:  doc according to 'tapped' feature
+            _checkoutDocMap : function (feature) {  
+                var id = feature.properties.name; // console.log("clicked at locator of  image " + id, feature.properties); 
+                // Send the image 
+                this._checkoutDoc(id); 
             },
 
             /**
              *  Supply image to other APP-Components 
              */            
-            _supplyimage : function(imgid) { 
-                var imgnames = Object.keys(this._imageset);  console.log("SUPPLY from", imgnames, imgid) ;
+            _checkoutDoc : function(imgid) { 
+                var imgnames = Object.keys(this._sessionset);  // console.log("SUPPLY from", imgnames, imgid) ;
                 imgnames.some(function(imgname){
                     if (imgid == imgname) {  
-                        var img = this._imageset[imgname]; console.log("Found img [" + imgname + "]"); // , img); // , img.value);
-                        this.locatedimg = img;
+                        var img = this._sessionset[imgname]; // console.log("Found img [" + imgname + "]"); // , img); // , img.value);
+                        this.supplieddoc = img;
                         return;
                     } 
                 }.bind(this));   
             },
 
-            // 
-            mapclickAction : function (feature) {  
-                var id = feature.properties.name; // console.log("clicked at locator of  image " + id, feature.properties); 
-                this._supplyimage(id); 
-            },
 
             hoverAction : function (feature) {
                 console.log("hovered ", feature); 
+            },
+
+            // 
+            _checkInUnset : function (nonlocated) { // console.log("FRESH nonlocated docs", nonlocated);
+                if (nonlocated.length) {
+                   this._sessionunset = this._sessionunset.concat(nonlocated); 
+                }   
+            },
+
+            // 
+            _observeUnset: function(count) { // console.log("UnSet",count);
+                if (count) {    
+                   this.ctrldisable = false; 
+                } else {
+                   this.ctrldisable = true; 
+                }
             },
 
             // generic click-listener
@@ -197,7 +261,7 @@ container for upload/presentation of geolocated images
                 var f = wpscope._mapeventListener(e); 
                 if (!f) return; // console.log("clicked",f);
 
-                wpscope.mapclickAction(f);
+                wpscope._checkoutDocMap(f);
             }, 
 
             // generic hover-listener
@@ -234,7 +298,7 @@ container for upload/presentation of geolocated images
             _fitBounds : function(features, padding) {
                 if (padding== null) padding = 20;
 
-                if (features.features) features = features.features; // if featureset was passed
+                if (features.features) features = features.features; // if a feature-set was passed
 
                 var coord0 = features[0].geometry.coordinates;
                 var bounds = features.reduce(function(bounds, feature) {
@@ -255,37 +319,36 @@ container for upload/presentation of geolocated images
                     return;  
                 } 
 
-
                 // 1. 
-                var featureset = rawdata; 
-                if (!featureset.features) {
-                    featureset = {
+                var _sessionfeatures = rawdata; 
+                if (!_sessionfeatures.features) {
+                    _sessionfeatures = {
                         "type": "FeatureCollection",
-                        "features": [featureset]
+                        "features": [_sessionfeatures]
                     }
                 }    
-                if (!featureset.features.length) {
+                if (!_sessionfeatures.features.length) {
                     console.log("BREAK. 2  no location data attached to ", rawdata);
                     return;  
                 } 
 
                 // 2. Update dataSource
-                var st = this._layerStatus();  // console.log("_refresh Layer " + st.id, st, rawdata, featureset); 
+                var st = this._layerStatus();  // console.log("_refresh Layer " + st.id, st, rawdata, _sessionfeatures); 
 
                 if (!st.src) {
                    
-                    this._featureset = featureset;
+                    this._sessionfeatures = _sessionfeatures;
                     map.addSource(st.id, {
                         "type": "geojson",
-                        "data": featureset
+                        "data": _sessionfeatures
                     });
 
                 } else { 
 
-                    this._featureset.features = this._featureset.features.concat(featureset.features); 
-                    // console.log("new, all features", featureset, this._featureset) ; 
+                    this._sessionfeatures.features = this._sessionfeatures.features.concat(_sessionfeatures.features); 
+                    // console.log("new, all features", _sessionfeatures, this._sessionfeatures) ; 
                     
-                    map.getSource(st.id).setData(this._featureset);
+                    map.getSource(st.id).setData(this._sessionfeatures);
                     
                 } // console.log("UPDATED imglinks-src with ", rawdata);
                 
@@ -314,7 +377,7 @@ container for upload/presentation of geolocated images
 
                 // 4. Update viewPort to inculde last loaded locations  
                 //    HILITING the last linkPoint
-                var fitdata = this._featureset,
+                var fitdata = this._sessionfeatures,
                     ff = fitdata.features;
                 if (ff.length < 2) { // fit to a certain buffer around point !!
                     var center = ff[0];
@@ -323,12 +386,14 @@ container for upload/presentation of geolocated images
                     var units = 'kilometers';
                     var pp = turf.explode(turf.circle(center, radius, steps, units));
                     ff = ff.concat(pp.features);   
-                } console.log("fitting to data:", ff); 
+                } else {
+                    // console.log("fitting to data:", ff); 
+                }
 
                 this._fitBounds(ff);
 
                 // 5. 
-                if (this.mapclickAction) {
+                if (this._checkoutDocMap) {
                      map.off('click', this._mapclickListener);
                      map.on('click', this._mapclickListener);
                 } 

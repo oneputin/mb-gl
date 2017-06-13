@@ -47,4 +47,28 @@ OPTIONAL-tool to query/view/supply mouse-map-location (lonlat)
  
 ### \<geotags-from-gpx\>
 Tool to organize tracks 
- 
+
+### \<image-links\>
+Geolocating images interactively on the map.  
+Manages 3 sets image-related data:
+- _sessionset : all imageData objects as "uploaded"
+- _sessionunset : array of imgnames not located by exif
+- _sessionfeatures : mappoints (geojson) of gelocated points
+
+Processing every images data in a form \<image-card\>
+- add Location
+- modify orientation 
+- edit metadata 
+- view image 
+
+#### Workflow - IS
+The data of located docs(imgs) are activated from the map (_sessionfeatures)   
+The unlocated images are activated from a dropdown-menu  
+
+#### Workflow - MUST
+Load all images into a image-slider.  
+Add sider-visibility-Toggle.  
+Add STORE - Action !!  
+
+#### More ...  
+

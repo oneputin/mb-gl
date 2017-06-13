@@ -94,10 +94,13 @@ container for toggling between FAB and AREA (CARD or other DIV)
             <div id="container">
 
                 <div class="areactrls">
+
                     <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
-                    <button on-click="toggleAbout">[[ctrllabel]]</button>
+                    
+                    <button id="ctrlbtn" on-click="toggleAbout">[[ctrllabel]]</button>
                     <!--<div class="flexchild"></div>-->
                     <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
+
                 </div>
 
                 <iron-collapse id="ctrl">
@@ -123,7 +126,13 @@ container for toggling between FAB and AREA (CARD or other DIV)
 
                 ctrllabel : {
                     type: String,
-                    value: "label"
+                    value: "CTRL"
+                }, 
+
+                ctrldisable : {
+                    type: Boolean,
+                    value: false,
+                    observer: 'toggleCtrl'
                 }, 
 
                 minsize : {
@@ -162,6 +171,12 @@ container for toggling between FAB and AREA (CARD or other DIV)
 
             logchecked : function(checked) {
                 // console.log("checked", checked);
+            },
+
+            // 
+            toggleCtrl : function(disable) { 
+                var btn = this.$$('#ctrlbtn'); // console.log("ctrldisable", disable, btn);
+                if (btn) btn.disabled = disable;
             },
 
             attached: function() {

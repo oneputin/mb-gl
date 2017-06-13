@@ -155,25 +155,30 @@
                     mapctrl = "[[mapctrl]]"
                     maptoast = "[[maptoast]]">
 
+                    <!-- main interface for doc(img)-management -->
+                    <image-links
+                        checked = "{{formshow}}"
+                        locateflag="[[locateflag]]"
+                        supplieddoc = "{{supplieddoc}}">
+                    </image-links>    
+
+                    <!-- Formular used to view/manipulate img-meta -->
                     <image-card 
                         id="imagecard"
-                        loadedimg = "[[locatedimg]]" 
+                        loadedimg = "{{supplieddoc}}" 
                         target = "[[target]]"
                         locateflag="{{locateflag}}">
                     </image-card>    
 
-                    <image-links
-                        checked = "{{formshow}}"
-                        locateflag="[[locateflag]]"
-                        locatedimg = "{{locatedimg}}">
-                    </image-links>    
-
+                    
+                    <!-- centered target marker, used to geolocate active doc(img) -->
                     <mb-target 
                         mbid = "[[mbid]]"
                         target = "{{target}}"
                         serviceflag="{{locateflag}}">
                     </mb-target>
 
+                    <!-- ??? -->
                     <mb-location-log 
                         checked
                         lnglat="{{lnglat}}" 
@@ -193,8 +198,9 @@
             <div id="radios">
                 
                 <template is="dom-if" if="{{mapstyle}}">
+                    <!-- Toggling map-overlaying elements -->
                     <paper-radio-button checked="{{infomode}}" on-change="toggleform">Imageviewer</paper-radio-button>
-                    <paper-radio-button checked="{{mousemode}}">Pointer Location</paper-radio-button>
+                    <paper-radio-button checked="{{mousemode}}">Query Locations</paper-radio-button>
                 </template>
 
             </div>
@@ -245,8 +251,8 @@
 
     scope.toggleform = function(e) { // console.log("toggleform ", e.target.checked);
         var imagecard = document.querySelector('#imagecard'); // console.log("toggle-form", imagecard); 
-        if (e.target.checked) imagecard.classList.remove('hidden');
-        else imagecard.classList.add('hidden');
+        if (e.target.checked)   imagecard.classList.remove('hidden');
+        else                    imagecard.classList.add('hidden');
     }
 
     document.addEventListener('WebComponentsReady', function() {
