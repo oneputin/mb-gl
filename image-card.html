@@ -1,10 +1,14 @@
 <link rel="import" href="../polymer/polymer.html">
 
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-button/paper-button.html">
 
-<link rel="import" href="../iron-icon/iron-icon.html">
+<!--<link rel="import" href="../iron-icons/iron-icons.html">-->
+<link rel="import" href="icons-svg.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
 <link rel="import" href="../paper-card/paper-card.html">
 
 <link rel="import" href="mb-map-behavior.html">
@@ -32,7 +36,7 @@ To 'close'
     <style is="custom-style">
         :host {
             position: absolute;
-            display: inline-block; /*none; */
+            display: none; /*inline-block; /*none; */
             opacity: 1; 
             /*to place vertically centered */
             /*top: 50%;
@@ -47,8 +51,24 @@ To 'close'
             }
         }
 
-        :host.hidden { /* can be ctrled from outside*/
+        /* ctrl vis from outside */
+        /*:host.hidden { 
             display: none; 
+        }*/
+
+        #container {
+             @apply(--layout-horizontal); 
+        }
+
+        #handle {
+            background-color: white;
+            border-color: gray;
+            border-style: solid;
+            border-width: 1px 1px 1px 0px;
+            font-weight: bold;
+            width: 20px;
+            height: 20px;
+            padding: 5px;
         }
 
         paper-card.info { 
@@ -63,7 +83,6 @@ To 'close'
             --paper-card-header-color: #f00;
         }
 
-
         .card-actions {
             @apply(--layout-horizontal); 
         }
@@ -72,7 +91,7 @@ To 'close'
             @apply(--layout-flex); 
         }
 
-        #div0 {
+        #content0 {
             font-size: 12px;
             font-weight: 400;
             border-bottom: 1px solid #e8e8e8;
@@ -107,42 +126,44 @@ To 'close'
 
     </style>
     <!--  -->
-        <!--image="{{cardimgurl}}" -->
-    <paper-card 
-        heading="[[editimg.name]]" 
-        image="[[editimg.src]]" 
-        class="edit">
-        <!--heading="{{carddata.title}}" -->
-        <!--class="info">-->
 
-        <!--<img class="" src="[[]]">-->
+    <div id="container">
+        
+        <paper-card 
+            id="card"
+            heading="[[editimg.name]]" 
+            image = "[[editimg.src]]" 
+            class = "edit">
+            <!--heading="{{carddata.title}}" -->
+            <!--class="info">-->
 
-        <div class="info-content">
+            <!--<img class="" src="[[]]">-->
 
-            <div class="card-content">
+            <div class="info-content">
 
-                <div id="div0">location : [[location]]</div>
+                <div class="card-content">
 
-                <div id="div1" class="info-html">
-                    [[geojson]]
+                    <div id="content0">location : [[location]]</div>
+
+                    <div id="content1" class="info-html">
+                        [[geojson]]
+                    </div>
+
                 </div>
 
+                <div class="card-actions">
+                    <paper-button id="locate" on-tap="_applylocation">Locate</paper-button>
+                    <paper-button id="rotate" on-tap="_applyrotation">Orientation</paper-button>
+                    <!--<paper-button class="info-link" on-tap="_storetofb">STORE</paper-button>-->
+                    <div class="flex"></div>
+                    <paper-icon-button icon="close" on-click="_toggleImg"></paper-icon-button>
+                </div>
             </div>
-
-            <div class="card-actions">
-                <paper-button id="locate" on-tap="_applylocation">Locate</paper-button>
-                <paper-button id="rotate" on-tap="_applyrotation">Rotate</paper-button>
-                <!--<paper-button class="info-link" on-tap="_storetofb">STORE</paper-button>-->
-                <div class="flex"></div>
-                <paper-icon-button icon="close" on-click="_toggleViewer"></paper-icon-button>
-            </div>
-
+        </paper-card>
+        <div on-tap="_toggleCard" id="handle">
+            <
         </div>
-
-        <!--<paper-button class="info-link" on-click="_toggleViewer">X</paper-button>-->
-        <!--<paper-icon-button icon="close" on-click="_toggleViewer"></paper-icon-button>-->
-
-    </paper-card>
+    </div>
 
     <content>
     </content>    
@@ -197,7 +218,8 @@ To 'close'
 
             // 
             _refreshForm : function(imgdata) { // console.log("_Apply another doc to FORM", imgdata);
-                
+                if (!imgdata)   this.style.display = "none";
+                else            this.style.display = "inline-block";
                 var editimg = imgdata.base; // Polymer-observer specific
 
                 var loc = "", geojson = "";
@@ -269,10 +291,25 @@ To 'close'
                 console.log("STORING",this.editimg) ; 
             },
 
-            _toggleViewer : function(e) { 
+            _toggleImg : function(e) { 
+                if (!this.editimg) return;  
                 if (this.editimg.src)   this.set("editimg.src","");
                 else                    this.set("editimg.src", this.editimg.value);
                 // this.classList.add("hidden") 
+            },
+
+            _toggleCard : function(e) { 
+                var handle = e.target,
+                    card = this.$.card,
+                    cardwidth = card.style.width; // console.log("handle", handle); console.log("card-width", card.style.width, card.style.display); 
+                if (card.style.display === "none") {
+                    card.style.display = "block";
+                    handle.innerHTML = "<b><</b>";
+                } else {    
+                    card.style.display = "none";
+                    handle.innerHTML = "<b>></b>";
+                }    
+                console.log("toggled paper-card visibility !") 
             },
 
 
@@ -361,13 +398,13 @@ To 'close'
 
                             header = "<b>" + boat + "</b>" + "<br>" + skipper;
 
-                            this.$.div0.innerHTML = header;
+                            this.$.content0.innerHTML = header;
                         }
                     }
                 }
 
                 // DIV1
-                if (data.html) this.$.div1.innerHTML = data.html;
+                if (data.html) this.$.content1.innerHTML = data.html;
             }
 
         });
