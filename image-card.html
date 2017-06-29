@@ -153,7 +153,6 @@ To 'close'
                     <div id="content0">Location : [[location]]</div>
                     <div id="content1" class="info-html">
                     </div>
-
                 </div>
 
                 <div class="card-actions">
@@ -167,9 +166,8 @@ To 'close'
             </div>
         </paper-card>
 
-        <div on-tap="_toggleCard" id="handle">
-            <
-        </div>
+        <div on-tap="_toggleCard" id="handle"> < </div>
+
     </div>
 
     <content>
@@ -225,6 +223,7 @@ To 'close'
             attached: function() {
                 // this.dataUsageChanged();
                 // console.log("target attached");
+                this._toggleCard("close");
             },
 
             // A. Basic 
@@ -337,7 +336,7 @@ To 'close'
                 if (!this.location) {
                     alert("location not set !"); 
                     return;
-                } console.log("locating editimg ", this.editimg); 
+                } console.log("locating editimg ", this.editimg.name); 
 
                 function createGeojson(longlat, imgname, img) { //console.log("createGeojson at", longlat, imgname, img);
 
@@ -384,12 +383,18 @@ To 'close'
                 // this.classList.add("hidden") 
             },
 
-            // toggle visibility 
-            _toggleCard : function(e) { 
-                var handle = e.target,
+            // toggle visibility of paper-card 
+            _toggleCard : function(open) {  // console.log("type=", typeof(open));
+
+                var handle = this.$.handle,
                     handlechar = handle.innerText,
                     card = this.$.card,
-                    cardwidth = card.style.width; // console.log("handle", handlechar); console.log("card-width", card.style.width, card.style.display); 
+                    cardwidth = card.style.width
+                    display = card.style.display; // console.log("handle", handlechar); console.log("card-width", card.style.width, card.style.display); 
+
+                if (typeof(open) === "object") open = display; 
+
+                // TESTED to use CSS-animation to slowly close : NOPE     
                 // if (handlechar === '>') { 
                 //     card.style.width = "100%";
                 //     handle.innerHTML = "<";
@@ -398,8 +403,7 @@ To 'close'
                 //     handle.innerHTML = ">";
                 // }    
 
-                if (handlechar === '>') { 
-                // if (card.style.display === "none") {
+                if (open === 'none') { 
                     card.style.display = "block";
                     handle.innerText = "<";
                 } else {    
@@ -408,7 +412,6 @@ To 'close'
                 }    
                 // console.log("toggled paper-card visibility !") 
             },
-
 
 
             // B. COMPILE Feature-data for OUTPUT

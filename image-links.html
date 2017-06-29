@@ -48,12 +48,13 @@ container for generation/management of links to docs/images (to be) gelocated/pr
             }
         </style>
 
-        <!-- A part of the map area (or whole map) is the dropbox -->
+        <!-- fab-area = part of the map area (or whole map) may be the dropbox -->
         <fab-area 
             ctrllabel = "[[ctrllabel]]"
             ctrldisable = "[[ctrldisable]]"
-            checked = false>
+            checked = "[[toolstatus]]">
 
+            <!-- SLOT-1 -->
             <div class="ctrl">
                 <!-- Liste der primär nicht referenzierten images -->
                 <paper-listbox>
@@ -63,10 +64,13 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                 </paper-listbox>
             </div>        
 
+            <!-- SLOT-2 -->
             <div class="content">    
+                
                 <div class="placeholder">
                     Placeholder DBQUERY
                 </div>
+                
                 <div class="placeholder">
                     Placeholder CAMERA
                     <camera-snapshot
@@ -188,6 +192,12 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                 ctrldisable : {
                     type : Boolean,
                     value : true
+                },
+
+                toolstatus : {
+                    type: Boolean,
+                    value: true,
+                    observer: 'log'
                 }
 
             },
@@ -207,6 +217,10 @@ container for generation/management of links to docs/images (to be) gelocated/pr
             ready: function() {
                 wpscope = this;
                 //map.showTileBoundaries();
+            },
+
+            log : function(status) {
+                console.log("status", status);
             },
 
             // Append link to 
@@ -231,7 +245,10 @@ container for generation/management of links to docs/images (to be) gelocated/pr
 
             // Update the "_sessionSet-object" ( =  docs(fi. img's) actually "in use") 
             // from collection of "last added docs" 
-            _checkinDocs : function(docCollection) { // console.log("CheckIn docs(imgs)", docset);
+            _checkinDocs : function(docCollection) { 
+                this.toolstatus = true;
+                this.toolstatus = false; // dbl-zuordnung ensures that false is evaluated !! 
+
                 var firstDoc;
                 var sessionset = this._sessionsetDocs; 
 
@@ -416,14 +433,21 @@ container for generation/management of links to docs/images (to be) gelocated/pr
               
                 }  else {          // Update dataSource
 
-                    var oldFeatures = this._sessionsetMap.features; console.log("old", oldFeatures) 
+                    var oldFeatures = this._sessionsetMap.features,
+                        tryFeatures = featuresetRefresh.features; // console.log("old", oldFeatures) ; console.log("try", tryFeatures) ;
 
-                    var newFeatures = featuresetRefresh.features.filter(function(item){
-                        return ( oldFeatures.indexOf(item) < 0 );
-                    }); 
-
-                    // can BREAK, if 
-                    if (!newFeatures.length) return;   console.log("new/old features", newFeatures, oldFeatures, featuresetRefresh); 
+                    // Filtering only features with a new name  
+                    var newFeatures = tryFeatures.filter(function(item){
+                        var isOld = false;
+                        oldFeatures.some(function(old){
+                            if (old.properties.name === item.properties.name) {
+                                isOld = true;
+                                return;
+                            } 
+                        })
+                        return !isOld;
+                    }); // console.log("really new features", newFeatures); 
+                    if (!newFeatures.length) return;   
 
                     this._sessionsetMap.features = this._sessionsetMap.features.concat(newFeatures); 
 
@@ -589,7 +613,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
 
                     var features = map.queryRenderedFeatures({
                         layers: [layername]
-                    });  console.log("_refreshMarkers. At zoom=" + zoom + " for", features.length + " feature(s)");
+                    });  // console.log("_refreshMarkers. At zoom=" + zoom + " for", features.length + " feature(s)");
 
                     if (features.length)  this._createMarkers(features);
 
@@ -680,7 +704,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                             mbMarker.setPopup(popup);
                         }    
                     }
-                }.bind(this)); console.log("Log of markers created ", log); 
+                }.bind(this)); console.log("Markers created ", log); 
             }
 
         });

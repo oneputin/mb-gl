@@ -79,7 +79,8 @@ container for toggling between FAB and AREA (CARD or other DIV)
 
         </style>
 
-        <!-- FAB (if fabArea is not visible) -->
+        <!-- "FAB" or FAB-Area are visible alternatively -->
+
         <template is="dom-if" if="{{!checked}}">
             <paper-fab 
                 id = "fab" 
@@ -90,9 +91,9 @@ container for toggling between FAB and AREA (CARD or other DIV)
             </paper-fab>
         </template>
 
-        <!-- FAB AREA = vertical container -->
         <template is="dom-if" if="{{checked}}">
-            
+
+            <!-- "FAB AREA" = vertical container -->
             <div id="container">
 
                 <div class="areactrls">
@@ -159,8 +160,6 @@ container for toggling between FAB and AREA (CARD or other DIV)
 
                 checked: {
                     type: Boolean,
-                    value: false,
-                    notify : true,
                     observer: 'logchecked'
                 }
             },
@@ -175,8 +174,9 @@ container for toggling between FAB and AREA (CARD or other DIV)
                 this._closer();
             },
 
-            logchecked : function(checked) {
-                // console.log("checked", checked);
+            logchecked : function(checked) { console.log("fabarea logchecked", checked);
+                if (checked === null) return;  
+                this._toggleVisibility(checked);
             },
 
             // 
@@ -246,7 +246,7 @@ container for toggling between FAB and AREA (CARD or other DIV)
                 }
                 this.checked = flag;
                 return; 
-            },    
+            } 
 
         });
 
