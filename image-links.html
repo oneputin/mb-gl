@@ -14,7 +14,9 @@
 
 <!--
 `image-links`
-container for upload/presentation of geolocated images 
+container for generation/management of links to docs/images (to be) gelocated/presented on a map 
+- uploaded "internally" by filedialog or dropzone 
+- supplied from outside 
 
 @demo demo/imagelinks.html 
 -->
@@ -34,28 +36,43 @@ container for upload/presentation of geolocated images
                 border: 1;
             }
 
+            .placeholder {
+                padding: 3px;
+                margin: 2px;
+                border: solid 1px red;
+            }
+
             .content : {
                 @apply(--layout-horizontal);
                 @apply(--layout-justified);
             }
         </style>
 
+        <!-- A part of the map area (or whole map) is the dropbox -->
         <fab-area 
             ctrllabel = "[[ctrllabel]]"
             ctrldisable = "[[ctrldisable]]"
             checked = false>
 
             <div class="ctrl">
-                <!-- Liste der nicht referenzierten -->
+                <!-- Liste der primär nicht referenzierten images -->
                 <paper-listbox>
                     <template is="dom-repeat" items="{{_sessionunset}}">
-                        <paper-item value="[[item]]" on-tap="_checkoutDocList">[[item]]</paper-item>
+                        <paper-item value="[[item]]" on-tap="_checkoutDocFromList">[[item]]</paper-item>
                     </template>    
                 </paper-listbox>
-                
             </div>        
 
             <div class="content">    
+                <div class="placeholder">
+                    Placeholder DBQUERY
+                </div>
+                <div class="placeholder">
+                    Placeholder CAMERA
+                    <camera-snapshot
+                        snapshots="{{imageset}}">
+                    </camera-snapshot>    
+                </div>
                 <!--  -->
                 <files-input
                     type="image"
@@ -63,19 +80,23 @@ container for upload/presentation of geolocated images
                     loadedfiles="{{imageset}}">
                 </files-input>    
 
-                <!--<button> STORE </button>-->
-                
-                <!-- invisible  -->
-                <exif-locations
-                    imageset = "[[imageset]]"
-                    locationmode = "geojson"
-                    locations = "{{featureset}}"
-                    nonlocated = "{{nonlocated}}">
-                </exif-locations>
-            
             </div>
 
         </fab-area>
+
+        <!--<files-box  
+            filetype="image" 
+            loadedfiles="{{imageset}}" 
+            boxsize="300"> 
+        </files-box> -->
+
+        <!-- always invisible background-function-element  -->
+        <exif-locations
+            imageset = "[[imageset]]"
+            locationmode = "geojson"
+            locations  = "{{featureset}}"
+            nonlocated = "{{nonlocated}}">
+        </exif-locations>
 
     </template>
 
@@ -96,7 +117,7 @@ container for upload/presentation of geolocated images
                 // checkIn: linkPoints
                 featureset : {
                     type: Object,
-                    observer: '_refreshLayer'
+                    observer: '_refreshMap' 
                 },
 
                 // checkIn: names of NOT located docs(imgs) 
@@ -105,8 +126,8 @@ container for upload/presentation of geolocated images
                     observer: '_checkInUnset'
                 },
 
-                // checkOut : selected doc(img)
-                supplieddoc : {
+                // checkIn/checkOut : selected doc(img)
+                docselected : {
                     type: Object,
                     notify : true
                 },
@@ -117,19 +138,31 @@ container for upload/presentation of geolocated images
                     observer : 'testlocation'
                 },
 
-
-
-                _sessionset : {
-                    type: Array,
-                    value: []
+                /**
+                 * Container of docs "in use" during this session
+                 */
+                _sessionsetDocs : {
+                    type: Object,
+                    value: {},
+                    observer : '_sessionlog'
                 },
 
                 // set of locations 
-                _sessionfeatures : {
+                featuresetRefresh : {
                     type: Object
                 },
 
-                // set of docs(imgs) NOT located in actual session
+                /**
+                 * Container of docs(imgs) NOT geolocated in actual session
+                 */
+                _sessionMarkers : {
+                    type: Array,
+                    value: []
+                    // observer: '_observeUnset'
+                },
+                /**
+                 * Container of docs(imgs) NOT geolocated in actual session
+                 */
                 _sessionunset : {
                     type: Array,
                     value: []
@@ -163,72 +196,82 @@ container for upload/presentation of geolocated images
             ],           
 
             observers: [
-                'addFeature(supplieddoc.location)',
+                'setImgLink(docselected.geojson)',
                 '_observeUnset(_sessionunset.length)'
             ],
 
-            ready: function() {
-                wpscope = this;
+            _sessionlog : function(set) {
+                console.log("_sessionlog", set);
             },
 
-            // 
-            addFeature: function(locationFeature) { 
-                if (locationFeature) {  
-                    var docname = locationFeature.properties.name;  // console.log("Add Link to mapIndex for", docname);
-                    var featureset = {
-                        "type": "FeatureCollection",
-                        "features": [locationFeature]
-                    }
-                    this._refreshLayer(featureset);
+            ready: function() {
+                wpscope = this;
+                //map.showTileBoundaries();
+            },
 
-                    var index = this._sessionunset.indexOf(docname);
-                    if (index > -1) {
-                        this.splice('_sessionunset', index, 1);
-                        // console.log("sessionUnSet updated", this._sessionunset);
-                    }
+            // Append link to 
+            setImgLink: function(linkFeature) { 
+
+                if (!linkFeature) return;   
+                // A. add link to map
+                var featureset = {
+                    "type": "FeatureCollection",
+                    "features": [linkFeature]
+                }
+
+                this._refreshLinks(featureset); 
+
+                // B. remove entry from 
+                var docname = linkFeature.properties.name;  console.log("Add Link to mapIndex for", docname, linkFeature);
+                var index = this._sessionunset.indexOf(docname);
+                if (index > -1) {
+                    this.splice('_sessionunset', index, 1);  // console.log("sessionUnSet updated", this._sessionunset);
                 }
             },
 
-            // Update the session's collection of processed docs(imgs)
-            // from last added docs 
-            _checkinDocs : function(docset) { // console.log("CheckIn docs(imgs)", docset);
+            // Update the "_sessionSet-object" ( =  docs(fi. img's) actually "in use") 
+            // from collection of "last added docs" 
+            _checkinDocs : function(docCollection) { // console.log("CheckIn docs(imgs)", docset);
                 var firstDoc;
+                var sessionset = this._sessionsetDocs; 
 
-                docset.some( function(img){
+                docCollection.forEach( function(img){ // console.log("CheckIn doc", img);
                     if (!firstDoc) firstDoc = img;
 
-                    if (!this._sessionset[img.name]) {
-                        this._sessionset[img.name] = img; // .value;
+                    if (!sessionset[img.name]) {
+                        sessionset[img.name] = img; // .value;
                     }     
-                }.bind(this));    
+                });    
+                this._sessionsetDocs = sessionset;  console.log("CHECKEDIN this._sessionsetDocs", this._sessionsetDocs);
 
                 if (firstDoc) { // console.log("activating doc(img) ", firstDoc.name, Object.keys(firstDoc)); 
                     this._checkoutDoc(firstDoc.name); 
                 }    
             },
 
-            // Checkout-1:  doc according to selected list-item
-            _checkoutDocList : function(e) { 
+            // Checkout-1:  from list of non-geocoded docs(images)
+            _checkoutDocFromList : function(e) { 
                 var item = e.target;   // console.log("item-value", item.value); // , item.value);
                 this._checkoutDoc(item.value); 
             },
 
-            // Checkout-2:  doc according to 'tapped' feature
-            _checkoutDocMap : function (feature) {  
+            // Checkout-2:  according to name-property of 'tapped' point-feature
+            _checkoutDocFromMap : function (feature) {  
                 var id = feature.properties.name; // console.log("clicked at locator of  image " + id, feature.properties); 
-                // Send the image 
                 this._checkoutDoc(id); 
             },
 
             /**
-             *  Supply image to other APP-Components 
+             *  Notify id of selected doc to be used by other APP-Components 
              */            
-            _checkoutDoc : function(imgid) { 
-                var imgnames = Object.keys(this._sessionset);  // console.log("SUPPLY from", imgnames, imgid) ;
+            _checkoutDoc : function(imgid) { // console.log("_checkoutDoc", imgid, this._sessionsetDocs); 
+                if (!this._sessionsetDocs) return;  
+                
+                var imgnames = Object.keys(this._sessionsetDocs);  // console.log("SUPPLY from", imgnames, imgid) ;
                 imgnames.some(function(imgname){
                     if (imgid == imgname) {  
-                        var img = this._sessionset[imgname]; // console.log("Found img [" + imgname + "]"); // , img); // , img.value);
-                        this.supplieddoc = img;
+                        var img = this._sessionsetDocs[imgname];   // console.log("Found img [" + imgname + "]"); // , img); // , img.value);
+                        this.docselected = img;
                         return;
                     } 
                 }.bind(this));   
@@ -260,7 +303,7 @@ container for upload/presentation of geolocated images
                 var f = wpscope._mapeventListener(e); 
                 if (!f) return; // console.log("clicked",f);
 
-                wpscope._checkoutDocMap(f);
+                wpscope._checkoutDocFromMap(f);
             }, 
 
             // generic hover-listener
@@ -287,8 +330,8 @@ container for upload/presentation of geolocated images
                 if (!layid) layid = this.layerid;
                 var status = {
                     id : layid,
-                    layer : map.getLayer(layid),
-                    src :  map.getSource(layid)
+                    src :  map.getSource(layid),
+                    layer : map.getLayer(layid)
                 };  // console.log("_layerStatus", status);  
                 return status;  
             },
@@ -311,55 +354,141 @@ container for upload/presentation of geolocated images
             },     
 
             // 
-            _refreshLayer: function(rawdata) {
+            _refreshMap: function(featureSet) {
+                
+                map.showTileBoundaries = true; // for DEBUG 
+
+                var imageset = this.imageset;  
+                console.log("_refreshMap FeatureSet", featureSet); 
+                console.log("_refreshMap ImageSet",  imageset); 
+
+                featureSet.features.forEach(function(f){
+
+                    if (!f.properties.img) {
+                        var name = f.properties.name,
+                            img ; 
+                        imageset.some(function(obj){
+                            if (obj.name == name) {
+                                img = obj.value;
+                                return;
+                            }     
+                        });
+                        f.properties.img = img;
+                    }
+                });
+                
+                this._refreshLinks(featureSet);
+            },
+
+            // Refresh the "src"(content) of "explored" data-layers 
+            // creates layers if not yet existing 
+            _refreshLinks: function(rawdata) {
                 
                 if (!rawdata || !rawdata.type) {
                     console.log("BREAK. 1  no location data attached!");
                     return;  
                 } 
 
-                // 1. 
-                var _sessionfeatures = rawdata; 
-                if (!_sessionfeatures.features) {
-                    _sessionfeatures = {
+                // 1. ReCheck structure as featureset
+                var featuresetRefresh = rawdata; 
+                
+                if (!featuresetRefresh.features) {
+                    featuresetRefresh = {
                         "type": "FeatureCollection",
-                        "features": [_sessionfeatures]
+                        "features": [featuresetRefresh]
                     }
                 }    
-                if (!_sessionfeatures.features.length) {
+                if (!featuresetRefresh.features.length) {
                     console.log("BREAK. 2  no location data attached to ", rawdata);
                     return;  
                 } 
 
-                // 2. Update dataSource
-                var st = this._layerStatus();  // console.log("_refresh Layer " + st.id, st, rawdata, _sessionfeatures); 
+                // 2. Check/Create/Update "LinkLayer"-Data
 
-                if (!st.src) {
-                   
-                    this._sessionfeatures = _sessionfeatures;
-                    map.addSource(st.id, {
-                        "type": "geojson",
-                        "data": _sessionfeatures
-                    });
+                var st = this._layerStatus();  // console.log("_refresh Layer " + st.id, st, rawdata, featuresetRefresh); 
 
-                } else { 
+                if (!st.layer) {   console.log("FIRST link-layer-setup from", rawdata);
 
-                    this._sessionfeatures.features = this._sessionfeatures.features.concat(_sessionfeatures.features); 
-                    // console.log("new, all features", _sessionfeatures, this._sessionfeatures) ; 
+                    this._createLayers(st.id, featuresetRefresh);
+                    setTimeout( function() {
+                        map.setZoom(map.getZoom() + 0.1); 
+                    }, 500);  
+              
+                }  else {          // Update dataSource
+
+                    var oldFeatures = this._sessionsetMap.features; console.log("old", oldFeatures) 
+
+                    var newFeatures = featuresetRefresh.features.filter(function(item){
+                        return ( oldFeatures.indexOf(item) < 0 );
+                    }); 
+
+                    // can BREAK, if 
+                    if (!newFeatures.length) return;   console.log("new/old features", newFeatures, oldFeatures, featuresetRefresh); 
+
+                    this._sessionsetMap.features = this._sessionsetMap.features.concat(newFeatures); 
+
+                    // console.log("new, all features", featuresetRefresh, this._sessionsetMap) ; 
+                    map.getSource(st.id).setData(this._sessionsetMap);
+
+                    // 4. Update viewPort to include last loaded locations  
+                    //    HILITING the last linkPoint
+                    var ff = newFeatures;
+
+                    if (ff.length < 2) { // fit to a certain buffer around point !!
+                        var center = ff[0];
+                        var radius = 5;
+                        var steps = 10;
+                        var units = 'kilometers';
+                        var pp = turf.explode(turf.circle(center, radius, steps, units));
+                        ff = ff.concat(pp.features);   
+                    } else {
+                        // console.log("fitting to data:", ff); 
+                    }
+
+                    this._fitBounds(ff);
+                }  
+
+                // 3.  
+                if (this._checkoutDocFromMap) {
+                     map.off('click', this._mapclickListener);
+                     map.on('click', this._mapclickListener);
+                } 
+
+                if (this.hoverAction) {
+                     map.off('hover', this.hoverListener);
+                     map.on('hover', this.hoverListener);
+                }
+
+                return {features: newFeatures} ;
+            },
+
+            // Create an suitably "clustering" layer
+            _createLayers : function(srcname, featureset) {    
+
+                this._sessionsetMap = featureset;
+
+                // 
+                var mode = "cluster";
+                var vis = "none";
+                if (this.visible) vis = "visible";
+
+                // A. SOURCE 
+                map.addSource(srcname, {
+                    "type": "geojson",
+                    "data": featureset,
+                    "cluster": true,
+                    "clusterMaxZoom": 14, // Max zoom to cluster points on
+                    "clusterRadius": 50 // Radius of each cluster when clustering points (defaults to 50)
                     
-                    map.getSource(st.id).setData(this._sessionfeatures);
-                    
-                } // console.log("UPDATED imglinks-src with ", rawdata);
-                
-                // 3. Check/Update "LinkLayer"
-                if (!st.layer) {
-                    var vis = "none";
-                    if (this.visible) vis = "visible";
+                });
+
+                // B. LAYER(s) of SOURCE
+                if (mode != "cluster") {  // B.1  Simple PointLayer
 
                     map.addLayer({
-                        "id": st.id,
+                        "id": srcname,
                         "type": "circle",
-                        "source": st.id,
+                        "source": srcname,
                         "layout" : {
                             "visibility": vis
                         },
@@ -370,39 +499,188 @@ container for upload/presentation of geolocated images
                             "circle-stroke-color": "#B42222"
                         },
                         "filter": ["==", "$type", "Point"],
-                    }); // console.log("added img-link-layer", map.getLayer(st.id) ); 
+                    }); // console.log("added img-link-layer", map.getLayer(srcname) ); 
 
-                }    
+                } else {                  // B.2 LayerGROUP with clusters (to best visualize the content of SOURCE) 
 
-                // 4. Update viewPort to inculde last loaded locations  
-                //    HILITING the last linkPoint
-                var fitdata = this._sessionfeatures,
-                    ff = fitdata.features;
-                if (ff.length < 2) { // fit to a certain buffer around point !!
-                    var center = ff[0];
-                    var radius = 5;
-                    var steps = 10;
-                    var units = 'kilometers';
-                    var pp = turf.explode(turf.circle(center, radius, steps, units));
-                    ff = ff.concat(pp.features);   
-                } else {
-                    // console.log("fitting to data:", ff); 
+                    var elem = this;
+
+                    // Cluster-Symbol (BG) 
+                    map.addLayer({
+                        id: "clusters",
+                        type: "circle",
+                        source: srcname,
+                        filter: ["has", "point_count"],
+                        paint: {
+                            "circle-color": {
+                                property: "point_count",
+                                type: "interval",
+                                stops: [
+                                    [0, "#51bbd6"],
+                                    [5, "#f1f075"],
+                                    [20, "#f28cb1"],
+                                ]
+                            },
+                            "circle-radius": {
+                                property: "point_count",
+                                type: "interval",
+                                stops: [
+                                    [0, 20],
+                                    [5, 30],
+                                    [20, 40]
+                                ]
+                            }
+                        }
+                    });
+
+                    // Cluster-Label (FG)
+                    map.addLayer({
+                        id: "cluster-count",
+                        type: "symbol",
+                        source: srcname,
+                        filter: ["has", "point_count"],
+                        layout: {
+                            "text-field": "{point_count_abbreviated}",
+                            "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+                            "text-size": 12
+                        }
+                    });
+
+                    // NON-clustered points
+                    map.addLayer({
+                        id: srcname,
+                        type: "circle",
+                        source: srcname,
+                        filter: ["!has", "point_count"],
+                        paint: {
+                            "circle-color": "#11b4da",
+                            "circle-radius": 4,
+                            "circle-stroke-width": 1,
+                            "circle-stroke-color": "#fff"
+                        }
+                    });
+
+                    // 
+                    map.on('zoomend', function(){
+                        elem._refreshMarkers(srcname);
+                    });
+
+                    map.on('moveend', function(){
+                        elem._refreshMarkers(srcname);
+                    });
                 }
 
-                this._fitBounds(ff);
+            },    
 
-                // 5. 
-                if (this._checkoutDocMap) {
-                     map.off('click', this._mapclickListener);
-                     map.on('click', this._mapclickListener);
-                } 
+            // Show markers only for features of a layer 
+            // that are actually rendered (visible mapextent)  
+            _refreshMarkers : function(layername, ms_debounce) {
+                if (!layername) layername = 'unclustered-point';
+                if (!ms_debounce) ms_debounce = 500; 
+                
+                this.debounce("markers", function() {
+                    
+                    var zoom = map.getZoom();
 
-                if (this.hoverAction) {
-                     map.off('hover', this.hoverListener);
-                     map.on('hover', this.hoverListener);
-                }
+                    this._sessionMarkers.forEach(function(marker){
+                        marker.remove(); 
+                    })
+                    this._sessionMarkers = [];
 
-                return st;
+                    var features = map.queryRenderedFeatures({
+                        layers: [layername]
+                    });  console.log("_refreshMarkers. At zoom=" + zoom + " for", features.length + " feature(s)");
+
+                    if (features.length)  this._createMarkers(features);
+
+                }, ms_debounce); 
+            },
+
+            // Create Markers used for display of points at "suitable" scales
+            // showing a thumbNail of geocoded images
+            _createMarkers: function(features) {
+                if (!features || !features.length) {  // console.log("ALERT. NO features to refresh markers from"); 
+                    return;
+                }  // console.log("Features to create Markers from:", features);
+
+                // Function activated after marker-click
+                var linkFunction = this._checkoutDoc;
+
+                // Sample function of dom4popup creation 
+                function dom4pop(properties) {
+                    var domContent = window.document.createElement('div');
+                        domContent.style.backgroundColor = "yellow";
+                        domContent.style.padding = "5px";
+                        
+                    var title = window.document.createElement('h3');
+                        title.innerText = properties.name;    
+                    var popimg = window.document.createElement('img');
+                        popimg.style.width = "400px";
+                        popimg.src = properties.img;
+                    domContent.append(title);    
+                    domContent.append(popimg);    
+                    return domContent; 
+                };
+
+                function makeMarker(imgUrl, iconSize) {
+                    var el = document.createElement('div');
+                    el.className = 'marker';
+                    el.style.cursor = "pointer";
+                    el.style.border = '1px solid #777';
+                    el.style.borderRadius = '4px';
+                    el.style.width  = iconSize[0] + 'px';
+                    el.style.height = iconSize[1] + 'px';
+                    el.style.backgroundImage = "url('"+imgUrl+"')";
+                    el.style.backgroundSize = "cover";
+                    return el;
+                };
+
+                function makePopup(properties) {
+                    var popup = new mapboxgl.Popup({offset: 25});
+                
+                    var text; // = properties.name; 
+                    var html; // ="<h3> Image name</h3>" + properties.name;
+                    var domContent = dom4pop(properties); 
+
+                    if (text)   popup.setText(text);
+                    if (html)   popup.setHTML(html);
+                    if (domContent) popup.setDOMContent(domContent);
+
+                    return popup;    
+                };    
+
+
+                var log = []; // tracks processed features
+                features.forEach(function(markerpnt) {
+                    // create a DOM element for the marker
+                    var name = markerpnt.properties.name,
+                        bgimg    = markerpnt.properties.img,
+                        iconSize = markerpnt.properties.iconsize;
+
+                    if (!iconSize) iconSize = [50,50];
+
+                    if (bgimg && (log.indexOf(name) < 0)) {
+                        log.push(name);
+                        var marker = makeMarker(bgimg, iconSize, markerpnt.properties);
+
+                        // add marker to map
+                        var mbMarker = new mapboxgl.Marker(marker, {offset: [-iconSize[0] / 2, -iconSize[1] / 2]})
+                            .setLngLat(markerpnt.geometry.coordinates)
+                            .addTo(map);
+
+                        this._sessionMarkers.push(mbMarker); 
+
+                        // setup link functions    
+                        if (linkFunction)  {
+                            marker.addEventListener('click', function() {
+                                linkFunction(markerpnt.properties.name);
+                            }); 
+                        } else if (dom4pop)  {
+                            var popup  = makePopup(markerpnt.properties);  
+                            mbMarker.setPopup(popup);
+                        }    
+                    }
+                }.bind(this)); console.log("Log of markers created ", log); 
             }
 
         });

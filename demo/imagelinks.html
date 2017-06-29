@@ -93,6 +93,7 @@
             position: relative;
             display : "block";
             top: 0; left: 0; 
+            max-width: 600px;
             width : 75% ;
             z-index: 9;
             padding: 10px;
@@ -146,24 +147,23 @@
                     mbid="{{mbid}}" 
                     cbox="{{cbox}}" 
                     zoom="{{zoom}}" 
-                    mapctrl = "[[mapctrl]]"
+                    mapctrl  = "[[mapctrl]]"
                     maptoast = "[[maptoast]]">
 
                     <!-- main interface for doc(img)-management -->
                     <image-links
-                        checked = "{{formshow}}"
-                        locateflag="[[locateflag]]"
-                        supplieddoc = "{{supplieddoc}}">
+                        checked     = "{{formshow}}"
+                        locateflag  = "[[locateflag]]"
+                        docselected = "{{docselected}}">
                     </image-links>    
 
                     <!-- Formular used to view/manipulate img-meta -->
                     <image-card 
                         id="imagecard"
-                        loadedimg = "{{supplieddoc}}" 
-                        target = "[[target]]"
-                        locateflag="{{locateflag}}">
+                        loadedimg  = "{{docselected}}" 
+                        location   = "[[target]]"
+                        locateflag = "{{locateflag}}">
                     </image-card>    
-
                     
                     <!-- centered target marker, used to geolocate active doc(img) -->
                     <mb-target 
@@ -176,29 +176,13 @@
                     <mb-location-log 
                         checked
                         lnglat="{{lnglat}}" 
-                        mbid="[[mbid]]"
-                        mousemode="[[mousemode]]"> 
+                        mbid = "[[mbid]]">
                     </mb-location-log>
 
                 </mb-map>
 
-            </template>    
-
-        </div>
-
-        <!-- RIGHT Block: several external app-controls -->
-        <div class="ctrls_area">
-            <!-- element with [n] visible features -->
-            <div id="radios">
                 
-                <template is="dom-if" if="{{mapstyle}}">
-                    <!-- Toggling map-overlaying elements -->
-                    <paper-radio-button checked="{{infomode}}" on-change="toggleform">Imageviewer</paper-radio-button>
-                    <paper-radio-button checked="{{mousemode}}">Query Locations</paper-radio-button>
-                </template>
-
-            </div>
-
+            </template>    
 
         </div>
 
@@ -243,14 +227,14 @@
     scope.formflag = "hidden";
     scope.locateflag = false;
 
-    scope.toggleform = function(e) { // console.log("toggleform ", e.target.checked);
+    scope.toggleform = function(e) {
         var imagecard = document.querySelector('#imagecard'); // console.log("toggle-form", imagecard); 
         if (e.target.checked)   imagecard.classList.remove('hidden');
         else                    imagecard.classList.add('hidden');
     }
 
     document.addEventListener('WebComponentsReady', function() {
-
+        console.log("WebComponentsReady"); 
     });
 
 </script>

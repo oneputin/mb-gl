@@ -171,6 +171,10 @@ container for toggling between FAB and AREA (CARD or other DIV)
             observers: [
             ],
 
+            ready : function() {
+                this._closer();
+            },
+
             logchecked : function(checked) {
                 // console.log("checked", checked);
             },
@@ -233,7 +237,6 @@ container for toggling between FAB and AREA (CARD or other DIV)
 
             // alternative visibility of control and container
             _toggleVisibility: function(flag) {                
-                
                 if (flag == null) flag = !this.checked; 
                 if (!flag)  {
                     this._toggleSize(50);
