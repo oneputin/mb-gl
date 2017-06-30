@@ -634,23 +634,58 @@ container for
                     
                     var zoom = map.getZoom();
 
+                    var features = map.queryRenderedFeatures({
+                        layers: [layername]
+                    });  // console.log("_refreshMarkers. At zoom=" + zoom + " for", features.length + " feature(s)");
+
+                    features = this.getuniqueFeatures(features, "name");
+
+                    // ? Heuristics of marker.management ?  
+                    // Comparing "new" features and "previous" markers  
+
+                    // H1:  
+                    var n1 = features.length,
+                        n2 = this._sessionMarkers.length; // console.log(n1,n2, features, this._sessionMarkers); 
+                    if (n1 == n2) {
+                        // H2: 
+                        
+                        return; 
+                    }
+
+                    // Refresh required !!
                     this._sessionMarkers.forEach(function(marker){
                         marker.remove(); 
                     })
                     this._sessionMarkers = [];
 
-                    var features = map.queryRenderedFeatures({
-                        layers: [layername]
-                    });  // console.log("_refreshMarkers. At zoom=" + zoom + " for", features.length + " feature(s)");
-
-                    if (features.length)  this._createMarkers(features);
+                    if (features.length)  {
+                        
+                        this._createMarkers(features);
+                    }
 
                 }, ms_debounce); 
             },
 
+            // MB-specific tool to remove duplicates !!
+            getuniqueFeatures: function(features, idname) {
+                if (!idname) idname = "name";
+                var uniqs = [], ids = [], id = "";
+
+                features.forEach(function(f) {
+                    id = f.properties[idname];
+                    if (!id || (ids.indexOf(id) < 0)) {
+                       ids.push(id);
+                       uniqs.push(f);
+                    }   
+                });
+                return uniqs; 
+            },
+
+
             // Create Markers used for display of points at "suitable" scales
             // showing a thumbNail of geocoded images
             _createMarkers: function(features) {
+                
                 if (!features || !features.length) {  // console.log("ALERT. NO features to refresh markers from"); 
                     return;
                 }  // console.log("Features to create Markers from:", features);
@@ -703,16 +738,20 @@ container for
 
 
                 var log = []; // tracks processed features
+                
                 features.forEach(function(markerpnt) {
                     // create a DOM element for the marker
-                    var name = markerpnt.properties.name,
+                    var name     = markerpnt.properties.name,
                         bgimg    = markerpnt.properties.img,
                         iconSize = markerpnt.properties.iconsize;
 
                     if (!iconSize) iconSize = [50,50];
 
-                    if (bgimg && (log.indexOf(name) < 0)) {
+                    // if (bgimg && (log.indexOf(name) < 0)) {
+                    if (bgimg) {    
+
                         log.push(name);
+                        
                         var marker = makeMarker(bgimg, iconSize, markerpnt.properties);
 
                         // add marker to map
@@ -732,7 +771,7 @@ container for
                             mbMarker.setPopup(popup);
                         }    
                     }
-                }.bind(this)); console.log("Markers created ", log); 
+                }.bind(this)); console.log(features.length + " Marker(s) created ", log); 
             }
 
         });
