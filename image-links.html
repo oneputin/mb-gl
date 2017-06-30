@@ -10,13 +10,16 @@
 <link rel="import" href = "../files-input/files-input.html">
 <link rel="import" href = "../image-meta/exif-locations.html">
 
-<link rel="import" href = "fab-area.html">
+<link rel="import" href = "gui-area.html">
+
 
 <!--
 `image-links`
-container for generation/management of links to docs/images (to be) gelocated/presented on a map 
-- uploaded "internally" by filedialog or dropzone 
-- supplied from outside 
+container for 
+- generation/management of map-links to docs/images (to be) gelocated/presented on a map 
+    - uploaded "internally" by filedialog or dropzone 
+    - supplied from outside
+- a ToolSet for      
 
 @demo demo/imagelinks.html 
 -->
@@ -48,11 +51,12 @@ container for generation/management of links to docs/images (to be) gelocated/pr
             }
         </style>
 
-        <!-- fab-area = part of the map area (or whole map) may be the dropbox -->
-        <fab-area 
+        <!-- gui-area = part of the map area (or whole map) may be the dropbox -->
+        <gui-area 
+            id = "imgctrl"
             ctrllabel = "[[ctrllabel]]"
             ctrldisable = "[[ctrldisable]]"
-            checked = "[[toolstatus]]">
+            open = "{{toolstatus}}">
 
             <!-- SLOT-1 -->
             <div class="ctrl">
@@ -68,16 +72,19 @@ container for generation/management of links to docs/images (to be) gelocated/pr
             <div class="content">    
                 
                 <div class="placeholder">
-                    Placeholder DBQUERY
+                    Placeholder DB QUERY & STORE
                 </div>
                 
+                <!-- try to extend to 100% of parent container -->
                 <div class="placeholder">
-                    Placeholder CAMERA
-                    <camera-snapshot
-                        snapshots="{{imageset}}">
-                    </camera-snapshot>    
+                    Placeholder DRAGnDROP
+                    <files-box
+                        type="image"
+                        multiple=true
+                        loadedfiles="{{imageset}}">
+                    </files-box>    
                 </div>
-                <!--  -->
+                
                 <files-input
                     type="image"
                     multiple=true
@@ -85,8 +92,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                 </files-input>    
 
             </div>
-
-        </fab-area>
+        </gui-area>
 
         <!--<files-box  
             filetype="image" 
@@ -115,7 +121,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                 // checkIn: doc(img)Data collection
                 imageset : {
                     type: Array ,
-                    observer: '_checkinDocs'
+                    observer: '_imagesetRefresh'
                 },
 
                 // checkIn: linkPoints
@@ -133,6 +139,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                 // checkIn/checkOut : selected doc(img)
                 docselected : {
                     type: Object,
+                    observer: 'logselected',
                     notify : true
                 },
 
@@ -197,7 +204,8 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                 toolstatus : {
                     type: Boolean,
                     value: true,
-                    observer: 'log'
+                    notify : true,
+                    observer: 'logToolStatus'
                 }
 
             },
@@ -210,6 +218,9 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                 '_observeUnset(_sessionunset.length)'
             ],
 
+            logselected: function(imgObj) {
+                // console.log("logselected", imgObj.name);
+            },
             _sessionlog : function(set) {
                 console.log("_sessionlog", set);
             },
@@ -219,8 +230,9 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                 //map.showTileBoundaries();
             },
 
-            log : function(status) {
-                console.log("status", status);
+            logToolStatus : function(toolstatus) {
+                // other "peripheral" gui-elements should be "hidden"(closed) during "tooling" 
+                console.log("toolstatus", toolstatus);
             },
 
             // Append link to 
@@ -245,7 +257,9 @@ container for generation/management of links to docs/images (to be) gelocated/pr
 
             // Update the "_sessionSet-object" ( =  docs(fi. img's) actually "in use") 
             // from collection of "last added docs" 
-            _checkinDocs : function(docCollection) { 
+            _imagesetRefresh : function(docCollection) { 
+                if (!docCollection || !docCollection.length)  return; 
+
                 this.toolstatus = true;
                 this.toolstatus = false; // dbl-zuordnung ensures that false is evaluated !! 
 
@@ -258,10 +272,11 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                     if (!sessionset[img.name]) {
                         sessionset[img.name] = img; // .value;
                     }     
-                });    
-                this._sessionsetDocs = sessionset;  console.log("CHECKEDIN this._sessionsetDocs", this._sessionsetDocs);
+                });   
 
-                if (firstDoc) { // console.log("activating doc(img) ", firstDoc.name, Object.keys(firstDoc)); 
+                this._sessionsetDocs = sessionset;  console.log("Refreshed this._sessionsetDocs", this._sessionsetDocs);
+
+                if (firstDoc && (docCollection.length < 2)) { // console.log("activating doc(img) ", firstDoc.name, Object.keys(firstDoc)); 
                     this._checkoutDoc(firstDoc.name); 
                 }    
             },
@@ -287,8 +302,8 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                 var imgnames = Object.keys(this._sessionsetDocs);  // console.log("SUPPLY from", imgnames, imgid) ;
                 imgnames.some(function(imgname){
                     if (imgid == imgname) {  
-                        var img = this._sessionsetDocs[imgname];   // console.log("Found img [" + imgname + "]"); // , img); // , img.value);
-                        this.docselected = img;
+                        var imgObj = this._sessionsetDocs[imgname];   console.log("Selected imgObj named [" + imgname + "]"); // , img); // , img.value);
+                        this.docselected = imgObj;
                         return;
                     } 
                 }.bind(this));   
@@ -316,7 +331,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
             },
 
             // generic click-listener
-            _mapclickListener : function(e) {
+            _mapClickListener : function(e) {
                 var f = wpscope._mapeventListener(e); 
                 if (!f) return; // console.log("clicked",f);
 
@@ -324,7 +339,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
             }, 
 
             // generic hover-listener
-            _maphoverListener : function(e) {
+            _mapHoverListener : function(e) {
                 var f = wpscope._mapeventListener(e); 
                 if (!f) return; 
                 wpscope.hoverAction(features[0]);
@@ -355,7 +370,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
 
             // Simple fitbounds for point-features
             _fitBounds : function(features, padding) {
-                if (padding== null) padding = 20;
+                if (padding== null) padding = 20; // pixels ?
 
                 if (features.features) features = features.features; // if a feature-set was passed
 
@@ -371,16 +386,17 @@ container for generation/management of links to docs/images (to be) gelocated/pr
             },     
 
             // 
-            _refreshMap: function(featureSet) {
+            _refreshMap: function(imagesetLocated) {
                 
                 map.showTileBoundaries = true; // for DEBUG 
 
                 var imageset = this.imageset;  
-                console.log("_refreshMap FeatureSet", featureSet); 
-                console.log("_refreshMap ImageSet",  imageset); 
+                // console.log("_refreshMap ImageSet Raw",  imageset); 
+                // console.log("_refreshMap ImageSet Located", imagesetLocated); 
+
+                var featureSet = imagesetLocated.geojson; 
 
                 featureSet.features.forEach(function(f){
-
                     if (!f.properties.img) {
                         var name = f.properties.name,
                             img ; 
@@ -393,6 +409,8 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                         f.properties.img = img;
                     }
                 });
+
+                console.log("_refreshMap FeatureSet", featureSet); 
                 
                 this._refreshLinks(featureSet);
             },
@@ -420,15 +438,36 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                     return;  
                 } 
 
+                var zoomFunction = this._fitBounds; 
+
+                // Update viewPort to include last loaded locations  
+                function zoomToFeatures(zoomFeatures) {
+                    var ff = zoomFeatures;
+                    var radius = this.radius ? this.radius : 5; 
+
+                    if (ff.length < 2) { // fit to a certain buffer around point !!
+                        // HILITING the last linkPoint in suitable Umkreis with "radius" km 
+                        var center = ff[0];
+                        var units = 'kilometers';
+                        var radius = radius;
+                        var steps = 10;
+                        var pp = turf.explode(turf.circle(center, radius, steps, units));
+                        ff = ff.concat(pp.features);   
+                    }
+                    zoomFunction(ff);
+                }  
+
                 // 2. Check/Create/Update "LinkLayer"-Data
 
                 var st = this._layerStatus();  // console.log("_refresh Layer " + st.id, st, rawdata, featuresetRefresh); 
+                var addedFeatures = [];
 
                 if (!st.layer) {   console.log("FIRST link-layer-setup from", rawdata);
 
-                    this._createLayers(st.id, featuresetRefresh);
+                    addedFeatures = this._createLayers(st.id, featuresetRefresh);
                     setTimeout( function() {
-                        map.setZoom(map.getZoom() + 0.1); 
+                        // map.setZoom(map.getZoom() + 0.1); 
+                        zoomToFeatures(addedFeatures);
                     }, 500);  
               
                 }  else {          // Update dataSource
@@ -437,7 +476,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                         tryFeatures = featuresetRefresh.features; // console.log("old", oldFeatures) ; console.log("try", tryFeatures) ;
 
                     // Filtering only features with a new name  
-                    var newFeatures = tryFeatures.filter(function(item){
+                    var addedFeatures = tryFeatures.filter(function(item){
                         var isOld = false;
                         oldFeatures.some(function(old){
                             if (old.properties.name === item.properties.name) {
@@ -446,36 +485,22 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                             } 
                         })
                         return !isOld;
-                    }); // console.log("really new features", newFeatures); 
-                    if (!newFeatures.length) return;   
+                    }); // console.log("really new features", addedFeatures); 
+                    if (!addedFeatures.length) return;   
 
-                    this._sessionsetMap.features = this._sessionsetMap.features.concat(newFeatures); 
+                    this._sessionsetMap.features = this._sessionsetMap.features.concat(addedFeatures); 
 
                     // console.log("new, all features", featuresetRefresh, this._sessionsetMap) ; 
                     map.getSource(st.id).setData(this._sessionsetMap);
 
-                    // 4. Update viewPort to include last loaded locations  
-                    //    HILITING the last linkPoint
-                    var ff = newFeatures;
+                    zoomToFeatures(addedFeatures); 
 
-                    if (ff.length < 2) { // fit to a certain buffer around point !!
-                        var center = ff[0];
-                        var radius = 5;
-                        var steps = 10;
-                        var units = 'kilometers';
-                        var pp = turf.explode(turf.circle(center, radius, steps, units));
-                        ff = ff.concat(pp.features);   
-                    } else {
-                        // console.log("fitting to data:", ff); 
-                    }
-
-                    this._fitBounds(ff);
-                }  
+                }
 
                 // 3.  
                 if (this._checkoutDocFromMap) {
-                     map.off('click', this._mapclickListener);
-                     map.on('click', this._mapclickListener);
+                     map.off('click', this._mapClickListener);
+                     map.on('click', this._mapClickListener);
                 } 
 
                 if (this.hoverAction) {
@@ -483,14 +508,14 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                      map.on('hover', this.hoverListener);
                 }
 
-                return {features: newFeatures} ;
+                return {features: addedFeatures} ;
             },
 
             // Create an suitably "clustering" layer
             _createLayers : function(srcname, featureset) {    
 
                 this._sessionsetMap = featureset;
-
+                
                 // 
                 var mode = "cluster";
                 var vis = "none";
@@ -506,7 +531,7 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                     
                 });
 
-                // B. LAYER(s) of SOURCE
+                // B. Create LAYER(s) of SOURCE
                 if (mode != "cluster") {  // B.1  Simple PointLayer
 
                     map.addLayer({
@@ -593,6 +618,9 @@ container for generation/management of links to docs/images (to be) gelocated/pr
                         elem._refreshMarkers(srcname);
                     });
                 }
+
+                // C. Return features added at creationtime
+                return featureset.features; 
 
             },    
 

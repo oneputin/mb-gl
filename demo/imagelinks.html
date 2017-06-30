@@ -9,7 +9,11 @@
     <!-- web-components applied for app-gui --> 
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
     <link rel="import" href="../../iron-collapse/iron-collapse.html"><!--  -->
-    <link rel="import" href="../../paper-radio-button/paper-radio-button.html"> <!-- ctrls  -->
+    <!--<link rel="import" href="../../paper-radio-button/paper-radio-button.html"> -->
+
+    <link rel="import" href="../../iron-icons/iron-icons.html">
+    <link rel="import" href="../../paper-fab/paper-fab.html">
+
 
     <!-- app-components related to map-api --> 
     <link rel="import" href="../mb-target.html">
@@ -61,20 +65,6 @@
             @apply(--layout-flex);
         }
         
-        timer-ctrl {
-            @apply(--layout-flex);
-        }
-        
-        timer-setup {
-            display: none;
-            border-style: solid;
-            border-width: 1px;
-            padding: 10px;
-            /*position: absolute;
-              top: 40px;
-              right: 20px; */
-        }
-        
         mb-content-browser {
             display: inline-block;
             @apply(--layout-vertical);
@@ -99,30 +89,12 @@
             padding: 10px;
         }
 
-        /*#imagecard.hidden {
-            display: none;
-        }*/
-
-        #radios {
-            padding: 10px;
-            display: inline-block;
-            @apply(--layout-vertical);
-            @apply(--layout-start);
-        }
-        
-        paper-radio-button {
-            /*align-self: center;*/
-            border: 1px solid var(--paper-green-200);
-            padding: 8px 16px;
-            margin: 8px 0px;
-        }
-        
-        paper-radio-button.red {
-            --paper-radio-button-checked-color: var(--paper-red-500);
-            --paper-radio-button-checked-ink-color: var(--paper-red-500);
-            --paper-radio-button-unchecked-color: var(--paper-red-900);
-            --paper-radio-button-unchecked-ink-color: var(--paper-red-900);
-            --paper-radio-button-label-color: var(--paper-red-500);
+        #foto {
+            position: absolute;
+            bottom: 20px;
+            right: 10px; 
+            opacity: 0.8; 
+            z-index: 9;
         }
 
     </style>
@@ -152,9 +124,9 @@
 
                     <!-- main interface for doc(img)-management -->
                     <image-links
-                        checked     = "{{formshow}}"
                         locateflag  = "[[locateflag]]"
-                        docselected = "{{docselected}}">
+                        docselected = "{{docselected}}"
+                        toolstatus  = "{{toolstatus}}">
                     </image-links>    
 
                     <!-- Formular used to view/manipulate img-meta -->
@@ -179,8 +151,18 @@
                         mbid = "[[mbid]]">
                     </mb-location-log>
 
-                </mb-map>
+                    <!-- FOTO -->
+                    <template is="dom-if" if="{{mobilemode}}">
+                        <paper-fab 
+                            id = "foto" 
+                            class = "fab"
+                            icon = "clear" 
+                            title = "heart" 
+                            on-tap = "toggleFoto">
+                        </paper-fab>
+                    </template>
 
+                </mb-map>
                 
             </template>    
 
@@ -197,44 +179,23 @@
     scope.mobilemode = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
     scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
     scope.mapstyle = 'mapbox://styles/mapbox/light-v9';
-    scope.morestyles = "demo-styles.json";
 
-    // Data-INIT
-    // scope.indexurl = "index-handheld-1.json"; // list of available datasets
-    // scope.indexurl = "https://clouds.iimaps.de/assets/data/index-sulawesi.json";
-    // scope.indexurl = "https://clouds.iimaps.de/assets/data/index-mobile.json";
-    scope.indexurl = "logbooks/index-history.json";
-    scope.metadatasetslabel="Trackbooks"
-    scope.metadataset = {}; // metadata of selected dataset
-
-    scope.basedataurl = ""; // list of available datasets
-    scope.dataset = []; // collection 
-    scope.datasetitem = {}; // track/route-object
 
     // Map-INIT
     scope.cbox = "13 , 52"; // Berlin
     scope.zoom = 8;
 
-    // STATE init
-    scope.routemode = false; // true; // false
-
-    scope.formshow = false;
-    scope.styleselectshow = false;
-    scope.mousemode = false; // 
-    
     // SHELL-actions
     scope.mapctrl = {};
-    scope.formflag = "hidden";
     scope.locateflag = false;
 
-    scope.toggleform = function(e) {
-        var imagecard = document.querySelector('#imagecard'); // console.log("toggle-form", imagecard); 
-        if (e.target.checked)   imagecard.classList.remove('hidden');
-        else                    imagecard.classList.add('hidden');
+    scope.toggleFoto = function(e) {
+        console.log("placeholder for fotos"); 
     }
 
     document.addEventListener('WebComponentsReady', function() {
         console.log("WebComponentsReady"); 
+
     });
 
 </script>

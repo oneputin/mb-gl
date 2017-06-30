@@ -9,7 +9,9 @@
 
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 
+
 <link rel="import" href="../paper-card/paper-card.html">
+
 <link rel="import" href="../paper-input/paper-input.html">
 
 
@@ -68,10 +70,11 @@ To 'close'
             background-color: white;
             border-color: gray;
             border-style: solid;
-            border-width: 1px 1px 1px 0px;
+            border-width: 1px 1px 1px 1px;
             font-weight: bold;
-            width: 20px;
-            height: 20px;
+            min-width: 2em;
+            margin-left: 0;
+            height: 40px;
             padding: 5px;
         }
 
@@ -166,7 +169,7 @@ To 'close'
             </div>
         </paper-card>
 
-        <div on-tap="_toggleCard" id="handle"> < </div>
+        <paper-button on-tap="_toggleCard" id="handle"></paper-button>
 
     </div>
 
@@ -213,16 +216,15 @@ To 'close'
 
             behaviors: [
                 Mbb.MapBehavior,
-                ExifBehavior
+                Mbb.ExifBehavior
             ],
 
             observers: [
-                '_refreshForm(loadedimg.*)'
+                '_refreshCard(loadedimg.*)'
             ],
 
-            attached: function() {
+            attached: function() {// console.log("DOM attached");
                 // this.dataUsageChanged();
-                // console.log("target attached");
                 this._toggleCard("close");
             },
 
@@ -241,23 +243,29 @@ To 'close'
 
             // 
             formContentCreate: function (editimg) {
-                // console.log(Object.keys(editimg));
+                console.log("editimg keys", Object.keys(editimg));
                 // console.log(Object.keys(editimg.location));
                 // console.log(Object.keys(editimg.location.geometry));
                 // console.log(Object.keys(editimg.location.properties));
+                
+                var locStatus = editimg.location ? "geo" : "non"; 
 
-                var exif = this.getExifSet(editimg.value); console.log("EXIF", exif);
+                this._toggleCard("open");
 
-                var content = editimg.location.properties.name; 
+                // var exifRaw = this.exifGetRaw(editimg.value); 
+                var exif = this.exifGetNamed(editimg.value); // console.log("EXIF", exif);
+                var exifData = this.exifGetData(exif); 
 
-                if (0) {                    
-                    content = "<h3>Imagename</h3><p>"+content+"</p>"; console.log("content2", content);
+                var content = editimg.name; // location.properties.name; 
+
+                if (0) {                   
+
+                    content = "<h3>Imagename</h3><p>"+content+"</p>"; // console.log("content2", content);
                 }    
 
                 if (1) {                    
-                    
-                    var head = document.createElement("h3");
-                    var newContent = document.createTextNode("More info about geolocated image"); 
+                    var head = document.createElement("h4");
+                    var newContent = document.createTextNode("More info about "+locStatus+"-located image"); 
                     head.appendChild(newContent);
 
                     var p1 = document.createElement("p");
@@ -265,12 +273,12 @@ To 'close'
                     p1.appendChild(newContent);
 
                     var p2 = document.createElement("p");
-                    newContent = document.createTextNode("Camera: " + exif["0th"]["Make"]); 
+                    newContent = document.createTextNode("Camera: " + exif["Make"]); 
                     p2.appendChild(newContent);
 
                     var inp = document.createElement("paper-input");
                     inp.setAttribute("label", "User comment");
-                    inp.setAttribute("value", exif["Exif"]["UserComment"]);
+                    inp.setAttribute("value", exif["UserComment"]);
                     
                     content = document.createElement("div");
                     content.appendChild(head);
@@ -285,12 +293,16 @@ To 'close'
 
 
             // U
-            _refreshForm : function(imgdata) { // console.log("_Apply another doc to FORM", imgdata);
-                if (!imgdata)   this.style.display = "none";
-                else            this.style.display = "inline-block";
-                
+            _refreshCard : function(imgdata) { // console.log("_Apply another doc to FORM", imgdata);
+                // little self-steuerung 
+                // a Automatik-Tür
+                if (!imgdata) this.style.display = "none";
+                else          this.style.display = "inline-block";
+                // b NO Action 
                 var editimg = imgdata.base; // Polymer-observer specific
+                if (!editimg.value) return; 
 
+                // 
                 var loc = "", formcontent = "";
 
                 if (editimg.location) {
@@ -302,15 +314,15 @@ To 'close'
                     // loc = JSON.stringify(loc); 
                     // console.log("Image IS located at", loc) ; 
 
-                    formcontent = this.formContentCreate(editimg);
-
                 } else {
 
                     // activate the LOCATE button
                     this.$.locate.disabled = false; 
                 
-                    loc = this.location; 
+                    loc = ""; // this.location; 
                 }
+
+                formcontent = this.formContentCreate(editimg);
                 
                 // trigger form update
                 // 1. img viewed in                 
@@ -329,6 +341,9 @@ To 'close'
                 // C. OK for any complex content
                 this.$.content1.innerHTML = '';
                 this.$.content1.append(formcontent); 
+                
+                // Reset the Input to be ready for "next" 
+                this.loadedimg = {}; 
             },
 
             // Add location-property to actually active editimg-object
@@ -392,7 +407,10 @@ To 'close'
                     cardwidth = card.style.width
                     display = card.style.display; // console.log("handle", handlechar); console.log("card-width", card.style.width, card.style.display); 
 
-                if (typeof(open) === "object") open = display; 
+                if (typeof(open) === "object") {
+                    if (display === "none") open = "open";
+                    else open = "close" ; 
+                }    
 
                 // TESTED to use CSS-animation to slowly close : NOPE     
                 // if (handlechar === '>') { 
@@ -403,7 +421,7 @@ To 'close'
                 //     handle.innerHTML = ">";
                 // }    
 
-                if (open === 'none') { 
+                if (open == 'open') { 
                     card.style.display = "block";
                     handle.innerText = "<";
                 } else {    

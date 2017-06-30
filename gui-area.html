@@ -7,16 +7,17 @@
 
 <link rel="import" href="../iron-icons/iron-icons.html">
 
-<link rel="import" href="../paper-fab/paper-fab.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
 
 <!--
-`fab-area`
-container for toggling between FAB and AREA (CARD or other DIV)
+`gui-area`
+container for toggling between FAB(or BUTTON) and an AREA with slots (CARD or other DIV) for variable content
 
 @demo demo/imagelinks.html 
 -->
 
-<dom-module id="fab-area">
+<dom-module id="gui-area">
 
     <template>
 
@@ -61,8 +62,22 @@ container for toggling between FAB and AREA (CARD or other DIV)
             }
 
             #fab {
-                opacity: 0.8;                 
+                opacity: 0.8;    
+                min-width: 2em;             
             }
+
+            #handle {
+                background-color: white;
+                border-color: gray;
+                border-style: solid;
+                border-width: 1px 1px 1px 1px;
+                font-weight: bold;
+                min-width: 2em;
+                margin-left: 0;
+                height: 40px;
+                padding: 5px;
+            }
+
 
             #ctrl div {
                 padding-left: 10px;
@@ -79,19 +94,18 @@ container for toggling between FAB and AREA (CARD or other DIV)
 
         </style>
 
-        <!-- "FAB" or FAB-Area are visible alternatively -->
+         <!--"FAB" or FAB-Area are visible alternatively -->
 
-        <template is="dom-if" if="{{!checked}}">
-            <paper-fab 
-                id = "fab" 
-                class = "fab" 
+        <template is="dom-if" if="{{!open}}">
+            <paper-button 
+                id = "handle" 
                 icon = "explore" 
-                title = "heart" 
-                on-tap = "_toggleVisibility">
-            </paper-fab>
+                title = "tools" 
+                on-tap = "_toggleVisibility">v
+            </paper-button>
         </template>
 
-        <template is="dom-if" if="{{checked}}">
+        <template is="dom-if" if="{{open}}">
 
             <!-- "FAB AREA" = vertical container -->
             <div id="container">
@@ -123,7 +137,7 @@ container for toggling between FAB and AREA (CARD or other DIV)
     <script>
         
         Polymer({
-            is: 'fab-area',
+            is: 'gui-area',
 
             properties: {
 
@@ -158,8 +172,9 @@ container for toggling between FAB and AREA (CARD or other DIV)
                     type: Boolean
                 },
 
-                checked: {
+                open: {
                     type: Boolean,
+                    notify: true,
                     observer: 'logchecked'
                 }
             },
@@ -174,9 +189,9 @@ container for toggling between FAB and AREA (CARD or other DIV)
                 this._closer();
             },
 
-            logchecked : function(checked) { console.log("fabarea logchecked", checked);
-                if (checked === null) return;  
-                this._toggleVisibility(checked);
+            logchecked : function(open) { console.log("fabarea logchecked", open);
+                if (open === null) return;  
+                this._toggleVisibility(open);
             },
 
             // 
@@ -194,7 +209,7 @@ container for toggling between FAB and AREA (CARD or other DIV)
             forceView: function(id) {
                 // triggers show of viewer-area
                 // usable to "remove" the browser-header
-                this.checked = true;
+                this.open = true;
                 this._toggleVisibility(true);
             },
 
@@ -207,7 +222,7 @@ container for toggling between FAB and AREA (CARD or other DIV)
             },
 
             _closer : function() {
-                // this.checked = false;
+                // this.open = false;
                 this._toggleVisibility(false); 
                 this._issized = false;
             },
@@ -237,14 +252,14 @@ container for toggling between FAB and AREA (CARD or other DIV)
 
             // alternative visibility of control and container
             _toggleVisibility: function(flag) {                
-                if (flag == null) flag = !this.checked; 
+                if (flag == null) flag = !this.open; 
                 if (!flag)  {
                     this._toggleSize(50);
                 } else {
                     this._issized = true;
                     this._issized = false;
                 }
-                this.checked = flag;
+                this.open = flag;
                 return; 
             } 
 
