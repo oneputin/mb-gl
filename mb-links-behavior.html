@@ -1,0 +1,436 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<script>
+  /**
+   * `Mbb.LinksBehavior` 
+   * Utilities to create and manage pointLinks 
+   *
+   * @polymerBehavior Mbb.LinksBehavior
+   * @demo demo/imagelinks.html
+   **/
+    window.Mbb = window.Mbb || {};
+
+    Mbb.LinksBehavior = {
+
+        properties: {
+            mbbtest: {
+                value: 99
+            },
+            popup:{
+                type: Object
+            },
+            clustered: {
+                type: Array,
+                value: [],
+                notify:true
+            },
+            featureidname : {
+                type: String,
+                value: "name"
+            } 
+        },
+
+        observers: [
+            'docLinkSet(docselected.geojson)',
+            'trackDocsUnlinked(_sessionunset.length)'
+        ],
+
+        // Test the layer status
+        _linkLayerStatus : function(layid) {
+            if (!layid) layid = this.layerid;
+            var status = {
+                id : layid,
+                src :  map.getSource(layid),
+                layer : map.getLayer(layid)
+            };  // console.log("_linkLayerStatus", status);  
+            return status;  
+        },
+
+        // generic click-listener
+        _mapClickListener : function(e) {
+            var f = wpscope._mapeventListener(e); 
+            if (!f) return; // console.log("clicked",f);
+
+            wpscope._checkoutDocFromMap(f);
+        }, 
+
+        // generic hover-listener
+        _mapHoverListener : function(e) {
+            var f = wpscope._mapeventListener(e); 
+            if (!f) return; 
+            wpscope.hoverAction(features[0]);
+        }, 
+
+        // GENERIC select-event-translator
+        _mapeventListener : function(e) {
+            var st = wpscope._linkLayerStatus(); 
+            if (!st.layer) return ;  
+
+            var features = map.queryRenderedFeatures(e.point, {
+                layers: [st.id]
+            });
+            if (!features || !features.length) return;   
+            return features[0];
+        },    
+
+
+
+
+        // Append link to 
+        docLinkSet: function(linkFeature) { 
+            if (!linkFeature) return;   
+
+            // A. add linkFeature to map
+            var featureset = {
+                "type": "FeatureCollection",
+                "features": [linkFeature]
+            }
+            this._refreshLinks(featureset); 
+
+            // B. remove entry from "unset" docs 
+            var docname = linkFeature.properties.name;  console.log("Add Link to mapIndex for", docname, linkFeature);
+            var index = this._sessionunset.indexOf(docname);
+            if (index > -1) {
+                this.splice('_sessionunset', index, 1);  // console.log("sessionUnSet updated", this._sessionunset);
+            }
+        },
+
+
+        // Refresh the "src"(content) of "explored" data-layers 
+        // creates layers if not yet existing 
+        _refreshLinks: function(rawdata) {
+            
+            if (!rawdata || !rawdata.type) {
+                console.log("BREAK. 1  no location data attached!");
+                return;  
+            } 
+
+            // 1. ReCheck structure as featureset
+            var featuresetRefresh = rawdata; 
+            
+            if (!featuresetRefresh.features) {
+                featuresetRefresh = {
+                    "type": "FeatureCollection",
+                    "features": [featuresetRefresh]
+                }
+            }    
+            if (!featuresetRefresh.features.length) {
+                console.log("BREAK. 2  no location data attached to ", rawdata);
+                return;  
+            } 
+
+            var zoomFunction = this._fitBounds; 
+
+            // Update viewPort to include last loaded locations  
+            function zoomToFeatures(zoomFeatures) {
+                var ff = zoomFeatures;
+                var radius = this.radius ? this.radius : 5; 
+
+                if (ff.length < 2) { // fit to a certain buffer around point !!
+                    // HILITING the last linkPoint in suitable Umkreis with "radius" km 
+                    var center = ff[0];
+                    var units = 'kilometers';
+                    var radius = radius;
+                    var steps = 10;
+                    var pp = turf.explode(turf.circle(center, radius, steps, units));
+                    ff = ff.concat(pp.features);   
+                }
+                zoomFunction(ff);
+            }  
+
+            // 2. Check/Create/Update "LinkLayer"-Data
+
+            var st = this._linkLayerStatus();  // console.log("_refresh Layer " + st.id, st, rawdata, featuresetRefresh); 
+            var addedFeatures = [];
+
+            if (!st.layer) {   console.log("FIRST link-layer-setup from", rawdata);
+
+                addedFeatures = this._createLayers(st.id, featuresetRefresh);
+                setTimeout( function() {
+                    // map.setZoom(map.getZoom() + 0.1); 
+                    zoomToFeatures(addedFeatures);
+                }, 500);  
+            
+            }  else {          // Update dataSource
+
+                var oldFeatures = this._sessionSet.features,
+                    tryFeatures = featuresetRefresh.features; // console.log("old", oldFeatures) ; console.log("try", tryFeatures) ;
+
+                // Filtering only features with a new name  
+                var addedFeatures = tryFeatures.filter(function(item){
+                    var isOld = false;
+                    oldFeatures.some(function(old){
+                        if (old.properties.name === item.properties.name) {
+                            isOld = true;
+                            return;
+                        } 
+                    })
+                    return !isOld;
+                }); // console.log("really new features", addedFeatures); 
+                if (!addedFeatures.length) return;   
+
+                this._sessionSet.features = this._sessionSet.features.concat(addedFeatures); 
+
+                // console.log("new, all features", featuresetRefresh, this._sessionSet) ; 
+                map.getSource(st.id).setData(this._sessionSet);
+
+                zoomToFeatures(addedFeatures); 
+
+            }
+
+            // 3.  
+            if (this._checkoutDocFromMap) {
+                    map.off('click', this._mapClickListener);
+                    map.on('click', this._mapClickListener);
+            } 
+
+            if (this.hoverAction) {
+                    map.off('hover', this.hoverListener);
+                    map.on('hover', this.hoverListener);
+            }
+
+            return {features: addedFeatures} ;
+        },
+
+        // 
+        _refreshMap: function(imagesetLocated) {
+            
+            map.showTileBoundaries = true; // for DEBUG 
+
+            var imageset = this.imageset;  
+            // console.log("_refreshMap ImageSet Raw",  imageset); 
+            // console.log("_refreshMap ImageSet Located", imagesetLocated); 
+
+            var featureSet = imagesetLocated.geojson; 
+
+            featureSet.features.forEach(function(f){
+                if (!f.properties.img) {
+                    var name = f.properties.name,
+                        img ; 
+                    imageset.some(function(obj){
+                        if (obj.name == name) {
+                            img = obj.value;
+                            return;
+                        }     
+                    });
+                    f.properties.img = img;
+                }
+            });
+
+            console.log("_refreshMap FeatureSet", featureSet); 
+            
+            this._refreshLinks(featureSet);
+        },
+        // Create an suitably "clustering" layer
+        _createLayers : function(srcname, featureset, idname) {    
+            if (!idname) idname = "name"; 
+            this._sessionSet = featureset;
+            
+            // 
+            var clusterMode = true,
+                clusterRadius = 50,
+                clusterMaxZoom = 14;
+
+            var vis = "none";
+            if (this.visible) vis = "visible";
+
+            // A. SOURCE 
+            map.addSource(srcname, {
+                "type": "geojson",
+                "data": featureset,
+                "cluster": clusterMode,
+                "clusterMaxZoom": clusterMaxZoom, // Max zoom to cluster points on
+                "clusterRadius": clusterRadius    // Radius of each cluster when clustering points (defaults to 50)
+            });
+
+            // B. Create LAYER(s) of SOURCE
+
+            if (!clusterMode) {  // B.1  Simple PointLayer
+
+                map.addLayer({
+                    "id": srcname,
+                    "type": "circle",
+                    "source": srcname,
+                    "layout" : {
+                        "visibility": vis
+                    },
+                    "paint": {
+                        "circle-radius": 8,
+                        "circle-color": "#FFFFFF",
+                        "circle-stroke-width": 2,
+                        "circle-stroke-color": "#B42222"
+                    },
+                    "filter": ["==", "$type", "Point"],
+                }); // console.log("added img-link-layer", map.getLayer(srcname) ); 
+
+            } else {                  // B.2 LayerGROUP with clusters (to best visualize the content of SOURCE) 
+
+                var elem = this;
+
+                // Cluster-Symbol (BG) 
+                map.addLayer({
+                    id: "clusters",
+                    type: "circle",
+                    source: srcname,
+                    filter: ["has", "point_count"],
+                    paint: {
+                        "circle-color": {
+                            property: "point_count",
+                            type: "interval",
+                            stops: [
+                                [0, "#51bbd6"],
+                                [5, "#f1f075"],
+                                [20, "#f28cb1"],
+                            ]
+                        },
+                        "circle-radius": {
+                            property: "point_count",
+                            type: "interval",
+                            stops: [
+                                [0, 20],
+                                [5, 30],
+                                [20, 40]
+                            ]
+                        }
+                    }
+                });
+
+                // Cluster-Label (FG)
+                map.addLayer({
+                    id: "cluster-count",
+                    type: "symbol",
+                    source: srcname,
+                    filter: ["has", "point_count"],
+                    layout: {
+                        "text-field": "{point_count_abbreviated}",
+                        "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+                        "text-size": 12
+                    }
+                });
+
+                // NON-clustered points
+                map.addLayer({
+                    id: srcname,
+                    type: "circle",
+                    source: srcname,
+                    filter: ["!has", "point_count"],
+                    paint: {
+                        "circle-color": "#11b4da",
+                        "circle-radius": 4,
+                        "circle-stroke-width": 1,
+                        "circle-stroke-color": "#fff"
+                    }
+                });
+
+                // EVENTS to Refresh customMarkers of "PURE" points
+                map.on('zoomend', function(){
+                    elem._checkMarkers(srcname, idname);
+                });
+
+                map.on('moveend', function(){
+                    elem._checkMarkers(srcname, idname);
+                });
+
+                // EVENTS to query features "below" a cluster-point
+                var self = this;
+                map.on('click', function (e) {
+
+                    var clusters = map.queryRenderedFeatures(e.point, {
+                        layers: ['clusters']
+                    });
+
+                    if (clusters.length) {
+
+                        var links = self._sessionSet.features;  
+                        //console.log("clusters, All links", clusters, links);
+                        var pointsInCluster = links.filter(function(f){
+                            var pointPixels = map.project(f.geometry.coordinates);
+                            var pixelDistance = Math.sqrt(
+                                Math.pow(e.point.x - pointPixels.x, 2) + 
+                                Math.pow(e.point.y - pointPixels.y, 2) 
+                            );
+                            return Math.abs(pixelDistance) <= clusterRadius;
+                        }); console.log("clustered links", pointsInCluster);
+                        self.clustered = pointsInCluster;
+                    }
+                });
+
+            }
+
+            // C. Return features added at creationtime
+            return featureset.features; 
+
+        },    
+
+        // MB-specific tool to remove duplicates !!
+        mbFeaturesUnique: function(features, idname) {
+            if (!idname) idname = "name";
+            var uniqs = [], ids = [], id = "";
+
+            features.forEach(function(f) {
+                id = f.properties[idname];
+                if (!id || (ids.indexOf(id) < 0)) {
+                    ids.push(id);
+                    uniqs.push(f);
+                }   
+            });
+            return uniqs; 
+        },
+
+        // Update the "_sessionDocs-object" ( =  docs(fi. img's) actually "in use") 
+        // from collection of "last added docs" 
+        _sessionDocsRefresh : function(docCollection) { 
+            if (!docCollection || !docCollection.length)  return; 
+
+            this.toolstatus = true;
+            this.toolstatus = false; // dbl-zuordnung ensures that false is evaluated !! 
+
+            var firstDoc;
+            var sessionDocs = this._sessionDocs; 
+
+            docCollection.forEach( function(doc){ // console.log("CheckIn doc", img);
+                if (!firstDoc) firstDoc = doc;
+
+                if (!sessionDocs[doc.name]) {
+                    sessionDocs[doc.name] = doc; // fi img;
+                }     
+            });   
+
+            this._sessionDocs = sessionDocs;  console.log("Refreshed this._sessionDocs", this._sessionDocs);
+
+            if (firstDoc && (docCollection.length < 2)) { // console.log("activating doc(img) ", firstDoc.name, Object.keys(firstDoc)); 
+                this._checkoutDoc(firstDoc.name); 
+            }    
+        },
+
+        // Checkout-1:  from list of non-geocoded docs(images)
+        _checkoutDocFromList : function(e) { 
+            var item = e.target;   // console.log("item-value", item.value); // , item.value);
+            this._checkoutDoc(item.value); 
+        },
+
+        // Checkout-2:  according to name-property of 'tapped' point-feature
+        _checkoutDocFromMap : function (feature) {  
+            var id = feature.properties.name; // console.log("clicked at locator of  image " + id, feature.properties); 
+            this._checkoutDoc(id); 
+        },
+
+        /**
+            *  Notify id of selected doc to be used by other APP-Components 
+            */            
+        _checkoutDoc : function(checkoutid) { // console.log("_checkoutDoc", imgid, this._sessionDocs); 
+            if (!this._sessionDocs) return;  
+            
+            var docids = Object.keys(this._sessionDocs);  // console.log("SUPPLY from", imgnames, imgid) ;
+            docids.some(function(docid){
+                if (checkoutid == docid) {  
+                    var docObj = this._sessionDocs[docid];   console.log("Selected imgObj named [" + docid + "]"); // , img); // , img.value);
+                    this.docselected = docObj;
+                    return;
+                } 
+            }.bind(this));   
+        },
+
+
+    }
+</script>    

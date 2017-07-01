@@ -42,7 +42,7 @@ To 'close'
     <style is="custom-style">
         :host {
             position: absolute;
-            display: none; /*inline-block; /*none; */
+            display: none; /*inline-block; */
             opacity: 1; 
             /*to place vertically centered */
             /*top: 50%;
@@ -144,9 +144,9 @@ To 'close'
     <div id="container">
         
         <paper-card 
-            id="card"
-            heading="[[editimg.name]]" 
-            image = "[[editimg.src]]" 
+            id = "card"
+            heading="[[_titleText]]" 
+            image = "[[_titleImg]]" 
             class = "edit">
 
             <div class="info-content">
@@ -183,9 +183,15 @@ To 'close'
             is: 'image-card',
 
             properties: {
+                _titleText : {
+                    type: String
+                },
+                _titleImg : {
+                    type: String
+                },
 
-                metadataset: {
-                    type: Object
+                features : {
+                    type: Array
                 },
 
                 loadedimg: {
@@ -197,21 +203,15 @@ To 'close'
                     type: Object
                 }, 
                 
+                metadataset: {
+                    type: Object
+                },
+
                 // 
                 location : {
                     type: String,
                     observer: '_formatLocation'
                 },
-                // 
-                formcontent : {
-                    type: String,
-                    value: "nn"
-                },
-
-                geojson : {
-                    type: String,
-                    notify: true                    
-                }
             },
 
             behaviors: [
@@ -220,12 +220,21 @@ To 'close'
             ],
 
             observers: [
-                '_refreshCard(loadedimg.*)'
+                '_refreshCardImg(loadedimg.*)',
+                '_refreshCardMenu(features)'
             ],
+
+            listeners: {
+                // 'cluster.tap': 'clusterSelect'
+            },
 
             attached: function() {// console.log("DOM attached");
                 // this.dataUsageChanged();
                 this._toggleCard("close");
+            },
+
+            clusterSelect : function(e){
+                console.log("selected item", e);
             },
 
             // A. Basic 
@@ -241,8 +250,44 @@ To 'close'
                 this.location = JSON.stringify(ll);
             },
 
-            // 
-            formContentCreate: function (editimg) {
+            _refreshCardMenu: function (features) {
+                if (!features) this.style.display = "none";
+                else           this.style.display = "inline-block";
+                if (!features.length) return;  console.log("features4menu", features);
+
+                this._toggleCard("open");
+                
+                // Header 
+                this._titleText =  "Cluster with "+features.length +" Features";
+                this._titleImg = "";
+                
+                // CtrlLine ??? 
+
+                // Main Content
+                var menu = document.createElement("paper-menu");
+                var item, id, text;
+                features.forEach(function(f){
+                    id = f.properties.name;
+                    item = document.createElement("paper-item");
+                    item.setAttribute("value", id);
+                    item.classList.add("cluster");
+                    item.appendChild(document.createTextNode(id));
+
+                    menu.appendChild(item);
+                });
+
+                this.$.content1.innerHTML = '';
+                this.$.content1.append(menu); 
+                var items = Polymer.dom(this.root).querySelectorAll("paper-item");
+                items.forEach(function(item){
+                    item.addEventListener('tap', function(e){
+                        console.log("selected",e.target.getAttribute("value"))
+                    });
+                });
+            },
+
+            // create Dorm describing an Image 
+            imgFormCreate: function (editimg) {
                 console.log("editimg keys", Object.keys(editimg));
                 // console.log(Object.keys(editimg.location));
                 // console.log(Object.keys(editimg.location.geometry));
@@ -258,56 +303,50 @@ To 'close'
 
                 var content = editimg.name; // location.properties.name; 
 
-                if (0) {                   
+                var head = document.createElement("h4");
+                var newContent = document.createTextNode("More info about "+locStatus+"-located image"); 
+                head.appendChild(newContent);
 
-                    content = "<h3>Imagename</h3><p>"+content+"</p>"; // console.log("content2", content);
-                }    
+                var p1 = document.createElement("p");
+                newContent = document.createTextNode(content); 
+                p1.appendChild(newContent);
 
-                if (1) {                    
-                    var head = document.createElement("h4");
-                    var newContent = document.createTextNode("More info about "+locStatus+"-located image"); 
-                    head.appendChild(newContent);
+                var p2 = document.createElement("p");
+                newContent = document.createTextNode("Camera: " + exif["Make"]); 
+                p2.appendChild(newContent);
 
-                    var p1 = document.createElement("p");
-                    newContent = document.createTextNode(content); 
-                    p1.appendChild(newContent);
-
-                    var p2 = document.createElement("p");
-                    newContent = document.createTextNode("Camera: " + exif["Make"]); 
-                    p2.appendChild(newContent);
-
-                    var inp = document.createElement("paper-input");
-                    inp.setAttribute("label", "User comment");
-                    inp.setAttribute("value", exif["UserComment"]);
-                    
-                    content = document.createElement("div");
-                    content.appendChild(head);
-                    content.appendChild(p1);
-                    content.appendChild(p2);
-                    content.appendChild(inp);
-                    
-                }
+                var inp = document.createElement("paper-input");
+                inp.setAttribute("label", "User comment");
+                inp.setAttribute("value", exif["UserComment"]);
+                
+                content = document.createElement("div");
+                content.appendChild(head);
+                content.appendChild(p1);
+                content.appendChild(p2);
+                content.appendChild(inp);
 
                 return content; 
             },
 
-
-            // U
-            _refreshCard : function(imgdata) { // console.log("_Apply another doc to FORM", imgdata);
+            // Update 
+            _refreshCardImg : function(imgdata) { // console.log("_Apply another doc to FORM", imgdata);
                 // little self-steuerung 
                 // a Automatik-Tür
                 if (!imgdata) this.style.display = "none";
                 else          this.style.display = "inline-block";
-                // b NO Action 
+                
+                // b RAW ContentCheck , NO Action 
                 var editimg = imgdata.base; // Polymer-observer specific
                 if (!editimg.value) return; 
 
                 // 
                 var loc = "", formcontent = "";
-
+                this._titleText = editimg.name ? editimg.name : "nn";
+                this._titleImg = editimg.value ? editimg.value : "";
+                 
                 if (editimg.location) {
 
-                    // disable the LOCATE button for this image
+                    // disable the LOCATE button of the CARD.Ctrls
                     this.$.locate.disabled = true; 
 
                     loc = editimg.location.geometry.coordinates; 
@@ -322,9 +361,10 @@ To 'close'
                     loc = ""; // this.location; 
                 }
 
-                formcontent = this.formContentCreate(editimg);
+                formcontent = this.imgFormCreate(editimg);
                 
                 // trigger form update
+
                 // 1. img viewed in                 
                 editimg.src = editimg.value; 
                 this.editimg = editimg; 
@@ -332,13 +372,6 @@ To 'close'
 
                 // 2. Update (informal) form fields 
 
-                // A. OK for non-HTML text
-                // this.formcontent = formcontent;
-
-                // B. OK for explicite HTMNL-string  
-                // this.$.content1.innerHTML = formcontent;
-
-                // C. OK for any complex content
                 this.$.content1.innerHTML = '';
                 this.$.content1.append(formcontent); 
                 
@@ -412,15 +445,15 @@ To 'close'
                     else open = "close" ; 
                 }    
 
-                // TESTED to use CSS-animation to slowly close : NOPE     
-                // if (handlechar === '>') { 
-                //     card.style.width = "100%";
-                //     handle.innerHTML = "<";
-                // } else {
-                //     card.style.width = 0;
-                //     handle.innerHTML = ">";
-                // }    
-
+            /*  //TESTED to use CSS-animation to slowly open/close : NOPE     
+                if (handlechar === '>') { 
+                    card.style.width = "100%";
+                    handle.innerHTML = "<";
+                } else {
+                    card.style.width = 0;
+                    handle.innerHTML = ">";
+                }    
+            */
                 if (open == 'open') { 
                     card.style.display = "block";
                     handle.innerText = "<";
@@ -428,7 +461,7 @@ To 'close'
                     card.style.display = "none";
                     handle.innerText = ">";
                 }    
-                // console.log("toggled paper-card visibility !") 
+                console.log("toggled paper-card visibility to", open) 
             },
 
 

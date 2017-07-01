@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+    
+    <style>
+        #map {
+            width: 300px;
+            height: 300px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="map"></div>
+
+<script>
+
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYXZub3Zvc2Vsb3YiLCJhIjoiY2lyNG42cW0yMDAzYWk0bWNkdHllaWNnOSJ9.bp3cq3VYHc07FJWs9RpzBw';
+
+	var map = new mapboxgl.Map({
+		container: 'map',
+		style: 'mapbox://styles/mapbox/streets-v9'
+	});
+	map.setZoom(9);
+	map.setCe
+    nter([37.592927, 55.749700]);
+
+	map.on('load', function() {
+		var features = [];
+
+		// dev data random points for map
+		for (let i = 0; i < 100; i++) {
+			features.push({
+				"type": "Feature",
+				"geometry": {
+					"type": "Point",
+					"coordinates": [37.337495 + Math.random() / 2, 55.910473 - Math.random() / 2]
+				},
+				"properties": {
+					'icon'		: 'monument',
+					"itemID"	: Math.round(Math.random() * 10000)
+				}
+			});
+		}
+		var clusterRadius = 50;
+		// add source for clustered points
+		map.addSource("points", {
+			"type": "geojson",
+			"data": {
+				"type": "FeatureCollection",
+				"features": features
+			},
+			cluster: true,
+            clusterRadius: clusterRadius
+		});
+
+		// new layer for non clustered points
+		map.addLayer({
+			"id": "points",
+			"type": "symbol",
+			"source": "points",
+			"layout": {
+				"icon-image": "{icon}-15",
+				"text-anchor": "top",
+				"text-field": "{itemID}",
+				"text-size": 11,
+				"text-offset": [0, 0.6],
+				'icon-allow-overlap': true,
+				'icon-ignore-placement': true
+			}
+		});
+
+		// new layer for clustered points
+		map.addLayer({
+			"id": "cluster",
+			"type": "symbol",
+			"source": "points",
+			"layout": {
+				"icon-image": "star-15",
+				"text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+				"text-anchor": "top",
+				"text-field": "{point_count}",
+				"text-offset": [0, 0.6],
+				"text-size" : 12
+			},
+			"filter": [">=", "point_count", 2]
+		});
+    
+		// map click handler 
+		map.on('click', function(e) {
+			var cluster = map.queryRenderedFeatures(e.point, { layers: ["cluster"] });
+
+			if (cluster[0]) {
+      	var pointsInCluster = features.filter(function(f){
+        	var pointPixels = map.project(f.geometry.coordinates)
+          var pixelDistance = Math.sqrt(
+            Math.pow(e.point.x - pointPixels.x, 2) + 
+            Math.pow(e.point.y - pointPixels.y, 2) 
+        );
+        return Math.abs(pixelDistance) <= clusterRadius;
+        });
+        console.log(cluster, pointsInCluster);
+      }
+      
+		})
+	});
+</script>
+</body>
+</html>
