@@ -13,6 +13,18 @@
     Mbb.LinksBehavior = {
 
         properties: {
+            // checkIn/checkOut : selected doc(img)
+            docselected : {
+                type: Object,
+                observer: '_logProperty',
+                notify : true
+            },
+            // checkIn/checkOut : selected doc(img)
+            querydocid : {
+                type: String,
+                observer: '_queryDoc'
+            },
+            
             mbbtest: {
                 value: 99
             },
@@ -27,13 +39,21 @@
             featureidname : {
                 type: String,
                 value: "name"
-            } 
+            },
         },
 
         observers: [
             'docLinkSet(docselected.geojson)',
             'trackDocsUnlinked(_sessionunset.length)'
         ],
+
+
+        // realizes "idQuery" on sessionDocs
+        _queryDoc: function(docid){  
+            var docselected = this._sessionDocs[docid];
+            console.log("_queryDoc", docid, docselected, this.docselected); // this._sessionDocs);
+            if (docselected) this.docselected = docselected; 
+        },
 
         // Test the layer status
         _linkLayerStatus : function(layid) {
@@ -72,9 +92,6 @@
             if (!features || !features.length) return;   
             return features[0];
         },    
-
-
-
 
         // Append link to 
         docLinkSet: function(linkFeature) { 
@@ -228,6 +245,7 @@
             
             // 
             var clusterMode = true,
+                popupMode = true,
                 clusterRadius = 50,
                 clusterMaxZoom = 14;
 
@@ -331,28 +349,70 @@
                     elem._checkMarkers(srcname, idname);
                 });
 
+
                 // EVENTS to query features "below" a cluster-point
                 var self = this;
-                map.on('click', function (e) {
+
+                function createMenu(itemdata){
+
+                    var menu = document.createElement("paper-menu");
+                    itemdata.forEach(function(data){
+                        item = document.createElement("paper-item");
+                        item.setAttribute("value", data.value);
+                        item.classList.add("cluster");
+                        item.appendChild(document.createTextNode(data.text));
+
+                        item.addEventListener('tap', function(e){
+                            self.querydocid = e.target.getAttribute("value");
+                        });
+
+                        menu.appendChild(item);
+                    });
+                    return menu;
+                }
+
+                map.on('click', 'clusters', function (e) {
 
                     var clusters = map.queryRenderedFeatures(e.point, {
                         layers: ['clusters']
                     });
 
-                    if (clusters.length) {
+                    var links = self._sessionSet.features;  //console.log("clusters, All links", clusters, links);
+                    
+                    var pointsInCluster = links.filter(function(f){
+                        var pointPixels = map.project(f.geometry.coordinates);
+                        var pixelDistance = Math.sqrt(
+                            Math.pow(e.point.x - pointPixels.x, 2) + 
+                            Math.pow(e.point.y - pointPixels.y, 2) 
+                        );
+                        return Math.abs(pixelDistance) <= clusterRadius;
+                    }); console.log("clustered linkpoints", pointsInCluster);
 
-                        var links = self._sessionSet.features;  
-                        //console.log("clusters, All links", clusters, links);
-                        var pointsInCluster = links.filter(function(f){
-                            var pointPixels = map.project(f.geometry.coordinates);
-                            var pixelDistance = Math.sqrt(
-                                Math.pow(e.point.x - pointPixels.x, 2) + 
-                                Math.pow(e.point.y - pointPixels.y, 2) 
-                            );
-                            return Math.abs(pixelDistance) <= clusterRadius;
-                        }); console.log("clustered links", pointsInCluster);
-                        self.clustered = pointsInCluster;
+                    var itemdata = [], id, text;
+                    pointsInCluster.forEach(function(f){
+                        id = f.properties.name;
+                        text = id.split(".")[0];
+                        itemdata.push({text:text,value:id});
+                    }); 
+                    // sort upside
+                    itemdata.sort(function(a, b) {
+                        // return parseFloat(a.text) - parseFloat(b.text);
+                        return a.text.localeCompare(b.text);
+                    });
+
+                    console.log("itemdata of linkpoints",itemdata);
+
+                    if (popupMode) {
+                        var popupContent = createMenu(itemdata); 
+                        new mapboxgl.Popup()
+                            .setLngLat(e.features[0].geometry.coordinates)
+                            .setDOMContent(popupContent)
+                            .addTo(map);
+                    } else {
+                        self.clustered = itemdata;
                     }
+
+
                 });
 
             }
@@ -399,6 +459,7 @@
             this._sessionDocs = sessionDocs;  console.log("Refreshed this._sessionDocs", this._sessionDocs);
 
             if (firstDoc && (docCollection.length < 2)) { // console.log("activating doc(img) ", firstDoc.name, Object.keys(firstDoc)); 
+                // this.querydocid = firstDoc.name; 
                 this._checkoutDoc(firstDoc.name); 
             }    
         },
@@ -406,29 +467,27 @@
         // Checkout-1:  from list of non-geocoded docs(images)
         _checkoutDocFromList : function(e) { 
             var item = e.target;   // console.log("item-value", item.value); // , item.value);
+            // this.querydocid = item.value; 
             this._checkoutDoc(item.value); 
         },
 
         // Checkout-2:  according to name-property of 'tapped' point-feature
         _checkoutDocFromMap : function (feature) {  
-            var id = feature.properties.name; // console.log("clicked at locator of  image " + id, feature.properties); 
-            this._checkoutDoc(id); 
+            // this.querydocid = feature.properties.name; // console.log("clicked at locator of  image " + id, feature.properties); 
+            this._checkoutDoc(feature.properties.name); 
         },
 
         /**
-            *  Notify id of selected doc to be used by other APP-Components 
+            *  Check Notify id of selected doc to be used by other APP-Components 
             */            
-        _checkoutDoc : function(checkoutid) { // console.log("_checkoutDoc", imgid, this._sessionDocs); 
-            if (!this._sessionDocs) return;  
+        _checkoutDoc : function(checkoutid) { 
+            // if (!this._sessionDocs) return;
+
+            console.log("Last Doc Checkout, id=[" + this.querydocid + "]"); 
+            this.querydocid = "";  
+            this.querydocid = checkoutid;  
+            console.log("Next Doc Checkout, id=[" + checkoutid + "]"); 
             
-            var docids = Object.keys(this._sessionDocs);  // console.log("SUPPLY from", imgnames, imgid) ;
-            docids.some(function(docid){
-                if (checkoutid == docid) {  
-                    var docObj = this._sessionDocs[docid];   console.log("Selected imgObj named [" + docid + "]"); // , img); // , img.value);
-                    this.docselected = docObj;
-                    return;
-                } 
-            }.bind(this));   
         },
 
 

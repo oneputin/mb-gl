@@ -2,13 +2,13 @@
 
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
-
 <link rel="import" href="../iron-collapse/iron-collapse.html">
 
-<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
 
 <link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="icons-svg.html">
 
 
 <!--
@@ -35,10 +35,6 @@ container for toggling between FAB(or BUTTON) and an AREA with slots (CARD or ot
                 display: block;
                 background-color: rgba(255,255,255,0.5); /*#ff4081*/
                 @apply(--layout-vertical);
-            }
-
-            paper-icon-button {
-                background-color: rgba(255,0,0,0.5);
             }
 
             .areactrls {
@@ -98,9 +94,9 @@ container for toggling between FAB(or BUTTON) and an AREA with slots (CARD or ot
          <!--"FAB" or FAB-Area are visible alternatively -->
 
         <template is="dom-if" if="{{!open}}">
-            <paper-button 
+            <paper-icon-button 
                 id = "handle" 
-                icon = "explore" 
+                icon = "app:expand-more" 
                 title = "tools" 
                 on-tap = "_toggleVisibility">v
             </paper-button>
@@ -113,11 +109,12 @@ container for toggling between FAB(or BUTTON) and an AREA with slots (CARD or ot
 
                 <div class="areactrls">
 
-                    <paper-icon-button icon="unfold-more" on-click="_toggle"></paper-icon-button>
+                    <paper-icon-button icon="app:unfold-more" on-tap="_toggle"></paper-icon-button>
                     
                     <button id="ctrlbtn" on-click="toggleAbout">[[ctrllabel]]</button>
                     <!--<div class="flexchild"></div>-->
-                    <paper-icon-button icon="close" on-click="_closer"></paper-icon-button>
+                    
+                    <paper-icon-button icon="app:close" on-tap="_closer"></paper-icon-button>
 
                 </div>
 
@@ -190,7 +187,7 @@ container for toggling between FAB(or BUTTON) and an AREA with slots (CARD or ot
                 this._closer();
             },
 
-            logchecked : function(open) { console.log("fabarea logchecked", open);
+            logchecked : function(open) { //console.log("fabarea logchecked", open);
                 if (open === null) return;  
                 this._toggleVisibility(open);
             },

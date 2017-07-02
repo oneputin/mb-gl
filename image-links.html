@@ -138,13 +138,6 @@ container for
                     observer: '_checkInUnset'
                 },
 
-                // checkIn/checkOut : selected doc(img)
-                docselected : {
-                    type: Object,
-                    observer: 'logselected',
-                    notify : true
-                },
-
                 // 
                 location : {
                     type: String,
@@ -216,11 +209,12 @@ container for
                 Mbb.LinksBehavior
             ],           
 
-            logselected: function(imgObj) {
-                // console.log("logselected", imgObj.name);
+            _logProperty: function(prop) {
+                // console.log("_logProperty", prop);
             },
+
             _sessionlog : function(set) {
-                console.log("_sessionlog", set);
+                console.log("_sessionDocs", set);
             },
 
             ready: function() {
@@ -230,9 +224,8 @@ container for
 
             logToolStatus : function(toolstatus) {
                 // other "peripheral" gui-elements should be "hidden"(closed) during "tooling" 
-                console.log("toolstatus", toolstatus);
+                // console.log("toolstatus", toolstatus);
             },
-
 
             hoverAction : function (feature) {
                 console.log("hovered ", feature); 
@@ -368,22 +361,17 @@ container for
                     return popup;    
                 };    
 
-
-                var log = []; // tracks processed features
-                
                 features.forEach(function(markerpnt) {
+                   
                     // create a DOM element for the marker
-                    var name     = markerpnt.properties.name,
+                    var markerid = markerpnt.properties.name,
                         bgimg    = markerpnt.properties.img,
                         iconSize = markerpnt.properties.iconsize;
 
                     if (!iconSize) iconSize = [50,50];
 
-                    // if (bgimg && (log.indexOf(name) < 0)) {
                     if (bgimg) {    
 
-                        log.push(name);
-                        
                         var marker = makeMarker(bgimg, iconSize, markerpnt.properties);
 
                         // add marker to map
@@ -395,15 +383,16 @@ container for
 
                         // setup link functions    
                         if (linkFunction)  {
-                            marker.addEventListener('click', function() {
-                                linkFunction(markerpnt.properties.name);
+                            marker.addEventListener('tap', function() {
+                                // console.log("LINK on marker of:", markerid); 
+                                linkFunction(markerid);
                             }); 
                         } else if (dom4pop)  {
                             var popup  = makePopup(markerpnt.properties);  
                             mbMarker.setPopup(popup);
                         }    
                     }
-                }.bind(this)); console.log(features.length + " Marker(s) created ", log); 
+                }.bind(this)); console.log(features.length + " Marker(s) created "); // , features); 
             }
 
         });
