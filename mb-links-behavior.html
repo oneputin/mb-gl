@@ -13,6 +13,7 @@
     Mbb.LinksBehavior = {
 
         properties: {
+
             // checkIn/checkOut : selected doc(img)
             docselected : {
                 type: Object,
@@ -20,7 +21,7 @@
                 notify : true
             },
             // checkIn/checkOut : selected doc(img)
-            querydocid : {
+            linkdocid : {
                 type: String,
                 observer: '_queryDoc'
             },
@@ -43,15 +44,17 @@
         },
 
         observers: [
-            'docLinkSet(docselected.geojson)',
             'trackDocsUnlinked(_sessionunset.length)'
         ],
 
+        // generic debug-util
+        _logProperty: function(prop) {
+            // console.log("_logProperty", prop);
+        },
 
-        // realizes "idQuery" on sessionDocs
+        // trigger "idSelect" on sessionDocs
         _queryDoc: function(docid){  
-            var docselected = this._sessionDocs[docid];
-            console.log("_queryDoc", docid, docselected, this.docselected); // this._sessionDocs);
+            var docselected = this._sessionDocs[docid]; // console.log("_queryDoc", docid, docselected, this.docselected); // this._sessionDocs);
             if (docselected) this.docselected = docselected; 
         },
 
@@ -92,26 +95,6 @@
             if (!features || !features.length) return;   
             return features[0];
         },    
-
-        // Append link to 
-        docLinkSet: function(linkFeature) { 
-            if (!linkFeature) return;   
-
-            // A. add linkFeature to map
-            var featureset = {
-                "type": "FeatureCollection",
-                "features": [linkFeature]
-            }
-            this._refreshLinks(featureset); 
-
-            // B. remove entry from "unset" docs 
-            var docname = linkFeature.properties.name;  console.log("Add Link to mapIndex for", docname, linkFeature);
-            var index = this._sessionunset.indexOf(docname);
-            if (index > -1) {
-                this.splice('_sessionunset', index, 1);  // console.log("sessionUnSet updated", this._sessionunset);
-            }
-        },
-
 
         // Refresh the "src"(content) of "explored" data-layers 
         // creates layers if not yet existing 
@@ -232,9 +215,7 @@
                     });
                     f.properties.img = img;
                 }
-            });
-
-            console.log("_refreshMap FeatureSet", featureSet); 
+            }); // console.log("_refreshMap FeatureSet", featureSet); 
             
             this._refreshLinks(featureSet);
         },
@@ -363,8 +344,9 @@
                         item.appendChild(document.createTextNode(data.text));
 
                         item.addEventListener('tap', function(e){
-                            self.querydocid = e.target.getAttribute("value");
+                            self.linkdocid = e.target.getAttribute("value");
                         });
+                        
 
                         menu.appendChild(item);
                     });
@@ -388,21 +370,24 @@
                         return Math.abs(pixelDistance) <= clusterRadius;
                     }); console.log("clustered linkpoints", pointsInCluster);
 
+                    // Create generic itemdata {value:value, text:text}
+                    // for gui-elements 
                     var itemdata = [], id, text;
                     pointsInCluster.forEach(function(f){
                         id = f.properties.name;
                         text = id.split(".")[0];
                         itemdata.push({text:text,value:id});
                     }); 
-                    // sort upside
+
+                    // sort itemdata alphabetically by 'text' 
                     itemdata.sort(function(a, b) {
                         // return parseFloat(a.text) - parseFloat(b.text);
                         return a.text.localeCompare(b.text);
-                    });
+                    }); //console.log("itemdata of linkpoints",itemdata);
 
-                    console.log("itemdata of linkpoints",itemdata);
-
+                    // Alternives for itemdata-usage
                     if (popupMode) {
+                        // 
                         var popupContent = createMenu(itemdata); 
                         new mapboxgl.Popup()
                             .setLngLat(e.features[0].geometry.coordinates)
@@ -411,7 +396,6 @@
                     } else {
                         self.clustered = itemdata;
                     }
-
 
                 });
 
@@ -440,26 +424,26 @@
         // Update the "_sessionDocs-object" ( =  docs(fi. img's) actually "in use") 
         // from collection of "last added docs" 
         _sessionDocsRefresh : function(docCollection) { 
-            if (!docCollection || !docCollection.length)  return; 
+            if (!docCollection || !docCollection.length)  return;  console.log("_sessionDocsRefresh, NEW", docCollection);
 
             this.toolstatus = true;
             this.toolstatus = false; // dbl-zuordnung ensures that false is evaluated !! 
 
-            var firstDoc;
-            var sessionDocs = this._sessionDocs; 
+            var firstDoc; // of new Load process
+            var sessionDocs = this._sessionDocs;   console.log("_sessionDocsRefresh, OLD", sessionDocs);
 
-            docCollection.forEach( function(doc){ // console.log("CheckIn doc", img);
+            docCollection.forEach( function(doc){  console.log("Refresh doc", doc);
                 if (!firstDoc) firstDoc = doc;
 
-                if (!sessionDocs[doc.name]) {
-                    sessionDocs[doc.name] = doc; // fi img;
-                }     
+                // if (!sessionDocs[doc.name]) { 
+                    sessionDocs[doc.name] = doc; // Überschreiben !!!
+                // }     
             });   
 
-            this._sessionDocs = sessionDocs;  console.log("Refreshed this._sessionDocs", this._sessionDocs);
+            this._sessionDocs = sessionDocs;  // console.log("Refreshed this._sessionDocs", this._sessionDocs);
 
             if (firstDoc && (docCollection.length < 2)) { // console.log("activating doc(img) ", firstDoc.name, Object.keys(firstDoc)); 
-                // this.querydocid = firstDoc.name; 
+                // this.linkdocid = firstDoc.name; 
                 this._checkoutDoc(firstDoc.name); 
             }    
         },
@@ -467,13 +451,13 @@
         // Checkout-1:  from list of non-geocoded docs(images)
         _checkoutDocFromList : function(e) { 
             var item = e.target;   // console.log("item-value", item.value); // , item.value);
-            // this.querydocid = item.value; 
+            // this.linkdocid = item.value; 
             this._checkoutDoc(item.value); 
         },
 
         // Checkout-2:  according to name-property of 'tapped' point-feature
         _checkoutDocFromMap : function (feature) {  
-            // this.querydocid = feature.properties.name; // console.log("clicked at locator of  image " + id, feature.properties); 
+            // this.linkdocid = feature.properties.name; // console.log("clicked at locator of  image " + id, feature.properties); 
             this._checkoutDoc(feature.properties.name); 
         },
 
@@ -483,9 +467,9 @@
         _checkoutDoc : function(checkoutid) { 
             // if (!this._sessionDocs) return;
 
-            console.log("Last Doc Checkout, id=[" + this.querydocid + "]"); 
-            this.querydocid = "";  
-            this.querydocid = checkoutid;  
+            console.log("Last Doc Checkout, id=[" + this.linkdocid + "]"); 
+            this.linkdocid = "";  
+            this.linkdocid = checkoutid;  
             console.log("Next Doc Checkout, id=[" + checkoutid + "]"); 
             
         },

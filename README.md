@@ -48,7 +48,7 @@ OPTIONAL-tool to query/view/supply mouse-map-location (lonlat)
 ### \<geotags-from-gpx\>
 Tool to organize tracks 
 
-### \<image-links\>
+### \<mb-links-foto\>
 Geolocating images interactively on the map.  
 Manages 3 sets image-related data:
 - _sessionset : all imageData objects as "uploaded"

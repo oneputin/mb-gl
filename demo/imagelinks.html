@@ -24,7 +24,7 @@
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
     
-    <link rel="import" href = "../image-links.html">
+    <link rel="import" href = "../mb-links-foto.html">
     <link rel="import" href = "../image-card.html">
     
     <custom-style>
@@ -74,7 +74,7 @@
                 @apply(--layout-start);
             }
 
-            image-links {
+            mb-links-foto {
                 position: absolute;
                 top: 0;
                 right: 0; 
@@ -130,22 +130,23 @@
                     maptoast = "[[maptoast]]">
 
                     <!-- main interface for doc(img)-management -->
-                    <image-links
+                    <mb-links-foto
                         locateflag  = "[[locateflag]]"
                         docselected = "{{docselected}}"
-                        querydocid  = "[[querydocid]]"
+                        linkdocid   = "[[linkdocid]]"
                         clustered   = "{{itemdata}}"
                         toolstatus  = "{{toolstatus}}">
-                    </image-links>    
+                    </mb-links-foto>    
 
                     <!-- Formular used to view/manipulate img-meta -->
                     <image-card 
                         id = "imagecard"
-                        carddoc    = "{{docselected}}" 
-                        querydocid = "{{querydocid}}" 
-                        itemdata   = "[[itemdata]]" 
+                        docobj     = "{{docselected}}" 
+                        docobjid   = "{{linkdocid}}" 
+                        maplocation = "{{lnglat}}" 
                         locateflag = "{{locateflag}}">
                     </image-card>    
+                        <!--itemdata   = "[[itemdata]]" -->
                     
                     <!-- centered target marker, used to geolocate active doc(img) -->
                     <mb-target 

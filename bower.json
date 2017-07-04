@@ -23,7 +23,8 @@
     "iron-a11y-keys": "PolymerElements/iron-a11y-keys#^1.0.6",
     "paper-radio-button": "https://github.com/PolymerElements/paper-radio-button.git#^1.3.1",
     "google-chart": "https://github.com/GoogleWebComponents/google-chart.git#^1.1.2",
-    "image-meta": "https://github.com/oneputin/image-meta.git"
+    "image-meta": "https://github.com/oneputin/image-meta.git",
+    "image-canvas": "https://github.com/oneputin/image-canvas.git#canvas"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",

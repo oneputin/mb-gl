@@ -1,32 +1,32 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../iron-collapse/iron-collapse.html">
-<link rel="import" href="../paper-item/paper-item.html">
-<link rel="import" href="../paper-listbox/paper-listbox.html">
-<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href = "../iron-flex-layout/iron-flex-layout.html">
 
+<link rel="import" href = "../paper-icon-button/paper-icon-button.html">
+<link rel="import" href = "../iron-collapse/iron-collapse.html">
+<link rel="import" href = "../paper-item/paper-item.html">
+<link rel="import" href = "../paper-listbox/paper-listbox.html">
+<link rel="import" href = "../iron-icons/iron-icons.html">
+
+<!--GIA-->
 <link rel="import" href = "../files-input/files-input.html">
-
 <link rel="import" href = "../image-meta/exif-locations.html">
-
+<!--LOCAL-->
 <link rel="import" href = "mb-links-behavior.html">
 <link rel="import" href = "gui-area.html">
 
-
 <!--
-`image-links`
+`mb-links-foto`
 container for 
-- generation/management of map-links to docs/images (to be) gelocated/presented on a map 
-    - uploaded "internally" by filedialog or dropzone 
+- generation/management of map-links to fotoss/images (to be) gelocated/presented on a map 
+    - uploaded "internally" by fileDialog or dropZone 
     - supplied from outside
 - a ToolSet for      
 
 @demo demo/imagelinks.html 
 -->
 
-<dom-module id="image-links">
+<dom-module id="mb-links-foto">
 
     <template>
 
@@ -37,6 +37,7 @@ container for
                 position: relative;
             }
             paper-item {
+                cursor: pointer;	
                 padding: 3px;
                 border: 1;
             }
@@ -116,7 +117,7 @@ container for
         var wpscope; 
 
         Polymer({
-            is: 'image-links',
+            is: 'mb-links-foto',
 
             properties: {
 
@@ -209,9 +210,9 @@ container for
                 Mbb.LinksBehavior
             ],           
 
-            _logProperty: function(prop) {
-                // console.log("_logProperty", prop);
-            },
+            observers:[
+                'imgObjReload(docselected.*)',
+            ],
 
             _sessionlog : function(set) {
                 console.log("_sessionDocs", set);
@@ -221,6 +222,24 @@ container for
                 wpscope = this;
                 //map.showTileBoundaries();
             },
+
+            // Reload an img (fi AFTER some exif changed) 
+            imgObjReload: function(docObjObserver) {   
+                if (!docObjObserver) return;   
+                if (!docObjObserver.base) return; 
+                
+                var docObj = docObjObserver.base;  
+
+                if (docObj.exif) { 
+                    var index = this._sessionunset.indexOf(docObj.name);
+                    if (index > -1) {  //  remove entry from "unset" docs 
+                        this.splice('_sessionunset', index, 1);  console.log("_sessionUnSet reduced", this._sessionunset);
+                    } console.log("RELOAD imgObj with new exif !", docObj.name, docObj);
+                    // Trigger RELOAD  
+                    this.imageset = [docObj];
+                }    
+            },
+
 
             logToolStatus : function(toolstatus) {
                 // other "peripheral" gui-elements should be "hidden"(closed) during "tooling" 
@@ -232,9 +251,10 @@ container for
             },
 
             // 
-            _checkInUnset : function (nonlocated) { // console.log("FRESH nonlocated docs", nonlocated);
-                if (nonlocated.length) {
-                   this._sessionunset = this._sessionunset.concat(nonlocated); 
+            _checkInUnset : function (nonlocated) { console.log("NONLOCATED NEW:", nonlocated.names); 
+                if (nonlocated && nonlocated.names.length) { 
+                   this._sessionunset = this._sessionunset.concat(nonlocated.names); 
+                   console.log("NONLOCATED All:", this._sessionunset);
                 }   
             },
 
@@ -392,7 +412,7 @@ container for
                             mbMarker.setPopup(popup);
                         }    
                     }
-                }.bind(this)); console.log(features.length + " Marker(s) created "); // , features); 
+                }.bind(this));  console.log(features.length + " Marker(s) created "); // , features); 
             }
 
         });

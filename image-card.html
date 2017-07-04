@@ -16,6 +16,7 @@
 
 
 <link rel="import" href="../image-meta/exif-behavior.html">
+<link rel="import" href="../image-canvas/image-orientation.html">
 
 <link rel="import" href="mb-map-behavior.html">
 
@@ -134,15 +135,24 @@ To 'close'
             color: var(--google-blue-500); 
         }
 
-        paper-icon-button {
-            background-color: var(--paper-light-blue-500);
-        }
-
     </style>
     <!--  -->
 
     <div id="container">
         
+        <image-orientation 
+            id     = "preview" 
+            src    = "[[docobj.value]]" 
+            out    = "{{imgdata}}" 
+            quality= "[[quality]]">
+        </image-orientation>
+
+        <exif-locations
+            locationmode = "coords"
+            imagedata = "[[docobj.value]]"
+            locations  = "{{locations}}">
+        </exif-locations>
+
         <paper-card 
             id = "card"
             heading="[[_titleText]]" 
@@ -153,17 +163,16 @@ To 'close'
 
                 <!-- Build content from blocks -->
                 <div class="card-content">
-                    <div id="content0">Location : [[location]]</div>
+                    <div id="content0">Location : [[doclocation]]</div>
                     <div id="content1" class="info-html">
                     </div>
                 </div>
 
                 <div class="card-actions">
-                    <paper-button id="locate" on-tap="_applylocation">Locate</paper-button>
-                    <!--<paper-button id="rotate" on-tap="_applyrotation">Orientation</paper-button>-->
+                    <paper-button id="locate" on-tap="_applyLocationToImg">Locate</paper-button>
                     <paper-button class="info-link" on-tap="_storetofb">STORE</paper-button>
                     <div class="flex"></div>
-                    <paper-icon-button icon="close" on-click="_toggleImg"></paper-icon-button>
+                    <paper-icon-button id="vistoggle" icon="app:visibility-off" on-click="_toggleImgVisibility"></paper-icon-button>
                 </div>
 
             </div>
@@ -183,6 +192,7 @@ To 'close'
             is: 'image-card',
 
             properties: {
+                // 
                 _titleText : {
                     type: String
                 },
@@ -190,17 +200,25 @@ To 'close'
                     type: String
                 },
 
-                // src of card-content
-                carddoc: {
+                quality : 100, 
+
+                // Primary exchange Object (organizing data&metadata of document(img))
+                docobj: {
                     type: Object,
                     notify : true
                 }, 
-                // 
-                querydocid: {
+
+                docobjs: {
+                    type: Array,
+                    computed: 'toArray(docobj)'
+                },
+
+                // imgdata after "orientation-verification"
+                imgdata : {
                     type: String,
-                    notify : true
-                }, 
-                
+                    observer: '_setupImgCard'
+                },
+                // 
                 imgDoc: {
                     type: Object
                 }, 
@@ -210,15 +228,26 @@ To 'close'
                 itemdata : {
                     type: Array
                 },
+                // if selected from menu-items 
+                docobjid: {
+                    type: String,
+                    notify : true
+                }, 
 
-                metadataset: {
-                    type: Object
+                // status-property
+                locations : {
+                    type: Array,
+                    observer: '_formatLocation'
                 },
 
-                // 
-                location : {
-                    type: String,
-                    observer: '_formatLocation'
+                // import-property
+                maplocation : {
+                    type: String
+                },
+                // status-property
+                doclocation : {
+                    type: String
+                    // observer: '_formatLocation'
                 },
             },
 
@@ -228,8 +257,7 @@ To 'close'
             ],
 
             observers: [
-                '_refreshCardImg(carddoc.*)',
-                '_refreshCardMenu(itemdata)'
+                '_setupMenuCard(itemdata)'
             ],
 
             listeners: {
@@ -241,24 +269,38 @@ To 'close'
                 this._toggleCard("close");
             },
 
+            toArray: function(docobj) {
+                return [docobj];
+            },
+
             clusterSelect : function(e){
                 console.log("selected item", e);
             },
 
             // A. Basic 
 
-            _formatLocation : function(location) {
-                if (!location) return;  
-                var prec = this.prec ? this.prec : 5;
+            // Reduce the presented location-precision
+            _formatLocation : function(location) { 
+                if (!location || !location.length) {
+                    this.doclocation = "";
+                    return;
+                }
+
+                location = location[0];  
                 if (typeof location == "string") location = JSON.parse(location);
-                var ll=[];  
+
+                // Run prec-reduction 
+                var prec = this.prec ? this.prec : 5;
+                var ll = [];  
                 location.forEach(function(x){
                     ll.push(parseFloat(x.toFixed(prec)));
                 }) ;
-                this.location = JSON.stringify(ll);
+
+                this.doclocation = JSON.stringify(ll);  // console.log("_formatLocation from,to", location, this.doclocation);
             },
 
-            _refreshCardMenu: function (itemdata) {
+            // (Optional) Refresh card from menudata 
+            _setupMenuCard: function (itemdata) {
                 if (!itemdata) this.style.display = "none";
                 else           this.style.display = "inline-block";
                 if (!itemdata.length) return;  console.log("itemdata4menu", itemdata);
@@ -290,160 +332,166 @@ To 'close'
                 icard.$.content1.append(menu); 
 
                 // 4. Setup LINKS from menu-items
-                //    = pass querydocid into app-shell 
-
+                //    = pass docobjid into app-shell 
                 var items = Polymer.dom(this.root).querySelectorAll("paper-item");
-                
                 items.forEach(function(item){
                     item.addEventListener('tap', function(e){
                         icard._toggleCard("close");
-                        icard.querydocid = e.target.getAttribute("value");
+                        icard.docobjid = e.target.getAttribute("value");
                     });
                 });
             },
 
-            // create Dorm describing an Image 
-            imgFormCreate: function (imgDoc) {
-                // console.log("imgDoc keys", Object.keys(imgDoc));
-                // console.log(Object.keys(imgDoc.location));
-                // console.log(Object.keys(imgDoc.location.geometry));
-                // console.log(Object.keys(imgDoc.location.properties));
-                
-                var locStatus = imgDoc.location ? "geo" : "non"; 
+            // Formupdat starts after img-check
+            _setupImgCard : function(imgData) { 
+                if (!imgData) {
+                    this.style.display = "none";
+                    return; 
+                } // console.log("Image was (ORIENTATON-) checked");
+                this.style.display = "inline-block";
 
-                this._toggleCard("open");
+                // Auxiliary object for imgToggling
+                this.imgDoc = {
+                    name : this.docobj.name,
+                    value : imgData,
+                    src : imgData
+                };
 
-                // var exifRaw = this.exifGetRaw(imgDoc.value); 
-                var exif = this.exifGetNamed(imgDoc.value); // console.log("EXIF", exif);
-                var exifData = this.exifGetData(exif); 
+                this._titleImg = this.imgDoc.src;;
 
-                var content = imgDoc.name; // location.properties.name; 
-
-                var head = document.createElement("h4");
-                var newContent = document.createTextNode("More info about "+locStatus+"-located image"); 
-                head.appendChild(newContent);
-
-                var p1 = document.createElement("p");
-                newContent = document.createTextNode(content); 
-                p1.appendChild(newContent);
-
-                var p2 = document.createElement("p");
-                newContent = document.createTextNode("Camera: " + exif["Make"]); 
-                p2.appendChild(newContent);
-
-                var inp = document.createElement("paper-input");
-                inp.setAttribute("label", "User comment");
-                inp.setAttribute("value", exif["UserComment"]);
-                
-                content = document.createElement("div");
-                content.appendChild(head);
-                content.appendChild(p1);
-                content.appendChild(p2);
-                content.appendChild(inp);
-
-                return content; 
+                this._setupCardData(this.imgDoc);
             },
 
-            // Update 
-            _refreshCardImg : function(imgData) { // console.log("_Apply another doc to FORM", imgData);
-                // little self-steuerung 
-                // a Automatik-Tür
-                if (!imgData) this.style.display = "none";
-                else          this.style.display = "inline-block";
-                
-                // b RAW ContentCheck , NO Action 
-                var imgDoc = imgData.base; // Polymer-observer specific
-                if (!imgDoc.value) return; 
+            _setupCardData : function(imgDocObj) {  // console.log(" Create CARD data/form  .", imgDocObj);
 
-                // 
-                var loc = "", formcontent = "";
-                this._titleText = imgDoc.name ? imgDoc.name : "nn";
-                this._titleImg = imgDoc.value ? imgDoc.value : "";
-                 
-                if (imgDoc.location) {
+                var self = this; 
+                // create Dorm describing an Image 
+                function imgFormUpdate(imgDoc) {
+                    // console.log("imgDoc keys", Object.keys(imgDoc));
+                    // console.log(Object.keys(imgDoc.location));
+                    // console.log(Object.keys(imgDoc.location.geometry));
+                    // console.log(Object.keys(imgDoc.location.properties));
+                    
+                    // var exifRaw = this.exifGetRaw(imgDoc.value); 
+                    var exif = self.exifGetNamed(imgDoc.value); // console.log("EXIF", exif);
+                    // var exifData = self.exifGetData(exif); 
 
-                    // disable the LOCATE button of the CARD.Ctrls
-                    this.$.locate.disabled = true; 
+                    var content = imgDoc.name; // location.properties.name; 
 
-                    loc = imgDoc.location.geometry.coordinates; 
-                    // loc = JSON.stringify(loc); 
-                    // console.log("Image IS located at", loc) ; 
+                    var locStatus = imgDoc.location ? "geo" : "non"; 
+                    
 
-                } else {
+                    var head = document.createElement("h4");
+                    var newContent = document.createTextNode("More info about "+locStatus+"-located image"); 
+                    head.appendChild(newContent);
 
-                    // activate the LOCATE button
-                    this.$.locate.disabled = false; 
-                
-                    loc = ""; // this.location; 
-                }
+                    var p1 = document.createElement("p");
+                    newContent = document.createTextNode(content); 
+                    p1.appendChild(newContent);
 
-                formcontent = this.imgFormCreate(imgDoc);
-                
-                // trigger form update
+                    var p2 = document.createElement("p");
+                    newContent = document.createTextNode("Camera: " + exif["Make"]); 
+                    p2.appendChild(newContent);
 
-                // 1. img viewed in                 
-                imgDoc.src = imgDoc.value; 
-                this.imgDoc = imgDoc; 
-                this.location = loc;
+                    var inp = document.createElement("paper-input");
+                    inp.setAttribute("label", "User comment");
+                    inp.setAttribute("value", exif["UserComment"]);
+                    
+                    content = document.createElement("div");
+                    content.appendChild(head);
+                    content.appendChild(p1);
+                    content.appendChild(p2);
+                    content.appendChild(inp);
 
-                // 2. Update (informal) form fields 
+                    return content; 
+                };
 
-                this.$.content1.innerHTML = '';
-                this.$.content1.append(formcontent); 
-                
-                // Reset the Input to be ready for "next" 
-                this.carddoc = {}; 
+                this._titleText = imgDocObj.name ? imgDocObj.name : "nn";
+
+                // this._toggleCard("open");
+
+                // Update (informal) form fields 
+                var content = imgFormUpdate(imgDocObj);
+
+                var formContainer =  this.$.content1;
+                formContainer.innerHTML = '';
+                formContainer.append(content); 
+
+                // Update app-properties // ??? 
+                this.imgDoc = imgDocObj;
+
+                // Reset the Input to be ready to receive "next" doc ?? 
+                // with "long-enough" delay  
+                // this.docobj = {}; 
             },
 
             // Add location-property to actually active imgDoc-object
-            _applylocation : function() {
-                if (!this.location) {
-                    alert("location not set !"); 
+            _applyLocationToImg : function() {
+                var exifmode = true; 
+                if (!this.maplocation) {
+                    alert("maplocation not available !"); 
                     return;
-                } console.log("locating imgDoc ", this.imgDoc.name); 
+                } console.log("Locating imgDoc ", this.imgDoc.name); 
 
-                function createGeojson(longlat, imgname, img) { //console.log("createGeojson at", longlat, imgname, img);
-
-                    longlat = JSON.parse(longlat);
-
-                    var geojson = {
-                        "type" : "Feature",
-                        "geometry" : {
-                            "type" : "Point",
-                            "coordinates": longlat
-                        },
-                        "properties" : {
-                            "name": imgname,
-                            "img": img
-                        }
-                    };
-                    return geojson;
-                };
-
-                var imgname = this.imgDoc.name,
+                var location = this.maplocation,
+                    imgname = this.imgDoc.name,
                     img = this.imgDoc.value;  //console.log("locating imgDoc " + imgname, "img=", img);
 
-                var geojson = createGeojson(this.location, imgname, img);  // console.log("apply gjson to "+ imgname, geojson); 
+                if (exifmode) { // Update Location data in exif (GPS*) of img and trigger reload 
+                    var exif = this.exifGetNamed(img);
+                    this.exifSetLocation(location, exif) ; console.log("exif geolocated", exif); // return;  
 
-                this.set('carddoc.geojson', geojson);
+                    img  = this.exifToImg(img, exif);
+                    this.set('docobj.value', img);
+                    this.set('docobj.exif', true);
+                    
+                } else {        // 
+
+                    function createGeojson(longlat, imgname, img) { console.log("createGeojson at", longlat, imgname); // , img);
+                        if (typeof longlat == "string") {  
+                            longlat = JSON.parse(longlat);
+                        } else if (longlat.lng) { // mbFeature 
+                            longlat = longlat.toArray(); 
+                        } 
+
+                        var geojson = {
+                            "type" : "Feature",
+                            "geometry" : {
+                                "type" : "Point",
+                                "coordinates": longlat
+                            },
+                            "properties" : {
+                                "name": imgname,
+                                "img": img
+                            }
+                        };
+                        return geojson;
+                    };
+
+                    var geojson = createGeojson(location, imgname, img);  // console.log("apply gjson to "+ imgname, geojson); 
+
+                    this.set('docobj.geojson', geojson);
+                }
 
             },
 
-            // Simple 90° rotations (one direction) 
-            _applyrotation : function() {
-                var imgname = this.imgDoc.name;
-                console.log("_applyrotation", imgname); 
-            },    
-
-            // 
+            // Move imgDocObj to DB (fi FB)
             _storetofb : function() {
-                console.log("STORING",this.imgDoc) ; 
+                console.log("Placeholder: STORING to DB",this.imgDoc) ; 
             },
 
-            _toggleImg : function(e) { 
+            // Enhance UX toggling Img-visibility
+            _toggleImgVisibility : function(e) { 
                 if (!this.imgDoc) return;  
-                if (this.imgDoc.src)   this.set("imgDoc.src","");
-                else                    this.set("imgDoc.src", this.imgDoc.value);
+                var handle = this.$.vistoggle;
+                if (this.imgDoc.src)   { console.log("Hide Image");
+                    this.set("imgDoc.src","");
+                    handle.setAttribute("icon","app:visibility");
+                } else { console.log("Show Image");
+                    this.set("imgDoc.src", this.imgDoc.value);
+                    handle.setAttribute("icon","app:visibility-off");
+                }   
+               
                 // this.classList.add("hidden") 
             },
 
@@ -461,26 +509,13 @@ To 'close'
                     else open = "close" ; 
                 }    
 
-                /*  //TESTED to use CSS-animation to slowly open/close : NOPE     
-                    if (handlechar === '>') { 
-                        card.style.width = "100%";
-                        handle.innerHTML = "<";
-                    } else {
-                        card.style.width = 0;
-                        handle.innerHTML = ">";
-                    }    
-                */
-
                 if (open == 'open') { 
                     card.style.display = "block";
                     handle.setAttribute("icon","app:first-page");
-                    // handle.innerText = "<";
                 } else {    
                     card.style.display = "none";
                     handle.setAttribute("icon", "app:last-page");
-                    // handle.innerText = ">";
-                }    
-                // console.log("toggled paper-card visibility to", open) 
+                }   // console.log("toggled paper-card visibility to", open) 
             },
 
             // B. COMPILE Feature-data for OUTPUT
