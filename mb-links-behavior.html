@@ -193,20 +193,20 @@
         },
 
         // 
-        _refreshMap: function(imagesetLocated) {
-            
+        _refreshMap: function(featuresetLocated) {
+            if (!featuresetLocated) return; 
+            // console.log("_refreshMap LinkPoints of ImageSet Located", featuresetLocated); // .locations, imagesetLocated.geojson); 
+
             map.showTileBoundaries = true; // for DEBUG 
 
-            var imageset = this.imageset;  
-            // console.log("_refreshMap ImageSet Raw",  imageset); 
-            // console.log("_refreshMap ImageSet Located", imagesetLocated); 
+            var imageset = this.imageset;  // console.log("_refreshMap ImageSet Raw",  imageset); 
 
-            var featureSet = imagesetLocated.geojson; 
+            // var featureSet = featuresetLocated; // .geojson; 
 
-            featureSet.features.forEach(function(f){
+            featuresetLocated.features.forEach(function(f){
                 if (!f.properties.img) {
-                    var name = f.properties.name,
-                        img ; 
+                    var name = f.properties.name, img="" ; 
+                    // Integrate the img into properties
                     imageset.some(function(obj){
                         if (obj.name == name) {
                             img = obj.value;
@@ -217,7 +217,7 @@
                 }
             }); // console.log("_refreshMap FeatureSet", featureSet); 
             
-            this._refreshLinks(featureSet);
+            this._refreshLinks(featuresetLocated);
         },
         // Create an suitably "clustering" layer
         _createLayers : function(srcname, featureset, idname) {    
@@ -424,15 +424,15 @@
         // Update the "_sessionDocs-object" ( =  docs(fi. img's) actually "in use") 
         // from collection of "last added docs" 
         _sessionDocsRefresh : function(docCollection) { 
-            if (!docCollection || !docCollection.length)  return;  console.log("_sessionDocsRefresh, NEW", docCollection);
+            if (!docCollection || !docCollection.length)  return;  // console.log("_sessionDocsRefresh, NEW", docCollection);
 
             this.toolstatus = true;
             this.toolstatus = false; // dbl-zuordnung ensures that false is evaluated !! 
 
             var firstDoc; // of new Load process
-            var sessionDocs = this._sessionDocs;   console.log("_sessionDocsRefresh, OLD", sessionDocs);
+            var sessionDocs = this._sessionDocs;   // console.log("_sessionDocsRefresh", docCollection , "OLD:", sessionDocs);
 
-            docCollection.forEach( function(doc){  console.log("Refresh doc", doc);
+            docCollection.forEach( function(doc){  // console.log("Refresh doc", doc);
                 if (!firstDoc) firstDoc = doc;
 
                 // if (!sessionDocs[doc.name]) { 

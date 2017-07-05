@@ -431,17 +431,19 @@ To 'close'
                 if (!this.maplocation) {
                     alert("maplocation not available !"); 
                     return;
-                } console.log("Locating imgDoc ", this.imgDoc.name); 
+                } 
 
                 var location = this.maplocation,
                     imgname = this.imgDoc.name,
                     img = this.imgDoc.value;  //console.log("locating imgDoc " + imgname, "img=", img);
 
                 if (exifmode) { // Update Location data in exif (GPS*) of img and trigger reload 
-                    var exif = this.exifGetNamed(img);
-                    this.exifSetLocation(location, exif) ; console.log("exif geolocated", exif); // return;  
+                    // console.log("Locating imgDoc ", this.imgDoc.name, "at", location); 
+
+                    var exif = this.exifSetLocation(location) ; // console.log("exif geolocated", exif); // return;  
 
                     img  = this.exifToImg(img, exif);
+
                     this.set('docobj.value', img);
                     this.set('docobj.exif', true);
                     
