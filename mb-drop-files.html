@@ -1,0 +1,168 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../files-input/files-behavior.html">
+
+<!--
+`mb-drop-files`
+formatted button to enable (toggle) for file(s) upload 
+@demo demo/input-demo.html 
+-->
+<dom-module id="mb-drop-files">
+
+	<template>
+
+	    <style>
+		    :host {
+		        display: inline-block;
+		    }
+
+			/*button-styling*/
+			paper-button.custom {
+			    --paper-button-ink-color: var(--paper-pink-a200);
+			    /* These could also be individually defined for each of the
+			      specific css classes, but we'll just do it once as an example */
+			    --paper-button-flat-keyboard-focus: {
+			      background-color: var(--paper-pink-a200);
+			      color: white !important;
+			  	}
+			  	--paper-button-raised-keyboard-focus: {
+			      background-color: var(--paper-pink-a200) !important;
+			      color: white !important;
+			    }
+			}
+
+			paper-button.custom:hover {
+			    background-color: var(--paper-indigo-100);
+			}
+
+			paper-button.pink {
+			    color: var(--paper-pink-a200);
+			}
+
+			paper-button.indigo {
+			    background-color: var(--paper-indigo-500);
+			    color: white;
+			    --paper-button-raised-keyboard-focus: {
+			      background-color: var(--paper-pink-a200) !important;
+			      color: white !important;
+			    };
+			}
+			paper-button.green {
+			    background-color: var(--paper-green-500);
+			    color: white;
+			}
+			
+			paper-button.green[active] {
+			    background-color: var(--paper-red-500);
+			}
+			
+			paper-button.disabled {
+			    color: white;
+			}			
+			
+			iron-icon {
+			  	margin-right:10px;
+			}				
+	  	</style>  
+
+	</template>    
+
+	<script>
+        var scope;
+	    Polymer({
+
+		    is: 'mb-drop-files',
+
+		    properties: {
+                map : {
+                    type : Object,
+                    observer: 'setupDropMode'
+                },
+
+				logmode: {
+					type: Boolean
+				}
+
+			},        
+
+			behaviors: [
+				Mbb.FilesBehavior
+			],
+
+            observers:[
+                'logfiles(loadedfiles.*)',
+            ],
+
+	    	ready : function() { // console.log("this in files-input", this);
+                scope = this; 
+            },	
+
+            logfiles : function(ff) {
+                if (!ff || !ff.length) return;  
+                console.log("logfiles", ff);
+            },
+
+            /**
+             * 
+             */   
+            setupDropMode: function(){
+                var readFiles = this._readFiles,
+                    readTracer = this._readTracer;
+                // handle drag-drop-events
+                var handleDropFiles = function(evt) {
+                    evt.stopPropagation();
+                    evt.preventDefault();
+                    var files = evt.dataTransfer.files;  
+                    if (files && files.length) { console.log(files.length + " dropped files:", files); 
+                        readFiles(files, scope, readTracer);		
+                    }
+                    return; 
+                }
+
+                var processFiles = function(files) {    // 
+                    var nFiles = files.length;
+                    var incFile = 100 / nFiles;
+                    var progressBar = 0;
+
+                    // In case of multiple file, loop on them
+                    for (var i = 0; i < nFiles; i++) {
+
+                        f = files[i];
+
+                        // Only process geojson files. Validate later.
+                        if (f.name.toLowerCase().indexOf(".geojson") == -1) {
+                            alert(f.name + " not supported");
+                            continue;
+                        }
+                        // get a new reader
+                        var reader = new FileReader();
+                        // handle events
+                        reader.onloadstart = (startProgress)(f);
+                        reader.onprogress = (updateProgress)(f);
+                        reader.onerror = (errorProgress)(f);
+                        reader.onload = (startWorker)(f);
+                        reader.onloadend = (updateLayerList)(f);
+                        // read the geojson
+                        reader.readAsText(f);
+                    }
+
+                };
+                // 
+                var handleDragOver = function(evt) {
+                    evt.stopPropagation();
+                    evt.preventDefault();
+                    evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+                };
+
+                // Set events
+                var mapContainer = document.getElementById("map");  console.log("detected map container", mapContainer); 
+                if (mapContainer) { console.log("setup dragevents on map", map); 
+                    mapContainer.addEventListener('dragover', handleDragOver, false);
+                    mapContainer.addEventListener('drop', handleDropFiles, false);
+                }
+
+            }
+
+        });
+    </script>
+</dom-module>        

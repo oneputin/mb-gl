@@ -58,6 +58,62 @@
             if (docselected) this.docselected = docselected; 
         },
 
+
+        // MB-specific tool to remove duplicates !!
+        _mbUniqueFeatures: function(features, idname) {
+            if (!idname) idname = "name"; // the property for unique id 
+            var uniqs = [], ids = [], id = "";
+
+            features.forEach(function(f) {
+                id = f.properties[idname];
+                if (!id || (ids.indexOf(id) < 0)) {
+                    ids.push(id);
+                    uniqs.push(f);
+                }   
+            });
+            return uniqs; 
+        },
+
+        _mbGetBounds : function(features, asfeature) {    
+
+            var bounds = map.getBounds(); 
+
+            if (features) {
+                
+                if (features.features) features = features.features; // if a feature-set was passed
+
+                var coord0 = features[0].geometry.coordinates;
+                bounds = features.reduce(function(bounds, feature) {
+                    var coord = feature.geometry.coordinates;
+                    return bounds.extend(coord);
+                }, new mapboxgl.LngLatBounds(coord0, coord0));
+            } console.log(bounds, asfeature); 
+
+            if (!asfeature) return bounds;
+            
+            var e = bounds.getEast(), s = bounds.getSouth(), w = bounds.getWest(), n = bounds.getNorth(),
+                p = [[[w,s], [w,n], [e,n], [e,s], [w,s]]]; console.log(e,s,w,n,p);  
+            
+            var bb = {
+                "type": "Feature",
+                "properties": {},
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": p
+                }
+            };
+            return bb; 
+        },     
+
+        // Simple fitbounds for point-features
+        _mbFitBounds : function(bounds, padding) {
+            if (padding== null) padding = 20; // pixels ?
+            // var bounds = this._mbGetBounds(features);
+            map.fitBounds(bounds, {
+                padding: 30
+            }); 
+        },     
+
         // Test the layer status
         _linkLayerStatus : function(layid) {
             if (!layid) layid = this.layerid;
@@ -119,23 +175,33 @@
                 return;  
             } 
 
-            var zoomFunction = this._fitBounds; 
+            var zoomFunction = this._mbFitBounds,
+                bbFunction = this._mbGetBounds; 
 
             // Update viewPort to include last loaded locations  
-            function zoomToFeatures(zoomFeatures) {
-                var ff = zoomFeatures;
-                var radius = this.radius ? this.radius : 5; 
+            function zoomAddedFeatures(addedFeatures, oldFeatures) {
+                // different actions methods 
+                var ff = addedFeatures,
+                    bb = bbFunction(ff); 
+                var bbold = bbFunction(oldFeatures);
 
-                if (ff.length < 2) { // fit to a certain buffer around point !!
+                // Add a buffer feature around single-point !!
+                if (ff.length < 2) { 
+                    var spoint = ff[0]; 
+                    var bbnow  = bbFunction(null, true); console.log(spoint, bbnow);
+                    if (turf.inside(spoint, bbnow)) { console.log("pnt is inside actual viewport!")
+                        return; 
+                    }    
                     // HILITING the last linkPoint in suitable Umkreis with "radius" km 
-                    var center = ff[0];
+                    var radius = this.radius ? this.radius : 5; 
                     var units = 'kilometers';
                     var radius = radius;
                     var steps = 10;
-                    var pp = turf.explode(turf.circle(center, radius, steps, units));
+                    var pp = turf.explode(turf.circle(spoint, radius, steps, units));
                     ff = ff.concat(pp.features);   
                 }
-                zoomFunction(ff);
+
+                zoomFunction(bb);
             }  
 
             // 2. Check/Create/Update "LinkLayer"-Data
@@ -146,9 +212,9 @@
             if (!st.layer) {   console.log("FIRST link-layer-setup from", rawdata);
 
                 addedFeatures = this._createLayers(st.id, featuresetRefresh);
+                
                 setTimeout( function() {
-                    // map.setZoom(map.getZoom() + 0.1); 
-                    zoomToFeatures(addedFeatures);
+                    zoomAddedFeatures(addedFeatures);
                 }, 500);  
             
             }  else {          // Update dataSource
@@ -174,7 +240,7 @@
                 // console.log("new, all features", featuresetRefresh, this._sessionSet) ; 
                 map.getSource(st.id).setData(this._sessionSet);
 
-                zoomToFeatures(addedFeatures); 
+                zoomAddedFeatures(addedFeatures, oldFeatures); 
 
             }
 
@@ -219,6 +285,7 @@
             
             this._refreshLinks(featuresetLocated);
         },
+
         // Create an suitably "clustering" layer
         _createLayers : function(srcname, featureset, idname) {    
             if (!idname) idname = "name"; 
@@ -226,26 +293,21 @@
             
             // 
             var clusterMode = true,
-                popupMode = true,
-                clusterRadius = 50,
-                clusterMaxZoom = 14;
+                popupMode = true;
 
             var vis = "none";
             if (this.visible) vis = "visible";
 
             // A. SOURCE 
-            map.addSource(srcname, {
-                "type": "geojson",
-                "data": featureset,
-                "cluster": clusterMode,
-                "clusterMaxZoom": clusterMaxZoom, // Max zoom to cluster points on
-                "clusterRadius": clusterRadius    // Radius of each cluster when clustering points (defaults to 50)
-            });
-
             // B. Create LAYER(s) of SOURCE
 
             if (!clusterMode) {  // B.1  Simple PointLayer
-
+                // A. 
+                map.addSource(srcname, {
+                    "type": "geojson",
+                    "data": featureset
+                });
+                // B. 
                 map.addLayer({
                     "id": srcname,
                     "type": "circle",
@@ -263,7 +325,19 @@
                 }); // console.log("added img-link-layer", map.getLayer(srcname) ); 
 
             } else {                  // B.2 LayerGROUP with clusters (to best visualize the content of SOURCE) 
+        
+                var clusterRadius = 50,
+                    clusterMaxZoom = 14;
+                // A. 
+                map.addSource(srcname, {
+                    "type": "geojson",
+                    "data": featureset,
+                    "cluster": clusterMode,
+                    "clusterMaxZoom": clusterMaxZoom, // Max zoom to cluster points on
+                    "clusterRadius": clusterRadius    // Radius of each cluster when clustering points (defaults to 50)
+                });
 
+                // B. 
                 var elem = this;
 
                 // Cluster-Symbol (BG) 
@@ -315,7 +389,7 @@
                     filter: ["!has", "point_count"],
                     paint: {
                         "circle-color": "#11b4da",
-                        "circle-radius": 4,
+                        "circle-radius": 8,
                         "circle-stroke-width": 1,
                         "circle-stroke-color": "#fff"
                     }
@@ -332,69 +406,116 @@
 
 
                 // EVENTS to query features "below" a cluster-point
-                var self = this;
+                var scope = this;
 
-                function createMenu(itemdata){
+                // Create generic itemdata {value:value, text:text}
+                // for gui-elements 
+                function featureList(points) { 
+                    var itemdata = [], id, text;
+                    points.forEach(function(pnt){
+                        id   = pnt.properties.name;
+                        text = id.split(".")[0]; // removes extensions (fi .jpg)
+                        itemdata.push({text:text, value:id});
+                    }); 
 
+                    // Sort itemdata alphabetically by 'text' 
+                    itemdata.sort(function(a, b) {
+                        // return parseFloat(a.text) - parseFloat(b.text);
+                        return a.text.localeCompare(b.text);
+                    }); //console.log("itemdata of linkpoints",itemdata);
+                    
+                    return itemdata
+                };    
+
+                var zoomFunction = this._mbFitBounds,
+                    bbFunction = this._mbGetBounds;
+                
+                // 
+                function createClusterPopupDom(features){
+                    console.log(this); 
+                    var itemList = featureList(features); 
+                    var popupDom = document.createElement("div");
+                    popupDom.style.backgroundColor = "lightgray";
+                    // popupDom.style.position = "relative";
+
+                    // 1. ZOOMBTN
+                    var zoomBtn = document.createElement("paper-button");
+                    zoomBtn.style.margin = "3px";
+                    zoomBtn.style.backgroundColor = "white";
+                    zoomBtn.setAttribute("raised", true); 
+                    zoomBtn.appendChild(document.createTextNode("ZoomToCluster"));
+
+                    zoomBtn.addEventListener('tap', function(e){
+                        // APP-Action: 
+                        console.log("zooming to", features);
+                        var bb = bbFunction(features)
+                        zoomFunction(bb);
+                        // GUI-Action: Close the mapboxgl-popup 
+                        // var popupEl = e.target.closest("div.mapboxgl-popup"); // console.log("popupParent", popupEl); 
+                        // var popupEl = popupDom.closest("div.mapboxgl-popup"); 
+                        var popupEl = popupDom.parentElement.parentElement;
+                        // if (popupEl) popupEl.remove();
+                    });
+
+                    // 2. Menu of features
                     var menu = document.createElement("paper-menu");
-                    itemdata.forEach(function(data){
+                    itemList.forEach(function(itemData){
                         item = document.createElement("paper-item");
-                        item.setAttribute("value", data.value);
+                        item.style.cursor = "pointer";
+
+                        item.setAttribute("value", itemData.value);
                         item.classList.add("cluster");
-                        item.appendChild(document.createTextNode(data.text));
+                        item.appendChild(document.createTextNode(itemData.text));
 
                         item.addEventListener('tap', function(e){
-                            self.linkdocid = e.target.getAttribute("value");
+                            // APP-Action: Setting APP-property "linkdocid"
+                            scope.linkdocid = e.target.getAttribute("value");  
+                            // GUI-Action: Close the mapboxgl-popup 
+                            // var popupEl = e.target.closest("div.mapboxgl-popup"); // console.log("popupParent", popupEl); 
+                            // var popupEl = popupDom.closest("div.mapboxgl-popup"); // console.log("popupParent", popupEl); 
+                            var popupEl = popupDom.parentElement.parentElement;
+                            // if (popupEl) popupEl.remove();
                         });
-                        
-
+                    
                         menu.appendChild(item);
                     });
-                    return menu;
+
+                    popupDom.appendChild(zoomBtn);
+                    popupDom.appendChild(menu);
+                    
+                    return popupDom;
                 }
 
                 map.on('click', 'clusters', function (e) {
 
-                    var clusters = map.queryRenderedFeatures(e.point, {
-                        layers: ['clusters']
-                    });
+                    // var clusters = map.queryRenderedFeatures(e.point, {
+                    //     layers: ['clusters']
+                    // });
+                    var clusterPnt = e.features[0]; 
 
-                    var links = self._sessionSet.features;  //console.log("clusters, All links", clusters, links);
+                    var linkPnts = scope._sessionSet.features;  //console.log("clusters, All links", clusters, links);
                     
-                    var pointsInCluster = links.filter(function(f){
+                    // FILTER points "under" Cluster : SPECIALFILTER (from stackOverflow)
+                    var pointsInCluster = linkPnts.filter(function(f){
                         var pointPixels = map.project(f.geometry.coordinates);
                         var pixelDistance = Math.sqrt(
                             Math.pow(e.point.x - pointPixels.x, 2) + 
                             Math.pow(e.point.y - pointPixels.y, 2) 
                         );
                         return Math.abs(pixelDistance) <= clusterRadius;
-                    }); console.log("clustered linkpoints", pointsInCluster);
-
-                    // Create generic itemdata {value:value, text:text}
-                    // for gui-elements 
-                    var itemdata = [], id, text;
-                    pointsInCluster.forEach(function(f){
-                        id = f.properties.name;
-                        text = id.split(".")[0];
-                        itemdata.push({text:text,value:id});
-                    }); 
-
-                    // sort itemdata alphabetically by 'text' 
-                    itemdata.sort(function(a, b) {
-                        // return parseFloat(a.text) - parseFloat(b.text);
-                        return a.text.localeCompare(b.text);
-                    }); //console.log("itemdata of linkpoints",itemdata);
+                    }); console.log("clustered linkPoints", pointsInCluster);
 
                     // Alternives for itemdata-usage
                     if (popupMode) {
                         // 
-                        var popupContent = createMenu(itemdata); 
+                        var popupContent = createClusterPopupDom(pointsInCluster); 
+
                         new mapboxgl.Popup()
-                            .setLngLat(e.features[0].geometry.coordinates)
+                            .setLngLat(clusterPnt.geometry.coordinates)
                             .setDOMContent(popupContent)
                             .addTo(map);
                     } else {
-                        self.clustered = itemdata;
+                        scope.clustered = featureList(pointsInCluster);
                     }
 
                 });
@@ -405,21 +526,6 @@
             return featureset.features; 
 
         },    
-
-        // MB-specific tool to remove duplicates !!
-        mbFeaturesUnique: function(features, idname) {
-            if (!idname) idname = "name";
-            var uniqs = [], ids = [], id = "";
-
-            features.forEach(function(f) {
-                id = f.properties[idname];
-                if (!id || (ids.indexOf(id) < 0)) {
-                    ids.push(id);
-                    uniqs.push(f);
-                }   
-            });
-            return uniqs; 
-        },
 
         // Update the "_sessionDocs-object" ( =  docs(fi. img's) actually "in use") 
         // from collection of "last added docs" 

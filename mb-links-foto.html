@@ -2,17 +2,20 @@
 
 <link rel="import" href = "../iron-flex-layout/iron-flex-layout.html">
 
-<link rel="import" href = "../paper-icon-button/paper-icon-button.html">
-<link rel="import" href = "../iron-collapse/iron-collapse.html">
+<link rel="import" href = "../paper-button/paper-button.html">
+<!--<link rel="import" href = "../paper-icon-button/paper-icon-button.html">-->
+<!--<link rel="import" href = "../iron-collapse/iron-collapse.html">-->
+
 <link rel="import" href = "../paper-item/paper-item.html">
 <link rel="import" href = "../paper-listbox/paper-listbox.html">
-<link rel="import" href = "../iron-icons/iron-icons.html">
+<!--<link rel="import" href = "../iron-icons/iron-icons.html">-->
 
 <!--GIA-->
 <link rel="import" href = "../files-input/files-input.html">
 <link rel="import" href = "../image-meta/exif-locations.html">
 <!--LOCAL-->
 <link rel="import" href = "mb-links-behavior.html">
+<link rel="import" href = "mb-drop-files.html">
 <link rel="import" href = "gui-area.html">
 
 <!--
@@ -49,8 +52,11 @@ container for
             }
 
             .content {
-                @apply(--layout-horizontal);
-                @apply(--layout-justified);
+                @apply(--layout-vertical);
+                /*@apply(--layout-justified);*/
+            }
+            .content * {
+                margin-top: 10px;
             }
         </style>
 
@@ -78,16 +84,7 @@ container for
                     Placeholder DB QUERY & STORE
                 </div>
                 
-                <!-- try to extend to 100% of parent container -->
-                <div class="placeholder">
-                    Placeholder DRAGnDROP
-                    <files-box
-                        type="image"
-                        multiple=true
-                        loadedfiles="{{imageset}}">
-                    </files-box>    
-                </div>
-                
+                <!-- supply a set of imagefiles from dropped files -->
                 <files-input
                     type="image"
                     multiple=true
@@ -97,13 +94,16 @@ container for
             </div>
         </gui-area>
 
-        <!--<files-box  
-            filetype="image" 
-            loadedfiles="{{imageset}}" 
-            boxsize="300"> 
-        </files-box> -->
+         <!-- INVISIBLE service-components -->
 
-        <!-- always invisible background-function-element  -->
+         <!-- supply a set of imagefiles from dropped files -->
+        <mb-drop-files 
+            map = [[map]]
+            type = "image"
+            loadedfiles = "{{imageset}}">
+        </mb-drop-files>    
+
+        <!-- Extract img-locations as geojson-features -->
         <exif-locations
             imageset = "[[imageset]]"
             locationformat = "geojson"
@@ -120,6 +120,10 @@ container for
             is: 'mb-links-foto',
 
             properties: {
+                // 
+                map: {
+                    type: Object
+                },
 
                 // checkIn: doc(img)Data collection
                 imageset : {
@@ -221,9 +225,7 @@ container for
 
             ready: function() {
                 wpscope = this;
-                //map.showTileBoundaries();
             },
-
             // Reload an img (fi AFTER some exif changed (especially coords)) 
             imgObjReload: function(docObjObserver) {   
                 if (!docObjObserver) return;   
@@ -269,30 +271,14 @@ container for
                 }
             },
 
-            // Simple fitbounds for point-features
-            _fitBounds : function(features, padding) {
-                if (padding== null) padding = 20; // pixels ?
-
-                if (features.features) features = features.features; // if a feature-set was passed
-
-                var coord0 = features[0].geometry.coordinates;
-                var bounds = features.reduce(function(bounds, feature) {
-                    var coord = feature.geometry.coordinates;
-                    return bounds.extend(coord);
-                }, new mapboxgl.LngLatBounds(coord0, coord0));
-
-                map.fitBounds(bounds, {
-                    padding: 30
-                }); 
-            },     
-
-
             // Show markers only for features of a layer 
             // that are actually rendered (visible mapextent)  
             _checkMarkers : function(layername, idname, ms_debounce) {
                 if (!layername) layername = 'unclustered-point';
                 if (!ms_debounce) ms_debounce = 500; 
                 
+                var getUnique = this._mbUniqueFeatures;
+
                 this.debounce("markers", function() {
                     
                     var zoom = map.getZoom();
@@ -301,7 +287,7 @@ container for
                         layers: [layername]
                     });  // console.log("_checkMarkers. At zoom=" + zoom + " for", features.length + " feature(s)");
 
-                    features = this.mbFeaturesUnique(features, idname);
+                    features = getUnique(features, idname);
 
                     // ? Heuristics of marker.management ?  
                     // Comparing "new" features and "previous" markers  
@@ -329,8 +315,10 @@ container for
 
             },
 
-            // Create Markers used for display of points at "suitable" scales
-            // showing a thumbNail of geocoded images
+            /**
+             *  Create Markers used for "enhanced" display of points at "suitable" scales
+             *  f.i. showing a thumbNail of a geocoded image
+             */
             _createMarkers: function(features) {
                 
                 if (!features || !features.length) {  // console.log("ALERT. NO features to refresh markers from"); 
@@ -340,8 +328,55 @@ container for
                 // Function activated after marker-click
                 var linkFunction = this._checkoutDoc;
 
-                // Sample function of dom4popup creation 
-                function dom4pop(properties) {
+                function createMarkerDom(markerSize, imgUrl) {
+                    var mDom = document.createElement('div');
+                    mDom.className = 'marker';
+                    mDom.style.cursor = "pointer";
+                    mDom.style.border = '1px solid #777';
+                    mDom.style.borderRadius = '4px';
+                    mDom.style.width  = markerSize[0] + 'px';
+                    mDom.style.height = markerSize[1] + 'px';
+                    mDom.style.backgroundSize = "cover"; // 
+                    if (imgUrl) mDom.style.backgroundImage = "url('"+imgUrl+"')";
+                    else mDom.style.backgroundColor = "green";
+                    return mDom;
+                };
+
+                function createMarker(markerPnt) {
+
+                    // create a DOM element for the marker
+                    var markerId = markerPnt.properties.name,
+                        markerSize = markerPnt.properties.iconSize;
+                    if (!markerSize) markerSize = [50,50];
+
+                    // var markerImg  = markerPnt.properties.img;
+                    // if (!markerImg) markerImg = "thumb.jpg";
+
+                    var markerDom = createMarkerDom(markerSize); // , markerImg);
+
+                    // add marker to map
+                    var mbMarker = new mapboxgl.Marker(markerDom, {offset: [-markerSize[0] / 2, -markerSize[1] / 2]})
+                        .setLngLat(markerPnt.geometry.coordinates)
+                        .addTo(map);
+
+                    // this._sessionMarkers.push(mbMarker); 
+
+                    // setup link functions    
+                    if (linkFunction)  {
+                        markerDom.addEventListener('tap', function() {
+                            // console.log("LINK on marker of:", markerId); 
+                            linkFunction(markerId);
+                        }); 
+                    } else if (createPopupDom)  {
+                        var popup  = createPopup(markerPnt.properties);  
+                        mbMarker.setPopup(popup);
+                    }    
+                    return mbMarker; 
+
+                }; // .bind(this));  
+
+                // Sample function of createPopupDomup creation 
+                function createPopupDom(properties) {
                     var domContent = window.document.createElement('div');
                         domContent.style.backgroundColor = "yellow";
                         domContent.style.padding = "5px";
@@ -356,25 +391,12 @@ container for
                     return domContent; 
                 };
 
-                function makeMarker(imgUrl, iconSize) {
-                    var el = document.createElement('div');
-                    el.className = 'marker';
-                    el.style.cursor = "pointer";
-                    el.style.border = '1px solid #777';
-                    el.style.borderRadius = '4px';
-                    el.style.width  = iconSize[0] + 'px';
-                    el.style.height = iconSize[1] + 'px';
-                    el.style.backgroundImage = "url('"+imgUrl+"')";
-                    el.style.backgroundSize = "cover";
-                    return el;
-                };
-
-                function makePopup(properties) {
+                function createPopup(properties) {
                     var popup = new mapboxgl.Popup({offset: 25});
                 
                     var text; // = properties.name; 
                     var html; // ="<h3> Image name</h3>" + properties.name;
-                    var domContent = dom4pop(properties); 
+                    var domContent = createPopupDom(properties); 
 
                     if (text)   popup.setText(text);
                     if (html)   popup.setHTML(html);
@@ -383,43 +405,9 @@ container for
                     return popup;    
                 };    
 
-                function createMarker(markerpnt) {
-
-                    // create a DOM element for the marker
-                    var markerid = markerpnt.properties.name,
-                        bgimg    = markerpnt.properties.img,
-                        iconSize = markerpnt.properties.iconsize;
-                    if (!bgimg) return;     
-
-                    if (!iconSize) iconSize = [50,50];
-
-
-                    var marker = makeMarker(bgimg, iconSize, markerpnt.properties);
-
-                    // add marker to map
-                    var mbMarker = new mapboxgl.Marker(marker, {offset: [-iconSize[0] / 2, -iconSize[1] / 2]})
-                        .setLngLat(markerpnt.geometry.coordinates)
-                        .addTo(map);
-
-                    // this._sessionMarkers.push(mbMarker); 
-
-                    // setup link functions    
-                    if (linkFunction)  {
-                        marker.addEventListener('tap', function() {
-                            // console.log("LINK on marker of:", markerid); 
-                            linkFunction(markerid);
-                        }); 
-                    } else if (dom4pop)  {
-                        var popup  = makePopup(markerpnt.properties);  
-                        mbMarker.setPopup(popup);
-                    }    
-                    return mbMarker; 
-
-                }; // .bind(this));  
-
                 var mbMarker = null;
-                features.forEach(function(markerpnt) {
-                    mbMarker = createMarker(markerpnt);  
+                features.forEach(function(markerPnt) {
+                    mbMarker = createMarker(markerPnt);  
                     this._sessionMarkers.push(mbMarker); 
                 }.bind(this)); console.log(features.length + " Marker(s) created "); // , features); 
 

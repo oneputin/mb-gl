@@ -401,7 +401,10 @@
             }
 
             if (!popupcontent || !html || (openflag == false) || this.trackmapmode) {
-                this.popup.remove();
+                if (this.popup) {
+                    this.popup.remove();
+                    this.popup = null;
+                }    
                 return;
             }
 
