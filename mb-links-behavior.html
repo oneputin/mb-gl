@@ -41,6 +41,12 @@
                 type: String,
                 value: "name"
             },
+                            
+            cardstatus : {
+                type: String,
+                value: "",
+                notify : true
+            }
         },
 
         observers: [
@@ -473,9 +479,7 @@
                     });
                 }
 
-
                 // EVENTS to query features "below" a cluster-point
-                var scope = this;
 
                 // Create generic itemdata {value:value, text:text}
                 // for gui-elements 
@@ -636,8 +640,8 @@
                         img.style.margin = "3px";
                         img.style.width = "200px";
                         img.setAttribute("src", props.img);
-                        img.addEventListener('tap', function(e){
-                            console.log("View datails of ", props.name);
+                        img.addEventListener('tap', function(e){ console.log("Open View with details of ", props.name);
+                            scope.cardstatus = "open"; 
                             Popup.remove(); 
                         });
                         var p = document.createElement("p");
@@ -649,21 +653,17 @@
                         
                         return popupDom;
 
-
-
                     };
 
                     var popupContent = createLinkPopupDom(lnkFeature); 
-
                     Popup = new mapboxgl.Popup()
                         .setLngLat(lnkFeature.geometry.coordinates)
                         .setDOMContent(popupContent)
                         .addTo(map);
-
-                } else {
-                    // Trigger actions in outside elements listening for property "clustered"  
-                    scope._checkoutDocFromMap(lnkFeature);
                 }
+
+                // Always Trigger actions in outside elements listening for property "clustered"  
+                scope._checkoutDocFromMap(lnkFeature);
                 
             });    	
 

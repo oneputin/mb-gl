@@ -249,6 +249,13 @@ To 'close'
                     type: String
                     // observer: '_formatLocation'
                 },
+
+                cardstatus : {
+                    type: String,
+                    value: "",
+                    observer: '_toggleCard'
+                }
+                
             },
 
             behaviors: [
@@ -257,7 +264,7 @@ To 'close'
             ],
 
             observers: [
-                '_setupMenuCard(itemdata)'
+                // '_setupMenuCard(itemdata)'
             ],
 
             listeners: {
@@ -299,7 +306,7 @@ To 'close'
                 this.doclocation = JSON.stringify(ll);  // console.log("_formatLocation from,to", location, this.doclocation);
             },
 
-            // (Optional) Refresh card from menudata 
+            // (Optional) Refresh card from menudata(?) 
             _setupMenuCard: function (itemdata) {
                 if (!itemdata) this.style.display = "none";
                 else           this.style.display = "inline-block";
@@ -342,7 +349,7 @@ To 'close'
                 });
             },
 
-            // Formupdat starts after img-check
+            // FormUpdate starts after img-check
             _setupImgCard : function(imgData) { 
                 if (!imgData) {
                     this.style.display = "none";
@@ -357,7 +364,7 @@ To 'close'
                     src : imgData
                 };
 
-                this._titleImg = this.imgDoc.src;;
+                this._titleImg = this.imgDoc.src;
 
                 this._setupCardData(this.imgDoc);
             },
@@ -407,8 +414,6 @@ To 'close'
                 };
 
                 this._titleText = imgDocObj.name ? imgDocObj.name : "nn";
-
-                // this._toggleCard("open");
 
                 // Update (informal) form fields 
                 var content = imgFormUpdate(imgDocObj);
@@ -501,10 +506,9 @@ To 'close'
             _toggleCard : function(open) {  // console.log("type=", typeof(open));
 
                 var handle = this.$.handle,
-                    handlechar = handle.innerText,
                     card = this.$.card,
-                    cardwidth = card.style.width
-                    display = card.style.display; // console.log("handle", handlechar); console.log("card-width", card.style.width, card.style.display); 
+                    display   = card.style.display; 
+                    // cardwidth = card.style.width,
 
                 if (typeof(open) === "object") {
                     if (display === "none") open = "open";
@@ -513,7 +517,7 @@ To 'close'
 
                 if (open == 'open') { 
                     card.style.display = "block";
-                    handle.setAttribute("icon","app:first-page");
+                    handle.setAttribute("icon", "app:first-page");
                 } else {    
                     card.style.display = "none";
                     handle.setAttribute("icon", "app:last-page");

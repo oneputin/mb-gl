@@ -132,20 +132,21 @@
                     <!-- main interface for doc(img)-management -->
                     <mb-links-foto
                         map = "[[map]]"
-                        locateflag  = "[[locateflag]]"
+                        cardstatus  = "{{cardstatus}}"
                         docselected = "{{docselected}}"
                         linkdocid   = "[[linkdocid]]"
                         clustered   = "{{itemdata}}"
+                        cardstatus  = "[[cardstatus]]"
                         toolstatus  = "{{toolstatus}}">
                     </mb-links-foto>    
 
                     <!-- Formular used to view/manipulate img-meta -->
                     <image-card 
                         id = "imagecard"
-                        docobj     = "{{docselected}}" 
-                        docobjid   = "{{linkdocid}}" 
+                        docobj      = "{{docselected}}" 
+                        docobjid    = "{{linkdocid}}" 
                         maplocation = "{{lnglat}}" 
-                        locateflag = "{{locateflag}}">
+                        cardstatus  = "[[cardstatus]]">
                     </image-card>    
                         <!--itemdata   = "[[itemdata]]" -->
                     
@@ -153,7 +154,7 @@
                     <mb-target 
                         mbid = "[[mbid]]"
                         target = "{{target}}"
-                        serviceflag="{{locateflag}}">
+                        serviceflag="{{cardstatus}}">
                     </mb-target>
 
                     <!-- ??? -->
@@ -199,7 +200,7 @@
 
     // SHELL-actions
     scope.mapctrl = {};
-    scope.locateflag = false;
+    scope.cardstatus = false;
 
     scope.toggleFoto = function(e) {
         console.log("placeholder for fotos"); 

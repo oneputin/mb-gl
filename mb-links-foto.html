@@ -160,7 +160,7 @@ container for
                 _sessionDocs : {
                     type: Object,
                     value: {},
-                    observer : '_sessionlog'
+                    observer : '_sessionLog'
                 },
 
                 // set of locations 
@@ -212,7 +212,7 @@ container for
                     notify : true,
                     observer: 'logToolStatus'
                 }
-
+                
             },
 
             behaviors: [
@@ -242,13 +242,14 @@ container for
                 
             },
 
-            _sessionlog : function(set) {
+            _sessionLog : function(set) {
                 console.log("_sessionDocs", set);
             },
 
             ready: function() {
                 wpscope = this;
             },
+            
             // Reload an img (fi AFTER some exif changed (especially coords)) 
             imgObjReload: function(docObjObserver) {   
                 if (!docObjObserver) return;   
