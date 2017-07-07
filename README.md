@@ -51,8 +51,8 @@ Tool to organize tracks
 ### \<mb-links-foto\>
 Geolocating images interactively on the map.  
 Manages 3 sets image-related data:
-- _sessionset : all imageData objects as "uploaded"
-- _sessionunset : array of imgnames not located by exif
+- _sessionSet : all imageData objects as "uploaded"
+- _sessionUnSet : array of imgnames not located by exif
 - _sessionfeatures : mappoints (geojson) of gelocated points
 
 Processing every images data in a form \<image-card\>

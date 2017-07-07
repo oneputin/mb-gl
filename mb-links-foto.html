@@ -71,7 +71,7 @@ container for
             <div class="ctrl">
                 <!-- Liste der primär nicht referenzierten images -->
                 <paper-listbox>
-                    <template is="dom-repeat" items="{{_sessionunset}}">
+                    <template is="dom-repeat" items="{{_sessionUnSet}}">
                         <paper-item value="[[item]]" on-tap="_checkoutDocFromList">[[item]]</paper-item>
                     </template>    
                 </paper-listbox>
@@ -79,11 +79,16 @@ container for
 
             <!-- SLOT-2 -->
             <div class="content">    
-                
-                <div class="placeholder">
+                <!--<div class="placeholder">
                     Placeholder DB QUERY & STORE
-                </div>
+                </div>-->
                 
+                <paper-button 
+                    id="clear"
+                    raised
+                    on-tap="_sessionClear">
+                    ClearSession
+                </paper-button> 
                 <!-- supply a set of imagefiles from dropped files -->
                 <files-input
                     type="image"
@@ -174,7 +179,7 @@ container for
                 /**
                  * Container of docs(imgs) NOT geolocated in actual session
                  */
-                _sessionunset : {
+                _sessionUnSet : {
                     type: Array,
                     value: []
                     // observer: 'docLinkUnsetLog'
@@ -219,6 +224,24 @@ container for
                 '_refreshMap(featureset.geojson)'   
             ],
 
+            _sessionClear : function(){
+                var status = this._linkLayerStatus(),
+                    fset = this._sessionSet,
+                    unset = this._sessionUnSet;
+
+                console.log("featureset", this.featureset); 
+                console.log(status);
+                console.log("Set",fset);
+                console.log("UnSet", unset);
+                fset.features = [];
+                status.src.setData(fset);
+                this._sessionUnSet=[];
+                this.featureset = {}; 
+                console.log(this._sessionSet);
+                console.log("featureset", this.featureset); 
+                
+            },
+
             _sessionlog : function(set) {
                 console.log("_sessionDocs", set);
             },
@@ -234,9 +257,9 @@ container for
                 var docObj = docObjObserver.base;  
 
                 if (docObj.exif) { // flag that exif had changed
-                    var index = this._sessionunset.indexOf(docObj.name);
+                    var index = this._sessionUnSet.indexOf(docObj.name);
                     if (index > -1) {  //  remove entry from "unset" docs 
-                        this.splice('_sessionunset', index, 1);  // console.log("_sessionUnSet reduced", this._sessionunset);
+                        this.splice('_sessionUnSet', index, 1);  
                     } // console.log("RELOAD imgObj with new exif !", docObj.name, docObj);
                     
                     // Trigger RELOAD  
@@ -255,10 +278,13 @@ container for
             },
 
             // merge additional nonlocated documents into session
-            _checkInUnset : function (nonlocated) { console.log("NONLOCATED NEW:", nonlocated.names); 
+            _checkInUnset : function (nonlocated) { // console.log("NONLOCATED NEW:", nonlocated.names); 
                 if (nonlocated && nonlocated.names.length) { 
-                   this._sessionunset = this._sessionunset.concat(nonlocated.names); 
-                   console.log("NONLOCATED All:", this._sessionunset);
+                   this._sessionUnSet = this._sessionUnSet.concat(nonlocated.names);
+                   this._sessionUnSet = this._sessionUnSet.filter(function(item, pos, self) {
+                        return self.indexOf(item) == pos;
+                   }); // removed duplicates  
+                   // console.log("NONLOCATED All:", this._sessionUnSet);
                 }   
             },
 
