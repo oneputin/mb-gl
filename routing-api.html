@@ -23,7 +23,7 @@ create and animate routes along waypoint file loaded from url
     </template>
 
     <script>
-        // Global referencing thi element in animation and geschachtelten functions
+        // Global referencing this element in animation and "geschachtelten" functions
         var mba;
 
         Polymer({
@@ -1074,8 +1074,17 @@ create and animate routes along waypoint file loaded from url
 
                 var timer = mba.timer,
                     model = mba.model,
-                    modeldata = mba.model.data,
-                    map = mba.map;
+                    map = mba.map,
+                    modeldata = mba.model.data;
+
+                var tracks = modeldata.tracks, // console.log("tracks", mapTime, tracks); 
+                    routes = modeldata.routes,
+                    traces = modeldata.traces;
+
+                if (!tracks || !tracks.features) {
+                    alert("no tracks to follow!") ; 
+                    return; 
+                } 
 
                 // Search location of (animation-)counter 
                 // on one of the routes legs                     	
@@ -1218,10 +1227,6 @@ create and animate routes along waypoint file loaded from url
                 // ctrl-parameters 
                 var located = [], // list of routes anumated during timeStep
                     mapMsg = "";  // flag that is set at "specific" animation-situations (start,stop, ...)
-
-                var tracks = modeldata.tracks, // console.log("tracks", mapTime, tracks); 
-                    routes = modeldata.routes,
-                    traces = modeldata.traces;
 
                 var nn = tracks.features.length; 
 

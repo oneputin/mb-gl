@@ -17,6 +17,7 @@ Demo to view ship-data animation
     <link rel="import" href="../../paper-listbox/paper-listbox.html">
     <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
 
+    <link rel="import" href="../mb-content-browser.html">
     <link rel="import" href="../mb-map.html">
     <link rel="import" href="../mb-location-log.html">
     <link rel="import" href="../mb-info-drag.html">
@@ -35,18 +36,18 @@ Demo to view ship-data animation
             @apply(--layout-horizontal);
             /*align-items: flex-start;*/
         }
-        
+
         mb-map {
             width: 55%;
             height: 600px;
         }
-        
+
         mb-location-log {
             left: 50%;
             margin-right: -50%;
             transform: translate(-50%, 0)
         }
-        
+
         .ctrls-in {
             display: inline-block;
             position: absolute;
@@ -55,13 +56,13 @@ Demo to view ship-data animation
             bottom: 12px;
             width: 100%;
         }
-        
+
         timer-ctrl {
             @apply(--layout-flex);
         }
-        
+
         mb-orientation-ctrl {}
-        
+
         .ctrls-out {
             /* itself flex layouted div */
             @apply(--layout-horizontal);
@@ -69,7 +70,7 @@ Demo to view ship-data animation
             width: 40%;
             margin-left: 10px;
         }
-        
+
         paper-dropdown-menu {
             border-style: solid;
             border-width: 1px;
@@ -80,7 +81,7 @@ Demo to view ship-data animation
             /*top: 40px;
               left: 30px;*/
         }
-        
+
         timer-setup {
             display: none;
             border-style: solid;
@@ -97,48 +98,48 @@ Demo to view ship-data animation
 <body>
 
     <template is="dom-bind" id="app">
-        
+
         <div class="container">
-            
-            <!-- Left block: Map -->
+
+            <!-- LEFT block:  Map  -->
             <mb-map 
                 mapapikey="[[mbkey]]" 
-                mapstyle="[[mbstyle]]"
+                mapstyle="[[mbstyle]]" 
                 map="{{map}}" 
                 cbox="{{cbox}}" 
                 zoom="{{zoom}}" 
                 lnglat="{{lnglat}}" 
                 mapctrl="[[mapctrl]]">
-                
-                <!-- Elements to show in map-overlay  -->
-                
-                    <!-- ctrl of animation and maporientation -->
 
-                    <!-- <div class="ctrls-in">
-                    <timer-ctrl 
-                        timer="{{tracktimer}}"
-                        timerctrl="{{trackctrl}}">
-                    </timer-ctrl> -->
+                <!-- Elements to show in map-overlay  -->
+
+                <!-- ctrl of animation and "maporientation" -->
+                <template is="dom-if" if="{{map}}">
+                   
+                    <div class="ctrls-in">
+                        <timer-ctrl timer="{{tracktimer}}" timerctrl="{{trackctrl}}">
+                        </timer-ctrl>
+                    </div>
 
                     <!--<mb-orientation-ctrl trackmode="{{trackmode}}">
-                    </mb-orientation-ctrl>-->                    
-                </div>
+                    </mb-orientation-ctrl>-->
 
-                <!-- <mb-location-log map="{{map}}" lnglat="{{lnglat}}" checked="[[uselocationlog]]">
-                </mb-location-log> -->
+                    <mb-location-log map="{{map}}" lnglat="{{lnglat}}" checked="[[uselocationlog]]">
+                    </mb-location-log>
 
+                </template>
 
+                <!-- INFO-element -->
                 <!--<mb-info-drag carddata="[[trackdata]]">
                 </mb-info-drag>-->
-                
-                <!-- removed properties
+
+                <!-- properties removed from ... 
                     url="[[routedataurl]]" 
                     menudata="{{menudata}}"
                     tmpdata="[[tmpdata]]"
                 -->
-                
                 <routing-vendee 
-                    routedata="{{routedata}}"
+                    routedata="{{routedata}}" 
                     basedataurl="[[basedataurl]]" 
                     trackinfo="[[trackinfo]]" 
                     trackdata="{{trackdata}}">
@@ -146,69 +147,73 @@ Demo to view ship-data animation
 
             </mb-map>
 
-            <!-- Right Block: several external app-controls -->
+
+            <!-- RIGHT Block: several external app-controls , ? invisible ? -->
             <div class="ctrls_out">
                 <!-- element with n visible features -->
                 <routing-api 
                     map="[[map]]" 
-                    timer="{{tracktimer}}"
+                    timer="{{tracktimer}}" 
                     routedata="[[routedata]]" 
                     routeid="[[routeid]]" 
-                    tracksymbol="[[tracksymbol]]" 
+                    tracksymbol="[[tracksymbol]]"
                     trackctrl="{{trackctrl}}" 
                     trackmode="{{trackmode}}" 
-                    trackdata="{{trackdata}}"
+                    trackdata="{{trackdata}}" 
                     trackinfo="[[trackinfo]]">
                 </routing-api>
-                
+
                 <!-- Left -->
-                <timer-setup  
+                <timer-setup 
                     timescalemax="[[tracktimer.timescalemax]]" 
                     timer="{{tracktimer}}">
                 </timer-setup>
 
-                <mb-content-browser
-                    dataset= "{{routeset}}"
-                    dataid= "{{routeid}}"
-                    indexurl="[[indexurl]]"
-                    datasets="[[routesets]]"
+                <!-- <mb-content-browser 
+                    dataset="{{routeset}}" 
+                    dataid="{{routeid}}" 
+                    indexurl="[[indexurl]]" 
+                    datasets="[[routesets]]" 
                     datasetslabel="Flight sets"
-                    datasetlabel= "Flights">
-                </mb-content-browser>                
+                    datasetlabel="Flights">
+                </mb-content-browser> -->
 
                 <mb-content-browser 
                     indexurl="[[indexurl]]" 
                     metadatasetslabel="[[metadatasetslabel]]" 
                     metadatasets="{{routesets}}" 
                     datasetmeta="{{routedatasrc}}"
-
-                    datasetlabel="[[datasetlabel]]"
+                    datasetlabel="[[datasetlabel]]" 
                     dataset="[[dataset]]" 
-                    selectvalue="{{datasetitem}}"> 
+                    selectvalue="{{datasetitem}}">
                 </mb-content-browser>
 
             </div>
+
         </div>
     </template>
 
     <script>
         var scope = document.querySelector('#app');
-
+        
         // APP-Ctrl
+        scope.map = null;
         scope.mapctrl = {};
         scope.cardctrl = {};
 
         // MAP-Environment
         scope.mbkey = "pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw";
+
         scope.mbstyle = 'mapbox://styles/oneputin/ciuz8mtxy01dx2jl8mszelrkm';
 
         scope.tracksymbol = 'boat-blue';
-        scope.cbox = "-50,-40";
+        scope.cbox   = "-50,-40";
         scope.lnglat = "-50,-40";
+        
         scope.zoom = 2;
 
         // TRACK-Environment 
-        scope.indexurl = "index-vendee.json"; // list of available datasets
+        scope.indexurl    = "index-vendee.json"; // list of available datasets
         scope.basedataurl = "wp-data/vendee-db.json"; // list of available datasets
         // Timescale to view tracks of boats over several days
         scope.tracktimer = {
@@ -222,7 +227,7 @@ Demo to view ship-data animation
         /**
          * Put selected url from menu-selection into import-element
          */
-        
+
         /*scope.selectedurl = function(e) {
             console.log(e.detail.item.url);
             this.routedataurl = e.detail.item.url;
@@ -248,7 +253,6 @@ Demo to view ship-data animation
             });
             scope.tmpdata = tmpdata;
         }*/
-
     </script>
 </body>
 

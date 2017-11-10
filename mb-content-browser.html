@@ -76,6 +76,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
         <template is="dom-if" if="{{checked}}">
 
             <div class="vertical">
+
                 <!-- get a datasetMeta -->
                 <div class="flexchild">
                     <dynamic-menu
@@ -179,7 +180,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
                     type: Object,
                     notify: true,
                     observer: '_checkObject'
-                },
+                }
 
             },
 
@@ -202,13 +203,13 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
              * @param      {<type>}  ajaxresponse  The ajaxresponse
              */
             _refreshMetadatasets: function(ajaxresponse) { 
-                var datasetmetas = ajaxresponse.detail.response; // console.log(ajaxresponse, datasetmetas);
+                var datasetmetas = ajaxresponse.detail.response;  console.log(ajaxresponse, datasetmetas);
                 // optionally do some modification
                 this.metadatasets = datasetmetas;  
             },
 
             _checkUrl : function(url){
-                // if (url) console.log("request catalog with", url);  
+                if (url) console.log("request catalog with", url);  
             },
 
             /**
@@ -227,7 +228,7 @@ wraps a 1-3-step NOSQL-mb-content-browser tool
             },
 
             // refresh menu of metadata
-            _refreshMetadata: function(meta){
+            _refreshMetadata: function(meta){ console.log("_refreshMetadata", meta);
                 // SWITCH into WAIT mode of submenu
                 this.dataset = [{
                     title: "please wait"

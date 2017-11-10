@@ -41,7 +41,8 @@ the map-object can be ctrld from outside
     </template>
 
     <script>
-        var map, mapscope;
+        var map, mapscope; // GLOBAL !!
+
         var setup = {
 
             mapapikey: 'pk.eyJ1Ijoib25lcHV0aW4iLCJhIjoiY2ltbHBidWxhMDAwa3ZubHdpNHMwdmNwMiJ9.XnPbDF8YdaDgfMFAVi9Vyw',
@@ -127,10 +128,9 @@ the map-object can be ctrld from outside
 
             attached: function() {
                 mapscope = this;
-
                 if (!this.mapapikey) this.mapapikey = setup.mapapikey;
                 //      
-                console.log("START mb-map after attached");            
+                // console.log("SETUP mb-map after <mb-map>-element was attached");            
                 this._setupMap(); 
             },
 
@@ -145,7 +145,7 @@ the map-object can be ctrld from outside
                 if (this.cbox) context["center"] = this.cbox.split(",");
 
                 var mapctrl = Object.assign({}, setup.map, this.mapctrl, context);
-                // ************************************
+                // ************************
 
                 if (!this.cbox) this.cbox = setup.cbox;
 
@@ -155,6 +155,7 @@ the map-object can be ctrld from outside
                 this.mapctrl = mapctrl;  // console.log("map attached", this.mapapikey, this.mapctrl);
 
                 this._mbMapInstall(mapctrl);
+
             },
 
             /**
@@ -164,7 +165,8 @@ the map-object can be ctrld from outside
              * @return {type} {description}
              */
             _changeMapStyle: function(mapstyle, map){
-                if (map && mapstyle) {  // console.log("CHANGE to mapstyle", mapstyle, map);
+                return; 
+                if (map && mapstyle) {  console.log("CHANGE to mapstyle", mapstyle, map);
                     map.on('data', this._mbMapStyleOnChange); // set map-event-action  
                     map.setStyle(mapstyle); // trigger map-event "setStyle""
                 }    
@@ -175,7 +177,7 @@ the map-object can be ctrld from outside
              * @param  {type} mapctrl {description}
              * @return {type} {description}
              */
-            _mbMapInstall: function(mapctrl) { 
+            _mbMapInstall: function(mapctrl) {  // console.log("_mbMapInstall. START with mapctrl=", mapctrl); 
                 // 
                 var that = this;
 
@@ -183,10 +185,8 @@ the map-object can be ctrld from outside
                 mapboxgl.accessToken = this.mapapikey;
 
                 map = new mapboxgl.Map(mapctrl);  // console.log("create map using", this.mapctrl, mapboxgl, map);
+                map.on('style.load', function() { // console.log("mb-map-style was loaded!!", map);
 
-                map.on('load', function() { // console.log("map loaded", map);
-                    
-                    // inform app about new center after any move
                     map.on('moveend', function() {
                         var cb = map.getCenter(),
                             bb = map.getBounds(),
@@ -195,7 +195,7 @@ the map-object can be ctrld from outside
                         that.cbox = cb.lng + "," + cb.lat;
                         that.bbox = bb._sw.lng + "," + bb._sw.lat + "," + bb._ne.lng + "," + bb._ne.lat;
                         that.zoom = z;
-                        // console.log("moveend", that.zoom,that.cbox,that.bbox);
+                        // console.log("move ended at", that.zoom, that.cbox, that.bbox);
                     });
 
                     //map.on('movestart', function() {
@@ -210,7 +210,9 @@ the map-object can be ctrld from outside
                     // console.log("mapbox map is loaded");                
                     // LOAD of json-themes will be triggered by _changeMapStyle 
                     // if this.map is set
+
                     that.map = map;
+                    // console.log("_mbMapInstall. DONE for ", map); 
                 });
             },
 

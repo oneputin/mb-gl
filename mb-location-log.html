@@ -28,11 +28,14 @@ wraps a distance utility
                 background-color: rgba(255,64,129,0.8); /*#ff4081*/
                 color: white;                    
                 /*opacity: 0.7;*/ /*related to all content bg,fg*/
+                cursor: pointer; 
             }
 
             #innerarea {
                 padding: 0.2em;
             }
+
+
         </style>
 
         <div id="innerarea">[[info]]</div>
@@ -101,7 +104,7 @@ wraps a distance utility
             ],
 
             listeners: {
-                'tap': '_centerPointVisibility'
+                'tap': '_centerPointVisibility',
             },
 
             ready : function() {
@@ -109,7 +112,15 @@ wraps a distance utility
             },
 
             attached: function() {
-                if (typeof this.checked == 'undefined') this.toggleVisibility(true);
+                if (typeof this.checked == 'undefined') {
+                    this.toggleVisibility(true);
+                }    
+            },
+
+            _evt_msnger: function(e) {  console.log("_msnger", e);
+                if (e.type == "mouseover" ) {  
+                    // e.target.style = "cursor:default"; 
+                }    
             },
 
             // externally controled visibility of 
@@ -157,12 +168,14 @@ wraps a distance utility
                 }
             },
 
-            // Refresh coords of dragPnt (= refresh Source)
+
+            // Refresh coords of dragging CENTER-Pnt (= refresh Source)
             _centerPointRefresh: function(lngLat) {
-                if (!lngLat) return; // console.log("logPointGet START", lngLat, this.logdata);
+                if (!lngLat) return;  
                 this.lnglat = lngLat; // INITIAL location
                 var logPointSrc;
-                if (map) logPointSrc = map.getSource("centerpoint");
+                if (map) logPointSrc = map.getSource("centerpoint"); 
+                // console.log("logPointGet START", lngLat, map);
                 if (!logPointSrc) {
                     this._centerPointSetup(lngLat);
                 } else {
@@ -202,10 +215,9 @@ wraps a distance utility
                     } 
                 });    
             },
-           
 
             // 
-            _centerPointSetup: function(lnglat) {
+            _centerPointSetup: function(lnglat) { // console.log("_centerPointSetup at", lnglat); 
                 var coords = [lnglat.lng,lnglat.lat],
                     feat = this._centerPointFeature(coords);
 
@@ -242,6 +254,7 @@ wraps a distance utility
                     }
                 ];
 
+                // add invisible initally !!  
                 centerPntLayers.forEach(function(layer){
                     map.addLayer(layer);
                     map.setLayoutProperty(layer.id, 'visibility', "none");

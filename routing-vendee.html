@@ -11,17 +11,17 @@
 
 <!--
 `routing-vendee`
-Interface for import/export of case-specific routing data
+Interface for import/export of appCase-specific routing data
 
 IN: transfer raw vendee-data 
-    into 'routedata' (dataformat required by routing-api-api)
+    into 'routedata' (dataformat required by routing-api)
 
 
-
-OUT: RICH-content Info-card related to one selected feature,  
-absolutely positioned as (mapbox-)map-overlay   
-Mode-A: Can be vertically dragged & horizontally resized.  
-Mode-B: Free drag   
+OUT: RICH-content Info-card(s) related to one selected feature,  
+     absolutely positioned as (mapbox-)map-overlay   
+    
+    Mode-A: Can be vertically dragged & horizontally resized.  
+    Mode-B: Free drag   
 
 To 'close' 
     - with click anywhere on the card
@@ -140,6 +140,11 @@ To 'close'
             is: 'routing-vendee',
 
             properties: {
+
+                basedataurl: {
+                    type: String
+                },
+
                 icon: {
                     type: String,
                     value: "boat-blue"
@@ -158,7 +163,8 @@ To 'close'
                 routedata: {
                     type: Array,
                     notify: true
-                }
+                }, 
+
             },
 
             behaviors: [
@@ -166,8 +172,9 @@ To 'close'
             ],
 
             observers: [
-                'importVendee(rawdata, rawdbdata)',
-                'transformMenu(tmpdata)'
+                // 'importVendee(rawdata, rawdbdata)',
+                'importVendee(rawdbdata)'
+                // 'transformMenu(tmpdata)'
             ],
 
             attached: function() {
@@ -176,16 +183,17 @@ To 'close'
 
             getdbdata: function(ajaxresponse) {
                 var rawdata = ajaxresponse.detail.response;
-                if (!rawdata) return;
-                // console.log("dbdata", rawdata);
+                if (!rawdata) return; console.log("getdbdata raw=", rawdata);
                 this.rawdbdata = rawdata; // triggers 'setupTracking'
             },
 
+
             // SPECIFIC import of specific vendee-data 
             // into datastructure of routing-API
-            importVendee: function(rawdata, rawdbdata) {
-                if (!rawdata || !rawdbdata) return;
-
+            // importVendee: function(rawdata, rawdbdata) {  
+            importVendee: function(rawdbdata) { console.log("importVendee", rawdbdata); return;  
+                // if (!rawdata || !rawdbdata) return;
+                var rawdata ; 
                 var icontemplate;
                 // icontemplate = "circle-stroked-11"; // this.icon;
                 // icontemplate = "boat-blue"; // this.icon;
@@ -203,13 +211,13 @@ To 'close'
                     return dd;
                 }
 
-
                 // A. Redistribute raw master-data and wp-records into temporary objects (masters, routes) 
+                
                 var routes = {},
                     masterdata = {},
                     route, master, id;
 
-                // A. Restructure master-table into collection    
+                // A. Restructure "master-table" into collection    
                 
                 rawdbdata.forEach(function(st, j) {
                     //  
@@ -229,30 +237,32 @@ To 'close'
 
                 // B. GROUP all position-records by id 
                 //    into objects for every resolved track
-                rawdata.forEach(function(wp, j) {
-                    //  
-                    var wpx = {},
-                        lng, lat;
-                    var pass = mba.utcTime(wp.date + "." + wp.time);
-                    wpx.ab = pass;
-                    wpx.an = pass;
+                if (rawdata && rawdata.length) {
+                    rawdata.forEach(function(wp, j) {
+                        //  
+                        var wpx = {},
+                            lng, lat;
+                        var pass = mba.utcTime(wp.date + "." + wp.time);
+                        wpx.ab = pass;
+                        wpx.an = pass;
 
-                    // Apply specific 
-                    lat = dmtodd(wp.lat);
-                    lng = dmtodd(wp.lng);
+                        // Apply specific 
+                        lat = dmtodd(wp.lat);
+                        lng = dmtodd(wp.lng);
 
-                    wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
-                    wpx.icon = this.wpicon;
+                        wpx.coords = [lng, lat]; // { "lng": lng, "lat": lat };
+                        wpx.icon = this.wpicon;
 
-                    //  
-                    id = wp.id;
-                    route = routes[id];
-                    if (!route) {
-                        route = [];
-                        routes[id] = route;
-                    }
-                    route.push(wpx);
-                }.bind(this));
+                        //  
+                        id = wp.id;
+                        route = routes[id];
+                        if (!route) {
+                            route = [];
+                            routes[id] = route;
+                        }
+                        route.push(wpx);
+                    }.bind(this));
+                }
 
                 // C. Join temporary masters- and routes-objects 
                 //    into array of api-conform routes with wps sorted by time 
@@ -364,7 +374,6 @@ To 'close'
 
 
             // C.  FORMAT INFO-Card 
-
             refreshCardContent: function(data) {
                 var nbsp = "&nbsp;"; //"~"; 
                 if (!data) return;

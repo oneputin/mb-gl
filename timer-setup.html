@@ -157,7 +157,8 @@ ctrls are compiled and exported as `timer`-properties: timescale, timescalemax, 
             ready: function(){
                 var metadataset = {}; 
                 // if (this.metadataset && this.metadataset.timer) metadataset = this.metadataset;
-                this._setupTimer(this.metadataset.timer, this.starttimer);
+                this._setupTimer(metadataset.timer, this.starttimer);
+                // this._setupTimer(this.metadataset.timer, this.starttimer);
                 // this._setupTimeCtrls(this.timer.timescalemax);
             },
 
