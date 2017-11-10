@@ -1,0 +1,96 @@
+{
+    "url": "http:\/\/www.iimaps.de\/slides\/data",
+    "parurl": "http:\/\/www.iimaps.de\/slides\/data",
+    "dataurl": "http:\/\/iimaps.de\/npp\/gl2\/data",
+    "slide": "basintree",
+    "service": "slide",
+    "mapclient": "mbgl",
+    "card": "default",
+    "region": "europe",
+    "bbox": "[13.483743173714402,52.77048104970231]",
+    "setupurls": {
+        "host": "http:\/\/iimaps.de\/slides\/setup.xml",
+        "slides": "http:\/\/iimaps.de\/slides\/setup.xml",
+        "npp": "http:\/\/iimaps.de\/npp\/setup.xml"
+    },
+    "magic": 6,
+    "indexId": "BSO000034401",
+    "outletSea": "northsea",
+    "indexFeature": {
+        "@attributes": {
+            "id": "BSO000034401",
+            "intersect": "1"
+        },
+        "name": "BSO000034401",
+        "Region": {
+            "LatLonAltBox": {
+                "north": "52.9012",
+                "south": "52.1518",
+                "east": "0.2351",
+                "west": "-1.2204"
+            }
+        }
+    },
+    "siteUrl": "http:\/\/www.iimaps.de\/slides\/data\/northsea",
+    "oemId": "BSO00003440",
+    "mmuId": "BSO000034401",
+    "outletId": "BSO00003440",
+    "oemTree": ["BSO00003440"],
+    "slideSet": ["BSO00003440"],
+    "parent": "BSO00003440",
+    "parentRiver": "BSO00003440",
+    "docMode": null,
+    "indexMode": false,
+    "kmlMode": false,
+    "htmMode": false,
+    "jsonMode": false
+}
+
+
+{
+    "url": "http:\/\/www.iimaps.de\/slides\/data",
+    "parurl": "http:\/\/www.iimaps.de\/slides\/data",
+    "dataurl": "http:\/\/iimaps.de\/npp\/gl2\/data",
+    "slide": "basintree",
+    "service": "slide",
+    "mapclient": "mbgl",
+    "card": "default",
+    "region": "europe",
+    "bbox": "[13.5,52.5]",
+    "setupurls": {
+        "host": "http:\/\/iimaps.de\/slides\/setup.xml",
+        "slides": "http:\/\/iimaps.de\/slides\/setup.xml",
+        "npp": "http:\/\/iimaps.de\/npp\/setup.xml"
+    },
+    "magic": 6,
+    "indexId": "BSO000000801",
+    "outletSea": "northsea",
+    "indexFeature": {
+        "@attributes": {
+            "id": "BSO000000801",
+            "intersect": "1"
+        },
+        "name": "BSO000000801",
+        "Region": {
+            "LatLonAltBox": {
+                "north": "52.8374",
+                "south": "52.3512",
+                "east": "0.8454",
+                "west": "-0.3465"
+            }
+        }
+    },
+    "siteUrl": "http:\/\/www.iimaps.de\/slides\/data\/northsea",
+    "oemId": "BSO00000080",
+    "mmuId": "BSO000000801",
+    "outletId": "BSO00000080",
+    "oemTree": ["BSO00000080"],
+    "slideSet": ["BSO00000080"],
+    "parent": "BSO00000080",
+    "parentRiver": "BSO00000080",
+    "docMode": null,
+    "indexMode": false,
+    "kmlMode": false,
+    "htmMode": false,
+    "jsonMode": false
+}

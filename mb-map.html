@@ -129,7 +129,8 @@ the map-object can be ctrld from outside
                 mapscope = this;
 
                 if (!this.mapapikey) this.mapapikey = setup.mapapikey;
-                //                 
+                //      
+                console.log("START mb-map after attached");            
                 this._setupMap(); 
             },
 
@@ -174,7 +175,7 @@ the map-object can be ctrld from outside
              * @param  {type} mapctrl {description}
              * @return {type} {description}
              */
-            _mbMapInstall: function(mapctrl) {
+            _mbMapInstall: function(mapctrl) { 
                 // 
                 var that = this;
 

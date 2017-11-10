@@ -6,9 +6,10 @@
 
 <!--
 `mb-gl`
-wraps a map based on mapbox-gl-api 
+FIRST try to wrap a map based on mapbox-gl-api 
 and a dynamic feature overlay with minimum parameters. 
 NO additional elements 
+
 @demo demo/index.html 
 -->
 
@@ -153,6 +154,7 @@ NO additional elements
             ],
 
             attached: function() {
+
                 console.log("log setup", setup);
 
                 this.mapapikey = setup.mapapikey;

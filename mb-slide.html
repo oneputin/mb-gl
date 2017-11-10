@@ -66,7 +66,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 url     = "[[serviceurl]]"
                 service = "[[_servicequery]]"
                 query   = "[[_clientquery]]"
-                msg = "{{msg}}"
+                msg     = "{{msg}}"
                 geojson = "{{slidedata}}">
             </kml-json>
         </template>
@@ -98,10 +98,13 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
         var slidesetup = {
 
-            serviceurl: "http://iimaps.de/npp/if_slides.php",
+            // serviceurl:  "http://iimaps.de/npp/if_slides.php",
+            // serviceurl:  "http://localhost/npp/if_slides.php",
+            serviceurl:  "http://localhost/slides/if_slides.php",
 
             serviceparams: {
-                mapclient: "ol2",
+                // mapclient: "ol2",
+                mapclient: "mbgl",
                 card: "default",
                 slide: "basin"
             },
@@ -171,7 +174,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                  *  - continuously during map-move 
                  */
                 target: {
-                    type: String //, observer: 'locationrequest'
+                    type: String //, observer: 'locationObserver'
                 },
 
                 msg: {
@@ -272,7 +275,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             ],
 
             observers: [
-                'locationrequest(target, serviceflag)',
+                'locationObserver(target, serviceflag)',
                 //'servicerequest(serviceflag, serviceparams.card, serviceparams.slide)',
                 'serviceresponse(slidedata.*)',
                 'requestlog(serviceurl, _servicequery.*)'
@@ -282,8 +285,8 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 console.log("server-msg", msg)
             },
 
-            requestlog: function(a, b) {
-                // console.log("requestlog", a, b, b.value);
+            requestlog: function(url, query) {
+                console.log("requestlog", url, query); // , b.value);
             },
 
             attached: function() {
@@ -304,13 +307,22 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 this.serviceurl = slidesetup.serviceurl;
             },
 
-            locationrequest: function(target, serviceflag) {
-                this.serviceparams.cbox = target; 
-                this.servicerequest(serviceflag);
+            // Trigger LBS if queryLocation changed 
+            locationObserver: function(target, serviceflag) { 
+                if ((this.serviceparams.cbox != target) || serviceflag ) {
+                    var msg = "Location Observed at";
+                    if (serviceflag) { 
+                        msg = "QUERY-" + msg;
+                        this.serviceparams.cbox = target; 
+                        this.servicerequest(serviceflag);
+                    } else {
+                        msg = "NAV-" + msg;
+                    }   // console.log(msg, target);
+                }    
             },
 
             /**
-             *   Action triggers new slide-request after any of the service-parameters had changed
+             *   Action triggers new slide-request if any-one of the service-parameters had changed
              *   mainly : cbox (mapcenter)
              */
             servicerequest: function(serviceflag) {
@@ -328,7 +340,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
 
                     servicequery["time"] = Date.now();
                    
-                    // console.log("Trigger SERVICEREQUEST as:", servicequery, "to " + this.serviceurl);
+                    console.log("Trigger SERVICEREQUEST to:", this.serviceurl, "with ", servicequery);
                     this._servicequery = {};
                     this._servicequery = servicequery;
 
@@ -343,8 +355,7 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             /*
              *   action triggered after (slide)-server returns new data   
              */
-            serviceresponse: function(rawslidedata) {
-                // console.log("RAW serviceresponse", rawslidedata) 
+            serviceresponse: function(rawslidedata) {                // console.log("RAW serviceresponse", rawslidedata) 
                 this.$.loadspinner.active = false;
                 if (!map || (typeof rawslidedata != "object") || !Object.keys(rawslidedata).length) return;
                 // console.log(typeof rawslidedata, rawslidedata); // , map);
@@ -366,12 +377,12 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                 this.slidebox = this.getBoundingBox(slidedata.features);
 
                 this.slidekeys = this.getFeatureKeys(slidedata);
-                // console.log("ServiceResponse [slidekeys,slidedata,slidebox]:", this.slidekeys, slidedata, this.slidebox);
+                console.log("ServiceResponse [slideKEYS,SLIDE,slideBBOX]:", this.slidekeys, slidedata, this.slidebox);
 
                 var slidesource = this.slidectrl.source,
                     slidename = this.slidectrl.id;
 
-                // Specifically mb-gl: ? Test for SOURCE  (not for layer) ?
+                // Specifically mb-gl: ? Test for layer-SOURCE (not for layer) ?
                 if (!map.getSource(slidesource)) {
                     // create NEW slidelayer
                     this.createSlideLayer();
@@ -402,7 +413,8 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
                     slidectrl = this.slidectrl,
                     insertlayer = this.insertslidebelow,
                     slidesource = slidectrl.source;
-                // console.log("createSlideLayer for source",slidesource, slidedata);     
+                console.log("createSlideLayer for source", slidesource, slidedata);     
+                
                 // A. add slide-source to map    
                 map.addSource(slidesource, {
                     type: 'geojson',
@@ -486,35 +498,34 @@ wraps a mb-gl-overlay based on feature-geosource (geojson) and links to mb-gl-ma
             },
 
             /**
-             * 
+             *  Steps (and zooms) to "next" element (slideindex-1) of the actually loaded slideStack
              */
             zoomslide: function() {
                 if (!this.slidebox) return;
 
-                if (this.$.loadspinner.active) {
+                if (this.$.loadspinner.active) {   console.log("NO-SERVER-RESPONSE");
                     // B. reset old slide if NO server-response
-                    console.log("NO-SERVER-RESPONSE");
                     this.$.loadspinner.active = false;
                     map.setLayoutProperty(this.slidectrl.id, 'visibility', 'visible');
                
                 } else {
-                    var slidedata = this.slidedata,
-                        n = slidedata.features.length;
 
-
-                    // A. deactivate service-trigger
+                    // A. DEACTIVATE service-trigger
                     this.serviceflag = false;
 
-                    // B. 
-                    var index = this.slideindex;
+
+                    // B. The 
+                    var slidedata = this.slidedata,
+                        n = slidedata.features.length,
+                        index = this.slideindex;
                     if (index == undefined) index = n - 1;  
 
                     // C. 
                     var slide = slidedata.features[index],  
-                        bb = this.getBoundingBox([slide]);
+                        bb = this.getBoundingBox([slide]); // console.log("zoomslide to ", index, bb);
                     map.fitBounds(bb);
                     
-                    // D. 
+                    // D. Change the index of zoomslide "rotating" through 
                     index = index - 1 < 0 ? n - 1 : index - 1 ; 
                     this.slideindex = index; 
 

@@ -161,8 +161,8 @@ wraps a distance utility
             _centerPointRefresh: function(lngLat) {
                 if (!lngLat) return; // console.log("logPointGet START", lngLat, this.logdata);
                 this.lnglat = lngLat; // INITIAL location
-
-                var logPointSrc = map.getSource("centerpoint");
+                var logPointSrc;
+                if (map) logPointSrc = map.getSource("centerpoint");
                 if (!logPointSrc) {
                     this._centerPointSetup(lngLat);
                 } else {

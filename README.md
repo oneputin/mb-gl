@@ -1,6 +1,6 @@
 # \<mb-gl\>
 
-wrap a mapbox 
+wrap mapbox-features as webcomponents
 
 ## Strategy
 
@@ -17,6 +17,7 @@ wrap around map based on mapbox-gl-api
 ### \<mb-slide\>
 wrap a feature-overlay linked to mapbox-gl-map ('map'-property)  
 Results of feature-queries are exported (and/or) presented in popup (paper-dialog)  
+- 
 
 ### \<mb-zoom\>
 Bidirectional Zoom-Ctrl related to mapbox-gl-map ('map'-property)  
